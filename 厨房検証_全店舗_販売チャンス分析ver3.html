@@ -1,0 +1,498 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>厨房検証｜販売チャンス分析</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700;900&display=swap');
+:root{
+  --bg:#f4f6f9;--card:#fff;--border:#dde2ea;--text:#1a1f2e;--muted:#6b7280;
+  --green:#16a34a;--orange:#d97706;--red:#dc2626;--blue:#2563eb;--purple:#7c3aed;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{background:var(--bg);color:var(--text);font-family:'Noto Sans JP',sans-serif;font-size:12px;-webkit-text-size-adjust:100%;}
+.page{max-width:1200px;margin:0 auto;padding:10px 12px 30px;}
+/* header */
+.hdr{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding-bottom:10px;border-bottom:2px solid var(--border);margin-bottom:10px;}
+.htitle{font-size:18px;font-weight:900;letter-spacing:.03em;}
+.htitle em{color:var(--red);font-style:normal;}
+select#ss{font-size:14px;font-weight:700;padding:5px 26px 5px 10px;border:2px solid var(--blue);border-radius:6px;
+  background:#fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='7'%3E%3Cpath d='M0 0l5 7 5-7z' fill='%232563eb'/%3E%3C/svg%3E") no-repeat right 8px center;
+  appearance:none;color:var(--blue);cursor:pointer;}
+.pbadge{font-size:10px;color:var(--muted);background:#f0f3f7;border:1px solid var(--border);border-radius:4px;padding:3px 8px;}
+/* kpi */
+.kpis{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px;}
+@media(min-width:900px){.kpis{grid-template-columns:repeat(4,1fr);}}
+.kpi{background:var(--card);border:1px solid var(--border);border-radius:8px;padding:10px 12px;}
+.kpi-l{font-size:9px;color:var(--muted);margin-bottom:2px;}
+.kpi-v{font-size:22px;font-weight:900;line-height:1.1;}
+.kpi-s{font-size:9px;color:var(--muted);}
+/* grid */
+.grid{display:flex;flex-direction:column;gap:10px;}
+@media(min-width:900px){.grid{display:grid;grid-template-columns:1fr 1fr;}}
+.card{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:12px;overflow:hidden;position:relative;}
+.card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;}
+.cb::before{background:var(--blue);}.cr::before{background:var(--red);}
+.cg::before{background:var(--green);}.cp::before{background:var(--purple);}
+.ctitle{font-size:10px;font-weight:700;color:var(--muted);letter-spacing:.06em;margin-bottom:2px;}
+.csub{font-size:9px;color:#9ca3af;margin-bottom:8px;}
+canvas{display:block;width:100% !important;}
+/* table */
+.sw{max-height:280px;overflow-y:auto;-webkit-overflow-scrolling:touch;}
+table{width:100%;border-collapse:collapse;}
+th{font-size:9px;color:var(--muted);padding:3px 4px;border-bottom:1px solid var(--border);text-align:left;white-space:nowrap;}
+td{padding:5px 4px;border-bottom:1px solid #f3f4f6;font-size:10px;vertical-align:middle;}
+tr:last-child td{border-bottom:none;}
+.nr{text-align:right;font-variant-numeric:tabular-nums;}
+.pn{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:140px;}
+@media(min-width:900px){.pn{max-width:200px;}}
+.up{color:var(--green);font-weight:700;}.dn{color:var(--red);font-weight:700;}
+.rb{display:inline-flex;align-items:center;justify-content:center;width:17px;height:17px;border-radius:3px;font-size:8px;font-weight:700;color:#fff;}
+.r1{background:#d4a017;}.r2{background:#888;}.r3{background:#a0522d;}.rn{background:#e5e7eb;color:#6b7280;}
+.tag{display:inline-block;padding:1px 4px;border-radius:2px;font-size:8px;font-weight:700;}
+.tnew{background:#dbeafe;color:var(--blue);}.tup{background:#dcfce7;color:var(--green);}.twarn{background:#fee2e2;color:var(--red);}
+/* scatter legend */
+.leg{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:6px;}
+.li{display:flex;align-items:center;gap:4px;font-size:8.5px;color:var(--muted);}
+.ld{width:9px;height:9px;border-radius:50%;flex-shrink:0;}
+/* tooltip */
+#tip{position:fixed;display:none;pointer-events:none;z-index:9999;
+  background:rgba(15,23,42,.93);color:#fff;border-radius:8px;padding:9px 12px;
+  font-size:11px;line-height:1.7;max-width:220px;box-shadow:0 4px 20px rgba(0,0,0,.3);}
+#tip .tn{font-weight:700;font-size:12px;border-bottom:1px solid rgba(255,255,255,.15);padding-bottom:3px;margin-bottom:3px;word-break:break-all;}
+#tip .tz{font-size:9px;opacity:.75;margin-top:2px;}
+</style>
+</head>
+<body>
+<div id="tip"><div class="tn" id="tipn"></div><div id="tipb"></div><div class="tz" id="tipz"></div></div>
+<div class="page">
+  <div class="hdr">
+    <div class="htitle">厨房検証 <em id="sn">—</em></div>
+    <select id="ss"></select>
+    <div class="pbadge">📅 2026-02-23 〜 2026-03-09（直近３週）</div>
+  </div>
+  <div class="kpis">
+    <div class="kpi"><div class="kpi-l">最新週 合計販売数 PSA/D</div><div class="kpi-v" id="ks" style="color:var(--blue)">—</div><div class="kpi-s" id="kss"></div></div>
+    <div class="kpi"><div class="kpi-l">最新週 合計廃棄数 PSA/D</div><div class="kpi-v" id="kw" style="color:var(--red)">—</div><div class="kpi-s" id="kws"></div></div>
+    <div class="kpi"><div class="kpi-l">取扱SKU数（最新週）</div><div class="kpi-v" id="kk" style="color:var(--purple)">—</div><div class="kpi-s" id="kks"></div></div>
+    <div class="kpi"><div class="kpi-l">廃棄率（廃棄÷販売）</div><div class="kpi-v" id="kr" style="color:var(--orange)">—</div><div class="kpi-s" id="krs"></div></div>
+  </div>
+  <div class="grid">
+    <div class="card cb">
+      <div class="ctitle">🔵 週別 販売数比較（上位15品）</div>
+      <div class="csub">販売数 PSA/D ｜ 2/23・3/02・3/09週</div>
+      <canvas id="cS"></canvas>
+    </div>
+    <div class="card cr">
+      <div class="ctitle">🔴 週別 廃棄数比較（廃棄多い順）</div>
+      <div class="csub">廃棄数 PSA/D ｜ 2/23・3/02・3/09週</div>
+      <canvas id="cW"></canvas>
+    </div>
+    <div class="card cg">
+      <div class="ctitle">🟢 販売伸長ランキング（直近3週トレンド）</div>
+      <div class="csub">2/23週→3/09週の変化 ｜ 伸びている＝作成増のチャンス</div>
+      <div class="sw"><table><thead><tr>
+        <th style="width:20px">#</th><th>商品名</th>
+        <th class="nr">2/23</th><th class="nr">3/02</th><th class="nr">3/09</th>
+        <th class="nr">増減</th>
+      </tr></thead><tbody id="tbl"></tbody></table></div>
+    </div>
+    <div class="card cp">
+      <div class="ctitle">🟣 販売チャンス × 廃棄リスク マトリクス</div>
+      <div class="csub">廃棄率15%未満＝チャンスあり ／ タップで商品名確認</div>
+      <div class="leg">
+        <div class="li"><div class="ld" style="background:#16a34a"></div>✅ 作成増のチャンス</div>
+        <div class="li"><div class="ld" style="background:#84cc16"></div>🌱 廃棄率優秀</div>
+        <div class="li"><div class="ld" style="background:#2563eb"></div>🔵 精度改善で伸ばせる</div>
+        <div class="li"><div class="ld" style="background:#dc2626"></div>🔴 作成計画見直し</div>
+      </div>
+      <canvas id="cSc"></canvas>
+    </div>
+  </div>
+</div>
+<script>
+var ALL_STORES = {"\u6c5f\u5742\u5357":[{"name":"\u9e7f\u5150\u5cf6\u770c\u7523\u685c\u5cf6\u3069\u308a\u306e\u30c1\u30ad\u30f3\u5357\u86ee\u4e3c\uff16","s":[3.71,5.0,6.86,7.0,8.0],"w":[0.0,0.0,0.29,0.14,0.29]},{"name":"\u4e09\u5143\u8c5a\u306e\u539a\u5207\u308a\u30ed\u30fc\u30b9\u30ab\u30c4\u30b5\u30f3\u30c9\uff13","s":[7.67,7.29,5.86,5.86,6.86],"w":[0.83,0.71,0.43,1.14,1.0]},{"name":"\u6d77\u8001\u30ab\u30c4\u30bf\u30de\u30b4\u30b5\u30f3\u30c9\uff08\uff11\u500b\u5165\u308a\uff09\uff11","s":[4.57,6.71,7.33,6.43,6.71],"w":[0.29,0.0,0.0,0.43,0.14]},{"name":"\u4e09\u5143\u8c5a\u306e\u539a\u5207\u308a\u30ed\u30fc\u30b9\u30bd\u30fc\u30b9\u30ab\u30c4\u4e3c\uff15","s":[3.71,4.29,5.86,6.14,6.57],"w":[0.14,0.29,1.29,2.0,1.29]},{"name":"\u3054\u308d\u3063\u3068\u30bf\u30de\u30b4\u30b5\u30f3\u30c9\uff08\uff11\u500b\u5165\u308a\uff09\uff14","s":[3.14,4.43,4.86,5.43,6.14],"w":[0.57,0.86,0.57,1.0,1.0]},{"name":"\u4e09\u5143\u8c5a\u306e\u539a\u5207\u308a\u30ed\u30fc\u30b9\u30ab\u30c4\u30b5\u30f3\u30c9\uff08\uff11\u500b\uff09\uff13","s":[7.29,6.86,6.86,6.0,6.0],"w":[0.43,0.0,0.0,0.43,1.0]},{"name":"\u60e3\u83dc\u3000\u9d8f\u306e\u70ad\u706b\u713c\u304d\uff13\u7a2e\u76db\u308a\uff11","s":[null,1.0,5.43,5.71,5.86],"w":[null,0.0,0.43,0.86,0.86]},{"name":"\u60e3\u83dc\u3000\u82e5\u9d8f\u306e\u7802\u809d\u306b\u3093\u306b\u304f","s":[2.57,2.71,5.14,6.0,5.43],"w":[0.29,0.14,0.43,0.43,1.57]},{"name":"\u60e3\u83dc\u3000\u30c1\u30fc\u30ba\u5927\u8449\u30c1\u30ad\u30f3\u30ab\u30c4","s":[2.57,2.86,4.14,5.14,5.29],"w":[0.29,0.0,0.86,1.71,1.57]},{"name":"\u4e09\u5143\u8c5a\u306e\u539a\u5207\u308a\u30ab\u30c4\uff06\u30bf\u30de\u30b4\u30b5\u30f3\u30c9\uff16","s":[3.29,4.14,3.71,3.29,3.86],"w":[0.0,0.43,0.0,0.43,0.43]},{"name":"\u6d77\u8001\u30ab\u30c4\u30bf\u30de\u30b4\u30b5\u30f3\u30c9\uff11","s":[3.29,4.0,4.43,4.14,3.71],"w":[0.14,0.14,0.0,0.43,0.0]},{"name":"\u9d8f\u306e\u304b\u3089\u63da\u3052\u5f01\u5f53\uff14","s":[4.0,3.0,3.25,3.14,3.57],"w":[0.0,0.17,0.5,0.43,0.14]},{"name":"\u30ac\u30fc\u30ea\u30c3\u30af\u30c8\u30de\u30c8\u30c1\u30ad\u30f3\u4e3c","s":[3.43,3.71,3.29,3.6,3.57],"w":[0.0,0.14,0.14,0.0,0.43]},{"name":"\u5f69\u308a\u91ce\u83dc\u3068\u9d8f\u304b\u3089\u63da\u3052\u306e\u7518\u9162\u305f\u308c\u4e3c\uff13","s":[3.43,3.57,3.86,4.57,3.43],"w":[0.14,0.43,0.0,0.0,0.43]},{"name":"\u60e3\u83dc\u3000\u4e09\u5143\u8c5a\u306e\u539a\u5207\u308a\u30ed\u30fc\u30b9\u30ab\u30c4","s":[null,null,4.0,2.6,3.33],"w":[null,null,0.4,1.4,0.0]},{"name":"\u3068\u308d\u30fc\u308a\u305f\u307e\u3054\u4e09\u5143\u8c5a\u539a\u5207\u308a\u30ed\u30fc\u30b9\u30ab\u30c4\u4e3c\uff14","s":[2.0,3.29,2.71,3.29,3.33],"w":[0.0,0.14,0.0,0.14,0.0]},{"name":"\u6d77\u9bae\u304b\u304d\u63da\u3052\u4e3c\uff15","s":[3.0,3.86,4.29,4.43,3.29],"w":[0.43,0.29,0.57,0.0,0.14]},{"name":"\u76db\u5408\u305b\u5f01\u5f53\uff08\u30cf\u30f3\u30d0\u30fc\u30b0\uff06\u9d8f\u304b\u3089\uff09","s":[null,null,3.0,3.14,2.86],"w":[null,null,0.4,0.14,0.14]},{"name":"\u5099\u9577\u70ad\u713c\u304d\u89aa\u5b50\u4e3c\uff15","s":[1.86,3.43,2.86,3.14,2.86],"w":[0.0,0.0,0.0,0.14,0.0]},{"name":"\u713c\u304d\u3055\u3070\uff06\u9d8f\u304b\u3089\u5f01\u5f53","s":[null,null,null,null,2.75],"w":[null,null,null,null,0.75]},{"name":"\u9999\u3070\u3057\u7092\u3081\u30c1\u30e3\u30fc\u30cf\u30f3\uff06\u9d8f\u304b\u3089\uff11","s":[1.83,2.43,2.5,3.17,2.29],"w":[0.17,0.14,0.17,0.33,0.0]},{"name":"\u3066\u308a\u305f\u307e\u3054\u9d8f\u7adc\u7530\u63da\u3052\u30d0\u30fc\u30ac\u30fc","s":[null,null,null,3.5,2.0],"w":[null,null,null,0.5,0.0]},{"name":"\u6d77\u8001\u30ab\u30c4\u30d0\u30fc\u30ac\u30fc\uff12","s":[2.5,2.43,2.71,3.0,2.0],"w":[0.0,0.29,0.29,0.0,0.0]},{"name":"\u3054\u306f\u3093\u5927\u76db\uff01\u76db\u5408\u305b\u5f01\u5f53\uff08\u30cf\u30f3\u30d0\u30fc\u30b0\u9d8f\u304b\u3089","s":[null,null,2.2,2.14,1.86],"w":[null,null,0.0,0.14,0.0]},{"name":"\u65b0\u5bbf\u4e2d\u6751\u5c4b\u76e3\u4fee\u3000\u30ab\u30c4\u30ab\u30ec\u30fc\uff08\u4e2d\u8f9b\uff09\uff11","s":[1.5,1.6,2.0,2.0,1.8],"w":[0.0,0.2,0.0,0.33,0.0]},{"name":"\u3054\u306f\u3093\u5927\u76db\uff01\u9d8f\u306e\u304b\u3089\u63da\u3052\u5f01\u5f53\uff14","s":[null,1.0,0.5,2.0,null],"w":[null,0.0,0.5,0.0,null]}],"\u6c5f\u5742\u6771":[{"name":"\u5f69\u308a\u91ce\u83dc\u3068\u9d8f\u304b\u3089\u63da\u3052\u306e\u7518\u9162\u305f\u308c\u4e3c\uff13","s":[1.5,3.67,3.0,2.67,3.2],"w":[0.5,1.0,0.0,0.67,0.6]},{"name":"\u713c\u304d\u3055\u3070\uff06\u9d8f\u304b\u3089\u5f01\u5f53","s":[null,null,null,null,3.0],"w":[null,null,null,null,1.0]},{"name":"\u6d77\u9bae\u304b\u304d\u63da\u3052\u4e3c\uff15","s":[2.0,2.71,2.0,2.43,2.43],"w":[0.0,0.0,0.0,0.14,0.0]},{"name":"\u304b\u3089\u63da\u3052\u7167\u308a\u30de\u30e8\u4e3c\uff11","s":[2.0,3.14,1.0,2.29,2.14],"w":[0.0,0.14,0.5,0.29,0.14]},{"name":"\u3054\u306f\u3093\u5927\u76db\uff01\u9d8f\u306e\u304b\u3089\u63da\u3052\u5f01\u5f53\uff14","s":[1.0,1.67,1.6,1.86,2.14],"w":[0.0,0.17,0.0,0.0,0.0]},{"name":"\u3066\u308a\u305f\u307e\u3054\u9d8f\u7adc\u7530\u63da\u3052\u30d0\u30fc\u30ac\u30fc","s":[null,null,null,2.0,2.0],"w":[null,null,null,0.0,0.0]},{"name":"\u76db\u5408\u305b\u5f01\u5f53\uff08\u30cf\u30f3\u30d0\u30fc\u30b0\uff06\u9d8f\u304b\u3089\uff09","s":[null,null,5.5,2.57,2.0],"w":[null,null,0.83,0.0,0.43]},{"name":"\u60e3\u83dc\u3000\u82e5\u9d8f\u306e\u7802\u809d\u306b\u3093\u306b\u304f","s":[null,null,null,null,2.0],"w":[null,null,null,null,0.0]},{"name":"\u60e3\u83dc\u3000\u9d8f\u306e\u70ad\u706b\u713c\u304d\uff13\u7a2e\u76db\u308a\uff11","s":[null,2.0,2.0,2.0,2.0],"w":[null,0.0,0.0,0.0,0.0]},{"name":"\u6d77\u8001\u30ab\u30c4\u30bf\u30de\u30b4\u30b5\u30f3\u30c9\uff08\uff11\u500b\u5165\u308a\uff09\uff11","s":[2.0,2.0,2.0,2.0,2.0],"w":[0.0,0.0,0.0,0.0,0.0]},{"name":"\u9999\u3070\u3057\u7092\u3081\u30c1\u30e3\u30fc\u30cf\u30f3\uff06\u9d8f\u304b\u3089\uff11","s":[1.83,1.71,2.0,1.86,2.0],"w":[0.17,0.29,0.0,0.0,0.29]},{"name":"\u9e7f\u5150\u5cf6\u770c\u7523\u685c\u5cf6\u3069\u308a\u306e\u30c1\u30ad\u30f3\u5357\u86ee\u4e3c\uff16","s":[1.6,2.43,2.0,2.0,2.0],"w":[0.0,0.14,0.0,0.0,0.14]},{"name":"\u5099\u9577\u70ad\u713c\u304d\u89aa\u5b50\u4e3c\uff15","s":[1.33,1.71,1.86,2.0,1.86],"w":[0.0,0.14,0.0,0.0,0.14]},{"name":"\u65b0\u5bbf\u4e2d\u6751\u5c4b\u76e3\u4fee\u3000\u30ab\u30c4\u30ab\u30ec\u30fc\uff08\u4e2d\u8f9b\uff09\uff11","s":[1.8,1.86,2.0,2.0,1.86],"w":[0.0,0.0,0.0,0.0,0.14]},{"name":"\u4e09\u5143\u8c5a\u306e\u539a\u5207\u308a\u30ed\u30fc\u30b9\u30bd\u30fc\u30b9\u30ab\u30c4\u4e3c\uff15","s":[1.33,1.86,1.71,1.86,1.86],"w":[0.0,0.14,0.14,0.14,0.14]},{"name":"\u3054\u306f\u3093\u5927\u76db\uff01\u76db\u5408\u305b\u5f01\u5f53\uff08\u30cf\u30f3\u30d0\u30fc\u30b0\u9d8f\u304b\u3089","s":[null,null,4.67,2.8,1.8],"w":[null,null,0.5,0.0,0.2]},{"name":"\u3054\u308d\u3063\u3068\u30bf\u30de\u30b4\u30b5\u30f3\u30c9\uff08\uff11\u500b\u5165\u308a\uff09\uff14","s":[1.6,1.67,1.43,1.71,1.71],"w":[0.2,0.0,0.14,0.0,0.0]},{"name":"\u4e09\u5143\u8c5a\u306e\u539a\u5207\u308a\u30ed\u30fc\u30b9\u30ab\u30c4\u30b5\u30f3\u30c9\uff08\uff11\u500b\uff09\uff13","s":[1.8,1.67,1.57,1.71,1.71],"w":[0.0,0.0,0.0,0.0,0.0]},{"name":"\u4e09\u5143\u8c5a\u306e\u539a\u5207\u308a\u30ed\u30fc\u30b9\u30ab\u30c4\u30b5\u30f3\u30c9\uff13","s":[1.33,1.67,1.29,1.71,1.71],"w":[0.17,0.0,0.0,0.0,0.0]},{"name":"\u4e09\u5143\u8c5a\u306e\u539a\u5207\u308a\u30ab\u30c4\uff06\u30bf\u30de\u30b4\u30b5\u30f3\u30c9\uff16","s":[2.33,2.0,2.43,2.0,1.71],"w":[0.17,0.0,0.0,0.0,0.0]},{"name":"\u9d8f\u306e\u304b\u3089\u63da\u3052\u5f01\u5f53\uff14","s":[1.0,1.67,1.71,2.17,1.67],"w":[0.0,0.5,0.0,0.17,0.17]},{"name":"\u3068\u308d\u30fc\u308a\u305f\u307e\u3054\u4e09\u5143\u8c5a\u539a\u5207\u308a\u30ed\u30fc\u30b9\u30ab\u30c4\u4e3c\uff14","s":[1.5,1.0,1.4,2.0,1.6],"w":[0.0,0.33,0.2,0.0,0.4]},{"name":"\u3054\u306f\u3093\u5927\u76db\uff01\u70ad\u706b\u713c\u725b\u30ab\u30eb\u30d3\u5f01\u5f53\uff11","s":[1.0,2.2,1.5,1.4,1.6],"w":[0.0,0.2,0.0,0.0,0.0]},{"name":"\u76f4\u706b\u3067\u7099\u3063\u305f\u713c\u8c5a\u4e3c\uff11","s":[1.67,2.0,1.75,2.14,1.57],"w":[0.0,0.17,0.25,0.0,0.57]},{"name":"\u539a\u5207\u308a\u30ed\u30fc\u30b9\u3068\u3093\u304b\u3064\uff06\u304b\u3089\u63da\u3052\u5f01\u5f53\uff11","s":[2.0,1.67,1.6,2.0,1.57],"w":[0.0,0.0,0.0,0.0,0.29]},{"name":"\u3054\u306f\u3093\u5927\u76db\uff01\u3068\u3093\u304b\u3064\uff06\u304b\u3089\u63da\u3052\u5f01\u5f53\uff11","s":[1.0,1.6,1.75,1.8,1.4],"w":[0.0,0.2,0.0,0.2,0.2]},{"name":"\u70ad\u706b\u713c\u725b\u30ab\u30eb\u30d3\u5f01\u5f53\uff11","s":[1.0,1.5,1.67,1.29,1.29],"w":[0.0,0.0,0.0,0.14,0.29]},{"name":"\u6d77\u8001\u30ab\u30c4\u30bf\u30de\u30b4\u30b5\u30f3\u30c9\uff11","s":[1.25,1.0,1.0,1.0,1.0],"w":[0.0,0.0,0.0,0.0,0.0]},{"name":"\u3075\u3063\u304f\u3089\u713c\u304d\u3055\u3070\u4e3c","s":[null,1.0,1.33,null,null],"w":[null,1.5,0.67,null,null]},{"name":"\u65e8\u30c1\u30ea\u9d8f\u304b\u3089\u63da\u3052\u30d0\u30fc\u30ac\u30fc","s":[1.0,1.0,1.0,null,null],"w":[0.0,0.0,0.0,null,null]},{"name":"\u6d77\u8001\u30ab\u30c4\u30d0\u30fc\u30ac\u30fc\uff12","s":[1.0,1.0,1.0,1.0,null],"w":[0.0,0.0,0.0,0.0,null]},{"name":"\u7167\u713c\u304d\u30bf\u30eb\u30bf\u30eb\u9d8f\u7adc\u7530\u63da\u3052\u30d0\u30fc\u30ac\u30fc","s":[null,null,1.0,1.0,null],"w":[null,null,0.0,0.0,null]}],"\u4e94\u6708\u6771":[{"name":"\u4e09\u5143\u8c5a\u306e\u539a\u5207\u308a\u30ed\u30fc\u30b9\u30ab\u30c4\u30b5\u30f3\u30c9\uff13","s":[null,null,null,null,1.6],"w":[null,null,null,null,0.8]},{"name":"\u4e09\u5143\u8c5a\u306e\u539a\u5207\u308a\u30ab\u30c4\uff06\u30bf\u30de\u30b4\u30b5\u30f3\u30c9\uff16","s":[null,null,null,2.0,1.2],"w":[null,null,null,0.0,0.8]}],"\u4e0a\u65b0\u7530":[{"name":"\u4e09\u5143\u8c5a\u306e\u539a\u5207\u308a\u30ed\u30fc\u30b9\u30ab\u30c4\u30b5\u30f3\u30c9\uff13","s":[2.8,3.29,2.86,3.71,4.71],"w":[0.0,0.14,0.0,0.14,0.14]},{"name":"\u4e09\u5143\u8c5a\u306e\u539a\u5207\u308a\u30ab\u30c4\uff06\u30bf\u30de\u30b4\u30b5\u30f3\u30c9\uff16","s":[3.2,2.43,3.29,2.0,3.43],"w":[0.0,0.0,0.14,0.29,0.14]},{"name":"\u6d77\u8001\u30ab\u30c4\u30bf\u30de\u30b4\u30b5\u30f3\u30c9\uff11","s":[2.0,2.0,2.0,2.43,3.17],"w":[0.0,0.0,0.0,0.0,0.0]},{"name":"\u9999\u3070\u3057\u7092\u3081\u30c1\u30e3\u30fc\u30cf\u30f3\uff06\u9d8f\u304b\u3089\uff11","s":[3.0,2.57,2.57,2.14,3.14],"w":[0.17,0.0,0.14,1.0,1.0]},{"name":"\u713c\u304d\u3055\u3070\uff06\u9d8f\u304b\u3089\u5f01\u5f53","s":[null,null,null,null,3.0],"w":[null,null,null,null,0.2]},{"name":"\u3066\u308a\u305f\u307e\u3054\u9d8f\u7adc\u7530\u63da\u3052\u30d0\u30fc\u30ac\u30fc","s":[null,null,null,3.67,2.57],"w":[null,null,null,0.0,0.29]},{"name":"\u60e3\u83dc\u3000\u30c1\u30fc\u30ba\u5927\u8449\u30c1\u30ad\u30f3\u30ab\u30c4","s":[null,2.0,2.0,2.0,2.57],"w":[null,0.4,0.33,0.0,0.0]},{"name":"\u60e3\u83dc\u3000\u9d8f\u306e\u70ad\u706b\u713c\u304d\uff13\u7a2e\u76db\u308a\uff11","s":[2.0,1.86,2.0,1.83,2.43],"w":[0.0,0.14,0.33,0.17,0.14]},{"name":"\u9e7f\u5150\u5cf6\u770c\u7523\u685c\u5cf6\u3069\u308a\u306e\u30c1\u30ad\u30f3\u5357\u86ee\u4e3c\uff16","s":[1.25,2.33,2.17,2.0,2.4],"w":[0.0,0.0,0.0,0.4,0.0]},{"name":"\u60e3\u83dc\u3000\u82e5\u9d8f\u306e\u7802\u809d\u306b\u3093\u306b\u304f","s":[2.0,1.86,2.0,2.14,2.29],"w":[0.0,0.14,0.17,0.14,0.0]},{"name":"\u9d8f\u306e\u304b\u3089\u63da\u3052\u5f01\u5f53\uff14","s":[1.0,1.83,1.43,1.43,2.14],"w":[0.0,0.17,0.14,0.43,0.0]},{"name":"\u70ad\u706b\u713c\u725b\u30ab\u30eb\u30d3\u5f01\u5f53\uff11","s":[1.0,2.0,1.5,2.0,2.14],"w":[0.0,0.0,0.5,0.67,0.0]},{"name":"\u3054\u306f\u3093\u5927\u76db\uff01\u70ad\u706b\u713c\u725b\u30ab\u30eb\u30d3\u5f01\u5f53\uff11","s":[1.2,1.83,1.83,1.57,2.0],"w":[0.0,0.0,0.17,0.43,0.0]},{"name":"\u304b\u3089\u63da\u3052\u7167\u308a\u30de\u30e8\u4e3c\uff11","s":[null,null,null,2.0,2.0],"w":[null,null,null,0.0,0.0]},{"name":"\u6d77\u9bae\u304b\u304d\u63da\u3052\u4e3c\uff15","s":[1.67,2.57,2.17,2.0,2.0],"w":[0.0,0.0,0.0,0.29,0.0]},{"name":"\u76db\u5408\u305b\u5f01\u5f53\uff08\u30cf\u30f3\u30d0\u30fc\u30b0\uff06\u9d8f\u304b\u3089\uff09","s":[null,null,3.83,2.0,1.86],"w":[null,null,0.0,0.29,0.14]},{"name":"\u3054\u306f\u3093\u5927\u76db\uff01\u76db\u5408\u305b\u5f01\u5f53\uff08\u30cf\u30f3\u30d0\u30fc\u30b0\u9d8f\u304b\u3089","s":[null,null,2.33,2.0,1.86],"w":[null,null,0.17,0.5,0.14]},{"name":"\u76f4\u706b\u3067\u7099\u3063\u305f\u713c\u8c5a\u4e3c\uff11","s":[1.67,2.14,1.6,1.4,1.75],"w":[0.0,0.0,0.0,0.4,0.0]},{"name":"\u65b0\u5bbf\u4e2d\u6751\u5c4b\u76e3\u4fee\u3000\u30ab\u30c4\u30ab\u30ec\u30fc\uff08\u4e2d\u8f9b\uff09\uff11","s":[1.0,1.43,1.17,1.17,1.71],"w":[0.0,0.0,0.17,0.0,0.0]},{"name":"\u3054\u306f\u3093\u5927\u76db\uff01\u9d8f\u306e\u304b\u3089\u63da\u3052\u5f01\u5f53\uff14","s":[1.0,1.8,1.43,1.83,1.71],"w":[0.0,0.2,0.14,0.17,0.29]},{"name":"\u539a\u5207\u308a\u30ed\u30fc\u30b9\u3068\u3093\u304b\u3064\uff06\u304b\u3089\u63da\u3052\u5f01\u5f53\uff11","s":[1.0,2.0,1.29,1.43,1.57],"w":[0.0,0.0,0.0,0.0,0.0]},{"name":"\u6d77\u8001\u30ab\u30c4\u30d0\u30fc\u30ac\u30fc\uff12","s":[1.0,1.0,1.0,1.0,1.5],"w":[0.0,0.0,0.0,0.0,0.0]},{"name":"\u5099\u9577\u70ad\u713c\u304d\u89aa\u5b50\u4e3c\uff15","s":[1.0,1.71,1.5,1.4,1.5],"w":[0.0,0.0,0.0,0.0,0.0]},{"name":"\u4e09\u5143\u8c5a\u306e\u539a\u5207\u308a\u30ed\u30fc\u30b9\u30bd\u30fc\u30b9\u30ab\u30c4\u4e3c\uff15","s":[1.33,1.14,1.14,1.17,1.5],"w":[0.0,0.0,0.0,0.33,0.17]},{"name":"\u3054\u306f\u3093\u5927\u76db\uff01\u3068\u3093\u304b\u3064\uff06\u304b\u3089\u63da\u3052\u5f01\u5f53\uff11","s":[1.0,1.67,1.0,1.33,1.43],"w":[0.0,0.0,0.0,0.0,0.29]},{"name":"\u3068\u308d\u30fc\u308a\u305f\u307e\u3054\u4e09\u5143\u8c5a\u539a\u5207\u308a\u30ed\u30fc\u30b9\u30ab\u30c4\u4e3c\uff14","s":[1.0,1.29,1.2,0.86,1.17],"w":[0.0,0.0,0.0,0.14,0.17]},{"name":"\u60e3\u83dc\u3000\u4e09\u5143\u8c5a\u306e\u539a\u5207\u308a\u30ed\u30fc\u30b9\u30ab\u30c4","s":[null,null,null,null,1.0],"w":[null,null,null,null,0.0]},{"name":"\u7167\u713c\u304d\u30bf\u30eb\u30bf\u30eb\u9d8f\u7adc\u7530\u63da\u3052\u30d0\u30fc\u30ac\u30fc","s":[1.5,1.71,1.43,1.0,1.0],"w":[0.0,0.0,0.0,0.0,0.0]},{"name":"\u624b\u4f5c\u308a\u89aa\u5b50\u4e3c\uff16","s":[null,0.0,null,null,null],"w":[null,1.0,null,null,null]},{"name":"\u4e09\u5143\u8c5a\u306e\u539a\u5207\u308a\u30ed\u30fc\u30b9\u30ab\u30c4\u30b5\u30f3\u30c9\uff08\uff11\u500b\uff09\uff13","s":[1.0,null,null,null,null],"w":[0.0,null,null,null,null]}],"\u9752\u5c71\u53f0":[{"name":"\u3054\u306f\u3093\u5927\u76db\uff01\u76db\u5408\u305b\u5f01\u5f53\uff08\u30cf\u30f3\u30d0\u30fc\u30b0\u9d8f\u304b\u3089","s":[null,null,5.0,6.57,4.43],"w":[null,null,1.67,0.71,0.57]},{"name":"\u9e7f\u5150\u5cf6\u770c\u7523\u685c\u5cf6\u3069\u308a\u306e\u30c1\u30ad\u30f3\u5357\u86ee\u4e3c\uff16","s":[2.0,4.67,3.0,2.57,4.43],"w":[0.0,0.67,0.14,0.0,0.0]},{"name":"\u76db\u5408\u305b\u5f01\u5f53\uff08\u30cf\u30f3\u30d0\u30fc\u30b0\uff06\u9d8f\u304b\u3089\uff09","s":[null,null,7.67,6.71,4.29],"w":[null,null,0.67,1.29,0.71]},{"name":"\u6d77\u9bae\u304b\u304d\u63da\u3052\u4e3c\uff15","s":[2.0,4.0,2.29,2.57,3.57],"w":[0.0,0.0,0.29,0.0,0.0]},{"name":"\u76f4\u706b\u3067\u7099\u3063\u305f\u713c\u8c5a\u4e3c\uff11","s":[3.5,2.75,3.0,2.0,3.33],"w":[0.0,0.0,0.0,0.0,0.0]},{"name":"\u3054\u306f\u3093\u5927\u76db\uff01\u9d8f\u306e\u304b\u3089\u63da\u3052\u5f01\u5f53\uff14","s":[4.0,5.83,2.71,2.83,3.33],"w":[0.0,0.33,1.14,0.17,0.67]},{"name":"\u6d77\u8001\u30ab\u30c4\u30bf\u30de\u30b4\u30b5\u30f3\u30c9\uff11","s":[3.33,3.14,2.86,2.0,3.14],"w":[0.0,0.0,0.0,0.0,0.0]},{"name":"\u4e09\u5143\u8c5a\u306e\u539a\u5207\u308a\u30ed\u30fc\u30b9\u30ab\u30c4\u30b5\u30f3\u30c9\uff13","s":[2.5,2.29,2.29,2.57,2.43],"w":[0.0,0.0,0.0,0.0,0.0]},{"name":"\u9d8f\u306e\u304b\u3089\u63da\u3052\u5f01\u5f53\uff14","s":[null,null,2.0,2.0,2.33],"w":[null,null,0.5,0.0,0.0]},{"name":"\u4e09\u5143\u8c5a\u306e\u539a\u5207\u308a\u30ed\u30fc\u30b9\u30ab\u30c4\u30b5\u30f3\u30c9\uff08\uff11\u500b\uff09\uff13","s":[2.33,2.29,2.0,2.5,2.14],"w":[0.0,0.0,0.0,0.0,0.0]},{"name":"\u6d77\u8001\u30ab\u30c4\u30d0\u30fc\u30ac\u30fc\uff12","s":[null,null,2.33,2.0,2.0],"w":[null,null,0.0,0.0,0.0]},{"name":"\u4e09\u5143\u8c5a\u306e\u539a\u5207\u308a\u30ab\u30c4\uff06\u30bf\u30de\u30b4\u30b5\u30f3\u30c9\uff16","s":[2.0,2.0,2.0,2.33,2.0],"w":[0.0,0.0,0.0,0.0,0.0]},{"name":"\u5099\u9577\u70ad\u713c\u304d\u89aa\u5b50\u4e3c\uff15","s":[2.0,2.6,2.0,1.83,2.0],"w":[0.0,0.4,0.57,0.33,0.0]},{"name":"\u65b0\u5bbf\u4e2d\u6751\u5c4b\u76e3\u4fee\u3000\u30ab\u30c4\u30ab\u30ec\u30fc\uff08\u4e2d\u8f9b\uff09\uff11","s":[1.33,2.33,1.14,1.86,2.0],"w":[0.0,0.17,0.14,0.0,0.14]},{"name":"\u60e3\u83dc\u3000\u82e5\u9d8f\u306e\u7802\u809d\u306b\u3093\u306b\u304f","s":[2.0,2.0,1.29,1.71,1.86],"w":[0.0,0.0,0.43,0.43,0.14]},{"name":"\u3054\u306f\u3093\u5927\u76db\uff01\u70ad\u706b\u713c\u725b\u30ab\u30eb\u30d3\u5f01\u5f53\uff11","s":[2.0,4.5,3.33,2.0,1.83],"w":[0.0,0.5,0.33,0.0,1.17]},{"name":"\u713c\u304d\u3055\u3070\uff06\u9d8f\u304b\u3089\u5f01\u5f53","s":[null,null,null,null,1.75],"w":[null,null,null,null,0.25]},{"name":"\u60e3\u83dc\u3000\u30c1\u30fc\u30ba\u5927\u8449\u30c1\u30ad\u30f3\u30ab\u30c4","s":[1.29,1.29,1.0,1.43,1.43],"w":[0.0,0.0,0.33,0.0,0.0]},{"name":"\u4e09\u5143\u8c5a\u306e\u539a\u5207\u308a\u30ed\u30fc\u30b9\u30bd\u30fc\u30b9\u30ab\u30c4\u4e3c\uff15","s":[1.5,2.33,1.67,1.67,1.43],"w":[0.0,0.33,0.0,0.17,0.29]},{"name":"\u9999\u3070\u3057\u7092\u3081\u30c1\u30e3\u30fc\u30cf\u30f3\uff06\u9d8f\u304b\u3089\uff11","s":[1.14,1.57,1.14,1.29,1.29],"w":[0.0,0.0,0.0,0.14,0.14]},{"name":"\u60e3\u83dc\u3000\u9d8f\u306e\u70ad\u706b\u713c\u304d\uff13\u7a2e\u76db\u308a\uff11","s":[1.2,1.14,0.8,1.0,1.14],"w":[0.0,0.14,0.8,0.14,0.14]},{"name":"\u70ad\u706b\u713c\u725b\u30ab\u30eb\u30d3\u5f01\u5f53\uff11","s":[2.0,3.0,4.0,4.0,null],"w":[0.0,1.0,0.0,0.0,null]},{"name":"\u7167\u713c\u304d\u30bf\u30eb\u30bf\u30eb\u9d8f\u7adc\u7530\u63da\u3052\u30d0\u30fc\u30ac\u30fc","s":[2.0,null,null,null,null],"w":[0.0,null,null,null,null]},{"name":"\u3066\u308a\u305f\u307e\u3054\u9d8f\u7adc\u7530\u63da\u3052\u30d0\u30fc\u30ac\u30fc","s":[null,null,null,4.0,null],"w":[null,null,null,0.0,null]}],"\u671d\u65e5\u753a":[{"name":"\u4e09\u5143\u8c5a\u306e\u539a\u5207\u308a\u30ab\u30c4\uff06\u30bf\u30de\u30b4\u30b5\u30f3\u30c9\uff16","s":[1.71,3.71,3.57,5.43,5.57],"w":[0.0,0.0,0.14,0.0,0.0]},{"name":"\u6d77\u8001\u30ab\u30c4\u30bf\u30de\u30b4\u30b5\u30f3\u30c9\uff11","s":[2.0,2.86,2.71,3.43,3.71],"w":[0.0,0.0,0.0,0.0,0.0]},{"name":"\u4e09\u5143\u8c5a\u306e\u539a\u5207\u308a\u30ed\u30fc\u30b9\u30ab\u30c4\u30b5\u30f3\u30c9\uff13","s":[2.67,2.86,2.86,3.71,3.71],"w":[0.5,0.0,0.0,0.14,0.14]},{"name":"\u713c\u304d\u3055\u3070\uff06\u9d8f\u304b\u3089\u5f01\u5f53","s":[null,null,null,null,3.17],"w":[null,null,null,null,0.33]},{"name":"\u65b0\u5bbf\u4e2d\u6751\u5c4b\u76e3\u4fee\u3000\u30ab\u30c4\u30ab\u30ec\u30fc\uff08\u4e2d\u8f9b\uff09\uff11","s":[2.0,2.57,2.57,2.57,3.14],"w":[0.0,0.0,0.14,0.14,0.0]},{"name":"\u60e3\u83dc\u3000\u30c1\u30fc\u30ba\u5927\u8449\u30c1\u30ad\u30f3\u30ab\u30c4","s":[2.0,1.5,1.86,3.17,3.0],"w":[0.4,0.5,0.0,0.33,0.0]},{"name":"\u9999\u3070\u3057\u7092\u3081\u30c1\u30e3\u30fc\u30cf\u30f3\uff06\u9d8f\u304b\u3089\uff11","s":[1.86,2.14,1.86,3.17,2.86],"w":[0.0,0.0,0.14,0.0,0.29]},{"name":"\u3066\u308a\u305f\u307e\u3054\u9d8f\u7adc\u7530\u63da\u3052\u30d0\u30fc\u30ac\u30fc","s":[null,null,null,2.0,2.57],"w":[null,null,null,0.0,0.0]},{"name":"\u6d77\u8001\u30ab\u30c4\u30d0\u30fc\u30ac\u30fc\uff12","s":[2.0,1.86,2.14,2.14,2.57],"w":[0.0,0.14,0.0,0.57,0.29]},{"name":"\u5099\u9577\u70ad\u713c\u304d\u89aa\u5b50\u4e3c\uff15","s":[2.0,2.83,2.29,2.83,2.57],"w":[0.14,0.0,0.29,0.17,0.0]},{"name":"\u7167\u713c\u304d\u30bf\u30eb\u30bf\u30eb\u9d8f\u7adc\u7530\u63da\u3052\u30d0\u30fc\u30ac\u30fc","s":[2.0,2.0,2.0,2.0,2.29],"w":[0.0,0.0,0.0,0.0,0.0]},{"name":"\u4e09\u5143\u8c5a\u306e\u539a\u5207\u308a\u30ed\u30fc\u30b9\u30ab\u30c4\u30b5\u30f3\u30c9\uff08\uff11\u500b\uff09\uff13","s":[1.71,1.86,2.0,2.0,2.29],"w":[0.0,0.14,0.0,0.0,0.0]},{"name":"\u60e3\u83dc\u3000\u9d8f\u306e\u70ad\u706b\u713c\u304d\uff13\u7a2e\u76db\u308a\uff11","s":[1.33,2.0,1.83,1.25,2.17],"w":[0.5,0.4,0.33,0.25,0.17]},{"name":"\u6d77\u9bae\u304b\u304d\u63da\u3052\u4e3c\uff15","s":[1.67,1.86,1.57,1.57,2.14],"w":[0.0,0.0,0.14,0.0,0.0]},{"name":"\u76db\u5408\u305b\u5f01\u5f53\uff08\u30cf\u30f3\u30d0\u30fc\u30b0\uff06\u9d8f\u304b\u3089\uff09","s":[null,null,3.33,3.43,2.0],"w":[null,null,0.17,0.0,0.0]},{"name":"\u9e7f\u5150\u5cf6\u770c\u7523\u685c\u5cf6\u3069\u308a\u306e\u30c1\u30ad\u30f3\u5357\u86ee\u4e3c\uff16","s":[1.86,1.86,1.86,1.86,2.0],"w":[0.0,0.0,0.0,0.0,0.0]},{"name":"\u70ad\u706b\u713c\u725b\u30ab\u30eb\u30d3\u5f01\u5f53\uff11","s":[1.57,2.14,1.17,1.86,1.86],"w":[0.0,0.0,0.33,0.0,0.0]},{"name":"\u76f4\u706b\u3067\u7099\u3063\u305f\u713c\u8c5a\u4e3c\uff11","s":[1.86,1.83,1.86,2.0,1.86],"w":[0.0,0.0,0.0,0.29,0.14]},{"name":"\u304b\u3089\u63da\u3052\u7167\u308a\u30de\u30e8\u4e3c\uff11","s":[1.2,1.86,1.86,1.86,1.86],"w":[0.0,0.0,0.0,0.0,0.0]},{"name":"\u3054\u306f\u3093\u5927\u76db\uff01\u9d8f\u306e\u304b\u3089\u63da\u3052\u5f01\u5f53\uff14","s":[1.0,2.5,1.43,1.67,1.86],"w":[0.5,0.0,0.29,0.17,0.29]},{"name":"\u539a\u5207\u308a\u30ed\u30fc\u30b9\u3068\u3093\u304b\u3064\uff06\u304b\u3089\u63da\u3052\u5f01\u5f53\uff11","s":[1.86,1.86,1.71,1.71,1.86],"w":[0.14,0.0,0.14,0.14,0.14]},{"name":"\u6d77\u8001\u30ab\u30c4\u30bf\u30de\u30b4\u30b5\u30f3\u30c9\uff08\uff11\u500b\u5165\u308a\uff09\uff11","s":[2.0,2.0,2.29,1.86,1.83],"w":[0.0,0.0,0.0,0.14,0.17]},{"name":"\u3054\u306f\u3093\u5927\u76db\uff01\u3068\u3093\u304b\u3064\uff06\u304b\u3089\u63da\u3052\u5f01\u5f53\uff11","s":[1.0,1.71,1.57,1.67,1.83],"w":[0.0,0.0,0.29,0.17,0.0]},{"name":"\u3054\u308d\u3063\u3068\u30bf\u30de\u30b4\u30b5\u30f3\u30c9\uff08\uff11\u500b\u5165\u308a\uff09\uff14","s":[1.71,1.43,2.0,1.71,1.71],"w":[0.29,0.57,0.0,0.29,0.29]},{"name":"\u4e09\u5143\u8c5a\u306e\u539a\u5207\u308a\u30ed\u30fc\u30b9\u30bd\u30fc\u30b9\u30ab\u30c4\u4e3c\uff15","s":[1.17,1.71,1.86,1.71,1.71],"w":[0.0,0.0,0.0,0.29,0.0]},{"name":"\u9d8f\u306e\u304b\u3089\u63da\u3052\u5f01\u5f53\uff14","s":[1.0,1.83,1.71,2.0,1.5],"w":[0.0,0.0,0.14,0.14,0.0]},{"name":"\u3054\u306f\u3093\u5927\u76db\uff01\u76db\u5408\u305b\u5f01\u5f53\uff08\u30cf\u30f3\u30d0\u30fc\u30b0\u9d8f\u304b\u3089","s":[null,null,1.83,1.86,1.33],"w":[null,null,0.0,0.14,0.0]},{"name":"\u30ac\u30fc\u30ea\u30c3\u30af\u30c8\u30de\u30c8\u30c1\u30ad\u30f3\u4e3c","s":[null,2.5,0.0,null,null],"w":[null,0.0,1.0,null,null]},{"name":"\u60e3\u83dc\u3000\u304a\u3064\u307e\u307f\u713c\u8c5a\u30dd\u30c6\u30b5\u30e9","s":[null,null,2.5,4.0,null],"w":[null,null,0.5,1.0,null]}],"\u5439\u8b66\u5bdf":[{"name":"\u304b\u3089\u63da\u3052\u7167\u308a\u30de\u30e8\u4e3c\uff11","s":[1.75,2.4,2.0,null,2.6],"w":[0.0,0.0,0.0,null,0.0]},{"name":"\u6d77\u8001\u30ab\u30c4\u30bf\u30de\u30b4\u30b5\u30f3\u30c9\uff08\uff11\u500b\u5165\u308a\uff09\uff11","s":[2.0,2.4,3.33,2.0,2.4],"w":[0.0,0.0,0.0,0.0,0.0]},{"name":"\u9e7f\u5150\u5cf6\u770c\u7523\u685c\u5cf6\u3069\u308a\u306e\u30c1\u30ad\u30f3\u5357\u86ee\u4e3c\uff16","s":[1.75,2.8,2.67,2.6,2.4],"w":[0.0,0.0,0.0,0.2,0.0]},{"name":"\u6d77\u9bae\u304b\u304d\u63da\u3052\u4e3c\uff15","s":[2.33,2.2,3.0,3.0,2.33],"w":[0.0,0.2,0.0,0.2,0.33]},{"name":"\u4e09\u5143\u8c5a\u306e\u539a\u5207\u308a\u30ed\u30fc\u30b9\u30ab\u30c4\u30b5\u30f3\u30c9\uff13","s":[2.33,2.25,2.33,2.2,2.2],"w":[0.0,0.5,0.0,0.0,0.0]},{"name":"\u5099\u9577\u70ad\u713c\u304d\u89aa\u5b50\u4e3c\uff15","s":[2.0,2.6,2.33,2.4,2.2],"w":[0.0,0.4,0.33,0.0,0.0]},{"name":"\u713c\u304d\u3055\u3070\uff06\u9d8f\u304b\u3089\u5f01\u5f53","s":[null,null,null,null,2.0],"w":[null,null,null,null,0.5]},{"name":"\u4e09\u5143\u8c5a\u306e\u539a\u5207\u308a\u30ab\u30c4\uff06\u30bf\u30de\u30b4\u30b5\u30f3\u30c9\uff16","s":[2.0,1.8,1.0,2.4,2.0],"w":[0.0,0.2,0.5,0.0,0.0]},{"name":"\u76f4\u706b\u3067\u7099\u3063\u305f\u713c\u8c5a\u4e3c\uff11","s":[2.67,2.67,3.0,2.25,2.0],"w":[0.0,0.33,0.0,0.0,0.33]},{"name":"\u3066\u308a\u305f\u307e\u3054\u9d8f\u7adc\u7530\u63da\u3052\u30d0\u30fc\u30ac\u30fc","s":[null,null,null,2.0,1.8],"w":[null,null,null,0.0,0.2]},{"name":"\u76db\u5408\u305b\u5f01\u5f53\uff08\u30cf\u30f3\u30d0\u30fc\u30b0\uff06\u9d8f\u304b\u3089\uff09","s":[null,null,3.67,2.6,1.8],"w":[null,null,0.33,0.4,0.0]},{"name":"\u5f69\u308a\u91ce\u83dc\u3068\u9d8f\u304b\u3089\u63da\u3052\u306e\u7518\u9162\u305f\u308c\u4e3c\uff13","s":[2.0,1.8,2.0,2.4,1.8],"w":[0.0,0.2,0.0,0.0,0.2]},{"name":"\u9d8f\u306e\u304b\u3089\u63da\u3052\u5f01\u5f53\uff14","s":[1.0,2.75,2.0,2.4,1.8],"w":[0.0,0.25,0.0,0.0,0.2]},{"name":"\u65b0\u5bbf\u4e2d\u6751\u5c4b\u76e3\u4fee\u3000\u30ab\u30c4\u30ab\u30ec\u30fc\uff08\u4e2d\u8f9b\uff09\uff11","s":[1.75,1.8,1.67,2.0,1.67],"w":[0.25,0.2,0.0,0.4,0.33]},{"name":"\u4e09\u5143\u8c5a\u306e\u539a\u5207\u308a\u30ed\u30fc\u30b9\u30bd\u30fc\u30b9\u30ab\u30c4\u4e3c\uff15","s":[1.5,2.4,2.33,2.8,1.6],"w":[0.0,0.2,0.0,0.0,0.0]},{"name":"\u3054\u306f\u3093\u5927\u76db\uff01\u76db\u5408\u305b\u5f01\u5f53\uff08\u30cf\u30f3\u30d0\u30fc\u30b0\u9d8f\u304b\u3089","s":[null,null,3.67,2.2,1.33],"w":[null,null,0.0,0.2,0.17]},{"name":"\u3054\u306f\u3093\u5927\u76db\uff01\u70ad\u706b\u713c\u725b\u30ab\u30eb\u30d3\u5f01\u5f53\uff11","s":[1.5,1.4,1.0,1.0,1.25],"w":[0.0,0.4,0.0,0.25,0.0]},{"name":"\u3054\u306f\u3093\u5927\u76db\uff01\u9d8f\u306e\u304b\u3089\u63da\u3052\u5f01\u5f53\uff14","s":[2.0,3.25,1.67,1.8,1.2],"w":[0.0,0.5,0.67,0.0,0.2]},{"name":"\u6d77\u8001\u30ab\u30c4\u30bf\u30de\u30b4\u30b5\u30f3\u30c9\uff11","s":[null,null,null,null,1.0],"w":[null,null,null,null,0.0]},{"name":"\u3068\u308d\u30fc\u308a\u305f\u307e\u3054\u4e09\u5143\u8c5a\u539a\u5207\u308a\u30ed\u30fc\u30b9\u30ab\u30c4\u4e3c\uff14","s":[2.0,1.0,2.0,2.25,1.0],"w":[0.0,0.0,0.0,0.0,0.8]},{"name":"\u70ad\u706b\u713c\u725b\u30ab\u30eb\u30d3\u5f01\u5f53\uff11","s":[2.0,1.0,1.0,1.25,1.0],"w":[0.0,0.6,1.0,0.25,0.25]},{"name":"\u30ac\u30fc\u30ea\u30c3\u30af\u30c8\u30de\u30c8\u30c1\u30ad\u30f3\u4e3c","s":[2.5,2.2,null,null,null],"w":[0.25,0.2,null,null,null]},{"name":"\u7167\u713c\u304d\u30bf\u30eb\u30bf\u30eb\u9d8f\u7adc\u7530\u63da\u3052\u30d0\u30fc\u30ac\u30fc","s":[2.0,1.8,1.25,2.0,null],"w":[0.0,0.2,0.25,0.0,null]}],"\u8c4a\u6d25\u4e2d":[{"name":"\u3054\u306f\u3093\u5927\u76db\uff01\u76db\u5408\u305b\u5f01\u5f53\uff08\u30cf\u30f3\u30d0\u30fc\u30b0\u9d8f\u304b\u3089","s":[null,null,5.5,4.0,3.2],"w":[null,null,0.0,0.0,0.0]},{"name":"\u3054\u306f\u3093\u5927\u76db\uff01\u70ad\u706b\u713c\u725b\u30ab\u30eb\u30d3\u5f01\u5f53\uff11","s":[1.6,1.8,2.25,2.0,2.17],"w":[0.0,0.0,0.0,0.0,0.0]},{"name":"\u304b\u3089\u63da\u3052\u7167\u308a\u30de\u30e8\u4e3c\uff11","s":[2.0,1.83,2.17,2.0,2.17],"w":[0.0,0.17,0.0,0.0,0.0]},{"name":"\u713c\u304d\u3055\u3070\uff06\u9d8f\u304b\u3089\u5f01\u5f53","s":[null,null,null,null,2.0],"w":[null,null,null,null,0.0]},{"name":"\u3066\u308a\u305f\u307e\u3054\u9d8f\u7adc\u7530\u63da\u3052\u30d0\u30fc\u30ac\u30fc","s":[null,null,null,1.5,2.0],"w":[null,null,null,0.0,0.0]},{"name":"\u60e3\u83dc\u3000\u304a\u3064\u307e\u307f\u713c\u8c5a\u30dd\u30c6\u30b5\u30e9","s":[null,null,1.5,2.0,2.0],"w":[null,null,0.0,0.0,0.0]},{"name":"\u60e3\u83dc\u3000\u82e5\u9d8f\u306e\u7802\u809d\u306b\u3093\u306b\u304f","s":[2.0,1.86,2.0,1.83,2.0],"w":[0.0,0.0,0.0,0.17,0.0]},{"name":"\u60e3\u83dc\u3000\u30c1\u30fc\u30ba\u5927\u8449\u30c1\u30ad\u30f3\u30ab\u30c4","s":[2.0,1.8,2.0,2.0,2.0],"w":[0.0,0.0,0.0,0.0,0.0]},{"name":"\u5f69\u308a\u91ce\u83dc\u3068\u9d8f\u304b\u3089\u63da\u3052\u306e\u7518\u9162\u305f\u308c\u4e3c\uff13","s":[2.0,2.2,2.0,2.0,2.0],"w":[0.0,0.0,0.67,0.0,0.0]},{"name":"\u9999\u3070\u3057\u7092\u3081\u30c1\u30e3\u30fc\u30cf\u30f3\uff06\u9d8f\u304b\u3089\uff11","s":[1.86,1.86,1.71,1.86,2.0],"w":[0.0,0.0,0.29,0.0,0.14]},{"name":"\u76f4\u706b\u3067\u7099\u3063\u305f\u713c\u8c5a\u4e3c\uff11","s":[1.67,2.5,1.67,2.17,2.0],"w":[0.17,0.17,0.0,0.0,0.0]},{"name":"\u65b0\u5bbf\u4e2d\u6751\u5c4b\u76e3\u4fee\u3000\u30ab\u30c4\u30ab\u30ec\u30fc\uff08\u4e2d\u8f9b\uff09\uff11","s":[1.5,1.71,1.57,2.0,2.0],"w":[0.0,0.14,0.0,0.0,0.0]},{"name":"\u6d77\u9bae\u304b\u304d\u63da\u3052\u4e3c\uff15","s":[1.0,1.43,1.57,1.57,2.0],"w":[0.0,0.0,0.0,0.14,0.0]},{"name":"\u3054\u306f\u3093\u5927\u76db\uff01\u9d8f\u306e\u304b\u3089\u63da\u3052\u5f01\u5f53\uff14","s":[1.0,2.25,2.0,2.0,2.0],"w":[0.0,0.0,0.0,0.0,0.0]},{"name":"\u30ac\u30fc\u30ea\u30c3\u30af\u30c8\u30de\u30c8\u30c1\u30ad\u30f3\u4e3c","s":[2.0,1.5,2.0,2.2,1.8],"w":[0.0,0.17,0.0,0.2,0.2]},{"name":"\u76db\u5408\u305b\u5f01\u5f53\uff08\u30cf\u30f3\u30d0\u30fc\u30b0\uff06\u9d8f\u304b\u3089\uff09","s":[null,null,4.67,4.57,1.67],"w":[null,null,0.0,0.14,0.0]},{"name":"\u9e7f\u5150\u5cf6\u770c\u7523\u685c\u5cf6\u3069\u308a\u306e\u30c1\u30ad\u30f3\u5357\u86ee\u4e3c\uff16","s":[1.0,1.43,1.33,1.14,1.43],"w":[0.0,0.0,0.0,0.0,0.0]},{"name":"\u4e09\u5143\u8c5a\u306e\u539a\u5207\u308a\u30ed\u30fc\u30b9\u30bd\u30fc\u30b9\u30ab\u30c4\u4e3c\uff15","s":[1.0,1.86,1.17,1.29,1.43],"w":[0.0,0.0,0.0,0.0,0.0]},{"name":"\u60e3\u83dc\u3000\u9d8f\u306e\u70ad\u706b\u713c\u304d\uff13\u7a2e\u76db\u308a\uff11","s":[1.29,1.14,1.0,1.14,1.29],"w":[0.0,0.0,0.14,0.0,0.0]},{"name":"\u4e09\u5143\u8c5a\u306e\u539a\u5207\u308a\u30ed\u30fc\u30b9\u30ab\u30c4\u30b5\u30f3\u30c9\uff13","s":[1.6,1.43,1.33,1.14,1.29],"w":[0.0,0.0,0.0,0.14,0.0]},{"name":"\u70ad\u706b\u713c\u725b\u30ab\u30eb\u30d3\u5f01\u5f53\uff11","s":[1.0,1.43,1.14,1.0,1.25],"w":[0.0,0.0,0.0,0.0,0.0]},{"name":"\u3054\u308d\u3063\u3068\u30bf\u30de\u30b4\u30b5\u30f3\u30c9\uff08\uff11\u500b\u5165\u308a\uff09\uff14","s":[0.8,1.0,1.0,0.71,1.14],"w":[0.2,0.0,0.0,0.29,0.14]},{"name":"\u4e09\u5143\u8c5a\u306e\u539a\u5207\u308a\u30ab\u30c4\uff06\u30bf\u30de\u30b4\u30b5\u30f3\u30c9\uff16","s":[1.0,1.0,1.0,1.0,1.14],"w":[0.0,0.0,0.0,0.0,0.0]},{"name":"\u7167\u713c\u304d\u30bf\u30eb\u30bf\u30eb\u9d8f\u7adc\u7530\u63da\u3052\u30d0\u30fc\u30ac\u30fc","s":[1.0,1.0,1.0,1.0,1.0],"w":[0.0,0.0,0.0,0.5,0.0]},{"name":"\u6d77\u8001\u30ab\u30c4\u30d0\u30fc\u30ac\u30fc\uff12","s":[1.0,1.0,1.0,0.75,1.0],"w":[0.0,0.0,0.0,0.25,0.17]},{"name":"\u4e09\u5143\u8c5a\u306e\u539a\u5207\u308a\u30ed\u30fc\u30b9\u30ab\u30c4\u30b5\u30f3\u30c9\uff08\uff11\u500b\uff09\uff13","s":[1.0,1.0,1.0,0.86,1.0],"w":[0.0,0.0,0.0,0.14,0.0]},{"name":"\u5099\u9577\u70ad\u713c\u304d\u89aa\u5b50\u4e3c\uff15","s":[1.17,1.57,1.14,1.0,1.0],"w":[0.0,0.0,0.0,0.0,0.0]},{"name":"\u3068\u308d\u30fc\u308a\u305f\u307e\u3054\u4e09\u5143\u8c5a\u539a\u5207\u308a\u30ed\u30fc\u30b9\u30ab\u30c4\u4e3c\uff14","s":[0.83,1.0,1.14,1.0,1.0],"w":[0.17,0.17,0.0,0.0,0.0]},{"name":"\u9d8f\u306e\u304b\u3089\u63da\u3052\u5f01\u5f53\uff14","s":[null,1.17,1.17,1.2,1.0],"w":[null,0.0,0.0,0.2,0.0]},{"name":"\u3075\u3093\u308f\u308a\u305f\u307e\u3054\u3068\u7167\u713c\u30c1\u30e3\u30fc\u30b7\u30e5\u30fc\u4e3c","s":[null,2.67,null,null,null],"w":[null,0.0,null,null,null]}],"\u5927\u9053\u5357":[{"name":"\u4e09\u5143\u8c5a\u306e\u539a\u5207\u308a\u30ed\u30fc\u30b9\u30ab\u30c4\u30b5\u30f3\u30c9\uff13","s":[2.0,2.0,2.0,2.14,2.29],"w":[0.17,0.0,0.14,0.14,0.14]},{"name":"\u4e09\u5143\u8c5a\u306e\u539a\u5207\u308a\u30ab\u30c4\uff06\u30bf\u30de\u30b4\u30b5\u30f3\u30c9\uff16","s":[1.0,1.0,1.0,2.14,2.29],"w":[0.0,0.0,0.0,0.29,0.14]},{"name":"\u9e7f\u5150\u5cf6\u770c\u7523\u685c\u5cf6\u3069\u308a\u306e\u30c1\u30ad\u30f3\u5357\u86ee\u4e3c\uff16","s":[1.0,1.14,1.57,1.67,2.0],"w":[0.0,0.0,0.0,0.0,0.0]},{"name":"\u3054\u306f\u3093\u5927\u76db\uff01\u9d8f\u306e\u304b\u3089\u63da\u3052\u5f01\u5f53\uff14","s":[1.0,1.17,1.0,1.29,2.0],"w":[0.0,0.0,0.14,0.0,0.0]},{"name":"\u6d77\u8001\u30ab\u30c4\u30bf\u30de\u30b4\u30b5\u30f3\u30c9\uff11","s":[1.83,2.0,1.86,1.86,1.86],"w":[0.0,0.0,0.0,0.0,0.0]},{"name":"\u76f4\u706b\u3067\u7099\u3063\u305f\u713c\u8c5a\u4e3c\uff11","s":[1.57,2.0,1.86,1.67,1.86],"w":[0.14,0.0,0.0,0.0,0.0]},{"name":"\u6d77\u9bae\u304b\u304d\u63da\u3052\u4e3c\uff15","s":[1.43,1.71,1.57,1.71,1.86],"w":[0.0,0.0,0.0,0.0,0.14]},{"name":"\u713c\u304d\u3055\u3070\uff06\u9d8f\u304b\u3089\u5f01\u5f53","s":[null,null,null,null,1.2],"w":[null,null,null,null,1.0]},{"name":"\u76db\u5408\u305b\u5f01\u5f53\uff08\u30cf\u30f3\u30d0\u30fc\u30b0\uff06\u9d8f\u304b\u3089\uff09","s":[null,null,2.17,1.33,1.2],"w":[null,null,0.0,0.0,0.0]},{"name":"\u3054\u306f\u3093\u5927\u76db\uff01\u76db\u5408\u305b\u5f01\u5f53\uff08\u30cf\u30f3\u30d0\u30fc\u30b0\u9d8f\u304b\u3089","s":[null,null,2.5,2.14,1.17],"w":[null,null,0.0,0.0,0.0]},{"name":"\u3066\u308a\u305f\u307e\u3054\u9d8f\u7adc\u7530\u63da\u3052\u30d0\u30fc\u30ac\u30fc","s":[null,null,null,2.17,1.14],"w":[null,null,null,0.0,0.0]},{"name":"\u4e09\u5143\u8c5a\u306e\u539a\u5207\u308a\u30ed\u30fc\u30b9\u30ab\u30c4\u30b5\u30f3\u30c9\uff08\uff11\u500b\uff09\uff13","s":[1.0,1.0,0.86,1.0,1.14],"w":[0.0,0.0,0.14,0.0,0.0]},{"name":"\u60e3\u83dc\u3000\u9d8f\u306e\u70ad\u706b\u713c\u304d\uff13\u7a2e\u76db\u308a\uff11","s":[0.83,0.83,1.0,1.0,1.0],"w":[0.33,0.33,0.33,0.0,0.0]},{"name":"\u60e3\u83dc\u3000\u30c1\u30fc\u30ba\u5927\u8449\u30c1\u30ad\u30f3\u30ab\u30c4","s":[0.8,0.6,1.0,1.0,1.0],"w":[0.8,0.6,0.17,0.67,0.4]},{"name":"\u3054\u308d\u3063\u3068\u30bf\u30de\u30b4\u30b5\u30f3\u30c9\uff08\uff11\u500b\u5165\u308a\uff09\uff14","s":[1.0,1.0,0.86,0.67,1.0],"w":[0.0,0.0,0.14,0.5,0.0]},{"name":"\u6d77\u8001\u30ab\u30c4\u30d0\u30fc\u30ac\u30fc\uff12","s":[1.0,1.0,1.0,0.75,1.0],"w":[0.0,0.0,0.14,0.25,0.0]},{"name":"\u5099\u9577\u70ad\u713c\u304d\u89aa\u5b50\u4e3c\uff15","s":[1.0,0.86,1.29,1.0,1.0],"w":[0.0,0.14,0.0,0.17,0.0]},{"name":"\u9999\u3070\u3057\u7092\u3081\u30c1\u30e3\u30fc\u30cf\u30f3\uff06\u9d8f\u304b\u3089\uff11","s":[0.86,1.0,1.0,1.0,1.0],"w":[0.14,0.0,0.0,0.0,0.0]},{"name":"\u70ad\u706b\u713c\u725b\u30ab\u30eb\u30d3\u5f01\u5f53\uff11","s":[1.0,0.71,1.0,1.0,1.0],"w":[0.0,0.29,0.0,0.17,0.0]},{"name":"\u3054\u306f\u3093\u5927\u76db\uff01\u3068\u3093\u304b\u3064\uff06\u304b\u3089\u63da\u3052\u5f01\u5f53\uff11","s":[1.43,1.86,1.14,1.17,1.0],"w":[0.14,0.0,0.0,0.0,0.0]},{"name":"\u65b0\u5bbf\u4e2d\u6751\u5c4b\u76e3\u4fee\u3000\u30ab\u30c4\u30ab\u30ec\u30fc\uff08\u4e2d\u8f9b\uff09\uff11","s":[1.86,1.86,1.0,1.0,1.0],"w":[0.0,0.0,0.14,0.0,0.0]},{"name":"\u539a\u5207\u308a\u30ed\u30fc\u30b9\u3068\u3093\u304b\u3064\uff06\u304b\u3089\u63da\u3052\u5f01\u5f53\uff11","s":[null,null,null,1.0,1.0],"w":[null,null,null,0.0,0.0]},{"name":"\u7167\u713c\u304d\u30bf\u30eb\u30bf\u30eb\u9d8f\u7adc\u7530\u63da\u3052\u30d0\u30fc\u30ac\u30fc","s":[0.86,0.86,1.0,1.0,0.86],"w":[0.14,0.14,0.0,0.0,0.14]},{"name":"\u304b\u3089\u63da\u3052\u7167\u308a\u30de\u30e8\u4e3c\uff11","s":[null,null,null,1.0,0.83],"w":[null,null,null,0.0,0.17]},{"name":"\u60e3\u83dc\u3000\u82e5\u9d8f\u306e\u7802\u809d\u306b\u3093\u306b\u304f","s":[1.2,1.83,1.0,1.2,0.5],"w":[0.8,0.33,0.4,0.4,0.5]},{"name":"\u9d8f\u306e\u304b\u3089\u63da\u3052\u5f01\u5f53\uff14","s":[null,1.0,null,1.0,0.5],"w":[null,0.0,null,0.0,0.5]},{"name":"\u30ac\u30fc\u30ea\u30c3\u30af\u30c8\u30de\u30c8\u30c1\u30ad\u30f3\u4e3c","s":[null,null,1.5,1.75,null],"w":[null,null,0.5,0.25,null]},{"name":"\u3068\u308d\u30fc\u308a\u305f\u307e\u3054\u4e09\u5143\u8c5a\u539a\u5207\u308a\u30ed\u30fc\u30b9\u30ab\u30c4\u4e3c\uff14","s":[0.75,0.83,0.0,null,null],"w":[0.25,0.17,1.0,null,null]},{"name":"\u307e\u3093\u307e\u308b\u9d8f\uff06\u30cf\u30f3\u30d0\u30fc\u30b0\u5f01\u5f53","s":[null,null,1.0,null,null],"w":[null,null,0.0,null,null]},{"name":"\u6d77\u8001\u30ab\u30c4\u30bf\u30de\u30b4\u30b5\u30f3\u30c9\uff08\uff11\u500b\u5165\u308a\uff09\uff11","s":[2.0,1.71,2.0,null,null],"w":[0.0,0.14,0.0,null,null]},{"name":"\u60e3\u83dc\u3000\u304a\u3064\u307e\u307f\u713c\u8c5a\u30dd\u30c6\u30b5\u30e9","s":[null,null,1.33,null,null],"w":[null,null,0.67,null,null]}],"\u5229\u5009\u6771":[{"name":"\u6d77\u9bae\u304b\u304d\u63da\u3052\u4e3c\uff15","s":[1.67,2.57,2.0,3.0,2.14],"w":[0.0,0.0,0.0,0.0,0.0]},{"name":"\u3066\u308a\u305f\u307e\u3054\u9d8f\u7adc\u7530\u63da\u3052\u30d0\u30fc\u30ac\u30fc","s":[null,null,null,1.6,2.0],"w":[null,null,null,0.2,0.14]},{"name":"\u76db\u5408\u305b\u5f01\u5f53\uff08\u30cf\u30f3\u30d0\u30fc\u30b0\uff06\u9d8f\u304b\u3089\uff09","s":[null,null,3.17,2.29,2.0],"w":[null,null,0.17,0.0,0.0]},{"name":"\u60e3\u83dc\u3000\u82e5\u9d8f\u306e\u7802\u809d\u306b\u3093\u306b\u304f","s":[2.0,2.0,2.0,2.0,2.0],"w":[0.0,0.0,0.0,0.0,0.0]},{"name":"\u6d77\u8001\u30ab\u30c4\u30bf\u30de\u30b4\u30b5\u30f3\u30c9\uff08\uff11\u500b\u5165\u308a\uff09\uff11","s":[2.0,3.14,2.29,2.67,2.0],"w":[0.0,0.0,0.0,0.0,0.0]},{"name":"\u4e09\u5143\u8c5a\u306e\u539a\u5207\u308a\u30ed\u30fc\u30b9\u30ab\u30c4\u30b5\u30f3\u30c9\uff08\uff11\u500b\uff09\uff13","s":[2.0,2.0,2.0,2.0,2.0],"w":[0.0,0.29,0.33,0.4,0.0]},{"name":"\u9d8f\u306e\u304b\u3089\u63da\u3052\u5f01\u5f53\uff14","s":[2.0,2.5,1.86,1.71,2.0],"w":[1.0,0.0,0.14,0.29,0.0]},{"name":"\u4e09\u5143\u8c5a\u306e\u539a\u5207\u308a\u30ed\u30fc\u30b9\u30ab\u30c4\u30b5\u30f3\u30c9\uff13","s":[2.17,2.14,2.14,1.8,1.86],"w":[0.0,0.0,0.0,0.2,0.86]},{"name":"\u4e09\u5143\u8c5a\u306e\u539a\u5207\u308a\u30ab\u30c4\uff06\u30bf\u30de\u30b4\u30b5\u30f3\u30c9\uff16","s":[2.0,2.0,1.71,1.5,1.86],"w":[0.0,0.0,0.29,0.33,0.29]},{"name":"\u6d77\u8001\u30ab\u30c4\u30bf\u30de\u30b4\u30b5\u30f3\u30c9\uff11","s":[2.17,2.14,2.33,1.8,1.83],"w":[0.0,0.0,0.33,0.4,0.83]},{"name":"\u5099\u9577\u70ad\u713c\u304d\u89aa\u5b50\u4e3c\uff15","s":[1.4,1.71,2.0,1.8,1.71],"w":[0.4,0.14,0.0,0.2,0.0]},{"name":"\u70ad\u706b\u713c\u725b\u30ab\u30eb\u30d3\u5f01\u5f53\uff11","s":[2.0,1.71,1.29,1.86,1.71],"w":[0.0,0.14,0.29,0.14,0.14]},{"name":"\u713c\u304d\u3055\u3070\uff06\u9d8f\u304b\u3089\u5f01\u5f53","s":[null,null,null,null,1.67],"w":[null,null,null,null,0.17]},{"name":"\u5f69\u308a\u91ce\u83dc\u3068\u9d8f\u304b\u3089\u63da\u3052\u306e\u7518\u9162\u305f\u308c\u4e3c\uff13","s":[2.0,1.83,1.71,1.57,1.57],"w":[1.0,0.17,0.14,0.29,0.57]},{"name":"\u9e7f\u5150\u5cf6\u770c\u7523\u685c\u5cf6\u3069\u308a\u306e\u30c1\u30ad\u30f3\u5357\u86ee\u4e3c\uff16","s":[2.0,2.83,2.14,2.71,1.57],"w":[0.0,0.0,0.0,0.14,0.29]},{"name":"\u3054\u308d\u3063\u3068\u30bf\u30de\u30b4\u30b5\u30f3\u30c9\uff08\uff11\u500b\u5165\u308a\uff09\uff14","s":[1.83,1.71,1.57,1.67,1.5],"w":[0.17,0.29,0.29,0.67,0.5]},{"name":"\u76f4\u706b\u3067\u7099\u3063\u305f\u713c\u8c5a\u4e3c\uff11","s":[1.4,1.33,1.43,1.86,1.29],"w":[0.0,0.33,0.14,0.0,0.0]},{"name":"\u60e3\u83dc\u3000\u4e09\u5143\u8c5a\u306e\u539a\u5207\u308a\u30ed\u30fc\u30b9\u30ab\u30c4","s":[1.0,1.0,1.0,0.67,1.14],"w":[0.0,0.0,0.0,0.33,0.0]},{"name":"\u65b0\u5bbf\u4e2d\u6751\u5c4b\u76e3\u4fee\u3000\u30ab\u30c4\u30ab\u30ec\u30fc\uff08\u4e2d\u8f9b\uff09\uff11","s":[2.0,1.71,1.43,1.86,1.14],"w":[0.0,0.14,0.0,0.0,0.0]},{"name":"\u60e3\u83dc\u3000\u9d8f\u306e\u70ad\u706b\u713c\u304d\uff13\u7a2e\u76db\u308a\uff11","s":[1.0,1.2,1.0,1.0,1.0],"w":[0.0,0.0,0.0,0.0,0.0]},{"name":"\u60e3\u83dc\u3000\u30c1\u30fc\u30ba\u5927\u8449\u30c1\u30ad\u30f3\u30ab\u30c4","s":[1.0,1.0,1.0,0.83,1.0],"w":[0.0,0.0,0.0,0.17,0.0]},{"name":"\u3068\u308d\u30fc\u308a\u305f\u307e\u3054\u4e09\u5143\u8c5a\u539a\u5207\u308a\u30ed\u30fc\u30b9\u30ab\u30c4\u4e3c\uff14","s":[1.0,1.0,1.0,1.14,1.0],"w":[0.0,0.0,0.0,0.0,0.0]},{"name":"\u9999\u3070\u3057\u7092\u3081\u30c1\u30e3\u30fc\u30cf\u30f3\uff06\u9d8f\u304b\u3089\uff11","s":[1.0,1.0,1.17,1.0,1.0],"w":[2.0,0.0,0.0,0.0,0.0]},{"name":"\u304b\u3089\u63da\u3052\u7167\u308a\u30de\u30e8\u4e3c\uff11","s":[1.0,1.17,1.0,1.14,1.0],"w":[1.0,0.0,0.0,0.0,0.0]},{"name":"\u4e09\u5143\u8c5a\u306e\u539a\u5207\u308a\u30ed\u30fc\u30b9\u30bd\u30fc\u30b9\u30ab\u30c4\u4e3c\uff15","s":[1.0,1.17,1.33,1.0,1.0],"w":[0.0,0.0,0.33,0.17,0.0]},{"name":"\u539a\u5207\u308a\u30ed\u30fc\u30b9\u3068\u3093\u304b\u3064\uff06\u304b\u3089\u63da\u3052\u5f01\u5f53\uff11","s":[1.0,1.0,1.0,1.0,0.86],"w":[0.0,0.0,0.0,0.0,0.14]},{"name":"\u3075\u3063\u304f\u3089\u713c\u304d\u3055\u3070\u4e3c","s":[null,1.6,1.67,0.67,null],"w":[null,0.2,0.5,0.67,null]},{"name":"\u6d77\u8001\u30ab\u30c4\u30d0\u30fc\u30ac\u30fc\uff12","s":[2.17,2.0,1.86,1.5,null],"w":[0.5,0.5,0.14,0.5,null]}],"\u5143\u753a\u4e00":[{"name":"\u7167\u713c\u304d\u30bf\u30eb\u30bf\u30eb\u9d8f\u7adc\u7530\u63da\u3052\u30d0\u30fc\u30ac\u30fc","s":[2.0,1.8,1.86,1.8,3.5],"w":[0.0,0.2,0.14,0.2,0.0]},{"name":"\u6d77\u9bae\u304b\u304d\u63da\u3052\u4e3c\uff15","s":[1.43,2.43,1.86,2.29,2.29],"w":[0.0,0.0,0.29,0.0,0.0]},{"name":"\u3066\u308a\u305f\u307e\u3054\u9d8f\u7adc\u7530\u63da\u3052\u30d0\u30fc\u30ac\u30fc","s":[null,null,null,3.0,2.0],"w":[null,null,null,0.0,2.0]},{"name":"\u60e3\u83dc\u3000\u82e5\u9d8f\u306e\u7802\u809d\u306b\u3093\u306b\u304f","s":[1.83,2.0,1.71,2.0,2.0],"w":[0.17,0.0,0.14,0.14,0.0]},{"name":"\u4e09\u5143\u8c5a\u306e\u539a\u5207\u308a\u30ed\u30fc\u30b9\u30ab\u30c4\u30b5\u30f3\u30c9\uff08\uff11\u500b\uff09\uff13","s":[1.5,2.0,1.67,1.86,2.0],"w":[0.0,0.0,0.83,0.14,0.0]},{"name":"\u4e09\u5143\u8c5a\u306e\u539a\u5207\u308a\u30ed\u30fc\u30b9\u30ab\u30c4\u30b5\u30f3\u30c9\uff13","s":[2.0,2.0,1.71,2.71,2.0],"w":[0.0,0.0,0.29,0.0,0.0]},{"name":"\u4e09\u5143\u8c5a\u306e\u539a\u5207\u308a\u30ab\u30c4\uff06\u30bf\u30de\u30b4\u30b5\u30f3\u30c9\uff16","s":[2.0,1.86,1.86,1.86,2.0],"w":[0.4,0.14,0.14,0.0,0.14]},{"name":"\u4e09\u5143\u8c5a\u306e\u539a\u5207\u308a\u30ed\u30fc\u30b9\u30bd\u30fc\u30b9\u30ab\u30c4\u4e3c\uff15","s":[1.17,1.67,1.83,2.0,1.83],"w":[0.0,0.0,0.17,0.0,0.0]},{"name":"\u60e3\u83dc\u3000\u9d8f\u306e\u70ad\u706b\u713c\u304d\uff13\u7a2e\u76db\u308a\uff11","s":[1.43,1.86,1.14,2.0,1.71],"w":[0.43,0.29,0.86,0.33,0.43]},{"name":"\u5099\u9577\u70ad\u713c\u304d\u89aa\u5b50\u4e3c\uff15","s":[1.2,1.6,1.71,2.0,1.71],"w":[0.2,0.4,0.0,0.17,0.29]},{"name":"\u3068\u308d\u30fc\u308a\u305f\u307e\u3054\u4e09\u5143\u8c5a\u539a\u5207\u308a\u30ed\u30fc\u30b9\u30ab\u30c4\u4e3c\uff14","s":[1.25,1.83,2.0,2.0,1.67],"w":[0.0,0.0,0.0,0.0,0.33]},{"name":"\u60e3\u83dc\u3000\u30c1\u30fc\u30ba\u5927\u8449\u30c1\u30ad\u30f3\u30ab\u30c4","s":[1.71,2.0,1.83,2.0,1.57],"w":[0.14,0.0,0.67,0.0,0.57]},{"name":"\u5f69\u308a\u91ce\u83dc\u3068\u9d8f\u304b\u3089\u63da\u3052\u306e\u7518\u9162\u305f\u308c\u4e3c\uff13","s":[2.0,1.8,1.17,1.25,1.57],"w":[0.0,0.2,0.5,0.75,0.43]},{"name":"\u9e7f\u5150\u5cf6\u770c\u7523\u685c\u5cf6\u3069\u308a\u306e\u30c1\u30ad\u30f3\u5357\u86ee\u4e3c\uff16","s":[1.0,1.71,1.71,2.14,1.5],"w":[0.0,0.0,0.0,0.0,0.0]},{"name":"\u65b0\u5bbf\u4e2d\u6751\u5c4b\u76e3\u4fee\u3000\u30ab\u30c4\u30ab\u30ec\u30fc\uff08\u4e2d\u8f9b\uff09\uff11","s":[1.0,1.86,1.86,2.0,1.43],"w":[0.25,0.14,0.0,0.0,0.29]},{"name":"\u76db\u5408\u305b\u5f01\u5f53\uff08\u30cf\u30f3\u30d0\u30fc\u30b0\uff06\u9d8f\u304b\u3089\uff09","s":[null,null,2.4,2.0,1.4],"w":[null,null,0.0,0.0,0.2]},{"name":"\u713c\u304d\u3055\u3070\uff06\u9d8f\u304b\u3089\u5f01\u5f53","s":[null,null,null,null,1.33],"w":[null,null,null,null,0.33]},{"name":"\u9999\u3070\u3057\u7092\u3081\u30c1\u30e3\u30fc\u30cf\u30f3\uff06\u9d8f\u304b\u3089\uff11","s":[1.0,1.5,1.43,1.43,1.33],"w":[0.0,0.0,0.14,0.0,0.17]},{"name":"\u70ad\u706b\u713c\u725b\u30ab\u30eb\u30d3\u5f01\u5f53\uff11","s":[2.0,1.83,1.67,1.8,1.33],"w":[0.0,0.0,0.0,0.0,0.0]},{"name":"\u76f4\u706b\u3067\u7099\u3063\u305f\u713c\u8c5a\u4e3c\uff11","s":[1.8,2.14,2.5,1.86,1.29],"w":[0.0,0.0,0.0,0.0,0.57]},{"name":"\u3054\u306f\u3093\u5927\u76db\uff01\u9d8f\u306e\u304b\u3089\u63da\u3052\u5f01\u5f53\uff14","s":[1.0,1.0,1.0,0.8,1.25],"w":[0.0,0.0,0.25,0.2,0.0]},{"name":"\u3054\u306f\u3093\u5927\u76db\uff01\u3068\u3093\u304b\u3064\uff06\u304b\u3089\u63da\u3052\u5f01\u5f53\uff11","s":[1.0,1.25,1.0,1.2,1.17],"w":[0.0,0.0,0.0,0.0,0.0]},{"name":"\u539a\u5207\u308a\u30ed\u30fc\u30b9\u3068\u3093\u304b\u3064\uff06\u304b\u3089\u63da\u3052\u5f01\u5f53\uff11","s":[1.0,1.5,1.67,1.33,1.17],"w":[0.0,0.0,0.0,0.0,0.17]},{"name":"\u3054\u306f\u3093\u5927\u76db\uff01\u76db\u5408\u305b\u5f01\u5f53\uff08\u30cf\u30f3\u30d0\u30fc\u30b0\u9d8f\u304b\u3089","s":[null,null,2.0,1.67,1.0],"w":[null,null,0.0,0.0,0.25]},{"name":"\u9d8f\u306e\u304b\u3089\u63da\u3052\u5f01\u5f53\uff14","s":[1.0,1.6,1.43,1.71,0.83],"w":[0.0,0.0,0.14,0.14,0.83]},{"name":"\u3054\u306f\u3093\u5927\u76db\uff01\u70ad\u706b\u713c\u725b\u30ab\u30eb\u30d3\u5f01\u5f53\uff11","s":[null,1.0,1.5,1.0,0.67],"w":[null,0.0,0.0,0.0,0.33]},{"name":"\u60e3\u83dc\u3000\u4e09\u5143\u8c5a\u306e\u539a\u5207\u308a\u30ed\u30fc\u30b9\u30ab\u30c4","s":[1.0,0.0,0.5,0.5,0.5],"w":[0.0,1.0,0.5,0.5,0.5]},{"name":"\u304b\u3089\u63da\u3052\u7167\u308a\u30de\u30e8\u4e3c\uff11","s":[null,2.0,2.0,null,null],"w":[null,0.0,0.0,null,null]},{"name":"\u3075\u3063\u304f\u3089\u713c\u304d\u3055\u3070\u4e3c","s":[null,1.5,null,null,null],"w":[null,1.0,null,null,null]}],"\u539f\u7530\u5357":[{"name":"\u713c\u304d\u3055\u3070\uff06\u9d8f\u304b\u3089\u5f01\u5f53","s":[null,null,null,null,5.2],"w":[null,null,null,null,1.2]},{"name":"\u3066\u308a\u305f\u307e\u3054\u9d8f\u7adc\u7530\u63da\u3052\u30d0\u30fc\u30ac\u30fc","s":[null,null,null,3.8,4.0],"w":[null,null,null,0.0,0.0]},{"name":"\u4e09\u5143\u8c5a\u306e\u539a\u5207\u308a\u30ed\u30fc\u30b9\u30ab\u30c4\u30b5\u30f3\u30c9\uff08\uff11\u500b\uff09\uff13","s":[2.0,2.0,2.33,1.83,3.71],"w":[0.0,0.0,0.0,0.17,0.14]},{"name":"\u30d1\u30ea\u30c3\u3068\u30d5\u30e9\u30f3\u30af\u30c9\u30c3\u30b0\uff14","s":[2.67,2.83,2.5,2.67,3.6],"w":[0.33,0.17,0.5,0.33,0.0]},{"name":"\u3054\u306f\u3093\u5927\u76db\uff01\u76db\u5408\u305b\u5f01\u5f53\uff08\u30cf\u30f3\u30d0\u30fc\u30b0\u9d8f\u304b\u3089","s":[null,null,5.8,6.0,3.5],"w":[null,null,0.2,0.0,0.0]},{"name":"\u76db\u5408\u305b\u5f01\u5f53\uff08\u30cf\u30f3\u30d0\u30fc\u30b0\uff06\u9d8f\u304b\u3089\uff09","s":[null,null,4.8,5.67,3.14],"w":[null,null,1.2,0.33,0.0]},{"name":"\u6d77\u8001\u30ab\u30c4\u30bf\u30de\u30b4\u30b5\u30f3\u30c9\uff08\uff11\u500b\u5165\u308a\uff09\uff11","s":[2.0,2.0,2.0,2.0,2.86],"w":[0.0,0.0,0.17,0.0,0.71]},{"name":"\u4e09\u5143\u8c5a\u306e\u539a\u5207\u308a\u30ed\u30fc\u30b9\u30ab\u30c4\u30b5\u30f3\u30c9\uff13","s":[1.6,2.0,1.83,1.8,2.57],"w":[0.6,0.0,0.17,0.2,0.0]},{"name":"\u4e09\u5143\u8c5a\u306e\u539a\u5207\u308a\u30ab\u30c4\uff06\u30bf\u30de\u30b4\u30b5\u30f3\u30c9\uff16","s":[2.0,2.0,2.0,1.8,2.4],"w":[0.0,0.0,0.0,0.2,0.2]},{"name":"\u65b0\u5bbf\u4e2d\u6751\u5c4b\u76e3\u4fee\u3000\u30ab\u30c4\u30ab\u30ec\u30fc\uff08\u4e2d\u8f9b\uff09\uff11","s":[1.0,1.67,1.0,1.0,2.29],"w":[0.0,0.17,0.17,0.0,0.29]},{"name":"\u70ad\u706b\u713c\u725b\u30ab\u30eb\u30d3\u5f01\u5f53\uff11","s":[2.0,1.83,0.75,1.2,2.17],"w":[0.0,0.0,0.25,0.2,0.0]},{"name":"\u76f4\u706b\u3067\u7099\u3063\u305f\u713c\u8c5a\u4e3c\uff11","s":[2.0,2.0,1.5,2.17,2.17],"w":[0.0,0.0,0.67,0.0,0.0]},{"name":"\u6d77\u8001\u30ab\u30c4\u30bf\u30de\u30b4\u30b5\u30f3\u30c9\uff11","s":[2.0,2.0,1.83,1.8,2.14],"w":[0.0,0.0,0.0,0.2,0.14]},{"name":"\u3054\u308d\u3063\u3068\u30bf\u30de\u30b4\u30b5\u30f3\u30c9\uff08\uff11\u500b\u5165\u308a\uff09\uff14","s":[null,null,2.0,4.0,2.0],"w":[null,null,0.0,0.0,0.25]},{"name":"\u6d77\u9bae\u304b\u304d\u63da\u3052\u4e3c\uff15","s":[1.33,2.0,1.0,0.67,2.0],"w":[0.0,0.0,0.17,0.33,0.0]},{"name":"\u3054\u306f\u3093\u5927\u76db\uff01\u9d8f\u306e\u304b\u3089\u63da\u3052\u5f01\u5f53\uff14","s":[1.0,0.8,1.0,1.0,2.0],"w":[0.0,0.2,0.0,0.0,0.0]},{"name":"\u3054\u306f\u3093\u5927\u76db\uff01\u70ad\u706b\u713c\u725b\u30ab\u30eb\u30d3\u5f01\u5f53\uff11","s":[1.67,2.17,1.83,1.67,1.83],"w":[0.0,0.0,0.17,0.0,0.0]},{"name":"\u539a\u5207\u308a\u30ed\u30fc\u30b9\u3068\u3093\u304b\u3064\uff06\u304b\u3089\u63da\u3052\u5f01\u5f53\uff11","s":[1.0,1.6,1.0,1.33,1.83],"w":[0.0,0.0,0.0,0.0,0.0]},{"name":"\u5099\u9577\u70ad\u713c\u304d\u89aa\u5b50\u4e3c\uff15","s":[1.0,1.8,1.17,0.83,1.67],"w":[0.0,0.2,0.0,0.17,0.0]},{"name":"\u3054\u306f\u3093\u5927\u76db\uff01\u3068\u3093\u304b\u3064\uff06\u304b\u3089\u63da\u3052\u5f01\u5f53\uff11","s":[1.0,1.0,1.17,1.0,1.67],"w":[0.0,0.0,0.0,0.0,0.0]},{"name":"\u9d8f\u306e\u304b\u3089\u63da\u3052\u5f01\u5f53\uff14","s":[1.0,1.2,1.17,1.0,1.57],"w":[0.0,0.6,0.0,0.0,0.29]},{"name":"\u5f69\u308a\u91ce\u83dc\u3068\u9d8f\u304b\u3089\u63da\u3052\u306e\u7518\u9162\u305f\u308c\u4e3c\uff13","s":[2.0,2.0,2.0,null,1.33],"w":[0.0,0.0,0.0,null,1.33]},{"name":"\u9e7f\u5150\u5cf6\u770c\u7523\u685c\u5cf6\u3069\u308a\u306e\u30c1\u30ad\u30f3\u5357\u86ee\u4e3c\uff16","s":[1.0,1.2,1.0,null,1.33],"w":[0.0,0.0,0.0,null,0.0]},{"name":"\u9999\u3070\u3057\u7092\u3081\u30c1\u30e3\u30fc\u30cf\u30f3\uff06\u9d8f\u304b\u3089\uff11","s":[1.0,1.83,1.0,1.0,1.14],"w":[0.0,0.0,0.17,0.0,0.0]},{"name":"\u60e3\u83dc\u3000\u30c1\u30fc\u30ba\u5927\u8449\u30c1\u30ad\u30f3\u30ab\u30c4","s":[null,null,1.0,1.0,1.0],"w":[null,null,0.0,0.0,0.0]},{"name":"\u60e3\u83dc\u3000\u4e09\u5143\u8c5a\u306e\u539a\u5207\u308a\u30ed\u30fc\u30b9\u30ab\u30c4","s":[null,null,1.0,1.0,1.0],"w":[null,null,0.0,0.0,0.0]},{"name":"\u7167\u713c\u304d\u30bf\u30eb\u30bf\u30eb\u9d8f\u7adc\u7530\u63da\u3052\u30d0\u30fc\u30ac\u30fc","s":[1.0,1.0,1.0,1.0,1.0],"w":[0.0,0.0,0.0,0.0,0.0]},{"name":"\u6d77\u8001\u30ab\u30c4\u30d0\u30fc\u30ac\u30fc\uff12","s":[1.0,1.0,1.0,null,1.0],"w":[0.0,0.0,0.0,null,0.0]},{"name":"\u65e8\u30c1\u30ea\u9d8f\u304b\u3089\u63da\u3052\u30d0\u30fc\u30ac\u30fc","s":[1.0,1.0,null,null,1.0],"w":[0.0,0.0,null,null,0.0]},{"name":"\u4e09\u5143\u8c5a\u306e\u539a\u5207\u308a\u30ed\u30fc\u30b9\u30bd\u30fc\u30b9\u30ab\u30c4\u4e3c\uff15","s":[null,1.2,1.0,null,1.0],"w":[null,0.0,0.0,null,0.0]},{"name":"\u30ac\u30fc\u30ea\u30c3\u30af\u30c8\u30de\u30c8\u30c1\u30ad\u30f3\u4e3c","s":[2.0,1.83,1.67,2.0,null],"w":[0.0,0.0,0.33,0.0,null]},{"name":"\u3054\u306f\u3093\u5927\u76db\uff01\u30c1\u30ad\u30f3\u30ab\u30c4\u5f01\u5f53","s":[null,null,null,1.0,null],"w":[null,null,null,0.0,null]},{"name":"\u30c1\u30ad\u30f3\u30ab\u30c4\u5f01\u5f53","s":[2.0,null,null,1.0,null],"w":[0.0,null,null,0.0,null]},{"name":"\u3075\u3063\u304f\u3089\u713c\u304d\u3055\u3070\u4e3c","s":[null,1.5,2.0,null,null],"w":[null,0.5,0.0,null,null]},{"name":"\u6fc3\u539a\u30b0\u30e9\u30bf\u30f3\u30b3\u30ed\u30c3\u30b1\u30d0\u30fc\u30ac\u30fc","s":[1.0,null,null,0.0,null],"w":[0.0,null,null,1.0,null]},{"name":"\u60e3\u83dc\u3000\u304a\u3064\u307e\u307f\u713c\u8c5a\u30dd\u30c6\u30b5\u30e9","s":[null,null,null,0.33,null],"w":[null,null,null,1.33,null]}],"\u6771\u6dc0\u5ddd":[{"name":"\u3066\u308a\u305f\u307e\u3054\u9d8f\u7adc\u7530\u63da\u3052\u30d0\u30fc\u30ac\u30fc","s":[null,null,null,3.33,3.57],"w":[null,null,null,0.0,0.0]},{"name":"\u4e09\u5143\u8c5a\u306e\u539a\u5207\u308a\u30ab\u30c4\uff06\u30bf\u30de\u30b4\u30b5\u30f3\u30c9\uff16","s":[1.29,1.71,2.14,2.86,3.0],"w":[0.29,0.14,0.43,0.0,0.14]},{"name":"\u4e09\u5143\u8c5a\u306e\u539a\u5207\u308a\u30ed\u30fc\u30b9\u30ab\u30c4\u30b5\u30f3\u30c9\uff13","s":[2.17,2.14,2.14,2.57,2.43],"w":[0.0,0.0,0.0,0.0,0.43]},{"name":"\u6d77\u8001\u30ab\u30c4\u30bf\u30de\u30b4\u30b5\u30f3\u30c9\uff11","s":[2.29,2.57,2.14,2.14,2.14],"w":[0.14,0.0,0.0,0.0,0.0]},{"name":"\u713c\u304d\u3055\u3070\uff06\u9d8f\u304b\u3089\u5f01\u5f53","s":[null,null,null,null,2.0],"w":[null,null,null,null,0.0]},{"name":"\u76f4\u706b\u3067\u7099\u3063\u305f\u713c\u8c5a\u4e3c\uff11","s":[2.0,1.71,1.86,1.86,2.0],"w":[0.0,0.0,0.0,0.0,0.0]},{"name":"\u65b0\u5bbf\u4e2d\u6751\u5c4b\u76e3\u4fee\u3000\u30ab\u30c4\u30ab\u30ec\u30fc\uff08\u4e2d\u8f9b\uff09\uff11","s":[2.0,1.86,1.86,2.0,2.0],"w":[0.0,0.0,0.0,0.0,0.0]},{"name":"\u6d77\u8001\u30ab\u30c4\u30d0\u30fc\u30ac\u30fc\uff12","s":[2.0,1.17,1.86,1.86,1.86],"w":[0.0,0.33,0.0,0.0,0.0]},{"name":"\u304b\u3089\u63da\u3052\u7167\u308a\u30de\u30e8\u4e3c\uff11","s":[1.71,1.71,1.71,2.0,1.86],"w":[0.14,0.0,0.0,0.0,0.0]},{"name":"\u60e3\u83dc\u3000\u82e5\u9d8f\u306e\u7802\u809d\u306b\u3093\u306b\u304f","s":[2.0,1.86,2.14,1.83,1.83],"w":[0.33,0.0,0.0,0.17,0.67]},{"name":"\u7167\u713c\u304d\u30bf\u30eb\u30bf\u30eb\u9d8f\u7adc\u7530\u63da\u3052\u30d0\u30fc\u30ac\u30fc","s":[3.8,3.71,3.86,3.0,1.71],"w":[0.2,0.14,0.14,0.14,0.0]},{"name":"\u6d77\u9bae\u304b\u304d\u63da\u3052\u4e3c\uff15","s":[1.43,1.57,1.0,1.29,1.71],"w":[0.0,0.0,0.0,0.0,0.0]},{"name":"\u539a\u5207\u308a\u30ed\u30fc\u30b9\u3068\u3093\u304b\u3064\uff06\u304b\u3089\u63da\u3052\u5f01\u5f53\uff11","s":[null,2.0,1.17,1.0,1.5],"w":[null,0.0,0.0,0.0,0.0]},{"name":"\u9e7f\u5150\u5cf6\u770c\u7523\u685c\u5cf6\u3069\u308a\u306e\u30c1\u30ad\u30f3\u5357\u86ee\u4e3c\uff16","s":[1.0,1.57,1.0,1.0,1.29],"w":[0.14,0.0,0.0,0.0,0.0]},{"name":"\u60e3\u83dc\u3000\u30c1\u30fc\u30ba\u5927\u8449\u30c1\u30ad\u30f3\u30ab\u30c4","s":[1.71,1.67,1.5,1.43,1.14],"w":[0.0,0.0,0.0,0.0,0.0]},{"name":"\u5099\u9577\u70ad\u713c\u304d\u89aa\u5b50\u4e3c\uff15","s":[0.86,1.14,1.29,1.14,1.14],"w":[0.14,0.0,0.0,0.0,0.0]},{"name":"\u9999\u3070\u3057\u7092\u3081\u30c1\u30e3\u30fc\u30cf\u30f3\uff06\u9d8f\u304b\u3089\uff11","s":[1.43,1.29,0.86,1.0,1.14],"w":[0.0,0.0,0.14,0.0,0.0]},{"name":"\u76db\u5408\u305b\u5f01\u5f53\uff08\u30cf\u30f3\u30d0\u30fc\u30b0\uff06\u9d8f\u304b\u3089\uff09","s":[null,null,2.67,1.57,1.0],"w":[null,null,0.0,0.0,0.0]},{"name":"\u3054\u306f\u3093\u5927\u76db\uff01\u76db\u5408\u305b\u5f01\u5f53\uff08\u30cf\u30f3\u30d0\u30fc\u30b0\u9d8f\u304b\u3089","s":[null,null,1.33,1.0,1.0],"w":[null,null,0.0,0.0,0.0]},{"name":"\u60e3\u83dc\u3000\u9d8f\u306e\u70ad\u706b\u713c\u304d\uff13\u7a2e\u76db\u308a\uff11","s":[1.0,1.0,1.0,1.0,1.0],"w":[0.0,0.0,0.0,0.0,0.14]},{"name":"\u4e09\u5143\u8c5a\u306e\u539a\u5207\u308a\u30ed\u30fc\u30b9\u30ab\u30c4\u30b5\u30f3\u30c9\uff08\uff11\u500b\uff09\uff13","s":[1.0,1.57,1.86,1.29,1.0],"w":[0.17,0.0,0.14,0.0,0.14]},{"name":"\u9d8f\u306e\u304b\u3089\u63da\u3052\u5f01\u5f53\uff14","s":[null,1.67,1.17,1.0,1.0],"w":[null,0.0,0.0,0.0,0.0]},{"name":"\u3054\u306f\u3093\u5927\u76db\uff01\u3068\u3093\u304b\u3064\uff06\u304b\u3089\u63da\u3052\u5f01\u5f53\uff11","s":[1.0,1.0,1.0,1.0,1.0],"w":[0.0,0.0,0.0,0.17,0.0]},{"name":"\u3054\u306f\u3093\u5927\u76db\uff01\u9d8f\u306e\u304b\u3089\u63da\u3052\u5f01\u5f53\uff14","s":[2.0,null,1.0,1.33,1.0],"w":[0.0,null,0.0,0.0,0.0]},{"name":"\u4e09\u5143\u8c5a\u306e\u539a\u5207\u308a\u30ed\u30fc\u30b9\u30bd\u30fc\u30b9\u30ab\u30c4\u4e3c\uff15","s":[1.0,1.33,1.0,1.0,1.0],"w":[0.0,0.0,0.0,0.0,0.0]},{"name":"\u70ad\u706b\u713c\u725b\u30ab\u30eb\u30d3\u5f01\u5f53\uff11","s":[null,1.67,1.29,1.0,0.86],"w":[null,0.0,0.0,0.0,0.14]},{"name":"\u3054\u308d\u3063\u3068\u30bf\u30de\u30b4\u30b5\u30f3\u30c9\uff08\uff11\u500b\u5165\u308a\uff09\uff14","s":[1.14,1.57,1.29,1.14,0.83],"w":[0.14,0.0,0.71,0.0,0.33]},{"name":"\u3054\u306f\u3093\u5927\u76db\uff01\u70ad\u706b\u713c\u725b\u30ab\u30eb\u30d3\u5f01\u5f53\uff11","s":[1.0,1.0,null,null,null],"w":[0.14,0.0,null,null,null]},{"name":"\u3068\u308d\u30fc\u308a\u305f\u307e\u3054\u4e09\u5143\u8c5a\u539a\u5207\u308a\u30ed\u30fc\u30b9\u30ab\u30c4\u4e3c\uff14","s":[null,null,null,1.0,null],"w":[null,null,null,0.0,null]},{"name":"\u307e\u3093\u307e\u308b\u9d8f\uff06\u30cf\u30f3\u30d0\u30fc\u30b0\u5f01\u5f53","s":[null,1.0,null,null,null],"w":[null,0.0,null,null,null]},{"name":"\u6d77\u8001\u30ab\u30c4\u30bf\u30de\u30b4\u30b5\u30f3\u30c9\uff08\uff11\u500b\u5165\u308a\uff09\uff11","s":[2.0,2.0,null,1.0,null],"w":[0.0,0.0,null,0.0,null]},{"name":"\u60e3\u83dc\u3000\u304a\u3064\u307e\u307f\u713c\u8c5a\u30dd\u30c6\u30b5\u30e9","s":[null,null,1.67,0.5,null],"w":[null,null,0.0,1.0,null]}],"\u8c4a\u91cc\u4e94":[{"name":"\u4e09\u5143\u8c5a\u306e\u539a\u5207\u308a\u30ab\u30c4\uff06\u30bf\u30de\u30b4\u30b5\u30f3\u30c9\uff16","s":[2.71,4.57,4.0,4.29,4.71],"w":[0.43,0.0,0.43,0.29,0.14]},{"name":"\u3066\u308a\u305f\u307e\u3054\u9d8f\u7adc\u7530\u63da\u3052\u30d0\u30fc\u30ac\u30fc","s":[null,null,null,3.5,4.14],"w":[null,null,null,0.0,0.0]},{"name":"\u4e09\u5143\u8c5a\u306e\u539a\u5207\u308a\u30ed\u30fc\u30b9\u30ab\u30c4\u30b5\u30f3\u30c9\uff13","s":[3.17,3.71,3.86,4.29,3.86],"w":[0.5,0.14,0.14,0.0,0.29]},{"name":"\u6d77\u8001\u30ab\u30c4\u30d0\u30fc\u30ac\u30fc\uff12","s":[2.57,3.14,3.29,2.0,3.14],"w":[0.14,0.14,0.14,0.29,0.14]},{"name":"\u6d77\u8001\u30ab\u30c4\u30bf\u30de\u30b4\u30b5\u30f3\u30c9\uff11","s":[2.86,2.43,2.57,3.0,3.14],"w":[0.29,0.0,0.0,0.0,0.0]},{"name":"\u7167\u713c\u304d\u30bf\u30eb\u30bf\u30eb\u9d8f\u7adc\u7530\u63da\u3052\u30d0\u30fc\u30ac\u30fc","s":[2.71,3.2,3.14,2.33,3.0],"w":[0.0,0.0,0.0,0.0,0.0]},{"name":"\u65b0\u5bbf\u4e2d\u6751\u5c4b\u76e3\u4fee\u3000\u30ab\u30c4\u30ab\u30ec\u30fc\uff08\u4e2d\u8f9b\uff09\uff11","s":[2.71,3.0,2.29,3.14,2.71],"w":[0.0,0.0,0.0,0.0,0.0]},{"name":"\u4e09\u5143\u8c5a\u306e\u539a\u5207\u308a\u30ed\u30fc\u30b9\u30ab\u30c4\u30b5\u30f3\u30c9\uff08\uff11\u500b\uff09\uff13","s":[2.14,2.57,2.86,2.43,2.67],"w":[0.0,0.14,0.43,0.29,0.83]},{"name":"\u9999\u3070\u3057\u7092\u3081\u30c1\u30e3\u30fc\u30cf\u30f3\uff06\u9d8f\u304b\u3089\uff11","s":[1.71,2.0,2.29,2.43,2.57],"w":[0.14,0.14,0.0,0.0,0.0]},{"name":"\u3054\u308d\u3063\u3068\u30bf\u30de\u30b4\u30b5\u30f3\u30c9\uff08\uff11\u500b\u5165\u308a\uff09\uff14","s":[1.67,2.0,1.57,2.0,2.43],"w":[0.67,0.17,0.86,0.14,0.57]},{"name":"\u6d77\u8001\u30ab\u30c4\u30bf\u30de\u30b4\u30b5\u30f3\u30c9\uff08\uff11\u500b\u5165\u308a\uff09\uff11","s":[2.0,2.14,2.57,3.0,2.29],"w":[0.14,0.14,0.0,0.14,0.43]},{"name":"\u6d77\u9bae\u304b\u304d\u63da\u3052\u4e3c\uff15","s":[1.86,1.71,2.14,2.14,2.14],"w":[0.0,0.0,0.0,0.0,0.0]},{"name":"\u60e3\u83dc\u3000\u30c1\u30fc\u30ba\u5927\u8449\u30c1\u30ad\u30f3\u30ab\u30c4","s":[1.86,2.0,1.5,1.14,1.86],"w":[0.14,0.0,0.0,0.29,0.14]},{"name":"\u76f4\u706b\u3067\u7099\u3063\u305f\u713c\u8c5a\u4e3c\uff11","s":[1.71,2.29,1.86,1.71,1.86],"w":[0.29,0.0,0.0,0.0,0.0]},{"name":"\u60e3\u83dc\u3000\u82e5\u9d8f\u306e\u7802\u809d\u306b\u3093\u306b\u304f","s":[2.0,2.14,2.0,2.0,1.83],"w":[0.29,0.0,0.0,0.2,0.33]},{"name":"\u713c\u304d\u3055\u3070\uff06\u9d8f\u304b\u3089\u5f01\u5f53","s":[null,null,null,null,1.8],"w":[null,null,null,null,0.2]},{"name":"\u3068\u308d\u30fc\u308a\u305f\u307e\u3054\u4e09\u5143\u8c5a\u539a\u5207\u308a\u30ed\u30fc\u30b9\u30ab\u30c4\u4e3c\uff14","s":[1.71,2.0,1.5,1.86,1.71],"w":[0.14,0.0,0.0,0.0,0.0]},{"name":"\u3054\u306f\u3093\u5927\u76db\uff01\u3068\u3093\u304b\u3064\uff06\u304b\u3089\u63da\u3052\u5f01\u5f53\uff11","s":[1.5,2.43,2.14,1.86,1.71],"w":[0.17,0.14,0.14,0.0,0.14]},{"name":"\u3054\u306f\u3093\u5927\u76db\uff01\u70ad\u706b\u713c\u725b\u30ab\u30eb\u30d3\u5f01\u5f53\uff11","s":[2.86,2.14,1.86,1.86,1.71],"w":[0.0,0.0,0.0,0.0,0.0]},{"name":"\u304b\u3089\u63da\u3052\u7167\u308a\u30de\u30e8\u4e3c\uff11","s":[1.0,2.0,1.71,1.71,1.71],"w":[0.0,0.0,0.14,0.0,0.0]},{"name":"\u3054\u306f\u3093\u5927\u76db\uff01\u76db\u5408\u305b\u5f01\u5f53\uff08\u30cf\u30f3\u30d0\u30fc\u30b0\u9d8f\u304b\u3089","s":[null,null,3.67,2.0,1.57],"w":[null,null,0.0,0.0,0.0]},{"name":"\u9d8f\u306e\u304b\u3089\u63da\u3052\u5f01\u5f53\uff14","s":[null,null,null,1.33,1.5],"w":[null,null,null,0.0,0.17]},{"name":"\u3054\u306f\u3093\u5927\u76db\uff01\u9d8f\u306e\u304b\u3089\u63da\u3052\u5f01\u5f53\uff14","s":[5.0,3.0,2.14,1.71,1.29],"w":[0.0,0.0,0.0,0.0,0.14]},{"name":"\u60e3\u83dc\u3000\u9d8f\u306e\u70ad\u706b\u713c\u304d\uff13\u7a2e\u76db\u308a\uff11","s":[1.14,1.0,1.2,1.25,1.2],"w":[0.0,0.0,0.0,0.25,0.4]},{"name":"\u76db\u5408\u305b\u5f01\u5f53\uff08\u30cf\u30f3\u30d0\u30fc\u30b0\uff06\u9d8f\u304b\u3089\uff09","s":[null,null,1.5,1.5,1.17],"w":[null,null,0.0,0.0,0.0]},{"name":"\u5099\u9577\u70ad\u713c\u304d\u89aa\u5b50\u4e3c\uff15","s":[1.71,1.86,1.67,1.43,1.17],"w":[0.0,0.14,0.0,0.0,0.33]},{"name":"\u9e7f\u5150\u5cf6\u770c\u7523\u685c\u5cf6\u3069\u308a\u306e\u30c1\u30ad\u30f3\u5357\u86ee\u4e3c\uff16","s":[1.86,1.86,1.57,1.0,1.0],"w":[0.0,0.0,0.0,0.0,0.0]},{"name":"\u4e09\u5143\u8c5a\u306e\u539a\u5207\u308a\u30ed\u30fc\u30b9\u30bd\u30fc\u30b9\u30ab\u30c4\u4e3c\uff15","s":[1.0,1.17,1.57,1.17,1.0],"w":[0.0,0.0,0.0,0.0,0.0]},{"name":"\u307e\u3093\u307e\u308b\u9d8f\uff06\u30cf\u30f3\u30d0\u30fc\u30b0\u5f01\u5f53","s":[null,2.0,null,null,null],"w":[null,0.0,null,null,null]},{"name":"\u60e3\u83dc\u3000\u304a\u3064\u307e\u307f\u713c\u8c5a\u30dd\u30c6\u30b5\u30e9","s":[null,null,2.6,2.0,null],"w":[null,null,0.0,1.0,null]}],"\u5357\u91d1\u7530":[{"name":"\u3054\u306f\u3093\u5927\u76db\uff01\u76db\u5408\u305b\u5f01\u5f53\uff08\u30cf\u30f3\u30d0\u30fc\u30b0\u9d8f\u304b\u3089","s":[null,null,6.0,4.43,4.4],"w":[null,null,0.0,0.29,0.4]},{"name":"\u713c\u304d\u3055\u3070\uff06\u9d8f\u304b\u3089\u5f01\u5f53","s":[null,null,null,null,3.4],"w":[null,null,null,null,1.4]},{"name":"\u4e09\u5143\u8c5a\u306e\u539a\u5207\u308a\u30ed\u30fc\u30b9\u30ab\u30c4\u30b5\u30f3\u30c9\uff13","s":[3.0,2.14,3.4,2.67,3.17],"w":[0.5,0.71,0.0,0.67,0.33]},{"name":"\u4e09\u5143\u8c5a\u306e\u539a\u5207\u308a\u30ab\u30c4\uff06\u30bf\u30de\u30b4\u30b5\u30f3\u30c9\uff16","s":[2.67,2.86,3.2,2.83,2.67],"w":[0.0,0.0,0.4,0.17,0.33]},{"name":"\u6d77\u9bae\u304b\u304d\u63da\u3052\u4e3c\uff15","s":[3.0,2.86,3.0,2.33,2.5],"w":[0.0,0.0,0.25,0.17,0.0]},{"name":"\u3054\u306f\u3093\u5927\u76db\uff01\u9d8f\u306e\u304b\u3089\u63da\u3052\u5f01\u5f53\uff14","s":[2.0,2.67,2.75,2.29,2.5],"w":[0.0,0.0,0.0,0.14,0.17]},{"name":"\u60e3\u83dc\u3000\u30c1\u30fc\u30ba\u5927\u8449\u30c1\u30ad\u30f3\u30ab\u30c4","s":[2.0,2.5,1.8,2.17,2.33],"w":[0.4,0.17,0.4,0.83,0.33]},{"name":"\u3054\u306f\u3093\u5927\u76db\uff01\u3068\u3093\u304b\u3064\uff06\u304b\u3089\u63da\u3052\u5f01\u5f53\uff11","s":[3.2,2.29,2.75,2.67,2.33],"w":[0.2,0.14,0.0,0.17,0.33]},{"name":"\u76db\u5408\u305b\u5f01\u5f53\uff08\u30cf\u30f3\u30d0\u30fc\u30b0\uff06\u9d8f\u304b\u3089\uff09","s":[null,null,3.5,4.0,2.0],"w":[null,null,0.0,0.0,0.0]},{"name":"\u76f4\u706b\u3067\u7099\u3063\u305f\u713c\u8c5a\u4e3c\uff11","s":[1.0,1.5,2.0,2.0,2.0],"w":[0.0,0.0,0.0,0.0,0.0]},{"name":"\u65b0\u5bbf\u4e2d\u6751\u5c4b\u76e3\u4fee\u3000\u30ab\u30c4\u30ab\u30ec\u30fc\uff08\u4e2d\u8f9b\uff09\uff11","s":[2.0,1.57,2.0,2.0,2.0],"w":[0.0,0.0,0.0,0.0,0.0]},{"name":"\u5f69\u308a\u91ce\u83dc\u3068\u9d8f\u304b\u3089\u63da\u3052\u306e\u7518\u9162\u305f\u308c\u4e3c\uff13","s":[2.0,2.0,2.0,2.0,1.83],"w":[0.0,0.0,0.0,0.0,0.17]},{"name":"\u9e7f\u5150\u5cf6\u770c\u7523\u685c\u5cf6\u3069\u308a\u306e\u30c1\u30ad\u30f3\u5357\u86ee\u4e3c\uff16","s":[1.0,1.86,1.75,1.67,1.83],"w":[0.0,0.0,0.0,0.0,0.0]},{"name":"\u3066\u308a\u305f\u307e\u3054\u9d8f\u7adc\u7530\u63da\u3052\u30d0\u30fc\u30ac\u30fc","s":[null,null,null,1.6,1.8],"w":[null,null,null,0.4,0.0]},{"name":"\u6d77\u8001\u30ab\u30c4\u30d0\u30fc\u30ac\u30fc\uff12","s":[null,2.0,2.0,2.0,1.5],"w":[null,0.0,0.0,0.0,0.0]},{"name":"\u4e09\u5143\u8c5a\u306e\u539a\u5207\u308a\u30ed\u30fc\u30b9\u30bd\u30fc\u30b9\u30ab\u30c4\u4e3c\uff15","s":[2.0,2.67,2.0,2.0,1.5],"w":[0.0,0.17,0.0,0.0,0.33]},{"name":"\u3054\u306f\u3093\u5927\u76db\uff01\u70ad\u706b\u713c\u725b\u30ab\u30eb\u30d3\u5f01\u5f53\uff11","s":[2.0,2.14,1.75,2.0,1.33],"w":[0.14,0.14,0.0,0.0,0.33]},{"name":"\u539a\u5207\u308a\u30ed\u30fc\u30b9\u3068\u3093\u304b\u3064\uff06\u304b\u3089\u63da\u3052\u5f01\u5f53\uff11","s":[1.67,2.0,1.0,1.0,1.33],"w":[0.33,0.0,0.0,0.0,0.0]},{"name":"\u60e3\u83dc\u3000\u4e09\u5143\u8c5a\u306e\u539a\u5207\u308a\u30ed\u30fc\u30b9\u30ab\u30c4","s":[1.6,1.25,1.25,1.0,1.2],"w":[0.0,0.25,0.0,0.33,0.4]},{"name":"\u3068\u308d\u30fc\u308a\u305f\u307e\u3054\u4e09\u5143\u8c5a\u539a\u5207\u308a\u30ed\u30fc\u30b9\u30ab\u30c4\u4e3c\uff14","s":[3.0,1.83,1.25,1.0,1.17],"w":[0.0,0.17,0.0,0.0,0.0]},{"name":"\u9999\u3070\u3057\u7092\u3081\u30c1\u30e3\u30fc\u30cf\u30f3\uff06\u9d8f\u304b\u3089\uff11","s":[1.5,1.0,1.0,1.0,1.17],"w":[0.0,0.0,0.0,0.2,0.0]},{"name":"\u6d77\u8001\u30ab\u30c4\u30bf\u30de\u30b4\u30b5\u30f3\u30c9\uff11","s":[1.67,1.17,1.25,1.17,1.0],"w":[0.33,0.0,0.0,0.0,0.0]},{"name":"\u5099\u9577\u70ad\u713c\u304d\u89aa\u5b50\u4e3c\uff15","s":[3.0,1.2,1.0,1.0,1.0],"w":[0.0,0.0,0.0,0.0,0.0]},{"name":"\u70ad\u706b\u713c\u725b\u30ab\u30eb\u30d3\u5f01\u5f53\uff11","s":[2.0,1.57,1.0,0.83,1.0],"w":[0.0,0.29,0.0,0.17,0.0]},{"name":"\u9d8f\u306e\u304b\u3089\u63da\u3052\u5f01\u5f53\uff14","s":[0.0,1.83,1.25,1.0,0.83],"w":[1.0,0.33,0.0,0.0,0.33]},{"name":"\u4e09\u5143\u8c5a\u306e\u539a\u5207\u308a\u30ed\u30fc\u30b9\u30ab\u30c4\u30b5\u30f3\u30c9\uff08\uff11\u500b\uff09\uff13","s":[1.67,0.5,2.0,2.0,0.67],"w":[0.0,0.5,0.0,0.0,1.33]},{"name":"\u30ac\u30fc\u30ea\u30c3\u30af\u30c8\u30de\u30c8\u30c1\u30ad\u30f3\u4e3c","s":[2.0,2.4,null,2.0,null],"w":[0.0,0.0,null,0.0,null]}],"\u767d\u5cf6\u4e8c":[{"name":"\u4e09\u5143\u8c5a\u306e\u539a\u5207\u308a\u30ed\u30fc\u30b9\u30ab\u30c4\u30b5\u30f3\u30c9\uff13","s":[7.17,7.86,7.29,6.0,6.43],"w":[0.5,0.0,0.29,1.0,0.29]},{"name":"\u4e09\u5143\u8c5a\u306e\u539a\u5207\u308a\u30ed\u30fc\u30b9\u30ab\u30c4\u30b5\u30f3\u30c9\uff08\uff11\u500b\uff09\uff13","s":[5.5,6.0,5.14,4.29,5.71],"w":[0.83,0.14,0.57,2.0,0.43]},{"name":"\u3066\u308a\u305f\u307e\u3054\u9d8f\u7adc\u7530\u63da\u3052\u30d0\u30fc\u30ac\u30fc","s":[null,null,null,5.83,4.86],"w":[null,null,null,0.0,0.14]},{"name":"\u6d77\u8001\u30ab\u30c4\u30bf\u30de\u30b4\u30b5\u30f3\u30c9\uff11","s":[5.0,4.0,3.71,4.0,3.29],"w":[0.0,0.0,0.43,0.43,0.86]},{"name":"\u713c\u304d\u3055\u3070\uff06\u9d8f\u304b\u3089\u5f01\u5f53","s":[null,null,null,null,3.17],"w":[null,null,null,null,0.83]},{"name":"\u6d77\u8001\u30ab\u30c4\u30d0\u30fc\u30ac\u30fc\uff12","s":[3.29,3.57,3.0,2.86,2.71],"w":[0.0,0.14,0.14,0.57,0.0]},{"name":"\u4e09\u5143\u8c5a\u306e\u539a\u5207\u308a\u30ab\u30c4\uff06\u30bf\u30de\u30b4\u30b5\u30f3\u30c9\uff16","s":[3.86,4.0,4.14,3.57,2.57],"w":[0.14,0.29,0.14,0.29,1.29]},{"name":"\u6d77\u9bae\u304b\u304d\u63da\u3052\u4e3c\uff15","s":[1.0,2.0,1.86,1.43,1.71],"w":[0.14,0.0,0.14,0.57,0.14]},{"name":"\u76f4\u706b\u3067\u7099\u3063\u305f\u713c\u8c5a\u4e3c\uff11","s":[1.29,2.0,1.71,1.57,1.57],"w":[0.14,0.0,0.29,0.43,0.29]},{"name":"\u5f69\u308a\u91ce\u83dc\u3068\u9d8f\u304b\u3089\u63da\u3052\u306e\u7518\u9162\u305f\u308c\u4e3c\uff13","s":[1.0,1.83,1.43,1.14,1.43],"w":[1.0,0.17,0.57,1.14,0.57]},{"name":"\u76db\u5408\u305b\u5f01\u5f53\uff08\u30cf\u30f3\u30d0\u30fc\u30b0\uff06\u9d8f\u304b\u3089\uff09","s":[null,null,4.5,2.43,1.14],"w":[null,null,0.5,0.57,0.14]},{"name":"\u3054\u306f\u3093\u5927\u76db\uff01\u76db\u5408\u305b\u5f01\u5f53\uff08\u30cf\u30f3\u30d0\u30fc\u30b0\u9d8f\u304b\u3089","s":[null,null,4.5,2.86,1.14],"w":[null,null,0.5,0.14,0.0]},{"name":"\u60e3\u83dc\u3000\u30c1\u30fc\u30ba\u5927\u8449\u30c1\u30ad\u30f3\u30ab\u30c4","s":[0.83,1.0,1.0,0.83,1.0],"w":[0.17,0.0,0.0,0.33,0.25]},{"name":"\u5099\u9577\u70ad\u713c\u304d\u89aa\u5b50\u4e3c\uff15","s":[1.0,1.0,1.0,0.86,1.0],"w":[0.2,0.0,0.0,0.14,0.0]},{"name":"\u9e7f\u5150\u5cf6\u770c\u7523\u685c\u5cf6\u3069\u308a\u306e\u30c1\u30ad\u30f3\u5357\u86ee\u4e3c\uff16","s":[1.0,1.86,1.14,0.86,1.0],"w":[0.17,0.0,0.0,0.29,0.0]},{"name":"\u3054\u306f\u3093\u5927\u76db\uff01\u70ad\u706b\u713c\u725b\u30ab\u30eb\u30d3\u5f01\u5f53\uff11","s":[1.17,1.43,1.14,0.71,1.0],"w":[0.17,0.43,0.0,0.57,0.14]},{"name":"\u65b0\u5bbf\u4e2d\u6751\u5c4b\u76e3\u4fee\u3000\u30ab\u30c4\u30ab\u30ec\u30fc\uff08\u4e2d\u8f9b\uff09\uff11","s":[1.14,1.71,2.0,1.71,1.0],"w":[0.0,0.14,0.0,0.29,0.86]},{"name":"\u3054\u306f\u3093\u5927\u76db\uff01\u9d8f\u306e\u304b\u3089\u63da\u3052\u5f01\u5f53\uff14","s":[2.0,1.83,1.14,1.0,1.0],"w":[1.0,0.17,0.0,0.0,0.0]},{"name":"\u4e09\u5143\u8c5a\u306e\u539a\u5207\u308a\u30ed\u30fc\u30b9\u30bd\u30fc\u30b9\u30ab\u30c4\u4e3c\uff15","s":[1.0,1.86,1.14,1.0,1.0],"w":[0.0,0.0,0.0,0.14,0.17]},{"name":"\u539a\u5207\u308a\u30ed\u30fc\u30b9\u3068\u3093\u304b\u3064\uff06\u304b\u3089\u63da\u3052\u5f01\u5f53\uff11","s":[1.0,1.0,0.86,1.0,1.0],"w":[0.0,0.14,0.14,0.0,0.17]},{"name":"\u9999\u3070\u3057\u7092\u3081\u30c1\u30e3\u30fc\u30cf\u30f3\uff06\u9d8f\u304b\u3089\uff11","s":[1.14,1.0,1.0,1.0,0.86],"w":[0.0,0.0,0.0,0.0,0.14]},{"name":"\u70ad\u706b\u713c\u725b\u30ab\u30eb\u30d3\u5f01\u5f53\uff11","s":[1.14,1.43,1.0,1.14,0.86],"w":[0.0,0.14,0.14,0.14,0.29]},{"name":"\u60e3\u83dc\u3000\u4e09\u5143\u8c5a\u306e\u539a\u5207\u308a\u30ed\u30fc\u30b9\u30ab\u30c4","s":[1.0,0.67,0.6,0.86,0.83],"w":[0.0,0.33,0.6,0.14,0.33]},{"name":"\u3054\u306f\u3093\u5927\u76db\uff01\u3068\u3093\u304b\u3064\uff06\u304b\u3089\u63da\u3052\u5f01\u5f53\uff11","s":[1.0,1.17,0.86,0.86,0.83],"w":[0.0,0.0,0.14,0.14,0.17]},{"name":"\u9d8f\u306e\u304b\u3089\u63da\u3052\u5f01\u5f53\uff14","s":[null,1.67,1.14,1.0,0.8],"w":[null,0.5,0.0,0.0,0.4]},{"name":"\u7167\u713c\u304d\u30bf\u30eb\u30bf\u30eb\u9d8f\u7adc\u7530\u63da\u3052\u30d0\u30fc\u30ac\u30fc","s":[2.67,4.0,3.57,2.0,null],"w":[0.0,0.0,0.14,0.0,null]}]};
+var WR = 0.15;
+var scData = [], curMedX = 2;
+var DPR = window.devicePixelRatio || 1;
+
+// ユーティリティ
+function lat(d){ return d.s[4]!==null?d.s[4]:d.s[3]!==null?d.s[3]:d.s[2]; }
+function latW(d){ return d.w[4]!==null?d.w[4]:d.w[3]!==null?d.w[3]:d.w[2]; }
+function b3(d){ return d.s[2]!==null?d.s[2]:d.s[3]!==null?d.s[3]:d.s[4]; }
+function fv(v){ return (v!==null&&v!==undefined)?v.toFixed(2):'ー'; }
+function sumS(a,i){ return a.reduce(function(s,d){return s+(d.s[i]||0);},0); }
+function sumW(a,i){ return a.reduce(function(s,d){return s+(d.w[i]||0);},0); }
+function wrCalc(s,w){ if(!s||s===0) return (w&&w>0)?999:0; return (w||0)/s; }
+function dotCol(x,w,mx){
+  var r=wrCalc(x,w), hi=x>=mx, lo=r<WR;
+  if(hi&&lo)   return {f:'rgba(22,163,74,0.88)',  s:'#15803d', z:'✅ 作成増のチャンス'};
+  if(!hi&&lo)  return {f:'rgba(132,204,22,0.85)', s:'#65a30d', z:'🌱 廃棄率優秀・販売伸ばしたい'};
+  if(hi&&!lo)  return {f:'rgba(37,99,235,0.85)',  s:'#1d4ed8', z:'🔵 精度改善で更に伸ばせる'};
+  return            {f:'rgba(220,38,38,0.85)',  s:'#b91c1c', z:'🔴 作成計画見直しが必要'};
+}
+
+// Canvasをデバイス解像度に合わせてセットアップ
+function setupCanvas(id, cssH) {
+  var el = document.getElementById(id);
+  var w = Math.min(el.parentElement.clientWidth, window.innerWidth) - 24;
+  el.style.height = cssH + 'px';
+  el.width  = Math.round(w * DPR);
+  el.height = Math.round(cssH * DPR);
+  var ctx = el.getContext('2d');
+  ctx.scale(DPR, DPR);
+  ctx._cssW = w; ctx._cssH = cssH;
+  ctx._rows = [];
+  return ctx;
+}
+
+// ---- 横棒グラフ描画 ----
+function drawBar(id, items, ds0, ds1, ds2) {
+  var ROW = 26, PAD_L = 115, PAD_R = 8, PAD_T = 26, PAD_B = 6;
+  var cssH = PAD_T + items.length * ROW + PAD_B;
+  var ctx = setupCanvas(id, cssH);
+  var W = ctx._cssW, H = ctx._cssH;
+  var dataW = W - PAD_L - PAD_R;
+
+  var allVals = [];
+  items.forEach(function(_,i){ [ds0[i],ds1[i],ds2[i]].forEach(function(v){if(v!=null)allVals.push(v);}); });
+  var maxV = Math.max.apply(null, allVals.concat([0.1]));
+
+  var colors = ['rgba(22,163,74,0.8)','rgba(217,119,6,0.8)','rgba(220,38,38,0.88)'];
+  var wkLabels = ['2/23週','3/02週','3/09週'];
+
+  // 凡例
+  wkLabels.forEach(function(lbl,i){
+    var lx = PAD_L + i * 68;
+    ctx.fillStyle = colors[i]; ctx.fillRect(lx, 4, 10, 10);
+    ctx.fillStyle = '#6b7280'; ctx.font = '9px sans-serif';
+    ctx.textAlign = 'left'; ctx.textBaseline = 'top';
+    ctx.fillText(lbl, lx+13, 4);
+  });
+
+  // 商品名を幅に合わせてトリミング
+  function truncateName(name, maxW) {
+    ctx.font = '9px sans-serif';
+    if(ctx.measureText(name).width <= maxW) return name;
+    var t = name;
+    while(t.length > 1 && ctx.measureText(t + '…').width > maxW) t = t.slice(0,-1);
+    return t + '…';
+  }
+
+  items.forEach(function(name, ri) {
+    var y = PAD_T + ri * ROW;
+    var datasets = [ds0[ri], ds1[ri], ds2[ri]];
+    var bh = Math.floor((ROW-3) / 3);
+
+    // 商品名（PAD_L-8まで最大限表示）
+    var displayName = truncateName(name, PAD_L - 8);
+    ctx.fillStyle = '#1a1f2e'; ctx.font = '9px sans-serif';
+    ctx.textAlign = 'right'; ctx.textBaseline = 'middle';
+    ctx.fillText(displayName, PAD_L-4, y + ROW/2);
+
+    // 区切り線
+    ctx.strokeStyle = '#f0f3f7'; ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(PAD_L, y+ROW); ctx.lineTo(W, y+ROW); ctx.stroke();
+
+    // バーを先に全て描画
+    datasets.forEach(function(v, di) {
+      if(v==null) return;
+      var bw = Math.max(v / maxV * dataW, 0);
+      var by = y + di*bh + 1;
+      ctx.fillStyle = colors[di];
+      ctx.beginPath();
+      ctx.roundRect ? ctx.roundRect(PAD_L, by, bw, bh-1, 2) : ctx.rect(PAD_L, by, bw, bh-1);
+      ctx.fill();
+    });
+
+    // ラベルを後から上書き（6.5px・バー内白字）
+    datasets.forEach(function(v, di) {
+      if(v==null || v===0) return;
+      var bw = Math.max(v / maxV * dataW, 0);
+      var by = y + di*bh + 1;
+      var ly = by + bh/2;
+      ctx.font = 'bold 6.5px sans-serif'; ctx.textBaseline = 'middle';
+      var numStr = v.toFixed(2);
+      var tw = ctx.measureText(numStr).width;
+      if(bw > tw + 6) {
+        // バー内右寄せ・白字
+        ctx.fillStyle = 'rgba(255,255,255,0.95)';
+        ctx.textAlign = 'right';
+        ctx.fillText(numStr, PAD_L + bw - 3, ly);
+      } else if(bw > 0) {
+        // バー外・白背景＋黒字
+        ctx.fillStyle = 'rgba(255,255,255,0.9)';
+        ctx.beginPath();
+        ctx.roundRect ? ctx.roundRect(PAD_L+bw+1, ly-5, tw+4, 10, 2) : ctx.rect(PAD_L+bw+1, ly-5, tw+4, 10);
+        ctx.fill();
+        ctx.fillStyle = '#374151'; ctx.textAlign = 'left';
+        ctx.fillText(numStr, PAD_L+bw+3, ly);
+      }
+    });
+
+    // タップ判定用の行データを保存
+    ctx._rows = ctx._rows || [];
+    ctx._rows.push({
+      name: name,
+      y0: y, y1: y + ROW,
+      vals: datasets
+    });
+  });
+}
+
+// ---- 散布図描画 ----
+function drawScatter(id, data, medX) {
+  var cssH = 260;
+  var PAD_L=38, PAD_R=14, PAD_T=14, PAD_B=34;
+  var ctx = setupCanvas(id, cssH);
+  var W=ctx._cssW, H=cssH;
+  var cW=W-PAD_L-PAD_R, cH=H-PAD_T-PAD_B;
+
+  var xs=data.map(function(p){return p.x;});
+  var ys=data.map(function(p){return p.y;}).filter(function(v){return v<5;});
+  var minX=Math.max(0, (Math.min.apply(null,xs)||0)-0.3);
+  var maxX=(Math.max.apply(null,xs)||1)+0.5;
+  var maxY=Math.min(Math.max.apply(null,ys.concat([WR*2]))+0.05, 1.2);
+
+  function px(v){ return PAD_L+(v-minX)/(maxX-minX)*cW; }
+  function py(v){ return PAD_T+cH-(v/maxY)*cH; }
+
+  var cx=px(medX), cy=py(WR);
+
+  // 象限背景
+  var zones=[
+    ['#16a34a', cx, cy, W-PAD_R-cx, PAD_T+cH-cy],
+    ['#84cc16', PAD_L, cy, cx-PAD_L, PAD_T+cH-cy],
+    ['#2563eb', cx, PAD_T, W-PAD_R-cx, cy-PAD_T],
+    ['#dc2626', PAD_L, PAD_T, cx-PAD_L, cy-PAD_T]
+  ];
+  zones.forEach(function(z){
+    ctx.globalAlpha=0.05; ctx.fillStyle=z[0];
+    ctx.fillRect(z[1],z[2],Math.max(0,z[3]),Math.max(0,z[4]));
+  });
+  ctx.globalAlpha=1;
+
+  // 境界線
+  ctx.setLineDash([5,4]); ctx.lineWidth=1.2;
+  ctx.strokeStyle='rgba(100,116,139,0.4)';
+  ctx.beginPath(); ctx.moveTo(cx,PAD_T); ctx.lineTo(cx,PAD_T+cH); ctx.stroke();
+  ctx.strokeStyle='rgba(220,38,38,0.4)';
+  ctx.beginPath(); ctx.moveTo(PAD_L,cy); ctx.lineTo(W-PAD_R,cy); ctx.stroke();
+  ctx.setLineDash([]);
+
+  // Y軸目盛
+  ctx.fillStyle='#9ca3af'; ctx.font='8px sans-serif'; ctx.textAlign='right'; ctx.textBaseline='middle';
+  [0,0.1,0.2,0.3,0.5,1.0].filter(function(v){return v<=maxY;}).forEach(function(v){
+    var yy=py(v);
+    ctx.fillText((v*100).toFixed(0)+'%', PAD_L-4, yy);
+    ctx.strokeStyle='#e5e7eb'; ctx.lineWidth=1;
+    ctx.beginPath(); ctx.moveTo(PAD_L,yy); ctx.lineTo(W-PAD_R,yy); ctx.stroke();
+  });
+
+  // X軸目盛
+  ctx.textAlign='center'; ctx.textBaseline='top';
+  for(var v=Math.ceil(minX*2)/2; v<=maxX; v+=0.5){
+    var xx=px(v);
+    ctx.fillStyle='#9ca3af'; ctx.fillText(v.toFixed(1), xx, PAD_T+cH+4);
+  }
+
+  // ゾーンラベル
+  ctx.font='bold 7.5px sans-serif'; ctx.textBaseline='bottom';
+  ctx.fillStyle='rgba(22,163,74,.9)';  ctx.textAlign='left';  ctx.fillText('✅ 作成増のチャンス', cx+4, PAD_T+cH-4);
+  ctx.fillStyle='rgba(101,163,13,.9)'; ctx.textAlign='left';  ctx.fillText('🌱 廃棄率優秀', PAD_L+3, PAD_T+cH-4);
+  ctx.fillStyle='rgba(37,99,235,.9)';  ctx.textAlign='left';  ctx.fillText('🔵 精度改善', cx+4, PAD_T+14);
+  ctx.fillStyle='rgba(220,38,38,.9)';  ctx.textAlign='left';  ctx.fillText('🔴 計画見直し', PAD_L+3, PAD_T+14);
+
+  // 軸ラベル
+  ctx.fillStyle='#6b7280'; ctx.font='8px sans-serif';
+  ctx.textAlign='center'; ctx.textBaseline='bottom';
+  ctx.fillText('販売数 PSA/D（最新週）', PAD_L+cW/2, H);
+  ctx.save(); ctx.translate(10, PAD_T+cH/2); ctx.rotate(-Math.PI/2);
+  ctx.textBaseline='middle'; ctx.fillText('廃棄率', 0, 0); ctx.restore();
+
+  // 廃棄率ラベル
+  ctx.fillStyle='rgba(220,38,38,.55)'; ctx.font='7px sans-serif';
+  ctx.textAlign='right'; ctx.textBaseline='bottom';
+  ctx.fillText('廃棄率15%', W-PAD_R, cy-2);
+
+  // 点描画＋インタラクション用データ保存
+  scData._dots = [];
+  data.forEach(function(p) {
+    if(p.y>1.2) return;
+    var c=dotCol(p.x, p.rawW, medX);
+    var dx=px(p.x), dy=py(p.y);
+    ctx.beginPath(); ctx.arc(dx, dy, 6, 0, Math.PI*2);
+    ctx.fillStyle=c.f; ctx.fill();
+    ctx.strokeStyle=c.s; ctx.lineWidth=1.5; ctx.stroke();
+    scData._dots.push({dx:dx, dy:dy, p:p, c:c});
+  });
+}
+
+// タッチ・マウスで散布図のツールチップ
+function bindScatterEvents(canvasId) {
+  var el = document.getElementById(canvasId);
+  var tip = document.getElementById('tip');
+
+  function findDot(cx, cy) {
+    var rect = el.getBoundingClientRect();
+    var mx = cx - rect.left, my = cy - rect.top;
+    var best=null, bestD=999;
+    (scData._dots||[]).forEach(function(d){
+      var dist=Math.sqrt((d.dx-mx)*(d.dx-mx)+(d.dy-my)*(d.dy-my));
+      if(dist<16 && dist<bestD){ best=d; bestD=dist; }
+    });
+    return best;
+  }
+  function showTip(d, cx, cy) {
+    document.getElementById('tipn').textContent = d.p.name;
+    document.getElementById('tipb').innerHTML =
+      '販売: <strong>'+d.p.x.toFixed(2)+'</strong> PSA/D<br>'+
+      '廃棄: <strong>'+d.p.rawW.toFixed(2)+'</strong> PSA/D<br>'+
+      '廃棄率: <strong>'+(d.p.y*100).toFixed(1)+'%</strong>';
+    document.getElementById('tipz').textContent = d.c.z;
+    tip.style.display = 'block';
+    tip.style.left = Math.min(cx+14, window.innerWidth-230)+'px';
+    tip.style.top  = Math.max(cy-80, 8)+'px';
+  }
+  el.addEventListener('mousemove', function(e){
+    var d=findDot(e.clientX, e.clientY);
+    if(d){ showTip(d, e.clientX, e.clientY); el.style.cursor='pointer'; }
+    else { tip.style.display='none'; el.style.cursor='default'; }
+  });
+  el.addEventListener('mouseleave', function(){ tip.style.display='none'; });
+  el.addEventListener('touchend', function(e){
+    e.preventDefault();
+    var t=e.changedTouches[0];
+    var d=findDot(t.clientX, t.clientY);
+    if(d){ showTip(d, t.clientX, t.clientY); }
+    else  { tip.style.display='none'; }
+  },{passive:false});
+  document.addEventListener('touchstart', function(e){
+    if(!e.target.closest('#tip') && e.target.id!==canvasId) tip.style.display='none';
+  });
+}
+
+// ---- バーグラフのタップ/ホバーイベント ----
+function bindBarEvents(canvasId) {
+  var el = document.getElementById(canvasId);
+  var tip = document.getElementById('tip');
+
+  function findRow(clientX, clientY) {
+    var rect = el.getBoundingClientRect();
+    var my = clientY - rect.top;
+    var ctx = el.getContext('2d');
+    var rows = ctx._rows || [];
+    for(var i=0; i<rows.length; i++){
+      if(my >= rows[i].y0 && my < rows[i].y1) return rows[i];
+    }
+    return null;
+  }
+
+  function showBarTip(row, clientX, clientY) {
+    document.getElementById('tipn').textContent = row.name;
+    var wkLabels = ['2/23週','3/02週','3/09週'];
+    var lines = wkLabels.map(function(lbl, i){
+      return lbl + ': <strong>' + (row.vals[i] != null ? row.vals[i].toFixed(2) : 'ー') + '</strong>';
+    }).join('<br>');
+    document.getElementById('tipb').innerHTML = lines;
+    document.getElementById('tipz').textContent = '';
+    tip.style.display = 'block';
+    tip.style.left = Math.min(clientX + 14, window.innerWidth - 230) + 'px';
+    tip.style.top  = Math.max(clientY - 80, 8) + 'px';
+  }
+
+  el.addEventListener('mousemove', function(e) {
+    var row = findRow(e.clientX, e.clientY);
+    if(row){ showBarTip(row, e.clientX, e.clientY); el.style.cursor='pointer'; }
+    else   { tip.style.display='none'; el.style.cursor='default'; }
+  });
+  el.addEventListener('mouseleave', function(){ tip.style.display='none'; });
+  el.addEventListener('touchend', function(e){
+    e.preventDefault();
+    var t = e.changedTouches[0];
+    var row = findRow(t.clientX, t.clientY);
+    if(row) showBarTip(row, t.clientX, t.clientY);
+    else    tip.style.display='none';
+  }, {passive:false});
+}
+
+// ---- メイン描画 ----
+var sel = document.getElementById('ss');
+Object.keys(ALL_STORES).forEach(function(s){
+  var o=document.createElement('option'); o.value=s; o.textContent=s; sel.appendChild(o);
+});
+sel.addEventListener('change', function(){ render(sel.value); });
+
+function render(name) {
+  document.getElementById('sn').textContent = name;
+  var raw = ALL_STORES[name];
+
+  // KPI
+  var s4=sumS(raw.filter(function(d){return d.s[4]!==null;}),4);
+  var s3=sumS(raw.filter(function(d){return d.s[3]!==null;}),3);
+  var w4=sumW(raw.filter(function(d){return d.w[4]!==null;}),4);
+  var w3=sumW(raw.filter(function(d){return d.w[3]!==null;}),3);
+  var sk4=raw.filter(function(d){return d.s[4]!==null;}).length;
+  var sk3=raw.filter(function(d){return d.s[3]!==null;}).length;
+  var rt=s4>0?w4/s4*100:0, pr=s3>0?w3/s3*100:0;
+  document.getElementById('ks').textContent=s4.toFixed(2);
+  document.getElementById('kss').textContent=(s4>=s3?'↑':'↓')+' '+Math.abs(s4-s3).toFixed(2)+' vs 先週（'+s3.toFixed(2)+'）';
+  document.getElementById('kw').textContent=w4.toFixed(2);
+  document.getElementById('kws').textContent=(w4>=w3?'↑':'↓')+' '+Math.abs(w4-w3).toFixed(2)+' vs 先週（'+w3.toFixed(2)+'）';
+  document.getElementById('kk').textContent=sk4;
+  document.getElementById('kks').textContent='先週比 '+(sk4>=sk3?'+':'')+(sk4-sk3)+'品';
+  document.getElementById('kr').textContent=rt.toFixed(1)+'%';
+  document.getElementById('krs').textContent='先週比 '+(rt>=pr?'+':'')+(rt-pr).toFixed(1)+'pt';
+
+  // 販売グラフ
+  var top15=raw.filter(function(d){return lat(d)!==null;}).sort(function(a,b){return lat(b)-lat(a);}).slice(0,15);
+  drawBar('cS', top15.map(function(d){return d.name;}),
+    top15.map(function(d){return d.s[2];}),
+    top15.map(function(d){return d.s[3];}),
+    top15.map(function(d){return d.s[4];}));
+  bindBarEvents('cS');
+
+  // 廃棄グラフ
+  var topW=raw.filter(function(d){return latW(d)!==null;}).sort(function(a,b){return latW(b)-latW(a);}).slice(0,15);
+  drawBar('cW', topW.map(function(d){return d.name;}),
+    topW.map(function(d){return d.w[2];}),
+    topW.map(function(d){return d.w[3];}),
+    topW.map(function(d){return d.w[4];}));
+  bindBarEvents('cW');
+
+  // トレンドテーブル
+  var tbody=document.getElementById('tbl'); tbody.innerHTML='';
+  var td=raw.filter(function(d){
+    return [d.s[2],d.s[3],d.s[4]].filter(function(v){return v!==null;}).length>=2;
+  }).map(function(d){ return {name:d.name,s2:d.s[2],s3:d.s[3],s4:d.s[4],diff:lat(d)-b3(d)}; })
+    .sort(function(a,b){return b.diff-a.diff;});
+  td.slice(0,18).forEach(function(d,i){
+    var arrow=d.diff>0.1?'<span class="up">↑</span>':d.diff<-0.1?'<span class="dn">↓</span>':'<span style="color:#9ca3af">→</span>';
+    var rc=i===0?'r1':i===1?'r2':i===2?'r3':'rn';
+    var tag=d.s2===null?'<span class="tag tnew">NEW</span>':d.diff>0.3?'<span class="tag tup">伸長</span>':d.diff<-0.3?'<span class="tag twarn">要注意</span>':'';
+    var tr=document.createElement('tr');
+    tr.innerHTML='<td><span class="rb '+rc+'">'+(i+1)+'</span></td>'
+      +'<td><div class="pn" title="'+d.name+'">'+d.name+' '+tag+'</div></td>'
+      +'<td class="nr">'+fv(d.s2)+'</td><td class="nr">'+fv(d.s3)+'</td>'
+      +'<td class="nr" style="font-weight:700">'+fv(d.s4)+'</td>'
+      +'<td class="nr '+(d.diff>0.1?'up':d.diff<-0.1?'dn':'')+'">'+arrow+' '+(d.diff>0?'+':'')+d.diff.toFixed(2)+'</td>';
+    tbody.appendChild(tr);
+  });
+
+  // 散布図
+  scData = raw.filter(function(d){return lat(d)!==null&&latW(d)!==null;}).map(function(d){
+    var s=lat(d), w=latW(d); return {x:s,y:wrCalc(s,w),rawW:w,name:d.name};
+  }).filter(function(p){return p.y<1.01;}); // 廃棄率101%以上除外
+
+  var sx=scData.map(function(p){return p.x;}).sort(function(a,b){return a-b;});
+  curMedX = sx[Math.floor(sx.length/2)] || 2.0;
+  drawScatter('cSc', scData, curMedX);
+  bindScatterEvents('cSc');
+}
+
+window.addEventListener('load', function(){ render(Object.keys(ALL_STORES)[0]); });
+window.addEventListener('resize', function(){ render(document.getElementById('ss').value); });
+</script>
+</body>
+</html>
