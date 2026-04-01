@@ -657,8 +657,11 @@ function buildStoreOpts(id){
   STORES.forEach(s=>{const o=document.createElement('option');o.value=s.name;o.textContent=s.name;sel.appendChild(o);});
 }
 
+// ===== GAS エンドポイント =====
+const GAS_URL='https://script.google.com/macros/s/AKfycbyMcb6QN2kpUhM_1E_HFwzLjQ-9PE_AdJjiGtoEnQiyBzVDCzWI87rm6Oc_HSHq5_8h4Q/exec';
+
 // 送信
-function submitShift(){
+async function submitShift(){
   const name=document.getElementById('crewName').value.trim();
   const empId=document.getElementById('empId').value.trim();
   const homeStore=document.getElementById('homeStore').value;
@@ -668,7 +671,6 @@ function submitShift(){
   const transportEl=document.querySelector('input[name="transport"]:checked');
   const transport=transportEl?transportEl.value:null;
 
-  // バリデーション
   if(!name){alert('お名前を入力してください');document.getElementById('crewName').focus();return;}
   if(isValidName(name)===false){alert('お名前は漢字・ひらがな・カタカナで入力してください');document.getElementById('crewName').focus();return;}
   if(!empId||empId.length!==7||!/^\d{7}$/.test(empId)){alert('氏名コードは半角数字7桁で入力してください');document.getElementById('empId').focus();return;}
@@ -679,13 +681,25 @@ function submitShift(){
   const dates=keys.sort().map(ds=>({date:ds,start:selDT[ds].allday?null:selDT[ds].start,end:selDT[ds].allday?null:selDT[ds].end,allday:selDT[ds].allday}));
   const transportLabel=transport==='transit'?'公共交通機関（交通費支給対象）':transport==='walk'?'徒歩・自転車':'';
   const sub={id:Date.now(),name,empId,homeStore,dates,otherStores,transport:transportLabel,note,timestamp:new Date().toLocaleString('ja-JP')};
-  const stored=JSON.parse(localStorage.getItem('shiftData')||'[]');
-  stored.push(sub);
-  localStorage.setItem('shiftData',JSON.stringify(stored));
-  ['card-basic','card-cal','card-other','card-note','submitBtn','deadlineBanner'].forEach(id=>{
-    const el=document.getElementById(id);if(el)el.style.display='none';
-  });
-  const sc=document.getElementById('successCard');sc.classList.add('show');sc.scrollIntoView({behavior:'smooth'});
+
+  const btn=document.getElementById('submitBtn');
+  btn.disabled=true;
+  btn.innerHTML='<svg width="18" height="18" viewBox="0 0 24 24" fill="none" style="animation:spin 1s linear infinite"><circle cx="12" cy="12" r="10" stroke="white" stroke-width="2" stroke-dasharray="31.4" stroke-dashoffset="10"/></svg>&nbsp;送信中...';
+
+  try{
+    await fetch(GAS_URL,{method:'POST',mode:'no-cors',headers:{'Content-Type':'application/json'},body:JSON.stringify(sub)});
+    const stored=JSON.parse(localStorage.getItem('shiftData')||'[]');
+    stored.push(sub);
+    localStorage.setItem('shiftData',JSON.stringify(stored));
+    ['card-basic','card-cal','card-other','card-note','submitBtn','deadlineBanner'].forEach(id=>{
+      const el=document.getElementById(id);if(el)el.style.display='none';
+    });
+    const sc=document.getElementById('successCard');sc.classList.add('show');sc.scrollIntoView({behavior:'smooth'});
+  }catch(err){
+    alert('送信に失敗しました。通信環境を確認して再度お試しください。');
+    btn.disabled=false;
+    btn.innerHTML='シフト希望を提出する';
+  }
 }
 
 function resetForm(){
@@ -715,10 +729,40 @@ function resetForm(){
   window.scrollTo({top:0,behavior:'smooth'});
 }
 
+// ===== スプレッドシートからデータ取得 =====
+async function fetchSheetData(){
+  try{
+    // GASはno-corsだとレスポンスが読めないため、jsonpで取得
+    const data = await new Promise((resolve,reject)=>{
+      const cb='gasCallback_'+Date.now();
+      const script=document.createElement('script');
+      script.src=GAS_URL+'?callback='+cb;
+      script.onerror=()=>reject(new Error('script error'));
+      window[cb]=(json)=>{
+        delete window[cb];
+        document.head.removeChild(script);
+        resolve(json);
+      };
+      setTimeout(()=>{
+        if(window[cb]){delete window[cb];reject(new Error('timeout'));}
+      },10000);
+      document.head.appendChild(script);
+    });
+    if(data&&Array.isArray(data.data)){
+      localStorage.setItem('shiftData',JSON.stringify(data.data));
+      return data.data;
+    }
+  }catch(e){
+    console.warn('GAS fetch failed, using localStorage:',e);
+  }
+  return JSON.parse(localStorage.getItem('shiftData')||'[]');
+}
+
 // 管理
 const PAGE_SIZE=10;let adminPage=1;
-function renderAdmin(){
-  const data=JSON.parse(localStorage.getItem('shiftData')||'[]');
+async function renderAdmin(){
+  document.getElementById('submissionList').innerHTML='<div class="empty-admin"><div class="empty-icon">🔄</div>データを読み込んでいます...</div>';
+  const data=await fetchSheetData();
   const fs=document.getElementById('filterStore').value;
   const fo=document.getElementById('filterOther').value;
   let filtered=data.filter(s=>{
