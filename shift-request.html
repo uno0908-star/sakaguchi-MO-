@@ -359,6 +359,38 @@ const STORES=[
   {name:"箕面白島二丁目",mapUrl:"https://maps.google.com/?q=34.835083,135.495179"},
 ];
 
+// ===== 日付・時刻フォーマットユーティリティ =====
+
+// "Sat Dec 30 1899 09:00:00 GMT+0900..." や Date オブジェクトから "09:00" を取り出す
+function parseTimeStr(val){
+  if(!val)return null;
+  // すでに "HH:MM" 形式ならそのまま返す
+  if(/^\d{2}:\d{2}$/.test(String(val).trim()))return String(val).trim();
+  // Date文字列の場合：時・分を抽出
+  const m=String(val).match(/(\d{2}):(\d{2}):\d{2}/);
+  if(m)return`${m[1]}:${m[2]}`;
+  return null;
+}
+
+// timestamp を日本語表示に変換
+// "Wed Apr 01 2026 15:59:57 GMT+0900..." → "2026/04/01 15:59"
+function fmtTimestamp(ts){
+  if(!ts)return'';
+  // すでに日本語形式 "YYYY/M/D H:MM:SS" の場合
+  if(/^\d{4}\/\d/.test(ts)){
+    // 秒を省略して返す
+    return ts.replace(/:\d{2}$/, '').replace(/(\d{4})\/(\d+)\/(\d+)/,(_, y, m, d)=>`${y}/${String(m).padStart(2,'0')}/${String(d).padStart(2,'0')}`);
+  }
+  // 英語形式の場合は Date でパース
+  try{
+    const d=new Date(ts);
+    if(!isNaN(d.getTime())){
+      return`${d.getFullYear()}/${String(d.getMonth()+1).padStart(2,'0')}/${String(d.getDate()).padStart(2,'0')} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
+    }
+  }catch(e){}
+  return ts; // 変換できなければ元の文字列
+}
+
 // ===== 締め切り・対象期間ロジック =====
 function getTargetPeriod(){
   const now=new Date();now.setHours(0,0,0,0);
@@ -778,14 +810,19 @@ async function renderAdmin(){
       }
       const dow=d.getDay();
       const cls=dow===0?'sun':dow===6?'sat':'';
-      const tstr=dt.allday?'終日':`${dt.start} 〜 ${dt.end}`;
+      // ★ GASからの時刻文字列（英語Date形式）を "HH:MM" に変換
+      const startStr=parseTimeStr(dt.start)||dt.start||'';
+      const endStr=parseTimeStr(dt.end)||dt.end||'';
+      const tstr=dt.allday?'終日':`${startStr} 〜 ${endStr}`;
       return`<div class="sub-date-row"><span class="sub-date-dow ${cls}">${d.getMonth()+1}/${d.getDate()}(${days[dow]})</span><span class="sub-date-time">${tstr}</span></div>`;
     }).join('');
 
     const otherSec=s.otherStores&&s.otherStores.length
       ?`<div class="sub-other-stores"><div class="sub-other-label">🟢 他店舗勤務可（${s.otherStores.length}店舗）</div><div class="other-store-chips">${s.otherStores.map(n=>`<span class="other-chip">${n}</span>`).join('')}</div>${s.transport?`<div style="margin-top:5px;font-size:11px;color:var(--gray-500);">交通手段：<b>${s.transport}</b></div>`:''}</div>`:'';
     const noteSec=s.note?`<div class="sub-note">💬 ${s.note}</div>`:'';
-    card.innerHTML=`<div class="sub-header"><div><div class="sub-name">${s.name}</div><div class="sub-empid">No.${s.empId}</div></div><span class="sub-store-badge">${s.homeStore}</span></div><div class="sub-dates-list">${dateRows}</div>${otherSec}${noteSec}<div class="sub-timestamp">${s.timestamp}</div>`;
+    // ★ timestamp を日本語形式に変換
+    const tsDisplay=fmtTimestamp(s.timestamp);
+    card.innerHTML=`<div class="sub-header"><div><div class="sub-name">${s.name}</div><div class="sub-empid">No.${s.empId}</div></div><span class="sub-store-badge">${s.homeStore}</span></div><div class="sub-dates-list">${dateRows}</div>${otherSec}${noteSec}<div class="sub-timestamp">提出：${tsDisplay}</div>`;
     list.appendChild(card);
   });
   const pag=document.getElementById('pagination');
@@ -807,11 +844,50 @@ function exportCSV(){
   a.download=`シフト希望_${new Date().toLocaleDateString('ja-JP').replace(/\//g,'')}.csv`;a.click();
 }
 
-// ★修正2: 全データ削除 - フラグを立ててGAS再取得を防ぐ
-function clearAll(){
-  if(!confirm('全データを削除しますか？\n\n※この操作はブラウザ上の表示を消去します。\nGoogleスプレッドシート側のデータは別途削除が必要です。\n\nよろしいですか？'))return;
+// ★全データ削除 - ブラウザ＋GASスプレッドシート両方を削除
+async function clearAll(){
+  if(!confirm('全データを削除しますか？\n\nブラウザとGoogleスプレッドシートの両方から削除されます。\nこの操作は元に戻せません。\n\nよろしいですか？'))return;
+
+  // ボタンをローディング状態に
+  const btn=document.querySelector('.action-btn.danger');
+  const origText=btn?btn.innerHTML:'';
+  if(btn){btn.disabled=true;btn.innerHTML='🔄 削除中...';}
+
+  // GASスプレッドシート側を削除
+  let gasOk=false;
+  try{
+    await new Promise((resolve,reject)=>{
+      const cb='gasClearCallback_'+Date.now();
+      const script=document.createElement('script');
+      script.src=GAS_URL+'?action=clearAll&callback='+cb;
+      script.onerror=()=>reject(new Error('script error'));
+      window[cb]=(json)=>{
+        delete window[cb];
+        document.head.removeChild(script);
+        if(json&&json.status==='ok')resolve();
+        else reject(new Error('GAS returned error'));
+      };
+      setTimeout(()=>{
+        if(window[cb]){delete window[cb];try{document.head.removeChild(script);}catch(e){}reject(new Error('timeout'));}
+      },10000);
+      document.head.appendChild(script);
+    });
+    gasOk=true;
+  }catch(e){
+    console.warn('GAS clearAll failed:',e);
+  }
+
+  // ブラウザのlocalStorageも削除
   localStorage.removeItem('shiftData');
-  _dataCleared=true; // GASからの再取得を防ぐフラグ
+  _dataCleared=true;
+
+  if(btn){btn.disabled=false;btn.innerHTML=origText;}
+
+  if(gasOk){
+    alert('✅ スプレッドシートとブラウザのデータを削除しました。');
+  }else{
+    alert('⚠️ ブラウザのデータは削除しましたが、スプレッドシート側の削除に失敗しました。\nGASのコードに clearAll 対応が必要です。\n\n（GASコードの追加方法はClaude に確認してください）');
+  }
   renderAdmin();
 }
 
