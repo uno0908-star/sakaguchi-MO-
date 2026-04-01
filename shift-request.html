@@ -166,6 +166,13 @@
   .empty-icon{font-size:36px;margin-bottom:8px;}
   .pagination{display:flex;justify-content:center;align-items:center;gap:8px;margin-top:16px;font-size:12px;color:var(--gray-500);}
 
+  /* シフト確定バッジ・ボタン */
+  .confirmed-badge{display:inline-flex;align-items:center;gap:4px;background:#e8f5e9;color:#2e7d32;border:1px solid rgba(46,125,50,.3);font-size:11px;font-weight:700;padding:2px 8px;border-radius:5px;margin-left:6px;}
+  .confirm-btn{display:inline-flex;align-items:center;gap:3px;background:var(--gray-100);color:var(--gray-500);border:1px solid var(--gray-200);font-size:10px;font-weight:600;padding:2px 7px;border-radius:5px;cursor:pointer;margin-left:6px;font-family:'Noto Sans JP',sans-serif;transition:all .15s;white-space:nowrap;}
+  .confirm-btn:hover{background:var(--green-light);color:var(--green);border-color:var(--green);}
+  .confirm-btn.cancel{background:#fdecea;color:var(--red);border-color:rgba(229,57,53,.3);}
+  .confirm-btn.cancel:hover{background:var(--red);color:#fff;}
+
   .view{display:none;}
   .view.active{display:block;}
 </style>
@@ -327,6 +334,14 @@
       <select class="filter-select" id="filterOther" onchange="renderAdmin()">
         <option value="">全員</option>
         <option value="yes">他店舗OKのみ</option>
+      </select>
+    </div>
+    <div class="form-select-wrap" style="flex:1;min-width:130px;">
+      <select class="filter-select" id="filterSort" onchange="renderAdmin()">
+        <option value="store">所属店舗優先</option>
+        <option value="date">提出日時順</option>
+        <option value="name">名前順</option>
+        <option value="shiftdate">希望日順</option>
       </select>
     </div>
   </div>
@@ -775,14 +790,88 @@ async function fetchSheetData(){
 
 // 管理
 const PAGE_SIZE=10;let adminPage=1;
+
+// ===== シフト確定データ管理（GASリアルタイム共有） =====
+let _confirmedCache={}; // GASから取得した確定データキャッシュ
+
+// GASから確定データを取得
+async function fetchConfirmed(){
+  try{
+    const data=await new Promise((resolve,reject)=>{
+      const cb='gasConfirmedCb_'+Date.now();
+      const script=document.createElement('script');
+      script.src=GAS_URL+'?action=getConfirmed&callback='+cb;
+      script.onerror=()=>reject(new Error('script error'));
+      window[cb]=(json)=>{delete window[cb];document.head.removeChild(script);resolve(json);};
+      setTimeout(()=>{if(window[cb]){delete window[cb];try{document.head.removeChild(script);}catch(e){}reject(new Error('timeout'));}},8000);
+      document.head.appendChild(script);
+    });
+    if(data&&data.confirmed){
+      _confirmedCache=data.confirmed;
+      localStorage.setItem('shiftConfirmed',JSON.stringify(_confirmedCache));
+      return _confirmedCache;
+    }
+  }catch(e){
+    console.warn('fetchConfirmed failed, using cache:',e);
+  }
+  // フォールバック：ローカルキャッシュ
+  _confirmedCache=JSON.parse(localStorage.getItem('shiftConfirmed')||'{}');
+  return _confirmedCache;
+}
+
+// GASに確定データを保存
+async function saveConfirmToGAS(sid,date,store){
+  try{
+    await fetch(GAS_URL,{
+      method:'POST',mode:'no-cors',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({action:'confirm',submissionId:sid,date,store})
+    });
+  }catch(e){console.warn('saveConfirm failed:',e);}
+}
+
+// GASから確定データを削除
+async function deleteConfirmFromGAS(sid,date){
+  try{
+    await fetch(GAS_URL,{
+      method:'POST',mode:'no-cors',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({action:'unconfirm',submissionId:sid,date})
+    });
+  }catch(e){console.warn('deleteConfirm failed:',e);}
+}
+
+function confirmedKey(sid,date){return`${sid}_${date}`;}
+
+async function confirmShift(sid,date,currentStore){
+  const key=confirmedKey(sid,date);
+  const existing=_confirmedCache[key];
+  if(existing){
+    // 確定済み → 解除
+    if(!confirm(`「${date}」の確定（${existing}）を解除しますか？`))return;
+    delete _confirmedCache[key];
+    localStorage.setItem('shiftConfirmed',JSON.stringify(_confirmedCache));
+    renderAdminFromCache(); // ★即座にUI更新（GAS待ちなし）
+    deleteConfirmFromGAS(sid,date); // バックグラウンドでGAS更新
+  }else{
+    // 未確定 → 店舗名選択モーダルを開く
+    openConfirmModal(sid,date,currentStore);
+  }
+}
+
 async function renderAdmin(){
   document.getElementById('submissionList').innerHTML='<div class="empty-admin"><div class="empty-icon">🔄</div>データを読み込んでいます...</div>';
-  const data=await fetchSheetData();
+  // シフト希望データと確定データを並行取得
+  const [data]=await Promise.all([fetchSheetData(),fetchConfirmed()]);
   const fs=document.getElementById('filterStore').value;
   const fo=document.getElementById('filterOther').value;
+  const sortMode=document.getElementById('filterSort')?.value||'store';
+  _renderAdminWithData(data,fs,fo,sortMode);
+}
+
+function _renderAdminWithData(data,fs,fo,sortMode){
   let filtered=data.filter(s=>{
     if(fs){
-      // 所属店舗 OR 他店舗OKリストのどちらかに一致すればヒット
       const inHome=s.homeStore===fs;
       const inOther=(s.otherStores||[]).includes(fs);
       if(!inHome&&!inOther)return false;
@@ -790,6 +879,34 @@ async function renderAdmin(){
     if(fo==='yes'&&(!s.otherStores||!s.otherStores.length))return false;
     return true;
   });
+
+  // ★並び順の制御
+  filtered=filtered.slice(); // コピー
+  if(sortMode==='store'&&fs){
+    // 所属店舗一致を先頭、他店舗OKヒットを後ろ
+    filtered.sort((a,b)=>{
+      const aHome=a.homeStore===fs?0:1;
+      const bHome=b.homeStore===fs?0:1;
+      return aHome-bHome;
+    });
+  }else if(sortMode==='date'){
+    // 提出日時の古い順（早く提出した人が先頭）
+    filtered.sort((a,b)=>new Date(a.timestamp)-new Date(b.timestamp));
+  }else if(sortMode==='name'){
+    // 名前順（あいうえお）
+    filtered.sort((a,b)=>a.name.localeCompare(b.name,'ja'));
+  }else if(sortMode==='shiftdate'){
+    // 最も早い希望日順
+    filtered.sort((a,b)=>{
+      const aDate=(a.dates&&a.dates[0])?a.dates[0].date:'9999';
+      const bDate=(b.dates&&b.dates[0])?b.dates[0].date:'9999';
+      return aDate.localeCompare(bDate);
+    });
+  }else{
+    // デフォルト（提出新しい順）
+    filtered.reverse();
+  }
+
   document.getElementById('statTotal').textContent=data.length;
   document.getElementById('statStores').textContent=new Set(data.map(s=>s.homeStore)).size;
   document.getElementById('statOther').textContent=data.filter(s=>s.otherStores&&s.otherStores.length).length;
@@ -800,36 +917,39 @@ async function renderAdmin(){
   }
   const tp=Math.ceil(filtered.length/PAGE_SIZE);
   if(adminPage>tp)adminPage=1;
-  const paged=filtered.slice().reverse().slice((adminPage-1)*PAGE_SIZE,adminPage*PAGE_SIZE);
+  const paged=filtered.slice((adminPage-1)*PAGE_SIZE,adminPage*PAGE_SIZE);
   const days=['日','月','火','水','木','金','土'];
+
   paged.forEach(s=>{
     const card=document.createElement('div');card.className='submission-card';
 
-    // ★修正1: 日付表示を安全にフォーマット
+    // 日付行（確定ボタン・確定バッジ付き）
     const dateRows=(s.dates||[]).map(dt=>{
       const d=ds2d(dt.date);
-      // 日付が無効な場合のフォールバック
       if(isNaN(d.getTime())){
         const tstr=dt.allday?'終日':`${dt.start||'?'} 〜 ${dt.end||'?'}`;
         return`<div class="sub-date-row"><span class="sub-date-dow">${dt.date||'不明'}</span><span class="sub-date-time">${tstr}</span></div>`;
       }
       const dow=d.getDay();
       const cls=dow===0?'sun':dow===6?'sat':'';
-      // ★ GASからの時刻文字列（英語Date形式）を "HH:MM" に変換
       const startStr=parseTimeStr(dt.start)||dt.start||'';
       const endStr=parseTimeStr(dt.end)||dt.end||'';
       const tstr=dt.allday?'終日':`${startStr} 〜 ${endStr}`;
-      return`<div class="sub-date-row"><span class="sub-date-dow ${cls}">${d.getMonth()+1}/${d.getDate()}(${days[dow]})</span><span class="sub-date-time">${tstr}</span></div>`;
+      // ★確定バッジ（_confirmedCacheから取得）
+      const cKey=confirmedKey(s.id,dt.date);
+      const cStore=_confirmedCache[cKey];
+      const confirmSection=cStore
+        ?`<span class="confirmed-badge">✅ ${cStore} 確定</span><button class="confirm-btn cancel" onclick="confirmShift('${s.id}','${dt.date}','${s.homeStore}')">解除</button>`
+        :`<button class="confirm-btn" onclick="confirmShift('${s.id}','${dt.date}','${s.homeStore}')">＋確定入力</button>`;
+      return`<div class="sub-date-row"><span class="sub-date-dow ${cls}">${d.getMonth()+1}/${d.getDate()}(${days[dow]})</span><span class="sub-date-time">${tstr}</span>${confirmSection}</div>`;
     }).join('');
 
     const otherSec=s.otherStores&&s.otherStores.length
-      ?`<div class="sub-other-stores"><div class="sub-other-label">🟢 他店舗勤務可（${s.otherStores.length}店舗）</div><div class="other-store-chips">${s.otherStores.map(n=>`<span class="other-chip" style="${fs&&n===fs?'background:#fff3cd;border-color:#f5a623;color:#7a4f00;font-weight:700;':''}">${fs&&n===fs?'★ ':''  }${n}</span>`).join('')}</div>${s.transport?`<div style="margin-top:5px;font-size:11px;color:var(--gray-500);">交通手段：<b>${s.transport}</b></div>`:''}</div>`:'';
+      ?`<div class="sub-other-stores"><div class="sub-other-label">🟢 他店舗勤務可（${s.otherStores.length}店舗）</div><div class="other-store-chips">${s.otherStores.map(n=>`<span class="other-chip" style="${fs&&n===fs?'background:#fff3cd;border-color:#f5a623;color:#7a4f00;font-weight:700;':''}">${fs&&n===fs?'★ ':''}${n}</span>`).join('')}</div>${s.transport?`<div style="margin-top:5px;font-size:11px;color:var(--gray-500);">交通手段：<b>${s.transport}</b></div>`:''}</div>`:'';
     const noteSec=s.note?`<div class="sub-note">💬 ${s.note}</div>`:'';
-    // 他店舗OKでヒットした場合のバッジ
     const hitBadge=(fs&&s.homeStore!==fs&&(s.otherStores||[]).includes(fs))
       ?`<div style="margin-bottom:8px;font-size:11px;background:var(--orange-light);color:#7a4f00;border:1px solid rgba(245,166,35,.4);border-radius:6px;padding:4px 9px;display:inline-block;">📌 <b>${fs}</b> に他店舗OKで対応可</div>`
       :'';
-    // ★ timestamp を日本語形式に変換
     const tsDisplay=fmtTimestamp(s.timestamp);
     card.innerHTML=`<div class="sub-header"><div><div class="sub-name">${s.name}</div><div class="sub-empid">No.${s.empId}</div></div><span class="sub-store-badge">${s.homeStore}</span></div>${hitBadge}<div class="sub-dates-list">${dateRows}</div>${otherSec}${noteSec}<div class="sub-timestamp">提出：${tsDisplay}</div>`;
     list.appendChild(card);
@@ -1079,6 +1199,84 @@ function toggleClearPwVisibility(){
   const tog=document.getElementById('clearPwToggle');
   if(inp.type==='password'){inp.type='text';tog.textContent='🙈';}
   else{inp.type='password';tog.textContent='👁';}
+}
+</script>
+
+<!-- シフト確定入力モーダル -->
+<div id="confirmModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:999;align-items:center;justify-content:center;padding:20px;backdrop-filter:blur(3px);">
+  <div id="confirmModalBox" style="background:#fff;border-radius:18px;padding:28px 24px;width:100%;max-width:380px;box-shadow:0 16px 48px rgba(0,0,0,.22);">
+    <div style="text-align:center;margin-bottom:16px;">
+      <div style="width:48px;height:48px;background:linear-gradient(135deg,#00703c,#00b050);border-radius:13px;display:flex;align-items:center;justify-content:center;margin:0 auto 10px;box-shadow:0 4px 12px rgba(0,176,80,.3);">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+          <path d="M20 6L9 17l-5-5" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </div>
+      <div style="font-size:15px;font-weight:800;color:#0f172a;">シフト確定入力</div>
+      <div style="font-size:12px;color:#64748b;margin-top:4px;" id="confirmModalDate"></div>
+    </div>
+    <div style="font-size:12px;font-weight:600;color:#334155;margin-bottom:6px;">確定店舗を選択してください</div>
+    <div class="form-select-wrap" style="margin-bottom:14px;">
+      <select id="confirmStoreSelect" class="form-select" style="font-size:14px;">
+        <option value="">-- 店舗を選択 --</option>
+      </select>
+    </div>
+    <button onclick="submitConfirmModal()" style="width:100%;padding:13px;background:linear-gradient(135deg,#00703c,#00b050);color:#fff;border:none;border-radius:10px;font-size:15px;font-weight:700;font-family:'Noto Sans JP',sans-serif;cursor:pointer;box-shadow:0 3px 10px rgba(0,176,80,.25);margin-bottom:10px;">
+      ✅ 確定する
+    </button>
+    <button onclick="closeConfirmModal()" style="width:100%;padding:10px;background:transparent;color:#64748b;border:1.5px solid #e2e8f0;border-radius:10px;font-size:13px;font-weight:600;font-family:'Noto Sans JP',sans-serif;cursor:pointer;">
+      キャンセル
+    </button>
+  </div>
+</div>
+
+<script>
+let _pendingConfirm={sid:null,date:null};
+
+function openConfirmModal(sid,date,currentStore){
+  _pendingConfirm={sid,date};
+  const d=ds2d(date);
+  const days=['日','月','火','水','木','金','土'];
+  const dateJa=isNaN(d.getTime())?date:`${d.getMonth()+1}月${d.getDate()}日(${days[d.getDay()]})`;
+  document.getElementById('confirmModalDate').textContent=`対象日：${dateJa}（${currentStore} 所属）`;
+  // 店舗セレクトを構築
+  const sel=document.getElementById('confirmStoreSelect');
+  sel.innerHTML='<option value="">-- 店舗を選択 --</option>';
+  STORES.forEach(s=>{
+    const o=document.createElement('option');
+    o.value=s.name;o.textContent=s.name;
+    if(s.name===currentStore)o.selected=true;
+    sel.appendChild(o);
+  });
+  document.getElementById('confirmModal').style.display='flex';
+}
+
+function closeConfirmModal(){
+  document.getElementById('confirmModal').style.display='none';
+  _pendingConfirm={sid:null,date:null};
+}
+
+async function submitConfirmModal(){
+  const store=document.getElementById('confirmStoreSelect').value;
+  if(!store){alert('店舗を選択してください');return;}
+  const{sid,date}=_pendingConfirm;
+  closeConfirmModal();
+  // キャッシュを即更新
+  const key=confirmedKey(sid,date);
+  _confirmedCache[key]=store;
+  localStorage.setItem('shiftConfirmed',JSON.stringify(_confirmedCache));
+  // ★GAS再取得なしでキャッシュだけで即描画
+  renderAdminFromCache();
+  // バックグラウンドでGASに保存（待たない）
+  saveConfirmToGAS(sid,date,store);
+}
+
+// ★GAS通信なしでキャッシュデータだけで即描画
+function renderAdminFromCache(){
+  const data=JSON.parse(localStorage.getItem('shiftData')||'[]');
+  const fs=document.getElementById('filterStore').value;
+  const fo=document.getElementById('filterOther').value;
+  const sortMode=document.getElementById('filterSort')?.value||'store';
+  _renderAdminWithData(data,fs,fo,sortMode);
 }
 </script>
 </body>
