@@ -173,6 +173,21 @@
   .confirm-btn.cancel{background:#fdecea;color:var(--red);border-color:rgba(229,57,53,.3);}
   .confirm-btn.cancel:hover{background:var(--red);color:#fff;}
 
+  /* 仮シフト表 */
+  .draft-date-row{padding:10px 14px;border-bottom:1px solid var(--gray-100);display:flex;align-items:flex-start;gap:10px;}
+  .draft-date-row:last-child{border-bottom:none;}
+  .draft-date-col{min-width:72px;flex-shrink:0;}
+  .draft-date-label{font-size:13px;font-weight:700;color:var(--gray-900);}
+  .draft-date-label.sun{color:var(--red);}
+  .draft-date-label.sat{color:var(--lawson-blue);}
+  .draft-members{display:flex;flex-direction:column;gap:5px;flex:1;}
+  .draft-member-chip{display:flex;align-items:center;gap:6px;background:var(--gray-50);border-radius:7px;padding:6px 10px;font-size:12px;}
+  .draft-member-name{font-weight:700;color:var(--gray-900);}
+  .draft-member-time{color:var(--gray-700);font-family:'DM Mono',monospace;font-size:11px;}
+  .draft-member-badge{font-size:10px;font-weight:600;padding:1px 6px;border-radius:4px;flex-shrink:0;}
+  .draft-member-badge.home{background:var(--lawson-light);color:var(--lawson-blue);}
+  .draft-member-badge.help{background:#fff3cd;color:#7a4f00;}
+
   .view{display:none;}
   .view.active{display:block;}
 </style>
@@ -344,6 +359,18 @@
         <option value="shiftdate">希望日順</option>
       </select>
     </div>
+  </div>
+  <!-- 仮シフト表 -->
+  <div id="draftShiftSection" style="display:none;margin-bottom:16px;">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+      <div style="font-size:13px;font-weight:700;color:var(--lawson-blue);display:flex;align-items:center;gap:6px;">
+        <span style="background:var(--lawson-light);border-radius:7px;width:24px;height:24px;display:inline-flex;align-items:center;justify-content:center;font-size:13px;">📋</span>
+        仮シフト表
+        <span id="draftShiftStoreName" style="font-size:11px;font-weight:500;color:var(--gray-500);"></span>
+      </div>
+      <span style="font-size:10px;color:var(--gray-500);">✅確定済みのみ表示</span>
+    </div>
+    <div id="draftShiftTable" style="background:#fff;border-radius:var(--radius);border:1px solid var(--gray-200);overflow:hidden;box-shadow:var(--shadow-sm);"></div>
   </div>
   <div class="submission-list" id="submissionList"></div>
   <div class="pagination" id="pagination"></div>
@@ -841,14 +868,17 @@ async function deleteConfirmFromGAS(sid,date){
   }catch(e){console.warn('deleteConfirm failed:',e);}
 }
 
-function confirmedKey(sid,date){return`${sid}_${date}`;}
+function confirmedKey(sid,date){return String(sid)+'_'+date;}
 
 async function confirmShift(sid,date,currentStore){
   const key=confirmedKey(sid,date);
   const existing=_confirmedCache[key];
   if(existing){
     // 確定済み → 解除
-    if(!confirm(`「${date}」の確定（${existing}）を解除しますか？`))return;
+    const d=ds2d(date);
+    const days=['日','月','火','水','木','金','土'];
+    const dateJa=isNaN(d.getTime())?date:`${d.getMonth()+1}月${d.getDate()}日(${days[d.getDay()]})`;
+    if(!confirm(`「${dateJa}」の確定（${existing}）を解除しますか？`))return;
     delete _confirmedCache[key];
     localStorage.setItem('shiftConfirmed',JSON.stringify(_confirmedCache));
     renderAdminFromCache(); // ★即座にUI更新（GAS待ちなし）
@@ -910,6 +940,9 @@ function _renderAdminWithData(data,fs,fo,sortMode){
   document.getElementById('statTotal').textContent=data.length;
   document.getElementById('statStores').textContent=new Set(data.map(s=>s.homeStore)).size;
   document.getElementById('statOther').textContent=data.filter(s=>s.otherStores&&s.otherStores.length).length;
+
+  // ★仮シフト表の描画
+  renderDraftShift(data,fs);
   const list=document.getElementById('submissionList');list.innerHTML='';
   if(!filtered.length){
     list.innerHTML='<div class="empty-admin"><div class="empty-icon">📋</div>該当するシフト希望がありません。<br>クルーさんからの提出をお待ちください。</div>';
@@ -959,6 +992,181 @@ function _renderAdminWithData(data,fs,fo,sortMode){
   pag.innerHTML=`<button class="cal-nav-btn" onclick="chgPage(-1)" ${adminPage===1?'disabled':''}>◀</button><span>${adminPage}/${tp}ページ（${filtered.length}件）</span><button class="cal-nav-btn" onclick="chgPage(1)" ${adminPage===tp?'disabled':''}>▶</button>`;
 }
 function chgPage(d){adminPage+=d;renderAdmin();window.scrollTo({top:0,behavior:'smooth'});}
+
+// ===== 仮シフト表描画（ガントチャート形式） =====
+const CHART_START=6,CHART_END=30; // 表示時間軸 6:00〜翌6:00（30=翌6時）
+
+function timeToPercent(timeStr, isEnd=false){
+  if(!timeStr)return null;
+  const m=String(timeStr).match(/(\d{1,2}):(\d{2})/);
+  if(!m)return null;
+  let h=parseInt(m[1]),min=parseInt(m[2]);
+  // 深夜またぎ：終了時刻が開始より小さい場合は翌日扱い（+24）
+  // ここでは単純に0〜5時は翌日（+24）として扱う
+  if(isEnd && h<=CHART_START){ h+=24; }
+  const total=h*60+min;
+  const chartStartMin=CHART_START*60,chartEndMin=CHART_END*60;
+  if(total<=chartStartMin)return 0;
+  if(total>=chartEndMin)return 100;
+  return(total-chartStartMin)/(chartEndMin-chartStartMin)*100;
+}
+
+function calcBarPosition(startStr, endStr, allday){
+  if(allday)return{startPct:0,widthPct:100};
+  if(!startStr||!endStr)return{startPct:0,widthPct:100};
+  const sm=startStr.match(/(\d{1,2}):(\d{2})/);
+  const em=endStr.match(/(\d{1,2}):(\d{2})/);
+  if(!sm||!em)return{startPct:0,widthPct:100};
+
+  let sh=parseInt(sm[1]),sm2=parseInt(sm[2]);
+  let eh=parseInt(em[1]),em2=parseInt(em[2]);
+
+  // ★深夜またぎ自動判定：終了時刻 <= 開始時刻なら翌日扱い（+24）
+  // 例：17:00〜08:00 → 08:00を32:00として計算
+  if(eh<sh||(eh===sh&&em2<=sm2)){
+    eh+=24;
+  }
+
+  const chartStartMin=CHART_START*60;
+  const chartEndMin=CHART_END*60;
+  const startMin=sh*60+sm2;
+  const endMin=eh*60+em2;
+
+  const startPct=Math.max(0,(startMin-chartStartMin)/(chartEndMin-chartStartMin)*100);
+  const endPct=Math.min(100,(endMin-chartStartMin)/(chartEndMin-chartStartMin)*100);
+  const widthPct=Math.max(endPct-startPct,1);
+
+  return{startPct,widthPct};
+}
+
+function renderDraftShift(allData,fs){
+  const sec=document.getElementById('draftShiftSection');
+  const tbl=document.getElementById('draftShiftTable');
+  const nameEl=document.getElementById('draftShiftStoreName');
+
+  if(!fs){sec.style.display='none';return;}
+
+  const dateMap={};
+  const days=['日','月','火','水','木','金','土'];
+
+  allData.forEach(s=>{
+    (s.dates||[]).forEach(dt=>{
+      const key=String(s.id)+'_'+dt.date;
+      const confirmedStore=_confirmedCache[key];
+      if(confirmedStore!==fs)return;
+      if(!dateMap[dt.date])dateMap[dt.date]=[];
+      const startStr=parseTimeStr(dt.start)||'';
+      const endStr=parseTimeStr(dt.end)||'';
+      const timeStr=dt.allday?'終日':`${startStr}〜${endStr}`;
+      const isHelp=s.homeStore!==fs;
+
+      // ★深夜またぎ判定
+      const sm=startStr.match(/(\d{1,2}):(\d{2})/);
+      const em=endStr.match(/(\d{1,2}):(\d{2})/);
+      const isNightOver=sm&&em&&(parseInt(em[1])<parseInt(sm[1])||(parseInt(em[1])===parseInt(sm[1])&&parseInt(em[2])<=parseInt(sm[2])));
+
+      // 当日分のバー
+      const{startPct,widthPct}=calcBarPosition(startStr,endStr,dt.allday);
+      dateMap[dt.date].push({name:s.name,startPct,widthPct,timeStr,homeStore:s.homeStore,isHelp,isCarryover:false});
+
+      // ★翌日分のバー（深夜またぎの場合：0時〜終了時刻）
+      if(isNightOver&&!dt.allday&&endStr){
+        const nextDate=new Date(ds2d(dt.date));
+        nextDate.setDate(nextDate.getDate()+1);
+        const nextDateStr=ds(nextDate);
+        if(!dateMap[nextDateStr])dateMap[nextDateStr]=[];
+        // 翌日は 0時（=CHART_STARTより前）から終了時刻まで
+        const nextStart='00:00';
+        const{startPct:nsp,widthPct:nwp}=calcBarPosition(nextStart,endStr,false);
+        // 0時からのバーなので開始は0%固定、幅は終了時刻まで
+        const endH=parseInt(em[1]),endM=parseInt(em[2]);
+        const endMin=endH*60+endM;
+        const chartStartMin=CHART_START*60,chartEndMin=CHART_END*60;
+        const endPct=Math.min(100,(endMin-chartStartMin)/(chartEndMin-chartStartMin)*100);
+        dateMap[nextDateStr].push({
+          name:s.name,startPct:0,widthPct:Math.max(endPct,1),
+          timeStr,homeStore:s.homeStore,isHelp,isCarryover:true
+        });
+      }
+    });
+  });
+
+  const dates=Object.keys(dateMap).sort((a,b)=>ds2d(a).getTime()-ds2d(b).getTime());
+  if(!dates.length){sec.style.display='none';return;}
+
+  sec.style.display='block';
+  nameEl.textContent=`（${fs}）`;
+
+  // 時間軸ヘッダー（6,8,10...24,翌2,翌4,翌6）
+  const hourLabels=[];
+  for(let h=CHART_START;h<=CHART_END;h+=2){
+    const pct=(h-CHART_START)/(CHART_END-CHART_START)*100;
+    const label=h<24?`${h}時`:(h===24?'0時':`翌${h-24}時`);
+    hourLabels.push({pct,label,isMidnight:h>=24});
+  }
+
+  // 各行HTML生成
+  let rowsHtml='';
+  dates.forEach(dateStr=>{
+    const d=ds2d(dateStr);
+    const dow=d.getDay();
+    const dowColor=dow===0?'var(--red)':dow===6?'var(--lawson-blue)':'var(--gray-700)';
+    const dateJa=`${d.getMonth()+1}/${d.getDate()}<br><span style="font-size:9px;">(${days[dow]})</span>`;
+    const members=dateMap[dateStr];
+
+    members.forEach((m,i)=>{
+      const barColor=m.isHelp?'#e67e00':'var(--lawson-blue)';
+      const barStyle=`background:${barColor};`;
+      const tooltipText=`${m.name}｜${m.timeStr}｜${m.isHelp?m.homeStore+'からヘルプ':fs}${m.isCarryover?' (前日からの持ち越し)':''}`;
+      const midnightPct=(24-CHART_START)/(CHART_END-CHART_START)*100;
+
+      rowsHtml+=`
+        <div style="display:flex;align-items:center;padding:3px 8px;border-bottom:1px solid var(--gray-100);min-height:32px;${i===0?`border-top:2px solid ${dowColor}30`:''}" >
+          <div style="min-width:82px;flex-shrink:0;font-size:11px;font-weight:700;color:${dowColor};line-height:1.3;padding-right:8px;${i===0?'':'visibility:hidden;'}">${i===0?dateJa:''}${i===0?`<div style="font-size:9px;font-weight:400;color:var(--gray-500);margin-top:1px;">${members.length}名</div>`:''}</div>
+          <div style="flex:1;position:relative;height:24px;border-radius:5px;overflow:hidden;cursor:pointer;"
+               title="${tooltipText}"
+               onclick="showShiftBarTooltip(this,'${tooltipText}')">
+            <!-- 昼間帯背景 -->
+            <div style="position:absolute;left:0;width:${midnightPct}%;top:0;bottom:0;background:var(--gray-100);"></div>
+            <!-- 深夜帯背景（少し暗め） -->
+            <div style="position:absolute;left:${midnightPct}%;right:0;top:0;bottom:0;background:#e2e8f0;"></div>
+            <!-- 時間目盛り縦線 -->
+            ${hourLabels.map(({pct,isMidnight})=>`<div style="position:absolute;left:${pct}%;top:0;bottom:0;width:1px;background:rgba(0,0,0,${isMidnight?'.12':'.06'});"></div>`).join('')}
+            <!-- 確定バー -->
+            <div style="position:absolute;left:${m.startPct}%;width:${m.widthPct}%;top:2px;bottom:2px;${barStyle}border-radius:3px;display:flex;align-items:center;overflow:hidden;min-width:4px;box-shadow:0 1px 3px rgba(0,0,0,.15);">
+              <span style="font-size:10px;font-weight:700;color:#fff;padding:0 5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${m.name}</span>
+            </div>
+          </div>
+        </div>`;
+    });
+  });
+
+  tbl.innerHTML=`
+    <div style="display:flex;align-items:center;padding:3px 8px 3px 8px;border-bottom:2px solid var(--gray-200);background:var(--gray-50);">
+      <div style="min-width:82px;flex-shrink:0;font-size:9px;color:var(--gray-500);">日付/人数</div>
+      <div style="flex:1;position:relative;height:16px;">
+        ${hourLabels.map(({pct,label,isMidnight})=>`<div style="position:absolute;left:${pct}%;font-size:9px;color:${isMidnight?'var(--red)':'var(--gray-500)'};transform:translateX(-50%);white-space:nowrap;font-weight:${isMidnight?'700':'400'};">${label}</div>`).join('')}
+      </div>
+    </div>
+    ${rowsHtml}`;
+}
+
+// バータップでツールチップ表示
+let _barTooltipEl=null;
+function showShiftBarTooltip(el,text){
+  if(_barTooltipEl){_barTooltipEl.remove();_barTooltipEl=null;}
+  const tip=document.createElement('div');
+  tip.style.cssText='position:fixed;background:#0f172a;color:#fff;font-size:11px;padding:6px 10px;border-radius:8px;z-index:9999;max-width:220px;line-height:1.5;box-shadow:0 4px 12px rgba(0,0,0,.25);pointer-events:none;';
+  tip.textContent=text;
+  document.body.appendChild(tip);
+  _barTooltipEl=tip;
+  const rect=el.getBoundingClientRect();
+  let top=rect.top-40;
+  if(top<8)top=rect.bottom+6;
+  tip.style.top=top+'px';
+  tip.style.left=Math.min(rect.left,window.innerWidth-230)+'px';
+  setTimeout(()=>{if(_barTooltipEl===tip){tip.remove();_barTooltipEl=null;}},2500);
+}
 
 function exportCSV(){
   const data=JSON.parse(localStorage.getItem('shiftData')||'[]');
@@ -1277,6 +1485,7 @@ function renderAdminFromCache(){
   const fo=document.getElementById('filterOther').value;
   const sortMode=document.getElementById('filterSort')?.value||'store';
   _renderAdminWithData(data,fs,fo,sortMode);
+  renderDraftShift(data,fs);
 }
 </script>
 </body>
