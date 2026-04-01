@@ -117,7 +117,7 @@
   .store-check-item input[type="checkbox"]{position:absolute;opacity:0;width:0;height:0;}
   .store-check-label{display:flex;align-items:flex-start;gap:8px;padding:9px 11px;border:1.5px solid var(--gray-200);border-radius:var(--radius-sm);cursor:pointer;transition:all .15s;background:var(--gray-50);font-size:11.5px;line-height:1.3;-webkit-tap-highlight-color:transparent;}
   .store-check-item input:checked+.store-check-label{border-color:var(--green);background:var(--green-light);color:#1a6b35;font-weight:600;}
-  .store-checkmark{width:18px;height:18px;border:2px solid var(--gray-300);border-radius:5px;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all .15s;font-size:11px;}
+  .store-checkmark{width:18px;height:18px;border:2px solid var(--gray-300);border-radius:5px;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all .15s;font-size:11px;color:transparent;}
   .store-check-item input:checked+.store-check-label .store-checkmark{background:var(--green);border-color:var(--green);color:#fff;}
   .store-name-info{display:flex;flex-direction:column;gap:2px;}
   .store-map-link{font-size:10px;color:var(--lawson-blue);text-decoration:none;display:inline-flex;align-items:center;gap:2px;margin-top:2px;opacity:.7;}
@@ -781,7 +781,12 @@ async function renderAdmin(){
   const fs=document.getElementById('filterStore').value;
   const fo=document.getElementById('filterOther').value;
   let filtered=data.filter(s=>{
-    if(fs&&s.homeStore!==fs)return false;
+    if(fs){
+      // 所属店舗 OR 他店舗OKリストのどちらかに一致すればヒット
+      const inHome=s.homeStore===fs;
+      const inOther=(s.otherStores||[]).includes(fs);
+      if(!inHome&&!inOther)return false;
+    }
     if(fo==='yes'&&(!s.otherStores||!s.otherStores.length))return false;
     return true;
   });
@@ -818,11 +823,15 @@ async function renderAdmin(){
     }).join('');
 
     const otherSec=s.otherStores&&s.otherStores.length
-      ?`<div class="sub-other-stores"><div class="sub-other-label">🟢 他店舗勤務可（${s.otherStores.length}店舗）</div><div class="other-store-chips">${s.otherStores.map(n=>`<span class="other-chip">${n}</span>`).join('')}</div>${s.transport?`<div style="margin-top:5px;font-size:11px;color:var(--gray-500);">交通手段：<b>${s.transport}</b></div>`:''}</div>`:'';
+      ?`<div class="sub-other-stores"><div class="sub-other-label">🟢 他店舗勤務可（${s.otherStores.length}店舗）</div><div class="other-store-chips">${s.otherStores.map(n=>`<span class="other-chip" style="${fs&&n===fs?'background:#fff3cd;border-color:#f5a623;color:#7a4f00;font-weight:700;':''}">${fs&&n===fs?'★ ':''  }${n}</span>`).join('')}</div>${s.transport?`<div style="margin-top:5px;font-size:11px;color:var(--gray-500);">交通手段：<b>${s.transport}</b></div>`:''}</div>`:'';
     const noteSec=s.note?`<div class="sub-note">💬 ${s.note}</div>`:'';
+    // 他店舗OKでヒットした場合のバッジ
+    const hitBadge=(fs&&s.homeStore!==fs&&(s.otherStores||[]).includes(fs))
+      ?`<div style="margin-bottom:8px;font-size:11px;background:var(--orange-light);color:#7a4f00;border:1px solid rgba(245,166,35,.4);border-radius:6px;padding:4px 9px;display:inline-block;">📌 <b>${fs}</b> に他店舗OKで対応可</div>`
+      :'';
     // ★ timestamp を日本語形式に変換
     const tsDisplay=fmtTimestamp(s.timestamp);
-    card.innerHTML=`<div class="sub-header"><div><div class="sub-name">${s.name}</div><div class="sub-empid">No.${s.empId}</div></div><span class="sub-store-badge">${s.homeStore}</span></div><div class="sub-dates-list">${dateRows}</div>${otherSec}${noteSec}<div class="sub-timestamp">提出：${tsDisplay}</div>`;
+    card.innerHTML=`<div class="sub-header"><div><div class="sub-name">${s.name}</div><div class="sub-empid">No.${s.empId}</div></div><span class="sub-store-badge">${s.homeStore}</span></div>${hitBadge}<div class="sub-dates-list">${dateRows}</div>${otherSec}${noteSec}<div class="sub-timestamp">提出：${tsDisplay}</div>`;
     list.appendChild(card);
   });
   const pag=document.getElementById('pagination');
@@ -844,9 +853,34 @@ function exportCSV(){
   a.download=`シフト希望_${new Date().toLocaleDateString('ja-JP').replace(/\//g,'')}.csv`;a.click();
 }
 
-// ★全データ削除 - ブラウザ＋GASスプレッドシート両方を削除
-async function clearAll(){
-  if(!confirm('全データを削除しますか？\n\nブラウザとGoogleスプレッドシートの両方から削除されます。\nこの操作は元に戻せません。\n\nよろしいですか？'))return;
+// ★全データ削除 - 削除パスワードモーダルを開く
+function clearAll(){
+  document.getElementById('clearPwModal').style.display='flex';
+  document.getElementById('clearPwInput').value='';
+  document.getElementById('clearPwError').style.display='none';
+  setTimeout(()=>document.getElementById('clearPwInput').focus(),100);
+}
+
+function closeClearPwModal(){
+  document.getElementById('clearPwModal').style.display='none';
+}
+
+async function executeClearAll(){
+  const val=document.getElementById('clearPwInput').value;
+  if(val!=='3272885'){
+    const box=document.getElementById('clearPwModalBox');
+    document.getElementById('clearPwError').style.display='block';
+    document.getElementById('clearPwInput').value='';
+    document.getElementById('clearPwInput').focus();
+    box.animate([
+      {transform:'translateX(-6px)'},{transform:'translateX(6px)'},
+      {transform:'translateX(-4px)'},{transform:'translateX(4px)'},
+      {transform:'translateX(0)'}
+    ],{duration:350,easing:'ease-out'});
+    return;
+  }
+  closeClearPwModal();
+  if(!confirm('本当に全データを削除しますか？\nこの操作は元に戻せません。'))return;
 
   // ボタンをローディング状態に
   const btn=document.querySelector('.action-btn.danger');
@@ -997,6 +1031,52 @@ document.getElementById('prevMonthBtn').disabled=true;
 function togglePwVisibility(){
   const inp=document.getElementById('pwInput');
   const tog=document.getElementById('pwToggle');
+  if(inp.type==='password'){inp.type='text';tog.textContent='🙈';}
+  else{inp.type='password';tog.textContent='👁';}
+}
+</script>
+
+<!-- 削除パスワードモーダル -->
+<div id="clearPwModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:999;align-items:center;justify-content:center;padding:20px;backdrop-filter:blur(3px);">
+  <div id="clearPwModalBox" style="background:#fff;border-radius:18px;padding:28px 24px;width:100%;max-width:340px;box-shadow:0 16px 48px rgba(0,0,0,.22);">
+    <div style="text-align:center;margin-bottom:20px;">
+      <div style="width:52px;height:52px;background:linear-gradient(135deg,#c62828,#e53935);border-radius:14px;display:flex;align-items:center;justify-content:center;margin:0 auto 12px;box-shadow:0 4px 12px rgba(229,57,53,.35);">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+          <polyline points="3 6 5 6 21 6" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M19 6l-1 14H6L5 6" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M10 11v6M14 11v6" stroke="white" stroke-width="2" stroke-linecap="round"/>
+          <path d="M9 6V4h6v2" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </div>
+      <div style="font-size:16px;font-weight:800;color:#0f172a;">全データ削除</div>
+      <div style="font-size:12px;color:#64748b;margin-top:5px;line-height:1.5;">削除専用パスワードを入力してください。<br><span style="color:#e53935;font-weight:600;">この操作は元に戻せません。</span></div>
+    </div>
+    <div style="position:relative;margin-bottom:10px;">
+      <input type="password" id="clearPwInput"
+        placeholder="削除パスワードを入力"
+        inputmode="numeric"
+        style="width:100%;padding:12px 44px 12px 14px;border:1.5px solid #e2e8f0;border-radius:10px;font-size:15px;font-family:'DM Mono',monospace;letter-spacing:0.15em;background:#f8fafc;outline:none;transition:border-color .2s;"
+        onfocus="this.style.borderColor='#e53935';this.style.background='#fff';"
+        onblur="this.style.borderColor='#e2e8f0';this.style.background='#f8fafc';"
+        onkeydown="if(event.key==='Enter')executeClearAll();if(event.key==='Escape')closeClearPwModal();">
+      <span onclick="toggleClearPwVisibility()" style="position:absolute;right:13px;top:50%;transform:translateY(-50%);cursor:pointer;font-size:17px;user-select:none;" id="clearPwToggle">👁</span>
+    </div>
+    <div id="clearPwError" style="display:none;background:#fdecea;color:#e53935;font-size:12px;font-weight:600;padding:8px 12px;border-radius:8px;margin-bottom:10px;text-align:center;">
+      ❌ パスワードが違います。もう一度入力してください。
+    </div>
+    <button onclick="executeClearAll()" style="width:100%;padding:13px;background:linear-gradient(135deg,#c62828,#e53935);color:#fff;border:none;border-radius:10px;font-size:15px;font-weight:700;font-family:'Noto Sans JP',sans-serif;cursor:pointer;box-shadow:0 3px 10px rgba(229,57,53,.3);margin-bottom:10px;">
+      🗑 削除を実行する
+    </button>
+    <button onclick="closeClearPwModal()" style="width:100%;padding:10px;background:transparent;color:#64748b;border:1.5px solid #e2e8f0;border-radius:10px;font-size:13px;font-weight:600;font-family:'Noto Sans JP',sans-serif;cursor:pointer;">
+      キャンセル
+    </button>
+  </div>
+</div>
+
+<script>
+function toggleClearPwVisibility(){
+  const inp=document.getElementById('clearPwInput');
+  const tog=document.getElementById('clearPwToggle');
   if(inp.type==='password'){inp.type='text';tog.textContent='🙈';}
   else{inp.type='password';tog.textContent='👁';}
 }
