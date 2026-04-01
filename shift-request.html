@@ -18,7 +18,6 @@
   *{box-sizing:border-box;margin:0;padding:0;}
   body{font-family:'Noto Sans JP',sans-serif;background:var(--gray-50);color:var(--gray-900);min-height:100vh;-webkit-font-smoothing:antialiased;}
 
-  /* header */
   .header{background:linear-gradient(135deg,var(--lawson-dark) 0%,var(--lawson-blue) 60%,var(--accent) 100%);color:#fff;padding:18px 20px 16px;position:sticky;top:0;z-index:100;box-shadow:0 2px 12px rgba(0,68,143,.25);}
   .header-inner{max-width:680px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;}
   .header-logo{display:flex;align-items:center;gap:10px;}
@@ -30,15 +29,12 @@
   .tab-btn{padding:5px 12px;border:none;background:transparent;color:rgba(255,255,255,.75);font-size:12px;font-weight:500;border-radius:16px;cursor:pointer;transition:all .2s;font-family:'Noto Sans JP',sans-serif;white-space:nowrap;}
   .tab-btn.active{background:#fff;color:var(--lawson-blue);font-weight:700;box-shadow:0 1px 4px rgba(0,0,0,.15);}
 
-  /* main */
   .main{max-width:680px;margin:0 auto;padding:20px 16px 40px;}
 
-  /* card */
   .card{background:#fff;border-radius:var(--radius);padding:20px;margin-bottom:16px;box-shadow:var(--shadow-sm);border:1px solid var(--gray-200);}
   .card-title{font-size:13px;font-weight:700;color:var(--lawson-blue);margin-bottom:14px;display:flex;align-items:center;gap:7px;}
   .card-title .icon{width:24px;height:24px;background:var(--lawson-light);border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0;}
 
-  /* form */
   .form-group{margin-bottom:14px;}
   .form-label{display:block;font-size:12px;font-weight:600;color:var(--gray-700);margin-bottom:6px;}
   .required-badge{display:inline-block;background:var(--red);color:#fff;font-size:9px;font-weight:700;padding:1px 5px;border-radius:4px;margin-left:5px;vertical-align:middle;}
@@ -47,7 +43,6 @@
   .form-select-wrap{position:relative;}
   .form-select-wrap::after{content:'▼';position:absolute;right:14px;top:50%;transform:translateY(-50%);font-size:10px;color:var(--gray-500);pointer-events:none;}
 
-  /* 入力バリデーション */
   .form-input.error{border-color:var(--red)!important;background:var(--red-light)!important;}
   .form-input.ok{border-color:var(--green)!important;}
   .field-hint{font-size:11px;margin-top:5px;padding:5px 9px;border-radius:6px;display:none;line-height:1.5;}
@@ -55,10 +50,8 @@
   .field-hint.err{background:var(--red-light);color:var(--red);}
   .field-hint.info{background:var(--lawson-light);color:var(--lawson-blue);}
 
-  /* empId: 等幅フォント */
   #empId{font-family:'DM Mono',monospace;letter-spacing:0.15em;font-size:16px;}
 
-  /* 交通手段ラジオ */
   .transport-choice{display:flex;flex-direction:column;gap:8px;margin-top:4px;}
   .transport-item{position:relative;}
   .transport-item input[type="radio"]{position:absolute;opacity:0;width:0;height:0;}
@@ -76,13 +69,11 @@
   .transport-note-box.show{display:flex;}
   .t-icon{font-size:15px;flex-shrink:0;margin-top:1px;}
 
-  /* deadline banner */
   .deadline-banner{border-radius:var(--radius-sm);padding:14px 16px;margin-bottom:16px;font-size:12.5px;line-height:1.6;}
   .deadline-banner.ok{background:var(--green-light);border:1.5px solid rgba(0,176,80,.35);color:#1a6b35;}
   .deadline-banner.warn{background:var(--orange-light);border:1.5px solid rgba(245,166,35,.4);color:#7a4f00;}
   .deadline-period{margin-top:6px;background:rgba(255,255,255,.6);border-radius:6px;padding:8px 12px;font-size:13px;font-weight:700;}
 
-  /* calendar */
   .calendar-nav{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;}
   .cal-nav-btn{width:34px;height:34px;border:1.5px solid var(--gray-200);border-radius:8px;background:#fff;cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center;color:var(--gray-700);transition:all .15s;}
   .cal-nav-btn:hover{border-color:var(--lawson-blue);color:var(--lawson-blue);}
@@ -102,7 +93,6 @@
   .cal-day.today:not(.selected){border-color:var(--orange);font-weight:700;}
   .cal-day.today:not(.selected)::after{content:'';position:absolute;bottom:3px;width:4px;height:4px;background:var(--orange);border-radius:50%;}
 
-  /* date-time list */
   .selected-dates-section{margin-top:16px;}
   .selected-dates-label{font-size:12px;font-weight:700;color:var(--gray-700);margin-bottom:8px;display:flex;align-items:center;gap:5px;}
   .selected-count{background:var(--lawson-blue);color:#fff;font-size:10px;font-weight:700;padding:2px 7px;border-radius:10px;}
@@ -122,7 +112,6 @@
   .allday-toggle{display:flex;align-items:center;gap:4px;font-size:11px;color:var(--gray-500);cursor:pointer;flex-shrink:0;white-space:nowrap;}
   .allday-toggle input{width:14px;height:14px;cursor:pointer;accent-color:var(--lawson-blue);}
 
-  /* other stores */
   .store-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:4px;}
   .store-check-item{position:relative;}
   .store-check-item input[type="checkbox"]{position:absolute;opacity:0;width:0;height:0;}
@@ -133,22 +122,17 @@
   .store-name-info{display:flex;flex-direction:column;gap:2px;}
   .store-map-link{font-size:10px;color:var(--lawson-blue);text-decoration:none;display:inline-flex;align-items:center;gap:2px;margin-top:2px;opacity:.7;}
   .store-map-link:hover{opacity:1;}
-  .transport-note{margin-top:10px;background:var(--orange-light);border:1px solid rgba(245,166,35,.3);border-radius:var(--radius-sm);padding:10px 13px;font-size:12px;color:#7a4f00;display:flex;align-items:flex-start;gap:8px;line-height:1.5;}
-  .transport-note .t-icon{font-size:15px;flex-shrink:0;margin-top:1px;}
 
-  /* submit */
   .submit-btn{width:100%;padding:16px;background:linear-gradient(135deg,var(--lawson-blue),var(--accent));color:#fff;border:none;border-radius:var(--radius);font-size:16px;font-weight:700;font-family:'Noto Sans JP',sans-serif;cursor:pointer;box-shadow:0 4px 16px rgba(0,104,183,.35);transition:all .2s;display:flex;align-items:center;justify-content:center;gap:8px;-webkit-tap-highlight-color:transparent;}
   .submit-btn:hover{transform:translateY(-1px);box-shadow:0 6px 20px rgba(0,104,183,.4);}
   .submit-btn:active{transform:translateY(0);}
 
-  /* success */
   .success-card{background:var(--green-light);border:2px solid var(--green);border-radius:var(--radius);padding:30px 20px;text-align:center;display:none;}
   .success-card.show{display:block;}
   .success-icon{font-size:48px;margin-bottom:12px;}
   .success-title{font-size:18px;font-weight:700;color:var(--green);margin-bottom:8px;}
   .success-sub{font-size:13px;color:var(--gray-700);line-height:1.6;}
 
-  /* admin */
   .admin-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:16px;}
   .stat-card{background:#fff;border-radius:var(--radius-sm);padding:14px 12px;text-align:center;box-shadow:var(--shadow-sm);border:1px solid var(--gray-200);}
   .stat-num{font-size:24px;font-weight:900;color:var(--lawson-blue);line-height:1;}
@@ -276,7 +260,6 @@
     <p style="font-size:12px;color:var(--gray-500);margin-bottom:12px;line-height:1.5;">所属店舗のシフトが埋まっている場合、以下の店舗でも勤務可能ならチェックしてください。店長が確認してシフトに組み込みます。</p>
     <div class="store-grid" id="otherStoreGrid"></div>
 
-    <!-- 交通手段選択（他店舗にチェックが入ったら表示） -->
     <div id="transportSection" style="display:none;margin-top:14px;">
       <div class="form-label" style="margin-bottom:8px;">🚗 他店舗への交通手段<span class="required-badge">必須</span></div>
       <div class="transport-choice">
@@ -377,19 +360,14 @@ const STORES=[
 ];
 
 // ===== 締め切り・対象期間ロジック =====
-// 今週金曜締め切りで「翌々翌週（3週間後）」の月〜日を対象とする
-// 例：4/3(金)締め切り → 4/20(月)〜4/26(日)
 function getTargetPeriod(){
   const now=new Date();now.setHours(0,0,0,0);
-  const dow=now.getDay(); // 0=日,1=月,...,5=金,6=土
-  // 今週月曜を求める（月=0基準）
+  const dow=now.getDay();
   const daysFromMon=(dow+6)%7;
   const thisMonday=new Date(now);
   thisMonday.setDate(now.getDate()-daysFromMon);
-  // 今週金曜
   const thisFriday=new Date(thisMonday);
   thisFriday.setDate(thisMonday.getDate()+4);
-  // 3週間後の月〜日
   const targetMonday=new Date(thisMonday);
   targetMonday.setDate(thisMonday.getDate()+21);
   const targetSunday=new Date(targetMonday);
@@ -409,7 +387,6 @@ function renderDeadlineBanner(){
   const banner=document.getElementById('deadlineBanner');
   const isPast=now>thisFriday;
   if(isPast){
-    // 来週金曜・その3週間後を表示
     const nf=new Date(thisFriday);nf.setDate(thisFriday.getDate()+7);
     const nm=new Date(targetMonday);nm.setDate(targetMonday.getDate()+7);
     const ns=new Date(targetSunday);ns.setDate(targetSunday.getDate()+7);
@@ -424,7 +401,7 @@ function renderDeadlineBanner(){
 // ===== カレンダー =====
 const todayD=new Date();todayD.setHours(0,0,0,0);
 let curYear=todayD.getFullYear(),curMonth=todayD.getMonth();
-let selDT={}; // { "YYYY-MM-DD": {start,end,allday} }
+let selDT={};
 
 function changeMonth(dir){
   curMonth+=dir;
@@ -435,7 +412,20 @@ function changeMonth(dir){
 }
 
 function ds(d){return`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;}
-function ds2d(s){return new Date(s+'T00:00:00');}
+
+// ★修正1: 日付パース関数 - "YYYY-MM-DD"形式を確実にパース
+function ds2d(s){
+  if(!s)return new Date(NaN);
+  // "YYYY-MM-DD"形式の場合
+  if(typeof s==='string'&&/^\d{4}-\d{2}-\d{2}$/.test(s)){
+    const parts=s.split('-');
+    return new Date(parseInt(parts[0]),parseInt(parts[1])-1,parseInt(parts[2]));
+  }
+  // その他の文字列の場合も試みる
+  const d=new Date(s);
+  if(!isNaN(d.getTime()))return d;
+  return new Date(NaN);
+}
 
 function renderCalendar(){
   const{targetMonday,targetSunday}=getTargetPeriod();
@@ -565,19 +555,13 @@ function onTransportChange(){
 }
 
 // ===== 名前バリデーション =====
-// 全角文字（漢字・ひらがな・全角カタカナ・全角スペース・長音符等）のみ許可
-// 英字・半角カナ・数字は拒否
 function isValidName(val){
-  if(!val)return null; // 未入力はnull（エラーではない）
-  // 許可：全角ひらがな、全角カタカナ、CJK漢字、全角スペース、中黒・長音など
-  // 禁止：ASCII英字、半角カナ(ｦ-ﾟ)、数字
-  const forbidden=/[A-Za-z0-9\uFF61-\uFF9F]/; // 英字・半角カナ
+  if(!val)return null;
+  const forbidden=/[A-Za-z0-9\uFF61-\uFF9F]/;
   return !forbidden.test(val);
 }
-// 入力中：禁止文字をリアルタイム削除して警告
 function validateName(el){
   const raw=el.value;
-  // 半角カナ→全角カタカナ変換テーブル
   const hankakuToZenkaku={
     'ｦ':'ヲ','ｧ':'ァ','ｨ':'ィ','ｩ':'ゥ','ｪ':'ェ','ｫ':'ォ','ｬ':'ャ','ｭ':'ュ','ｮ':'ョ',
     'ｯ':'ッ','ｰ':'ー','ｱ':'ア','ｲ':'イ','ｳ':'ウ','ｴ':'エ','ｵ':'オ','ｶ':'カ','ｷ':'キ',
@@ -587,14 +571,10 @@ function validateName(el){
     'ﾓ':'モ','ﾔ':'ヤ','ﾕ':'ユ','ﾖ':'ヨ','ﾗ':'ラ','ﾘ':'リ','ﾙ':'ル','ﾚ':'レ','ﾛ':'ロ',
     'ﾜ':'ワ','ﾝ':'ン','ﾞ':'゛','ﾟ':'゜'
   };
-  // 半角カナを全角に自動変換
   let converted=raw.replace(/[ｦ-ﾟ]/g,c=>hankakuToZenkaku[c]||c);
-  // 英字は削除
   converted=converted.replace(/[A-Za-z]/g,'');
-  // 半角数字は削除
   converted=converted.replace(/[0-9]/g,'');
   if(converted!==raw)el.value=converted;
-
   const hint=document.getElementById('nameHint');
   const err=document.getElementById('nameErr');
   if(!converted){
@@ -621,9 +601,8 @@ function validateNameBlur(el){
   }
 }
 
-// ===== 氏名コード（7桁固定）バリデーション =====
+// ===== 氏名コードバリデーション =====
 function validateEmpId(el){
-  // 半角数字以外を即削除
   el.value=el.value.replace(/[^0-9]/g,'').slice(0,7);
   const hint=document.getElementById('empIdHint');
   const err=document.getElementById('empIdErr');
@@ -651,7 +630,6 @@ function validateEmpIdBlur(el){
   }
 }
 
-// 店舗セレクト
 function buildStoreOpts(id){
   const sel=document.getElementById(id);
   STORES.forEach(s=>{const o=document.createElement('option');o.value=s.name;o.textContent=s.name;sel.appendChild(o);});
@@ -712,7 +690,6 @@ function resetForm(){
   document.querySelectorAll('input[name="transport"]').forEach(r=>r.checked=false);
   document.getElementById('transportSection').style.display='none';
   document.getElementById('transportNoteBox').classList.remove('show');
-  // バリデーション状態リセット
   ['crewName','empId'].forEach(id=>{
     const el=document.getElementById(id);
     if(el)el.classList.remove('error','ok');
@@ -730,9 +707,15 @@ function resetForm(){
 }
 
 // ===== スプレッドシートからデータ取得 =====
+// ★修正2: 削除フラグを使ってGASデータ再取得後も削除状態を維持
+let _dataCleared=false;
+
 async function fetchSheetData(){
+  // 削除済みフラグが立っている場合はlocalStorageのみ返す（空配列）
+  if(_dataCleared){
+    return JSON.parse(localStorage.getItem('shiftData')||'[]');
+  }
   try{
-    // GASはno-corsだとレスポンスが読めないため、jsonpで取得
     const data = await new Promise((resolve,reject)=>{
       const cb='gasCallback_'+Date.now();
       const script=document.createElement('script');
@@ -784,12 +767,21 @@ async function renderAdmin(){
   const days=['日','月','火','水','木','金','土'];
   paged.forEach(s=>{
     const card=document.createElement('div');card.className='submission-card';
+
+    // ★修正1: 日付表示を安全にフォーマット
     const dateRows=(s.dates||[]).map(dt=>{
-      const d=ds2d(dt.date);const dow=d.getDay();
+      const d=ds2d(dt.date);
+      // 日付が無効な場合のフォールバック
+      if(isNaN(d.getTime())){
+        const tstr=dt.allday?'終日':`${dt.start||'?'} 〜 ${dt.end||'?'}`;
+        return`<div class="sub-date-row"><span class="sub-date-dow">${dt.date||'不明'}</span><span class="sub-date-time">${tstr}</span></div>`;
+      }
+      const dow=d.getDay();
       const cls=dow===0?'sun':dow===6?'sat':'';
       const tstr=dt.allday?'終日':`${dt.start} 〜 ${dt.end}`;
       return`<div class="sub-date-row"><span class="sub-date-dow ${cls}">${d.getMonth()+1}/${d.getDate()}(${days[dow]})</span><span class="sub-date-time">${tstr}</span></div>`;
     }).join('');
+
     const otherSec=s.otherStores&&s.otherStores.length
       ?`<div class="sub-other-stores"><div class="sub-other-label">🟢 他店舗勤務可（${s.otherStores.length}店舗）</div><div class="other-store-chips">${s.otherStores.map(n=>`<span class="other-chip">${n}</span>`).join('')}</div>${s.transport?`<div style="margin-top:5px;font-size:11px;color:var(--gray-500);">交通手段：<b>${s.transport}</b></div>`:''}</div>`:'';
     const noteSec=s.note?`<div class="sub-note">💬 ${s.note}</div>`:'';
@@ -814,9 +806,13 @@ function exportCSV(){
   const a=document.createElement('a');a.href=URL.createObjectURL(blob);
   a.download=`シフト希望_${new Date().toLocaleDateString('ja-JP').replace(/\//g,'')}.csv`;a.click();
 }
+
+// ★修正2: 全データ削除 - フラグを立ててGAS再取得を防ぐ
 function clearAll(){
-  if(!confirm('全データを削除しますか？この操作は元に戻せません。'))return;
-  localStorage.removeItem('shiftData');renderAdmin();
+  if(!confirm('全データを削除しますか？\n\n※この操作はブラウザ上の表示を消去します。\nGoogleスプレッドシート側のデータは別途削除が必要です。\n\nよろしいですか？'))return;
+  localStorage.removeItem('shiftData');
+  _dataCleared=true; // GASからの再取得を防ぐフラグ
+  renderAdmin();
 }
 
 // ===== パスワード認証 =====
@@ -836,7 +832,10 @@ function switchTab(tab,btn){
   document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
   document.getElementById(tab+'-view').classList.add('active');
   btn.classList.add('active');
-  if(tab==='admin')renderAdmin();
+  if(tab==='admin'){
+    _dataCleared=false; // 管理画面に入るたびにリセット（新規データを取得）
+    renderAdmin();
+  }
   window.scrollTo({top:0,behavior:'smooth'});
 }
 
@@ -854,6 +853,7 @@ function submitPw(){
     document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
     document.getElementById('admin-view').classList.add('active');
     if(btn)btn.classList.add('active');
+    _dataCleared=false;
     renderAdmin();
     window.scrollTo({top:0,behavior:'smooth'});
   } else {
@@ -870,7 +870,6 @@ function submitPw(){
   }
 }
 
-// Enterキーでも送信
 document.addEventListener('DOMContentLoaded',()=>{
   document.getElementById('pwInput').addEventListener('keydown',e=>{
     if(e.key==='Enter')submitPw();
