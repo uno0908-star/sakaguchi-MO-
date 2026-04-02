@@ -1,0 +1,781 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>アルバイト採用システム | 阪口商店</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;900&family=Oswald:wght@600&display=swap');
+:root {
+  --blue:#0056A8; --blue-dark:#003d7a; --blue-light:#e8f0fb;
+  --accent:#E63946; --gold:#F4A300; --green:#22c55e;
+  --white:#fff; --gray-50:#f8f9fc; --gray-100:#eef1f7;
+  --gray-300:#c4cad8; --gray-500:#7a8299; --gray-900:#1a1e2e;
+  --radius:14px; --shadow:0 4px 24px rgba(0,86,168,.10); --shadow-lg:0 12px 48px rgba(0,86,168,.18);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Noto Sans JP',sans-serif;background:var(--gray-50);color:var(--gray-900);min-height:100vh}
+
+/* ===================== 共通ヘッダー ===================== */
+.site-header{background:linear-gradient(135deg,var(--blue-dark),var(--blue));padding:16px 24px;display:flex;align-items:center;gap:12px;position:sticky;top:0;z-index:200;box-shadow:0 2px 16px rgba(0,0,0,.2)}
+.site-logo{background:var(--white);border-radius:8px;padding:5px 9px;font-family:'Oswald',sans-serif;font-size:11px;font-weight:600;color:var(--blue);letter-spacing:.3px;text-align:center;line-height:1.3;flex-shrink:0}
+.site-title{color:var(--white);font-size:14px;font-weight:700;flex:1}
+.site-sub{color:rgba(255,255,255,.65);font-size:10px;margin-top:1px}
+.nav-tabs{display:flex;gap:6px}
+.nav-tab{padding:7px 14px;background:rgba(255,255,255,.15);border:1.5px solid rgba(255,255,255,.25);border-radius:8px;color:rgba(255,255,255,.8);font-family:'Noto Sans JP',sans-serif;font-size:12px;font-weight:700;cursor:pointer;transition:all .15s;text-decoration:none;display:flex;align-items:center;gap:4px}
+.nav-tab:hover,.nav-tab.active{background:rgba(255,255,255,.25);color:var(--white);border-color:rgba(255,255,255,.5)}
+@media(max-width:520px){.site-title .site-sub{display:none}.nav-tab span{display:none}}
+
+/* ===================== ページ切替 ===================== */
+.page{display:none}
+.page.active{display:block}
+
+/* ===================== 応募フォームページ ===================== */
+.oubo-header{background:linear-gradient(135deg,var(--blue-dark) 0%,var(--blue) 60%,#1a7fe8 100%);position:relative;overflow:hidden}
+.oubo-header::before{content:'';position:absolute;top:-60px;right:-60px;width:260px;height:260px;border-radius:50%;background:rgba(255,255,255,.06)}
+.oubo-header-inner{position:relative;z-index:1;max-width:700px;margin:0 auto;padding:32px 24px 28px}
+.oubo-store-name{font-size:13px;font-weight:500;color:rgba(255,255,255,.75);margin-bottom:14px}
+.oubo-title{font-size:clamp(20px,5vw,30px);font-weight:900;color:var(--white);line-height:1.2}
+.oubo-title span{color:var(--gold)}
+.oubo-sub{margin-top:8px;font-size:12px;color:rgba(255,255,255,.70);line-height:1.6}
+
+.store-badge{max-width:700px;margin:-16px auto 0;padding:0 24px;position:relative;z-index:10}
+.store-badge-inner{background:var(--white);border-radius:var(--radius);box-shadow:var(--shadow-lg);padding:16px 20px;border-left:4px solid var(--gold)}
+.badge-label{font-size:11px;font-weight:700;color:var(--gold);letter-spacing:1px;margin-bottom:4px}
+.badge-name{font-size:15px;font-weight:700;color:var(--gray-900);margin-bottom:8px}
+.badge-row{display:flex;align-items:flex-start;gap:12px;flex-wrap:wrap}
+.badge-info{flex:1;min-width:150px}
+.shift-tags{display:flex;flex-wrap:wrap;gap:4px;margin-bottom:5px}
+.badge-tag{display:inline-block;background:var(--blue-light);color:var(--blue);border-radius:6px;padding:2px 8px;font-size:11px;font-weight:700}
+.badge-count{font-size:12px;color:var(--accent);font-weight:700;margin-top:2px}
+.badge-comment{font-size:12px;color:var(--gray-500);font-style:italic;margin-top:3px}
+.map-btn{display:inline-flex;align-items:center;gap:5px;background:var(--green);color:var(--white);border:none;border-radius:8px;padding:8px 13px;font-family:'Noto Sans JP',sans-serif;font-size:12px;font-weight:700;cursor:pointer;text-decoration:none;transition:all .15s;flex-shrink:0;white-space:nowrap}
+.map-btn:hover{background:#16a34a;transform:translateY(-1px)}
+
+.edit-btn-wrap{max-width:700px;margin:10px auto 0;padding:0 24px;text-align:right}
+.edit-toggle-btn{background:none;border:1.5px solid var(--gray-300);border-radius:8px;padding:6px 13px;font-family:'Noto Sans JP',sans-serif;font-size:12px;font-weight:700;color:var(--gray-500);cursor:pointer;transition:all .15s}
+.edit-toggle-btn:hover{border-color:var(--blue);color:var(--blue)}
+
+/* 管理パネル */
+.manager-panel{max-width:700px;margin:0 auto;padding:0 24px}
+.manager-panel-inner{background:var(--white);border-radius:var(--radius);box-shadow:var(--shadow-lg);overflow:hidden;margin-top:8px}
+.mp-header{background:linear-gradient(135deg,var(--blue-dark),var(--blue));padding:13px 18px;display:flex;align-items:center;gap:8px}
+.mp-title{color:var(--white);font-size:13px;font-weight:700;flex:1}
+.mp-close{background:rgba(255,255,255,.2);border:none;border-radius:6px;color:var(--white);width:26px;height:26px;cursor:pointer;font-size:15px;display:flex;align-items:center;justify-content:center}
+.mp-body{padding:18px}
+.mp-section{margin-bottom:16px}
+.mp-section:last-child{margin-bottom:0}
+.mp-label{font-size:12px;font-weight:700;color:var(--blue);margin-bottom:8px}
+.shift-check-list{display:flex;flex-direction:column;gap:7px}
+.sci{display:flex;align-items:center;gap:9px;padding:9px 13px;border:1.5px solid var(--gray-100);border-radius:9px;cursor:pointer;transition:all .15s}
+.sci.active{border-color:var(--blue);background:var(--blue-light)}
+.sci input[type="checkbox"]{width:17px;height:17px;accent-color:var(--blue);flex-shrink:0;cursor:pointer}
+.sci label{flex:1;font-size:13px;font-weight:500;cursor:pointer}
+.rm-btn{background:none;border:none;color:var(--gray-300);cursor:pointer;font-size:15px;padding:0 3px;line-height:1}
+.rm-btn:hover{color:var(--accent)}
+.add-shift-row{display:flex;gap:7px;margin-top:9px}
+.add-shift-input{flex:1;padding:8px 11px;border:1.5px solid var(--gray-300);border-radius:8px;font-family:'Noto Sans JP',sans-serif;font-size:13px}
+.add-shift-input:focus{outline:none;border-color:var(--blue)}
+.add-shift-btn{background:var(--blue);color:var(--white);border:none;border-radius:8px;padding:8px 14px;font-family:'Noto Sans JP',sans-serif;font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap}
+.mp-select,.mp-textarea{width:100%;padding:9px 11px;border:1.5px solid var(--gray-300);border-radius:8px;font-family:'Noto Sans JP',sans-serif;font-size:13px;background:var(--white)}
+.mp-textarea{resize:vertical;min-height:65px;line-height:1.7}
+.mp-select:focus,.mp-textarea:focus{outline:none;border-color:var(--blue)}
+.mp-save-btn{width:100%;padding:13px;background:linear-gradient(135deg,var(--blue),#1a7fe8);color:var(--white);border:none;border-radius:10px;font-family:'Noto Sans JP',sans-serif;font-size:14px;font-weight:900;cursor:pointer;box-shadow:0 4px 16px rgba(0,86,168,.3);transition:all .15s;margin-top:14px}
+.mp-save-btn:hover{transform:translateY(-1px)}
+
+/* フォーム */
+.oubo-main{max-width:700px;margin:0 auto;padding:22px 24px 60px}
+.section{background:var(--white);border-radius:var(--radius);box-shadow:var(--shadow);margin-bottom:18px;overflow:hidden}
+.section-header{background:var(--blue-light);padding:12px 20px;display:flex;align-items:center;gap:9px;border-bottom:1px solid rgba(0,86,168,.08)}
+.section-num{width:26px;height:26px;background:var(--blue);color:var(--white);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0}
+.section-title{font-size:13px;font-weight:700;color:var(--blue-dark)}
+.section-body{padding:20px}
+.field{margin-bottom:18px}
+.field:last-child{margin-bottom:0}
+.field-label{display:flex;align-items:center;gap:6px;font-size:12px;font-weight:700;color:var(--gray-900);margin-bottom:7px}
+.required{background:var(--accent);color:var(--white);font-size:10px;font-weight:700;padding:2px 5px;border-radius:4px}
+.optional{background:var(--gray-300);color:var(--white);font-size:10px;font-weight:700;padding:2px 5px;border-radius:4px}
+input[type="text"],input[type="tel"],input[type="email"],input[type="date"],input[type="number"],select,textarea{width:100%;padding:11px 13px;border:1.5px solid var(--gray-300);border-radius:10px;font-family:'Noto Sans JP',sans-serif;font-size:15px;color:var(--gray-900);background:var(--white);transition:border-color .2s,box-shadow .2s;-webkit-appearance:none;appearance:none}
+input:focus,select:focus,textarea:focus{outline:none;border-color:var(--blue);box-shadow:0 0 0 3px rgba(0,86,168,.12)}
+textarea{resize:vertical;min-height:85px;line-height:1.7}
+.row-2{display:grid;grid-template-columns:1fr 1fr;gap:11px}
+@media(max-width:480px){.row-2{grid-template-columns:1fr}}
+.radio-group{display:flex;gap:8px;flex-wrap:wrap}
+.radio-btn{flex:1;min-width:72px;position:relative}
+.radio-btn input[type="radio"]{position:absolute;opacity:0;width:0;height:0}
+.radio-btn label{display:flex;align-items:center;justify-content:center;padding:10px 7px;border:1.5px solid var(--gray-300);border-radius:9px;font-size:13px;font-weight:500;color:var(--gray-500);cursor:pointer;transition:all .18s;background:var(--white)}
+.radio-btn input:checked+label{border-color:var(--blue);background:var(--blue-light);color:var(--blue);font-weight:700}
+.check-group{display:flex;gap:7px;flex-wrap:wrap}
+.check-item{position:relative}
+.check-item input[type="checkbox"]{position:absolute;opacity:0;width:0;height:0}
+.check-item label{display:flex;align-items:center;justify-content:center;width:42px;height:42px;border:1.5px solid var(--gray-300);border-radius:9px;font-size:13px;font-weight:700;color:var(--gray-500);cursor:pointer;transition:all .18s;background:var(--white)}
+.check-item input:checked+label{border-color:var(--blue);background:var(--blue);color:var(--white)}
+select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%237a8299' stroke-width='1.8' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 13px center;padding-right:34px}
+.interview-slot{background:var(--gray-50);border:1.5px solid var(--gray-100);border-radius:9px;padding:13px 15px;margin-bottom:9px}
+.interview-slot:last-child{margin-bottom:0}
+.slot-label{font-size:12px;font-weight:700;color:var(--blue);margin-bottom:9px;display:flex;align-items:center;gap:5px}
+.slot-badge{width:19px;height:19px;background:var(--blue);color:var(--white);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700}
+.submit-wrap{margin-top:24px}
+.btn-submit{width:100%;padding:17px;background:linear-gradient(135deg,var(--blue),#1a7fe8);color:var(--white);border:none;border-radius:var(--radius);font-family:'Noto Sans JP',sans-serif;font-size:16px;font-weight:900;letter-spacing:1px;cursor:pointer;box-shadow:0 6px 24px rgba(0,86,168,.35);transition:transform .15s,box-shadow .15s;display:flex;align-items:center;justify-content:center;gap:8px}
+.btn-submit:hover{transform:translateY(-2px);box-shadow:0 10px 32px rgba(0,86,168,.40)}
+.btn-submit:disabled{background:var(--gray-300);box-shadow:none;cursor:not-allowed;transform:none}
+.form-note{margin-top:12px;font-size:11px;color:var(--gray-500);text-align:center;line-height:1.7}
+.success-screen{display:none;text-align:center;padding:60px 24px}
+.success-icon{width:76px;height:76px;background:linear-gradient(135deg,#22c55e,#16a34a);border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 22px;font-size:34px;box-shadow:0 8px 32px rgba(34,197,94,.3)}
+.success-title{font-size:20px;font-weight:900;margin-bottom:10px}
+.success-msg{font-size:13px;color:var(--gray-500);line-height:1.8;max-width:300px;margin:0 auto}
+.spinner{width:19px;height:19px;border:3px solid rgba(255,255,255,.4);border-top-color:var(--white);border-radius:50%;animation:spin .7s linear infinite;display:none}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* ===================== QR管理ページ ===================== */
+.qr-toolbar{max-width:1200px;margin:20px auto 0;padding:0 20px;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.qr-count{font-size:13px;font-weight:700;flex:1}
+.count-pill{background:var(--blue);color:var(--white);padding:3px 10px;border-radius:12px;font-size:11px;margin-left:6px}
+.btn-outline{padding:8px 15px;background:var(--white);color:var(--blue);border:1.5px solid var(--blue);border-radius:8px;font-family:'Noto Sans JP',sans-serif;font-size:12px;font-weight:700;cursor:pointer;transition:all .15s}
+.btn-outline:hover{background:var(--blue-light)}
+.filter-bar{max-width:1200px;margin:12px auto 0;padding:0 20px;display:flex;gap:7px;flex-wrap:wrap;align-items:center}
+.filter-label{font-size:11px;font-weight:700;color:var(--gray-500)}
+.chip{padding:5px 12px;background:var(--white);border:1.5px solid var(--gray-300);border-radius:20px;font-size:11px;font-weight:500;cursor:pointer;transition:all .15s;color:var(--gray-500)}
+.chip.active{background:var(--blue);border-color:var(--blue);color:var(--white);font-weight:700}
+.search-input{padding:6px 13px;border:1.5px solid var(--gray-300);border-radius:20px;font-family:'Noto Sans JP',sans-serif;font-size:12px;outline:none;transition:border-color .2s;width:170px}
+.search-input:focus{border-color:var(--blue)}
+.qr-grid{max-width:1200px;margin:14px auto 40px;padding:0 20px;display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:13px}
+.qr-card{background:var(--white);border-radius:var(--radius);box-shadow:var(--shadow);overflow:hidden;transition:transform .15s,box-shadow .15s}
+.qr-card:hover{transform:translateY(-2px);box-shadow:0 8px 28px rgba(0,86,168,.15)}
+.qrc-header{background:linear-gradient(135deg,var(--blue-dark),var(--blue));padding:10px 13px}
+.qrc-num{font-size:9px;font-weight:700;color:rgba(255,255,255,.5);letter-spacing:1px;margin-bottom:1px}
+.qrc-area{font-size:9px;font-weight:700;color:var(--gold);margin-bottom:2px}
+.qrc-name{font-size:12px;font-weight:700;color:var(--white);line-height:1.3}
+.qrc-qr{padding:14px;display:flex;align-items:center;justify-content:center;border-bottom:1px solid var(--gray-100)}
+.qr-wrap{width:130px;height:130px;display:flex;align-items:center;justify-content:center}
+.qrc-info{padding:11px 13px}
+.qrc-url{font-size:9px;color:var(--gray-500);word-break:break-all;margin-bottom:8px;line-height:1.5}
+.qrc-actions{display:flex;gap:5px}
+.qc-btn{flex:1;padding:6px;border:none;border-radius:7px;font-family:'Noto Sans JP',sans-serif;font-size:10px;font-weight:700;cursor:pointer;transition:all .15s;display:flex;align-items:center;justify-content:center;gap:2px;text-decoration:none}
+.qcb-print{background:var(--blue);color:var(--white)}
+.qcb-print:hover{background:var(--blue-dark)}
+.qcb-copy{background:var(--gray-100);color:var(--gray-900)}
+.qcb-copy:hover{background:var(--gray-300)}
+.qcb-map{background:#e8f5e9;color:#1b7a34}
+.qcb-map:hover{background:#c8e6c9}
+
+/* QR印刷モーダル */
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:1000;align-items:center;justify-content:center}
+.modal-overlay.show{display:flex}
+.modal{background:var(--white);border-radius:16px;padding:26px;max-width:400px;width:90%;box-shadow:0 20px 60px rgba(0,0,0,.3)}
+.modal-title{font-size:14px;font-weight:900;margin-bottom:3px}
+.modal-name{font-size:13px;font-weight:700;color:var(--blue);margin-bottom:3px}
+.modal-hint{font-size:11px;color:var(--gray-500);margin-bottom:14px}
+.modal-qr{display:flex;justify-content:center;margin-bottom:14px}
+.modal-btns{display:flex;gap:8px}
+.modal-btn{flex:1;padding:10px;border:none;border-radius:9px;font-family:'Noto Sans JP',sans-serif;font-size:13px;font-weight:700;cursor:pointer}
+.mbtn-print{background:var(--blue);color:var(--white)}
+.mbtn-close{background:var(--gray-100);color:var(--gray-900)}
+
+/* パスワードモーダル */
+.pw-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:500;align-items:center;justify-content:center}
+.pw-overlay.show{display:flex}
+.pw-modal{background:var(--white);border-radius:16px;padding:30px;max-width:340px;width:90%;box-shadow:0 20px 60px rgba(0,0,0,.3)}
+.pw-title{font-size:15px;font-weight:900;margin-bottom:5px}
+.pw-sub{font-size:12px;color:var(--gray-500);margin-bottom:18px}
+.pw-input{width:100%;padding:12px 13px;border:1.5px solid var(--gray-300);border-radius:10px;font-family:'Noto Sans JP',sans-serif;font-size:16px;letter-spacing:3px;text-align:center;margin-bottom:10px}
+.pw-input:focus{outline:none;border-color:var(--blue)}
+.pw-error{color:var(--accent);font-size:12px;margin-bottom:9px;display:none}
+.pw-btns{display:flex;gap:7px}
+.pw-btn{flex:1;padding:11px;border:none;border-radius:9px;font-family:'Noto Sans JP',sans-serif;font-size:13px;font-weight:700;cursor:pointer}
+.pw-ok{background:var(--blue);color:var(--white)}
+.pw-cancel{background:var(--gray-100);color:var(--gray-900)}
+
+/* 印刷エリア */
+.print-area{display:none;position:fixed;inset:0;background:white;z-index:2000;align-items:center;justify-content:center}
+@media print{body *{visibility:hidden!important}.print-area,.print-area *{visibility:visible!important}.print-area{display:flex!important;position:fixed!important;inset:0!important;background:white!important;z-index:9999!important}}
+.print-card{text-align:center;padding:36px;border:3px solid #0056A8;border-radius:20px;width:280px}
+
+/* Toast */
+.toast{position:fixed;bottom:22px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--gray-900);color:var(--white);padding:10px 22px;border-radius:8px;font-size:12px;font-weight:700;opacity:0;transition:all .3s;z-index:9999;pointer-events:none}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+</style>
+</head>
+<body>
+
+<!-- ===== 共通ヘッダー ===== -->
+<div class="site-header">
+  <div class="site-logo">LAWSON</div>
+  <div class="site-title" id="headerTitle">
+    アルバイト採用システム
+    <div class="site-sub">有限会社阪口商店</div>
+  </div>
+  <div class="nav-tabs">
+    <a class="nav-tab active" id="tabOubo" onclick="showPage('oubo')" href="#">📝 <span>応募フォーム</span></a>
+    <a class="nav-tab" id="tabQr" onclick="showPage('qr')" href="#">🖨 <span>QR管理</span></a>
+  </div>
+</div>
+
+<!-- ===================== 応募フォームページ ===================== -->
+<div class="page active" id="pageOubo">
+
+  <!-- サブヘッダー -->
+  <div class="oubo-header">
+    <div class="oubo-header-inner">
+      <div class="oubo-store-name" id="ouboStoreName"></div>
+      <div class="oubo-title">アルバイト<br><span>応募フォーム</span></div>
+      <div class="oubo-sub">必要事項をご記入のうえ、送信してください。<br>担当者よりご連絡いたします。</div>
+    </div>
+  </div>
+
+  <!-- 店舗バッジ -->
+  <div class="store-badge">
+    <div class="store-badge-inner">
+      <div class="badge-label">📣 募集中</div>
+      <div class="badge-name" id="badgeName"></div>
+      <div class="badge-row">
+        <div class="badge-info">
+          <div class="shift-tags" id="shiftTags"></div>
+          <div class="badge-count" id="badgeCount"></div>
+          <div class="badge-comment" id="badgeComment"></div>
+        </div>
+        <a class="map-btn" id="mapBtn" href="#" target="_blank" rel="noopener">📍 地図を見る</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- 店長メニューボタン -->
+  <div class="edit-btn-wrap">
+    <button class="edit-toggle-btn" onclick="openPwModal('edit')">⚙ 店長メニュー</button>
+  </div>
+
+  <!-- 店長編集パネル -->
+  <div class="manager-panel" id="managerPanel" style="display:none">
+    <div class="manager-panel-inner">
+      <div class="mp-header">
+        <div class="mp-title">⚙ 募集内容の編集 &nbsp;<span style="font-size:11px;opacity:.75;font-weight:500" id="mpStoreName"></span></div>
+        <button class="mp-close" onclick="closeManagerPanel()">✕</button>
+      </div>
+      <div class="mp-body">
+        <div class="mp-section">
+          <div class="mp-label">🗓 募集シフト（チェックで表示・時間帯は自由入力可）</div>
+          <div class="shift-check-list" id="shiftCheckList"></div>
+          <div class="add-shift-row">
+            <input type="text" class="add-shift-input" id="addShiftInput" placeholder="例：土日限定 9〜15時">
+            <button class="add-shift-btn" onclick="addCustomShift()">＋ 追加</button>
+          </div>
+        </div>
+        <div class="mp-section">
+          <div class="mp-label">👥 募集人数</div>
+          <select class="mp-select" id="mpCount">
+            <option>若干名</option><option>1名</option><option>2〜3名</option><option>3〜5名</option><option>複数名</option>
+          </select>
+        </div>
+        <div class="mp-section">
+          <div class="mp-label">💬 一言コメント（応募者へのメッセージ）</div>
+          <textarea class="mp-textarea" id="mpComment" placeholder="例：未経験歓迎！シフト相談OK！"></textarea>
+        </div>
+        <button class="mp-save-btn" onclick="saveManagerSettings()">💾 保存して反映する</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 応募フォーム本体 -->
+  <div class="oubo-main" id="formArea">
+    <form id="ouboForm" novalidate>
+
+      <div class="section">
+        <div class="section-header"><div class="section-num">1</div><div class="section-title">基本情報</div></div>
+        <div class="section-body">
+          <div class="field">
+            <div class="field-label"><span class="required">必須</span>お名前（フルネーム）</div>
+            <input type="text" name="name" placeholder="例：山田 太郎" required>
+          </div>
+          <div class="row-2">
+            <div class="field">
+              <div class="field-label"><span class="required">必須</span>年齢</div>
+              <input type="number" name="age" placeholder="20" min="15" max="80" required>
+            </div>
+            <div class="field">
+              <div class="field-label"><span class="required">必須</span>性別</div>
+              <div class="radio-group">
+                <div class="radio-btn"><input type="radio" name="gender" id="g1" value="男性" required><label for="g1">男性</label></div>
+                <div class="radio-btn"><input type="radio" name="gender" id="g2" value="女性"><label for="g2">女性</label></div>
+                <div class="radio-btn"><input type="radio" name="gender" id="g3" value="無回答"><label for="g3">無回答</label></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="section">
+        <div class="section-header"><div class="section-num">2</div><div class="section-title">連絡先</div></div>
+        <div class="section-body">
+          <div class="field">
+            <div class="field-label"><span class="required">必須</span>電話番号</div>
+            <input type="tel" name="tel" placeholder="例：090-1234-5678" required>
+          </div>
+          <div class="field">
+            <div class="field-label"><span class="optional">任意</span>メールアドレス</div>
+            <input type="email" name="email" placeholder="例：taro@example.com">
+          </div>
+        </div>
+      </div>
+
+      <div class="section">
+        <div class="section-header"><div class="section-num">3</div><div class="section-title">希望勤務日・時間帯</div></div>
+        <div class="section-body">
+          <div class="field">
+            <div class="field-label"><span class="required">必須</span>希望勤務曜日（複数選択可）</div>
+            <div class="check-group">
+              <div class="check-item"><input type="checkbox" id="d1" name="days" value="月"><label for="d1">月</label></div>
+              <div class="check-item"><input type="checkbox" id="d2" name="days" value="火"><label for="d2">火</label></div>
+              <div class="check-item"><input type="checkbox" id="d3" name="days" value="水"><label for="d3">水</label></div>
+              <div class="check-item"><input type="checkbox" id="d4" name="days" value="木"><label for="d4">木</label></div>
+              <div class="check-item"><input type="checkbox" id="d5" name="days" value="金"><label for="d5">金</label></div>
+              <div class="check-item"><input type="checkbox" id="d6" name="days" value="土"><label for="d6">土</label></div>
+              <div class="check-item"><input type="checkbox" id="d7" name="days" value="日"><label for="d7">日</label></div>
+            </div>
+          </div>
+          <div class="field">
+            <div class="field-label"><span class="required">必須</span>希望時間帯</div>
+            <select name="timeband" id="timebandSelect" required>
+              <option value="">選択してください</option>
+            </select>
+          </div>
+          <div class="field">
+            <div class="field-label"><span class="optional">任意</span>週に入れる日数</div>
+            <select name="weeksdays">
+              <option value="">選択してください</option>
+              <option>週1日</option><option>週2〜3日</option><option>週4〜5日</option><option>週6日以上</option><option>相談可</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <div class="section">
+        <div class="section-header"><div class="section-num">4</div><div class="section-title">面接希望日時（3候補）</div></div>
+        <div class="section-body">
+          <p style="font-size:11px;color:var(--gray-500);margin-bottom:14px;line-height:1.6">ご都合の良い日時を3つご記入ください。</p>
+          <div class="interview-slot">
+            <div class="slot-label"><div class="slot-badge">1</div>第1希望</div>
+            <div class="row-2">
+              <div class="field" style="margin-bottom:0"><input type="date" name="interview1_date"></div>
+              <div class="field" style="margin-bottom:0"><select name="interview1_time"><option value="">時間帯を選択</option><option>午前（10〜12時）</option><option>昼（12〜14時）</option><option>午後（14〜17時）</option><option>夕方（17〜19時）</option></select></div>
+            </div>
+          </div>
+          <div class="interview-slot">
+            <div class="slot-label"><div class="slot-badge">2</div>第2希望</div>
+            <div class="row-2">
+              <div class="field" style="margin-bottom:0"><input type="date" name="interview2_date"></div>
+              <div class="field" style="margin-bottom:0"><select name="interview2_time"><option value="">時間帯を選択</option><option>午前（10〜12時）</option><option>昼（12〜14時）</option><option>午後（14〜17時）</option><option>夕方（17〜19時）</option></select></div>
+            </div>
+          </div>
+          <div class="interview-slot">
+            <div class="slot-label"><div class="slot-badge">3</div>第3希望</div>
+            <div class="row-2">
+              <div class="field" style="margin-bottom:0"><input type="date" name="interview3_date"></div>
+              <div class="field" style="margin-bottom:0"><select name="interview3_time"><option value="">時間帯を選択</option><option>午前（10〜12時）</option><option>昼（12〜14時）</option><option>午後（14〜17時）</option><option>夕方（17〜19時）</option></select></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="section">
+        <div class="section-header"><div class="section-num">5</div><div class="section-title">志望動機・自己PR</div></div>
+        <div class="section-body">
+          <div class="field">
+            <div class="field-label"><span class="required">必須</span>志望動機・自己PR</div>
+            <textarea name="motivation" placeholder="例：自宅から近く、接客の経験を積みたいと思い応募しました。体力には自信があります。" required></textarea>
+          </div>
+          <div class="field">
+            <div class="field-label"><span class="optional">任意</span>バイト・仕事経験</div>
+            <textarea name="experience" placeholder="例：飲食店でホールスタッフを1年経験しました。" style="min-height:68px"></textarea>
+          </div>
+        </div>
+      </div>
+
+      <div class="submit-wrap">
+        <button type="submit" class="btn-submit" id="submitBtn">
+          <span id="submitText">応募を送信する　→</span>
+          <div class="spinner" id="spinner"></div>
+        </button>
+        <p class="form-note">送信後、担当者よりご連絡いたします（通常2〜3営業日以内）。<br>入力内容は採用目的にのみ使用します。</p>
+      </div>
+    </form>
+  </div>
+
+  <!-- 完了画面 -->
+  <div class="success-screen" id="successScreen">
+    <div class="success-icon">✓</div>
+    <div class="success-title">応募が完了しました！</div>
+    <div class="success-msg" id="successMsg"></div>
+  </div>
+</div><!-- /pageOubo -->
+
+<!-- ===================== QR管理ページ ===================== -->
+<div class="page" id="pageQr">
+  <div class="qr-toolbar">
+    <div class="qr-count">全 20 店舗<span class="count-pill" id="displayCount">20件表示</span></div>
+    <button class="btn-outline" onclick="copyAllUrls()">🔗 全URL一括コピー</button>
+  </div>
+  <div class="filter-bar">
+    <span class="filter-label">エリア：</span>
+    <div class="chip active" onclick="filterArea(this,'all')">すべて</div>
+    <div class="chip" onclick="filterArea(this,'suita')">吹田</div>
+    <div class="chip" onclick="filterArea(this,'toyonaka')">豊中</div>
+    <div class="chip" onclick="filterArea(this,'osaka')">大阪市内</div>
+    <div class="chip" onclick="filterArea(this,'kita')">北摂</div>
+    <input type="text" class="search-input" placeholder="🔍 店舗名で検索..." oninput="filterSearch(this.value)">
+  </div>
+  <div class="qr-grid" id="storeGrid"></div>
+</div><!-- /pageQr -->
+
+<!-- QR印刷モーダル -->
+<div class="modal-overlay" id="modal" onclick="if(event.target===this)closeModal()">
+  <div class="modal">
+    <div class="modal-title">🖨 印刷プレビュー</div>
+    <div class="modal-name" id="modalStoreName"></div>
+    <div class="modal-hint">QRコードを印刷して店内に掲示してください</div>
+    <div class="modal-qr" id="modalQrContainer"></div>
+    <div class="modal-btns">
+      <button class="modal-btn mbtn-print" onclick="doPrint()">印刷する</button>
+      <button class="modal-btn mbtn-close" onclick="closeModal()">閉じる</button>
+    </div>
+  </div>
+</div>
+
+<!-- パスワードモーダル -->
+<div class="pw-overlay" id="pwOverlay">
+  <div class="pw-modal">
+    <div class="pw-title">🔑 店長メニュー</div>
+    <div class="pw-sub">パスワードを入力してください</div>
+    <input type="password" class="pw-input" id="pwInput" placeholder="••••••" maxlength="20" onkeydown="if(event.key==='Enter')checkPassword()">
+    <div class="pw-error" id="pwError">パスワードが違います</div>
+    <div class="pw-btns">
+      <button class="pw-btn pw-ok" onclick="checkPassword()">確認</button>
+      <button class="pw-btn pw-cancel" onclick="closePwModal()">キャンセル</button>
+    </div>
+  </div>
+</div>
+
+<!-- 印刷エリア -->
+<div class="print-area" id="printArea">
+  <div class="print-card">
+    <div style="font-size:10px;color:#0056A8;font-weight:700;margin-bottom:6px;letter-spacing:1px">LAWSON</div>
+    <div style="font-size:13px;font-weight:900;color:#1a1e2e;margin-bottom:3px" id="printStoreName"></div>
+    <div style="font-size:10px;color:#7a8299;margin-bottom:13px">アルバイト募集中</div>
+    <div id="printQrContainer" style="display:flex;justify-content:center;margin-bottom:13px"></div>
+    <div style="font-size:12px;font-weight:700;color:#0056A8;margin-bottom:3px">📱 QRコードを読み取って応募！</div>
+    <div style="font-size:9px;color:#7a8299">スマートフォンのカメラを向けてください</div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ============================================================
+//  設定
+// ============================================================
+const GAS_URL = "https://script.google.com/macros/s/YOUR_GAS_DEPLOYMENT_ID/exec";
+const MANAGER_PASSWORD = "Lawson3963";
+const THIS_URL = "https://uno0908-star.github.io/sakaguchi-MO-/baito.html";
+
+// ============================================================
+//  店舗マスター（有限会社阪口商店 実店舗20店）
+// ============================================================
+const STORES = [
+  { key:"tarumi3",      name:"ローソン吹田垂水三丁目",     area:"suita",    areaLabel:"吹田",   maps:"https://www.google.com/maps/search/ローソン吹田垂水三丁目" },
+  { key:"esaka_east",   name:"ローソン江坂東",             area:"suita",    areaLabel:"吹田",   maps:"https://www.google.com/maps/search/ローソン江坂東+吹田市" },
+  { key:"esaka_south",  name:"ローソン江坂駅南口",         area:"suita",    areaLabel:"吹田",   maps:"https://www.google.com/maps/search/ローソン江坂駅南口" },
+  { key:"suita_police", name:"ローソン吹田警察署前",       area:"suita",    areaLabel:"吹田",   maps:"https://www.google.com/maps/search/ローソン吹田警察署前" },
+  { key:"kaneda",       name:"ローソン南金田二丁目",       area:"suita",    areaLabel:"吹田",   maps:"https://www.google.com/maps/search/ローソン南金田二丁目+吹田市" },
+  { key:"toyotsu_jhs",  name:"ローソン吹田豊津中学校前",   area:"suita",    areaLabel:"吹田",   maps:"https://www.google.com/maps/search/ローソン吹田豊津中学校前" },
+  { key:"shinden",      name:"ローソン新御堂筋上新田",     area:"suita",    areaLabel:"吹田",   maps:"https://www.google.com/maps/search/ローソン新御堂筋上新田" },
+  { key:"aoyamadai3",   name:"ローソン吹田青山台三丁目",   area:"suita",    areaLabel:"吹田",   maps:"https://www.google.com/maps/search/ローソン吹田青山台三丁目" },
+  { key:"asahi",        name:"ローソン吹田朝日町",         area:"suita",    areaLabel:"吹田",   maps:"https://www.google.com/maps/search/ローソン吹田朝日町" },
+  { key:"harada",       name:"ローソン豊中原田南一丁目",   area:"toyonaka", areaLabel:"豊中",   maps:"https://www.google.com/maps/search/ローソン豊中原田南一丁目" },
+  { key:"hattori3",     name:"ローソン豊中服部西町三丁目", area:"toyonaka", areaLabel:"豊中",   maps:"https://www.google.com/maps/search/ローソン豊中服部西町三丁目" },
+  { key:"tosokura1",    name:"ローソン豊中利倉東一丁目",   area:"toyonaka", areaLabel:"豊中",   maps:"https://www.google.com/maps/search/ローソン豊中利倉東一丁目" },
+  { key:"satsukigaoka", name:"ローソン五月ケ丘東",         area:"toyonaka", areaLabel:"豊中",   maps:"https://www.google.com/maps/search/ローソン五月ケ丘東+豊中市" },
+  { key:"hattori_moto", name:"ローソン豊中服部元町一丁目", area:"toyonaka", areaLabel:"豊中",   maps:"https://www.google.com/maps/search/ローソン豊中服部元町一丁目" },
+  { key:"daido_east",   name:"ローソン東淀川大道南",       area:"osaka",    areaLabel:"大阪市", maps:"https://www.google.com/maps/search/ローソン東淀川大道南" },
+  { key:"daido1",       name:"ローソン大道南一丁目",       area:"osaka",    areaLabel:"大阪市", maps:"https://www.google.com/maps/search/ローソン大道南一丁目+大阪市" },
+  { key:"toyosato6",    name:"ローソン豊里六丁目",         area:"osaka",    areaLabel:"大阪市", maps:"https://www.google.com/maps/search/ローソン豊里六丁目+大阪市" },
+  { key:"toyosato5",    name:"ローソン東淀川豊里五丁目",   area:"osaka",    areaLabel:"大阪市", maps:"https://www.google.com/maps/search/ローソン東淀川豊里五丁目" },
+  { key:"ikeda_city",   name:"ローソン池田市役所前",       area:"kita",     areaLabel:"池田",   maps:"https://www.google.com/maps/search/ローソン池田市役所前" },
+  { key:"minoh",        name:"ローソン箕面白島二丁目",     area:"kita",     areaLabel:"箕面",   maps:"https://www.google.com/maps/search/ローソン箕面白島二丁目" },
+];
+
+const DEFAULT_SHIFTS = [
+  { label:"早朝（6〜9時）",   checked:false },
+  { label:"午前（9〜13時）",  checked:false },
+  { label:"午後（13〜17時）", checked:false },
+  { label:"日中（9〜17時）",  checked:false },
+  { label:"夕方（17〜22時）", checked:false },
+  { label:"深夜（22〜6時）",  checked:false },
+];
+
+// ============================================================
+//  ページ切替
+// ============================================================
+function showPage(page){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-tab').forEach(t=>t.classList.remove('active'));
+  document.getElementById('page' + page.charAt(0).toUpperCase() + page.slice(1)).classList.add('active');
+  document.getElementById('tab' + page.charAt(0).toUpperCase() + page.slice(1)).classList.add('active');
+  if(page==='qr') renderGrid(STORES);
+  return false;
+}
+
+// ============================================================
+//  URLパラメータ解析・初期化
+// ============================================================
+const params = new URLSearchParams(location.search);
+const storeKey = params.get("store") || "esaka_south";
+const store = STORES.find(s=>s.key===storeKey) || STORES[2];
+let settings = loadSettings(storeKey);
+
+(function init(){
+  // ナビのモード
+  if(params.get("mode")==="qr"){
+    showPage('qr');
+  }
+
+  // 応募フォーム初期化
+  document.getElementById("ouboStoreName").textContent = store.name;
+  document.getElementById("badgeName").textContent     = store.name;
+  document.getElementById("mpStoreName").textContent   = store.name;
+  document.getElementById("mapBtn").href               = store.maps;
+  document.title = params.get("mode")==="qr"
+    ? "QRコード管理 | 阪口商店"
+    : "アルバイト応募 | " + store.name;
+
+  // hidden fields
+  const form = document.getElementById("ouboForm");
+  [["storeKey",storeKey],["storeName",store.name]].forEach(([n,v])=>{
+    const el=document.createElement("input");el.type="hidden";el.name=n;el.value=v;form.appendChild(el);
+  });
+
+  refreshBadge();
+  buildTimebandSelect();
+  buildShiftCheckList();
+})();
+
+// ============================================================
+//  設定読み書き
+// ============================================================
+function loadSettings(k){
+  try{ const r=localStorage.getItem("baito_"+k); if(r) return JSON.parse(r); }catch(e){}
+  return { shifts:DEFAULT_SHIFTS.map(s=>({...s})), count:"若干名", comment:"" };
+}
+function saveSettingsStore(k,s){ localStorage.setItem("baito_"+k,JSON.stringify(s)); }
+
+// ============================================================
+//  バッジ・フォーム更新
+// ============================================================
+function refreshBadge(){
+  const active = settings.shifts.filter(s=>s.checked);
+  document.getElementById("shiftTags").innerHTML = active.length
+    ? active.map(s=>`<span class="badge-tag">${s.label}</span>`).join("")
+    : '<span style="font-size:12px;color:var(--gray-500)">募集シフトは店長にお問い合わせください</span>';
+  document.getElementById("badgeCount").textContent   = settings.count  ? "募集人数："+settings.count : "";
+  document.getElementById("badgeComment").textContent = settings.comment || "";
+  buildTimebandSelect();
+}
+
+function buildTimebandSelect(){
+  const sel = document.getElementById("timebandSelect");
+  sel.innerHTML = '<option value="">選択してください</option>';
+  settings.shifts.forEach(s=>{
+    const o=document.createElement("option");o.value=s.label;o.textContent=s.label;sel.appendChild(o);
+  });
+  const f=document.createElement("option");f.value="相談可";f.textContent="時間帯は相談可";sel.appendChild(f);
+}
+
+// ============================================================
+//  店長編集パネル
+// ============================================================
+function buildShiftCheckList(){
+  const list = document.getElementById("shiftCheckList");
+  list.innerHTML = "";
+  settings.shifts.forEach((shift,idx)=>{
+    const isCustom = idx >= DEFAULT_SHIFTS.length;
+    const item = document.createElement("div");
+    item.className = "sci" + (shift.checked?" active":"");
+    item.innerHTML = `
+      <input type="checkbox" id="sc${idx}" ${shift.checked?"checked":""}
+        onchange="toggleShift(${idx},this.checked)">
+      <label for="sc${idx}">${shift.label}</label>
+      ${isCustom?`<button class="rm-btn" onclick="removeCustomShift(${idx})">✕</button>`:""}
+    `;
+    list.appendChild(item);
+  });
+  document.getElementById("mpCount").value   = settings.count   || "若干名";
+  document.getElementById("mpComment").value = settings.comment || "";
+}
+
+function toggleShift(idx,checked){
+  settings.shifts[idx].checked = checked;
+  document.querySelectorAll(".sci")[idx]?.classList.toggle("active",checked);
+}
+
+function addCustomShift(){
+  const input=document.getElementById("addShiftInput");
+  const val=input.value.trim(); if(!val) return;
+  settings.shifts.push({label:val,checked:true});
+  input.value=""; buildShiftCheckList();
+}
+
+function removeCustomShift(idx){
+  settings.shifts.splice(idx,1); buildShiftCheckList();
+}
+
+function saveManagerSettings(){
+  settings.count   = document.getElementById("mpCount").value;
+  settings.comment = document.getElementById("mpComment").value.trim();
+  saveSettingsStore(storeKey,settings);
+  refreshBadge(); closeManagerPanel();
+  showToast("✅ 募集内容を保存しました！");
+}
+
+function closeManagerPanel(){ document.getElementById("managerPanel").style.display="none"; }
+
+// ============================================================
+//  パスワード
+// ============================================================
+let pwTarget = "";
+function openPwModal(target){
+  pwTarget=target;
+  document.getElementById("pwInput").value="";
+  document.getElementById("pwError").style.display="none";
+  document.getElementById("pwOverlay").classList.add("show");
+  setTimeout(()=>document.getElementById("pwInput").focus(),100);
+}
+function closePwModal(){ document.getElementById("pwOverlay").classList.remove("show"); }
+function checkPassword(){
+  if(document.getElementById("pwInput").value===MANAGER_PASSWORD){
+    closePwModal();
+    if(pwTarget==="edit"){
+      document.getElementById("managerPanel").style.display="block";
+      buildShiftCheckList();
+      document.getElementById("managerPanel").scrollIntoView({behavior:"smooth",block:"start"});
+    }
+  } else {
+    document.getElementById("pwError").style.display="block";
+    document.getElementById("pwInput").value="";
+    document.getElementById("pwInput").focus();
+  }
+}
+
+// ============================================================
+//  フォーム送信
+// ============================================================
+document.getElementById("ouboForm").addEventListener("submit", async function(e){
+  e.preventDefault();
+  const days=[...document.querySelectorAll('input[name="days"]:checked')];
+  if(!days.length){ alert("希望勤務曜日を1日以上選択してください。"); return; }
+  const btn=document.getElementById("submitBtn");
+  const txt=document.getElementById("submitText");
+  const spin=document.getElementById("spinner");
+  btn.disabled=true; txt.style.display="none"; spin.style.display="block";
+  const fd=new FormData(this);
+  fd.set("days",days.map(c=>c.value).join("・"));
+  fd.set("submitted_at",new Date().toLocaleString("ja-JP",{timeZone:"Asia/Tokyo"}));
+  const payload={};
+  fd.forEach((v,k)=>{payload[k]=v;});
+  try{
+    await fetch(GAS_URL,{method:"POST",mode:"no-cors",headers:{"Content-Type":"application/json"},body:JSON.stringify(payload)});
+    document.getElementById("formArea").style.display="none";
+    document.getElementById("successScreen").style.display="block";
+    document.getElementById("successMsg").innerHTML=`<strong>${store.name}</strong> への応募ありがとうございます。<br>担当者より2〜3営業日以内にご連絡いたします。`;
+  }catch(err){
+    alert("送信中にエラーが発生しました。時間をおいて再度お試しください。");
+    btn.disabled=false; txt.style.display="inline"; spin.style.display="none";
+  }
+});
+
+// ============================================================
+//  QR管理ページ
+// ============================================================
+let currentArea="all", currentSearch="";
+const qrInstances={};
+
+function renderGrid(stores){
+  const grid=document.getElementById("storeGrid");
+  grid.innerHTML="";
+  document.getElementById("displayCount").textContent=stores.length+"件表示";
+  stores.forEach((s,i)=>{
+    const url=THIS_URL+"?store="+s.key;
+    const card=document.createElement("div");
+    card.className="qr-card";
+    card.innerHTML=`
+      <div class="qrc-header">
+        <div class="qrc-num">STORE ${String(STORES.indexOf(s)+1).padStart(2,"0")}</div>
+        <div class="qrc-area">${s.areaLabel}</div>
+        <div class="qrc-name">${s.name}</div>
+      </div>
+      <div class="qrc-qr"><div class="qr-wrap" id="qr-${s.key}"></div></div>
+      <div class="qrc-info">
+        <div class="qrc-url">${url}</div>
+        <div class="qrc-actions">
+          <button class="qc-btn qcb-print" onclick="openModal('${s.key}')">🖨 印刷</button>
+          <button class="qc-btn qcb-copy" onclick="copyUrl('${url}',this)">🔗 コピー</button>
+          <a class="qc-btn qcb-map" href="${s.maps}" target="_blank" rel="noopener">📍 地図</a>
+        </div>
+      </div>
+    `;
+    grid.appendChild(card);
+    setTimeout(()=>{
+      const el=document.getElementById("qr-"+s.key);
+      if(el&&!qrInstances[s.key]){
+        qrInstances[s.key]=new QRCode(el,{text:url,width:120,height:120,colorDark:"#0056A8",colorLight:"#ffffff",correctLevel:QRCode.CorrectLevel.M});
+      }
+    },i*25);
+  });
+}
+
+function filterArea(el,area){
+  document.querySelectorAll(".chip").forEach(c=>c.classList.remove("active"));
+  el.classList.add("active"); currentArea=area; applyFilter();
+}
+function filterSearch(val){ currentSearch=val.trim(); applyFilter(); }
+function applyFilter(){
+  let f=STORES;
+  if(currentArea!=="all") f=f.filter(s=>s.area===currentArea);
+  if(currentSearch) f=f.filter(s=>s.name.includes(currentSearch));
+  renderGrid(f);
+}
+
+// QR印刷モーダル
+let printKey=null;
+function openModal(key){
+  const s=STORES.find(x=>x.key===key);
+  printKey=key;
+  document.getElementById("modalStoreName").textContent=s.name;
+  const c=document.getElementById("modalQrContainer");c.innerHTML="";
+  new QRCode(c,{text:THIS_URL+"?store="+key,width:170,height:170,colorDark:"#0056A8",colorLight:"#ffffff",correctLevel:QRCode.CorrectLevel.M});
+  document.getElementById("modal").classList.add("show");
+}
+function closeModal(){ document.getElementById("modal").classList.remove("show"); }
+function doPrint(){
+  if(!printKey) return;
+  const s=STORES.find(x=>x.key===printKey);
+  document.getElementById("printStoreName").textContent=s.name;
+  const pc=document.getElementById("printQrContainer");pc.innerHTML="";
+  new QRCode(pc,{text:THIS_URL+"?store="+printKey,width:160,height:160,colorDark:"#003d7a",colorLight:"#ffffff",correctLevel:QRCode.CorrectLevel.H});
+  document.getElementById("printArea").style.display="flex";
+  setTimeout(()=>{ window.print(); document.getElementById("printArea").style.display="none"; closeModal(); },400);
+}
+
+function copyUrl(url,btn){
+  navigator.clipboard.writeText(url).then(()=>{ showToast("URLをコピーしました！"); btn.textContent="✅ コピー済"; setTimeout(()=>btn.textContent="🔗 コピー",2000); });
+}
+function copyAllUrls(){
+  const urls=STORES.map(s=>`${s.name}\n${THIS_URL}?store=${s.key}`).join("\n\n");
+  navigator.clipboard.writeText(urls).then(()=>showToast("全20店舗のURLをコピーしました！"));
+}
+
+function showToast(msg){
+  const t=document.getElementById("toast");t.textContent=msg;t.classList.add("show");
+  setTimeout(()=>t.classList.remove("show"),2500);
+}
+</script>
+</body>
+</html>
