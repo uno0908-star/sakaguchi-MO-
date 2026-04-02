@@ -17,7 +17,6 @@
   }
   *{box-sizing:border-box;margin:0;padding:0;}
   body{font-family:'Noto Sans JP',sans-serif;background:var(--gray-50);color:var(--gray-900);min-height:100vh;-webkit-font-smoothing:antialiased;}
-
   .header{background:linear-gradient(135deg,var(--lawson-dark) 0%,var(--lawson-blue) 60%,var(--accent) 100%);color:#fff;padding:18px 20px 16px;position:sticky;top:0;z-index:100;box-shadow:0 2px 12px rgba(0,68,143,.25);}
   .header-inner{max-width:680px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;}
   .header-logo{display:flex;align-items:center;gap:10px;}
@@ -28,13 +27,10 @@
   .tab-switcher{display:flex;background:rgba(255,255,255,.15);border-radius:20px;padding:3px;gap:2px;}
   .tab-btn{padding:5px 12px;border:none;background:transparent;color:rgba(255,255,255,.75);font-size:12px;font-weight:500;border-radius:16px;cursor:pointer;transition:all .2s;font-family:'Noto Sans JP',sans-serif;white-space:nowrap;}
   .tab-btn.active{background:#fff;color:var(--lawson-blue);font-weight:700;box-shadow:0 1px 4px rgba(0,0,0,.15);}
-
   .main{max-width:680px;margin:0 auto;padding:20px 16px 40px;}
-
   .card{background:#fff;border-radius:var(--radius);padding:20px;margin-bottom:16px;box-shadow:var(--shadow-sm);border:1px solid var(--gray-200);}
   .card-title{font-size:13px;font-weight:700;color:var(--lawson-blue);margin-bottom:14px;display:flex;align-items:center;gap:7px;}
   .card-title .icon{width:24px;height:24px;background:var(--lawson-light);border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0;}
-
   .form-group{margin-bottom:14px;}
   .form-label{display:block;font-size:12px;font-weight:600;color:var(--gray-700);margin-bottom:6px;}
   .required-badge{display:inline-block;background:var(--red);color:#fff;font-size:9px;font-weight:700;padding:1px 5px;border-radius:4px;margin-left:5px;vertical-align:middle;}
@@ -42,16 +38,13 @@
   .form-input:focus,.form-select:focus{outline:none;border-color:var(--lawson-blue);background:#fff;box-shadow:0 0 0 3px rgba(0,104,183,.1);}
   .form-select-wrap{position:relative;}
   .form-select-wrap::after{content:'▼';position:absolute;right:14px;top:50%;transform:translateY(-50%);font-size:10px;color:var(--gray-500);pointer-events:none;}
-
   .form-input.error{border-color:var(--red)!important;background:var(--red-light)!important;}
   .form-input.ok{border-color:var(--green)!important;}
   .field-hint{font-size:11px;margin-top:5px;padding:5px 9px;border-radius:6px;display:none;line-height:1.5;}
   .field-hint.show{display:block;}
   .field-hint.err{background:var(--red-light);color:var(--red);}
   .field-hint.info{background:var(--lawson-light);color:var(--lawson-blue);}
-
   #empId{font-family:'DM Mono',monospace;letter-spacing:0.15em;font-size:16px;}
-
   .transport-choice{display:flex;flex-direction:column;gap:8px;margin-top:4px;}
   .transport-item{position:relative;}
   .transport-item input[type="radio"]{position:absolute;opacity:0;width:0;height:0;}
@@ -68,12 +61,10 @@
   .transport-note-box{margin-top:10px;background:var(--orange-light);border:1px solid rgba(245,166,35,.3);border-radius:var(--radius-sm);padding:10px 13px;font-size:12px;color:#7a4f00;display:flex;align-items:flex-start;gap:8px;line-height:1.5;display:none;}
   .transport-note-box.show{display:flex;}
   .t-icon{font-size:15px;flex-shrink:0;margin-top:1px;}
-
   .deadline-banner{border-radius:var(--radius-sm);padding:14px 16px;margin-bottom:16px;font-size:12.5px;line-height:1.6;}
   .deadline-banner.ok{background:var(--green-light);border:1.5px solid rgba(0,176,80,.35);color:#1a6b35;}
   .deadline-banner.warn{background:var(--orange-light);border:1.5px solid rgba(245,166,35,.4);color:#7a4f00;}
   .deadline-period{margin-top:6px;background:rgba(255,255,255,.6);border-radius:6px;padding:8px 12px;font-size:13px;font-weight:700;}
-
   .calendar-nav{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;}
   .cal-nav-btn{width:34px;height:34px;border:1.5px solid var(--gray-200);border-radius:8px;background:#fff;cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center;color:var(--gray-700);transition:all .15s;}
   .cal-nav-btn:hover{border-color:var(--lawson-blue);color:var(--lawson-blue);}
@@ -92,12 +83,10 @@
   .cal-day.selected{background:var(--lawson-blue);border-color:var(--lawson-blue);color:#fff!important;font-weight:700;box-shadow:0 2px 8px rgba(0,104,183,.35);transform:scale(1.05);}
   .cal-day.today:not(.selected){border-color:var(--orange);font-weight:700;}
   .cal-day.today:not(.selected)::after{content:'';position:absolute;bottom:3px;width:4px;height:4px;background:var(--orange);border-radius:50%;}
-
   .selected-dates-section{margin-top:16px;}
   .selected-dates-label{font-size:12px;font-weight:700;color:var(--gray-700);margin-bottom:8px;display:flex;align-items:center;gap:5px;}
   .selected-count{background:var(--lawson-blue);color:#fff;font-size:10px;font-weight:700;padding:2px 7px;border-radius:10px;}
   .no-date{color:var(--gray-500);font-size:12px;padding:8px 0;display:block;}
-
   .date-time-row{display:flex;align-items:center;gap:8px;padding:10px 12px;background:var(--lawson-light);border:1.5px solid rgba(0,104,183,.18);border-radius:var(--radius-sm);margin-bottom:8px;animation:slideIn .15s ease;}
   @keyframes slideIn{from{opacity:0;transform:translateY(-4px);}to{opacity:1;transform:translateY(0);}}
   .date-label{font-size:13px;font-weight:700;color:var(--lawson-blue);min-width:76px;flex-shrink:0;}
@@ -109,9 +98,7 @@
   .time-select:focus{outline:none;border-color:var(--lawson-blue);}
   .remove-date-btn{width:28px;height:28px;border:none;background:rgba(229,57,53,.1);color:var(--red);border-radius:7px;cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all .15s;-webkit-tap-highlight-color:transparent;}
   .remove-date-btn:hover{background:var(--red);color:#fff;}
-  .allday-toggle{display:flex;align-items:center;gap:4px;font-size:11px;color:var(--gray-500);cursor:pointer;flex-shrink:0;white-space:nowrap;}
-  .allday-toggle input{width:14px;height:14px;cursor:pointer;accent-color:var(--lawson-blue);}
-
+  .allday-toggle{display:none;}
   .store-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:4px;}
   .store-check-item{position:relative;}
   .store-check-item input[type="checkbox"]{position:absolute;opacity:0;width:0;height:0;}
@@ -122,17 +109,14 @@
   .store-name-info{display:flex;flex-direction:column;gap:2px;}
   .store-map-link{font-size:10px;color:var(--lawson-blue);text-decoration:none;display:inline-flex;align-items:center;gap:2px;margin-top:2px;opacity:.7;}
   .store-map-link:hover{opacity:1;}
-
   .submit-btn{width:100%;padding:16px;background:linear-gradient(135deg,var(--lawson-blue),var(--accent));color:#fff;border:none;border-radius:var(--radius);font-size:16px;font-weight:700;font-family:'Noto Sans JP',sans-serif;cursor:pointer;box-shadow:0 4px 16px rgba(0,104,183,.35);transition:all .2s;display:flex;align-items:center;justify-content:center;gap:8px;-webkit-tap-highlight-color:transparent;}
   .submit-btn:hover{transform:translateY(-1px);box-shadow:0 6px 20px rgba(0,104,183,.4);}
   .submit-btn:active{transform:translateY(0);}
-
   .success-card{background:var(--green-light);border:2px solid var(--green);border-radius:var(--radius);padding:30px 20px;text-align:center;display:none;}
   .success-card.show{display:block;}
   .success-icon{font-size:48px;margin-bottom:12px;}
   .success-title{font-size:18px;font-weight:700;color:var(--green);margin-bottom:8px;}
   .success-sub{font-size:13px;color:var(--gray-700);line-height:1.6;}
-
   .admin-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:16px;}
   .stat-card{background:#fff;border-radius:var(--radius-sm);padding:14px 12px;text-align:center;box-shadow:var(--shadow-sm);border:1px solid var(--gray-200);}
   .stat-num{font-size:24px;font-weight:900;color:var(--lawson-blue);line-height:1;}
@@ -165,29 +149,14 @@
   .empty-admin{text-align:center;padding:40px 20px;color:var(--gray-500);font-size:13px;line-height:1.7;}
   .empty-icon{font-size:36px;margin-bottom:8px;}
   .pagination{display:flex;justify-content:center;align-items:center;gap:8px;margin-top:16px;font-size:12px;color:var(--gray-500);}
-
   /* シフト確定バッジ・ボタン */
   .confirmed-badge{display:inline-flex;align-items:center;gap:4px;background:#e8f5e9;color:#2e7d32;border:1px solid rgba(46,125,50,.3);font-size:11px;font-weight:700;padding:2px 8px;border-radius:5px;margin-left:6px;}
   .confirm-btn{display:inline-flex;align-items:center;gap:3px;background:var(--gray-100);color:var(--gray-500);border:1px solid var(--gray-200);font-size:10px;font-weight:600;padding:2px 7px;border-radius:5px;cursor:pointer;margin-left:6px;font-family:'Noto Sans JP',sans-serif;transition:all .15s;white-space:nowrap;}
   .confirm-btn:hover{background:var(--green-light);color:var(--green);border-color:var(--green);}
   .confirm-btn.cancel{background:#fdecea;color:var(--red);border-color:rgba(229,57,53,.3);}
   .confirm-btn.cancel:hover{background:var(--red);color:#fff;}
-
   /* 仮シフト表 */
-  .draft-date-row{padding:10px 14px;border-bottom:1px solid var(--gray-100);display:flex;align-items:flex-start;gap:10px;}
   .draft-date-row:last-child{border-bottom:none;}
-  .draft-date-col{min-width:72px;flex-shrink:0;}
-  .draft-date-label{font-size:13px;font-weight:700;color:var(--gray-900);}
-  .draft-date-label.sun{color:var(--red);}
-  .draft-date-label.sat{color:var(--lawson-blue);}
-  .draft-members{display:flex;flex-direction:column;gap:5px;flex:1;}
-  .draft-member-chip{display:flex;align-items:center;gap:6px;background:var(--gray-50);border-radius:7px;padding:6px 10px;font-size:12px;}
-  .draft-member-name{font-weight:700;color:var(--gray-900);}
-  .draft-member-time{color:var(--gray-700);font-family:'DM Mono',monospace;font-size:11px;}
-  .draft-member-badge{font-size:10px;font-weight:600;padding:1px 6px;border-radius:4px;flex-shrink:0;}
-  .draft-member-badge.home{background:var(--lawson-light);color:var(--lawson-blue);}
-  .draft-member-badge.help{background:#fff3cd;color:#7a4f00;}
-
   .view{display:none;}
   .view.active{display:block;}
 </style>
@@ -208,7 +177,7 @@
       </div>
       <div>
         <div class="header-title">シフト希望提出</div>
-        <div class="header-sub">阪口商店グループ 吹田支店</div>
+        <div class="header-sub">有限会社阪口商店</div>
       </div>
     </div>
     <div class="tab-switcher">
@@ -218,7 +187,6 @@
   </div>
 </div>
 
-<!-- クルー入力 -->
 <div id="crew-view" class="view active">
 <div class="main">
   <div class="deadline-banner ok" id="deadlineBanner"></div>
@@ -327,7 +295,6 @@
 </div>
 </div>
 
-<!-- 管理画面 -->
 <div id="admin-view" class="view">
 <div class="main">
   <div class="admin-stats">
@@ -335,9 +302,20 @@
     <div class="stat-card"><div class="stat-num" id="statStores">0</div><div class="stat-label">対象店舗数</div></div>
     <div class="stat-card"><div class="stat-num" id="statOther" style="color:var(--green);">0</div><div class="stat-label">他店舗OKの人数</div></div>
   </div>
+
+  <div id="rulesCard" style="background:#fffbeb;border:1.5px solid rgba(245,166,35,.4);border-radius:var(--radius);padding:14px 16px;margin-bottom:16px;">
+    <div style="font-size:12px;font-weight:700;color:#7a4f00;margin-bottom:8px;display:flex;align-items:center;gap:6px;">📋 シフト管理ツール 利用ルール</div>
+    <div style="font-size:11px;color:#7a4f00;line-height:1.8;">
+      <div>① <b>自店舗の確定入力を先に行ってください</b>（他店舗より先に自分の店のシフトを決めること）</div>
+      <div>② 他店舗移動OKのクルーが複数店舗にまたがる場合は、<b>該当店舗の管理者同士で相談</b>してからシフトを確定してください</div>
+      <div>③ <b>自分の店以外のシフトの「解除」ボタンは押さないでください</b></div>
+    </div>
+    <button onclick="document.getElementById('rulesCard').style.display='none'" style="margin-top:8px;font-size:10px;color:#7a4f00;background:transparent;border:1px solid rgba(122,79,0,.3);border-radius:5px;padding:3px 10px;cursor:pointer;font-family:'Noto Sans JP',sans-serif;">閉じる</button>
+  </div>
   <div class="admin-actions">
     <button class="action-btn" onclick="exportCSV()">📥 CSVダウンロード</button>
-    <button class="action-btn danger" onclick="clearAll()">🗑 全データ削除</button>
+    <button class="action-btn" onclick="openRangeDeleteModal()" style="color:var(--orange);">📅 期間別削除</button>
+    <button class="action-btn danger" onclick="clearAll()">🗑 全削除</button>
   </div>
   <div class="filter-bar">
     <div class="form-select-wrap" style="flex:1;min-width:130px;">
@@ -360,7 +338,7 @@
       </select>
     </div>
   </div>
-  <!-- 仮シフト表 -->
+
   <div id="draftShiftSection" style="display:none;margin-bottom:16px;">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
       <div style="font-size:13px;font-weight:700;color:var(--lawson-blue);display:flex;align-items:center;gap:6px;">
@@ -401,29 +379,19 @@ const STORES=[
   {name:"箕面白島二丁目",mapUrl:"https://maps.google.com/?q=34.835083,135.495179"},
 ];
 
-// ===== 日付・時刻フォーマットユーティリティ =====
-
-// "Sat Dec 30 1899 09:00:00 GMT+0900..." や Date オブジェクトから "09:00" を取り出す
 function parseTimeStr(val){
   if(!val)return null;
-  // すでに "HH:MM" 形式ならそのまま返す
   if(/^\d{2}:\d{2}$/.test(String(val).trim()))return String(val).trim();
-  // Date文字列の場合：時・分を抽出
   const m=String(val).match(/(\d{2}):(\d{2}):\d{2}/);
   if(m)return`${m[1]}:${m[2]}`;
   return null;
 }
 
-// timestamp を日本語表示に変換
-// "Wed Apr 01 2026 15:59:57 GMT+0900..." → "2026/04/01 15:59"
 function fmtTimestamp(ts){
   if(!ts)return'';
-  // すでに日本語形式 "YYYY/M/D H:MM:SS" の場合
   if(/^\d{4}\/\d/.test(ts)){
-    // 秒を省略して返す
     return ts.replace(/:\d{2}$/, '').replace(/(\d{4})\/(\d+)\/(\d+)/,(_, y, m, d)=>`${y}/${String(m).padStart(2,'0')}/${String(d).padStart(2,'0')}`);
   }
-  // 英語形式の場合は Date でパース
   try{
     const d=new Date(ts);
     if(!isNaN(d.getTime())){
@@ -433,7 +401,6 @@ function fmtTimestamp(ts){
   return ts; // 変換できなければ元の文字列
 }
 
-// ===== 締め切り・対象期間ロジック =====
 function getTargetPeriod(){
   const now=new Date();now.setHours(0,0,0,0);
   const dow=now.getDay();
@@ -460,19 +427,20 @@ function renderDeadlineBanner(){
   const now=new Date();now.setHours(0,0,0,0);
   const banner=document.getElementById('deadlineBanner');
   const isPast=now>thisFriday;
+  const thisSunday=new Date(thisFriday);thisSunday.setDate(thisFriday.getDate()+2);
   if(isPast){
     const nf=new Date(thisFriday);nf.setDate(thisFriday.getDate()+7);
+    const ns2=new Date(thisSunday);ns2.setDate(thisSunday.getDate()+7);
     const nm=new Date(targetMonday);nm.setDate(targetMonday.getDate()+7);
     const ns=new Date(targetSunday);ns.setDate(targetSunday.getDate()+7);
     banner.className='deadline-banner warn';
-    banner.innerHTML=`⏰ <strong>今週の締め切りは過ぎています。次回締め切り：${fmtDate(nf)}まで</strong><div class="deadline-period">📅 次回対象期間：${fmtShort(nm)}（月）〜 ${fmtShort(ns)}（日）</div>`;
+    banner.innerHTML=`⏰ <strong>今週の締め切りは過ぎています。次回締め切り：${fmtDate(nf)}まで</strong><div class="deadline-period">📅 次回対象期間：${fmtShort(nm)}（月）〜 ${fmtShort(ns)}（日）</div><div style="margin-top:6px;font-size:11px;color:#7a4f00;">⚠️ 遅くても<b>${fmtDate(ns2)}（日曜日）まで</b>に提出しないとシフトに入れません</div>`;
   }else{
     banner.className='deadline-banner ok';
-    banner.innerHTML=`✅ <strong>今週の締め切り：${fmtDate(thisFriday)}まで</strong><div class="deadline-period">📅 必須提出期間：${fmtShort(targetMonday)}（月）〜 ${fmtShort(targetSunday)}（日）<br><span style="font-size:11px;font-weight:400;opacity:.8;">※それ以降も1か月先まで入力できます</span></div>`;
+    banner.innerHTML=`✅ <strong>今週の締め切り：${fmtDate(thisFriday)}まで</strong><div class="deadline-period">📅 必須提出期間：${fmtShort(targetMonday)}（月）〜 ${fmtShort(targetSunday)}（日）<br><span style="font-size:11px;font-weight:400;opacity:.8;">※それ以降も1か月先まで入力できます</span></div><div style="margin-top:6px;font-size:11px;color:#1a6b35;">⚠️ 遅くても<b>${fmtDate(thisSunday)}（日曜日）まで</b>に提出しないとシフトに入れません</div>`;
   }
 }
 
-// ===== カレンダー =====
 const todayD=new Date();todayD.setHours(0,0,0,0);
 let curYear=todayD.getFullYear(),curMonth=todayD.getMonth();
 let selDT={};
@@ -487,15 +455,12 @@ function changeMonth(dir){
 
 function ds(d){return`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;}
 
-// ★修正1: 日付パース関数 - "YYYY-MM-DD"形式を確実にパース
 function ds2d(s){
   if(!s)return new Date(NaN);
-  // "YYYY-MM-DD"形式の場合
   if(typeof s==='string'&&/^\d{4}-\d{2}-\d{2}$/.test(s)){
     const parts=s.split('-');
     return new Date(parseInt(parts[0]),parseInt(parts[1])-1,parseInt(parts[2]));
   }
-  // その他の文字列の場合も試みる
   const d=new Date(s);
   if(!isNaN(d.getTime()))return d;
   return new Date(NaN);
@@ -591,14 +556,10 @@ function upd(ds,field,val){
   }
 }
 function togAll(ds,checked){
-  if(!selDT[ds])return;
-  selDT[ds].allday=checked;
-  const wrap=document.getElementById('ti_'+ds);
-  if(wrap){wrap.style.opacity=checked?'.4':'1';wrap.style.pointerEvents=checked?'none':'auto';}
+  if(selDT[ds])selDT[ds].allday=false;
 }
 function remDate(ds){delete selDT[ds];renderCalendar();renderDateTimeList();}
 
-// 他店舗
 function buildOtherStoreGrid(){
   const grid=document.getElementById('otherStoreGrid');
   STORES.forEach(s=>{
@@ -628,7 +589,6 @@ function onTransportChange(){
   nb.classList.toggle('show',val==='transit');
 }
 
-// ===== 名前バリデーション =====
 function isValidName(val){
   if(!val)return null;
   const forbidden=/[A-Za-z0-9\uFF61-\uFF9F]/;
@@ -675,7 +635,6 @@ function validateNameBlur(el){
   }
 }
 
-// ===== 氏名コードバリデーション =====
 function validateEmpId(el){
   el.value=el.value.replace(/[^0-9]/g,'').slice(0,7);
   const hint=document.getElementById('empIdHint');
@@ -709,10 +668,8 @@ function buildStoreOpts(id){
   STORES.forEach(s=>{const o=document.createElement('option');o.value=s.name;o.textContent=s.name;sel.appendChild(o);});
 }
 
-// ===== GAS エンドポイント =====
 const GAS_URL='https://script.google.com/macros/s/AKfycbyMcb6QN2kpUhM_1E_HFwzLjQ-9PE_AdJjiGtoEnQiyBzVDCzWI87rm6Oc_HSHq5_8h4Q/exec';
 
-// 送信
 async function submitShift(){
   const name=document.getElementById('crewName').value.trim();
   const empId=document.getElementById('empId').value.trim();
@@ -730,7 +687,16 @@ async function submitShift(){
   if(!keys.length){alert('シフト希望日を1日以上選択してください');return;}
   if(otherStores.length>0&&!transport){alert('他店舗への交通手段を選択してください');return;}
 
-  const dates=keys.sort().map(ds=>({date:ds,start:selDT[ds].allday?null:selDT[ds].start,end:selDT[ds].allday?null:selDT[ds].end,allday:selDT[ds].allday}));
+  const days=['日','月','火','水','木','金','土'];
+  const dateList=keys.sort().map(d=>{
+    const dt=ds2d(d);const dow=dt.getDay();
+    const t=`${selDT[d].start}〜${selDT[d].end}`;
+    return`・${dt.getMonth()+1}/${dt.getDate()}(${days[dow]}) ${t}`;
+  }).join('\n');
+  const confirmMsg=`以下の内容で提出しますか？\n\n【氏名】${name}\n【所属店舗】${homeStore}\n【希望日】\n${dateList}${otherStores.length?'\n【他店舗OK】'+otherStores.join('、'):''}\n\nよろしいですか？`;
+  if(!confirm(confirmMsg))return;
+
+  const dates=keys.sort().map(ds=>({date:ds,start:selDT[ds].start,end:selDT[ds].end,allday:false}));
   const transportLabel=transport==='transit'?'公共交通機関（交通費支給対象）':transport==='walk'?'徒歩・自転車':'';
   const sub={id:Date.now(),name,empId,homeStore,dates,otherStores,transport:transportLabel,note,timestamp:new Date().toLocaleString('ja-JP')};
 
@@ -743,6 +709,8 @@ async function submitShift(){
     const stored=JSON.parse(localStorage.getItem('shiftData')||'[]');
     stored.push(sub);
     localStorage.setItem('shiftData',JSON.stringify(stored));
+    btn.disabled=false;
+    btn.innerHTML='シフト希望を提出する';
     ['card-basic','card-cal','card-other','card-note','submitBtn','deadlineBanner'].forEach(id=>{
       const el=document.getElementById(id);if(el)el.style.display='none';
     });
@@ -780,12 +748,9 @@ function resetForm(){
   window.scrollTo({top:0,behavior:'smooth'});
 }
 
-// ===== スプレッドシートからデータ取得 =====
-// ★修正2: 削除フラグを使ってGASデータ再取得後も削除状態を維持
 let _dataCleared=false;
 
 async function fetchSheetData(){
-  // 削除済みフラグが立っている場合はlocalStorageのみ返す（空配列）
   if(_dataCleared){
     return JSON.parse(localStorage.getItem('shiftData')||'[]');
   }
@@ -815,13 +780,10 @@ async function fetchSheetData(){
   return JSON.parse(localStorage.getItem('shiftData')||'[]');
 }
 
-// 管理
 const PAGE_SIZE=10;let adminPage=1;
 
-// ===== シフト確定データ管理（GASリアルタイム共有） =====
 let _confirmedCache={}; // GASから取得した確定データキャッシュ
 
-// GASから確定データを取得
 async function fetchConfirmed(){
   try{
     const data=await new Promise((resolve,reject)=>{
@@ -841,12 +803,10 @@ async function fetchConfirmed(){
   }catch(e){
     console.warn('fetchConfirmed failed, using cache:',e);
   }
-  // フォールバック：ローカルキャッシュ
   _confirmedCache=JSON.parse(localStorage.getItem('shiftConfirmed')||'{}');
   return _confirmedCache;
 }
 
-// GASに確定データを保存
 async function saveConfirmToGAS(sid,date,store){
   try{
     await fetch(GAS_URL,{
@@ -857,7 +817,6 @@ async function saveConfirmToGAS(sid,date,store){
   }catch(e){console.warn('saveConfirm failed:',e);}
 }
 
-// GASから確定データを削除
 async function deleteConfirmFromGAS(sid,date){
   try{
     await fetch(GAS_URL,{
@@ -870,28 +829,26 @@ async function deleteConfirmFromGAS(sid,date){
 
 function confirmedKey(sid,date){return String(sid)+'_'+date;}
 
-async function confirmShift(sid,date,currentStore){
+async function confirmShift(sid,date,currentStore,origStart,origEnd,allday){
   const key=confirmedKey(sid,date);
   const existing=_confirmedCache[key];
-  if(existing){
-    // 確定済み → 解除
+  const existingStore=typeof existing==='object'?existing?.store:existing;
+  if(existingStore){
     const d=ds2d(date);
     const days=['日','月','火','水','木','金','土'];
     const dateJa=isNaN(d.getTime())?date:`${d.getMonth()+1}月${d.getDate()}日(${days[d.getDay()]})`;
-    if(!confirm(`「${dateJa}」の確定（${existing}）を解除しますか？`))return;
+    if(!confirm(`「${dateJa}」の確定（${existingStore}）を解除しますか？`))return;
     delete _confirmedCache[key];
     localStorage.setItem('shiftConfirmed',JSON.stringify(_confirmedCache));
-    renderAdminFromCache(); // ★即座にUI更新（GAS待ちなし）
-    deleteConfirmFromGAS(sid,date); // バックグラウンドでGAS更新
+    renderAdminFromCache();
+    deleteConfirmFromGAS(sid,date);
   }else{
-    // 未確定 → 店舗名選択モーダルを開く
-    openConfirmModal(sid,date,currentStore);
+    openConfirmModal(sid,date,currentStore,origStart,origEnd,allday);
   }
 }
 
 async function renderAdmin(){
   document.getElementById('submissionList').innerHTML='<div class="empty-admin"><div class="empty-icon">🔄</div>データを読み込んでいます...</div>';
-  // シフト希望データと確定データを並行取得
   const [data]=await Promise.all([fetchSheetData(),fetchConfirmed()]);
   const fs=document.getElementById('filterStore').value;
   const fo=document.getElementById('filterOther').value;
@@ -910,30 +867,24 @@ function _renderAdminWithData(data,fs,fo,sortMode){
     return true;
   });
 
-  // ★並び順の制御
   filtered=filtered.slice(); // コピー
   if(sortMode==='store'&&fs){
-    // 所属店舗一致を先頭、他店舗OKヒットを後ろ
     filtered.sort((a,b)=>{
       const aHome=a.homeStore===fs?0:1;
       const bHome=b.homeStore===fs?0:1;
       return aHome-bHome;
     });
   }else if(sortMode==='date'){
-    // 提出日時の古い順（早く提出した人が先頭）
     filtered.sort((a,b)=>new Date(a.timestamp)-new Date(b.timestamp));
   }else if(sortMode==='name'){
-    // 名前順（あいうえお）
     filtered.sort((a,b)=>a.name.localeCompare(b.name,'ja'));
   }else if(sortMode==='shiftdate'){
-    // 最も早い希望日順
     filtered.sort((a,b)=>{
       const aDate=(a.dates&&a.dates[0])?a.dates[0].date:'9999';
       const bDate=(b.dates&&b.dates[0])?b.dates[0].date:'9999';
       return aDate.localeCompare(bDate);
     });
   }else{
-    // デフォルト（提出新しい順）
     filtered.reverse();
   }
 
@@ -941,7 +892,6 @@ function _renderAdminWithData(data,fs,fo,sortMode){
   document.getElementById('statStores').textContent=new Set(data.map(s=>s.homeStore)).size;
   document.getElementById('statOther').textContent=data.filter(s=>s.otherStores&&s.otherStores.length).length;
 
-  // ★仮シフト表の描画
   renderDraftShift(data,fs);
   const list=document.getElementById('submissionList');list.innerHTML='';
   if(!filtered.length){
@@ -956,24 +906,25 @@ function _renderAdminWithData(data,fs,fo,sortMode){
   paged.forEach(s=>{
     const card=document.createElement('div');card.className='submission-card';
 
-    // 日付行（確定ボタン・確定バッジ付き）
     const dateRows=(s.dates||[]).map(dt=>{
       const d=ds2d(dt.date);
       if(isNaN(d.getTime())){
-        const tstr=dt.allday?'終日':`${dt.start||'?'} 〜 ${dt.end||'?'}`;
+        const tstr=`${dt.start||'09:00'} 〜 ${dt.end||'17:00'}`;
         return`<div class="sub-date-row"><span class="sub-date-dow">${dt.date||'不明'}</span><span class="sub-date-time">${tstr}</span></div>`;
       }
       const dow=d.getDay();
       const cls=dow===0?'sun':dow===6?'sat':'';
       const startStr=parseTimeStr(dt.start)||dt.start||'';
       const endStr=parseTimeStr(dt.end)||dt.end||'';
-      const tstr=dt.allday?'終日':`${startStr} 〜 ${endStr}`;
-      // ★確定バッジ（_confirmedCacheから取得）
+      const tstr=`${startStr||'09:00'} 〜 ${endStr||'17:00'}`;
       const cKey=confirmedKey(s.id,dt.date);
-      const cStore=_confirmedCache[cKey];
+      const cEntry=_confirmedCache[cKey];
+      const cStore=typeof cEntry==='object'?cEntry?.store:cEntry;
+      const cStartStr=typeof cEntry==='object'?(cEntry?.adjustedStart||startStr):startStr;
+      const cEndStr=typeof cEntry==='object'?(cEntry?.adjustedEnd||endStr):endStr;
       const confirmSection=cStore
-        ?`<span class="confirmed-badge">✅ ${cStore} 確定</span><button class="confirm-btn cancel" onclick="confirmShift('${s.id}','${dt.date}','${s.homeStore}')">解除</button>`
-        :`<button class="confirm-btn" onclick="confirmShift('${s.id}','${dt.date}','${s.homeStore}')">＋確定入力</button>`;
+        ?`<span class="confirmed-badge">✅ ${cStore} 確定 ${cStartStr}〜${cEndStr}</span><button class="confirm-btn cancel" onclick="confirmShift('${s.id}','${dt.date}','${s.homeStore}','${startStr}','${endStr}',false)">解除</button>`
+        :`<button class="confirm-btn" onclick="confirmShift('${s.id}','${dt.date}','${s.homeStore}','${startStr}','${endStr}',false)">＋確定入力</button>`;
       return`<div class="sub-date-row"><span class="sub-date-dow ${cls}">${d.getMonth()+1}/${d.getDate()}(${days[dow]})</span><span class="sub-date-time">${tstr}</span>${confirmSection}</div>`;
     }).join('');
 
@@ -993,7 +944,6 @@ function _renderAdminWithData(data,fs,fo,sortMode){
 }
 function chgPage(d){adminPage+=d;renderAdmin();window.scrollTo({top:0,behavior:'smooth'});}
 
-// ===== 仮シフト表描画（ガントチャート形式） =====
 const CHART_START=6,CHART_END=30; // 表示時間軸 6:00〜翌6:00（30=翌6時）
 
 function timeToPercent(timeStr, isEnd=false){
@@ -1001,8 +951,6 @@ function timeToPercent(timeStr, isEnd=false){
   const m=String(timeStr).match(/(\d{1,2}):(\d{2})/);
   if(!m)return null;
   let h=parseInt(m[1]),min=parseInt(m[2]);
-  // 深夜またぎ：終了時刻が開始より小さい場合は翌日扱い（+24）
-  // ここでは単純に0〜5時は翌日（+24）として扱う
   if(isEnd && h<=CHART_START){ h+=24; }
   const total=h*60+min;
   const chartStartMin=CHART_START*60,chartEndMin=CHART_END*60;
@@ -1021,8 +969,6 @@ function calcBarPosition(startStr, endStr, allday){
   let sh=parseInt(sm[1]),sm2=parseInt(sm[2]);
   let eh=parseInt(em[1]),em2=parseInt(em[2]);
 
-  // ★深夜またぎ自動判定：終了時刻 <= 開始時刻なら翌日扱い（+24）
-  // 例：17:00〜08:00 → 08:00を32:00として計算
   if(eh<sh||(eh===sh&&em2<=sm2)){
     eh+=24;
   }
@@ -1052,42 +998,26 @@ function renderDraftShift(allData,fs){
   allData.forEach(s=>{
     (s.dates||[]).forEach(dt=>{
       const key=String(s.id)+'_'+dt.date;
-      const confirmedStore=_confirmedCache[key];
+      const confirmedEntry=_confirmedCache[key];
+      const confirmedStore=typeof confirmedEntry==='object'?confirmedEntry?.store:confirmedEntry;
       if(confirmedStore!==fs)return;
       if(!dateMap[dt.date])dateMap[dt.date]=[];
-      const startStr=parseTimeStr(dt.start)||'';
-      const endStr=parseTimeStr(dt.end)||'';
-      const timeStr=dt.allday?'終日':`${startStr}〜${endStr}`;
+      const startStr=(typeof confirmedEntry==='object'&&confirmedEntry?.adjustedStart)?confirmedEntry.adjustedStart:(parseTimeStr(dt.start)||'');
+      const endStr=(typeof confirmedEntry==='object'&&confirmedEntry?.adjustedEnd)?confirmedEntry.adjustedEnd:(parseTimeStr(dt.end)||'');
+      const timeStr=`${startStr||'09:00'}〜${endStr||'17:00'}`;
       const isHelp=s.homeStore!==fs;
 
-      // ★深夜またぎ判定
-      const sm=startStr.match(/(\d{1,2}):(\d{2})/);
-      const em=endStr.match(/(\d{1,2}):(\d{2})/);
-      const isNightOver=sm&&em&&(parseInt(em[1])<parseInt(sm[1])||(parseInt(em[1])===parseInt(sm[1])&&parseInt(em[2])<=parseInt(sm[2])));
-
-      // 当日分のバー
-      const{startPct,widthPct}=calcBarPosition(startStr,endStr,dt.allday);
-      dateMap[dt.date].push({name:s.name,startPct,widthPct,timeStr,homeStore:s.homeStore,isHelp,isCarryover:false});
-
-      // ★翌日分のバー（深夜またぎの場合：0時〜終了時刻）
-      if(isNightOver&&!dt.allday&&endStr){
-        const nextDate=new Date(ds2d(dt.date));
-        nextDate.setDate(nextDate.getDate()+1);
-        const nextDateStr=ds(nextDate);
-        if(!dateMap[nextDateStr])dateMap[nextDateStr]=[];
-        // 翌日は 0時（=CHART_STARTより前）から終了時刻まで
-        const nextStart='00:00';
-        const{startPct:nsp,widthPct:nwp}=calcBarPosition(nextStart,endStr,false);
-        // 0時からのバーなので開始は0%固定、幅は終了時刻まで
-        const endH=parseInt(em[1]),endM=parseInt(em[2]);
-        const endMin=endH*60+endM;
-        const chartStartMin=CHART_START*60,chartEndMin=CHART_END*60;
-        const endPct=Math.min(100,(endMin-chartStartMin)/(chartEndMin-chartStartMin)*100);
-        dateMap[nextDateStr].push({
-          name:s.name,startPct:0,widthPct:Math.max(endPct,1),
-          timeStr,homeStore:s.homeStore,isHelp,isCarryover:true
-        });
+      let startH=6,startM=0,endH=30,endM=0;
+      if(!dt.allday&&startStr&&endStr){
+        const sm=startStr.match(/(\d{1,2}):(\d{2})/);
+        const em=endStr.match(/(\d{1,2}):(\d{2})/);
+        if(sm&&em){
+          startH=parseInt(sm[1]);startM=parseInt(sm[2]);
+          endH=parseInt(em[1]);endM=parseInt(em[2]);
+          if(endH<startH||(endH===startH&&endM<=startM))endH+=24;
+        }
       }
+      dateMap[dt.date].push({name:s.name,startH,startM,endH,endM,timeStr,homeStore:s.homeStore,isHelp,allday:!!dt.allday});
     });
   });
 
@@ -1097,15 +1027,33 @@ function renderDraftShift(allData,fs){
   sec.style.display='block';
   nameEl.textContent=`（${fs}）`;
 
-  // 時間軸ヘッダー（6,8,10...24,翌2,翌4,翌6）
-  const hourLabels=[];
-  for(let h=CHART_START;h<=CHART_END;h+=2){
-    const pct=(h-CHART_START)/(CHART_END-CHART_START)*100;
-    const label=h<24?`${h}時`:(h===24?'0時':`翌${h-24}時`);
-    hourLabels.push({pct,label,isMidnight:h>=24});
-  }
+  let globalMaxEnd=CHART_END;
+  dates.forEach(dateStr=>{
+    dateMap[dateStr].forEach(m=>{
+      if(!m.allday&&m.endH>globalMaxEnd)globalMaxEnd=m.endH;
+    });
+  });
+  globalMaxEnd=Math.ceil(globalMaxEnd/2)*2;
+  if(globalMaxEnd<CHART_END)globalMaxEnd=CHART_END;
 
-  // 各行HTML生成
+  const chartRange=globalMaxEnd-CHART_START;
+
+  const globalHourLabels=[];
+  for(let h=CHART_START;h<=globalMaxEnd;h+=2){
+    const pct=(h-CHART_START)/chartRange*100;
+    const label=h<24?`${h}時`:(h===24?'0時':`翌${h-24}時`);
+    globalHourLabels.push({pct,label,isMidnight:h>=24});
+  }
+  const midnightPct=(24-CHART_START)/chartRange*100;
+
+  const globalHeaderHtml=`
+    <div style="display:flex;align-items:center;padding:3px 8px 3px 8px;border-bottom:2px solid var(--gray-200);background:var(--gray-50);position:sticky;top:0;z-index:2;">
+      <div style="min-width:82px;flex-shrink:0;font-size:9px;color:var(--gray-500);">日付/人数</div>
+      <div style="flex:1;position:relative;height:16px;">
+        ${globalHourLabels.map(({pct,label,isMidnight})=>`<div style="position:absolute;left:${pct}%;font-size:9px;color:${isMidnight?'var(--red)':'var(--gray-500)'};transform:translateX(-50%);white-space:nowrap;font-weight:${isMidnight?'700':'400'};">${label}</div>`).join('')}
+      </div>
+    </div>`;
+
   let rowsHtml='';
   dates.forEach(dateStr=>{
     const d=ds2d(dateStr);
@@ -1116,24 +1064,24 @@ function renderDraftShift(allData,fs){
 
     members.forEach((m,i)=>{
       const barColor=m.isHelp?'#e67e00':'var(--lawson-blue)';
-      const barStyle=`background:${barColor};`;
-      const tooltipText=`${m.name}｜${m.timeStr}｜${m.isHelp?m.homeStore+'からヘルプ':fs}${m.isCarryover?' (前日からの持ち越し)':''}`;
-      const midnightPct=(24-CHART_START)/(CHART_END-CHART_START)*100;
+      const tooltipText=`${m.name}｜${m.timeStr}｜${m.isHelp?m.homeStore+'からヘルプ':fs}`;
+
+      let startPct=0,widthPct=100;
+      if(!m.allday){
+        startPct=Math.max(0,(m.startH*60+m.startM-CHART_START*60)/(chartRange*60)*100);
+        const endPct=Math.min(100,(m.endH*60+m.endM-CHART_START*60)/(chartRange*60)*100);
+        widthPct=Math.max(endPct-startPct,1);
+      }
 
       rowsHtml+=`
         <div style="display:flex;align-items:center;padding:3px 8px;border-bottom:1px solid var(--gray-100);min-height:32px;${i===0?`border-top:2px solid ${dowColor}30`:''}" >
           <div style="min-width:82px;flex-shrink:0;font-size:11px;font-weight:700;color:${dowColor};line-height:1.3;padding-right:8px;${i===0?'':'visibility:hidden;'}">${i===0?dateJa:''}${i===0?`<div style="font-size:9px;font-weight:400;color:var(--gray-500);margin-top:1px;">${members.length}名</div>`:''}</div>
           <div style="flex:1;position:relative;height:24px;border-radius:5px;overflow:hidden;cursor:pointer;"
-               title="${tooltipText}"
-               onclick="showShiftBarTooltip(this,'${tooltipText}')">
-            <!-- 昼間帯背景 -->
+               title="${tooltipText}" onclick="showShiftBarTooltip(this,'${tooltipText}')">
             <div style="position:absolute;left:0;width:${midnightPct}%;top:0;bottom:0;background:var(--gray-100);"></div>
-            <!-- 深夜帯背景（少し暗め） -->
             <div style="position:absolute;left:${midnightPct}%;right:0;top:0;bottom:0;background:#e2e8f0;"></div>
-            <!-- 時間目盛り縦線 -->
-            ${hourLabels.map(({pct,isMidnight})=>`<div style="position:absolute;left:${pct}%;top:0;bottom:0;width:1px;background:rgba(0,0,0,${isMidnight?'.12':'.06'});"></div>`).join('')}
-            <!-- 確定バー -->
-            <div style="position:absolute;left:${m.startPct}%;width:${m.widthPct}%;top:2px;bottom:2px;${barStyle}border-radius:3px;display:flex;align-items:center;overflow:hidden;min-width:4px;box-shadow:0 1px 3px rgba(0,0,0,.15);">
+            ${globalHourLabels.map(({pct,isMidnight})=>`<div style="position:absolute;left:${pct}%;top:0;bottom:0;width:1px;background:rgba(0,0,0,${isMidnight?'.12':'.06'});"></div>`).join('')}
+            <div style="position:absolute;left:${startPct}%;width:${widthPct}%;top:2px;bottom:2px;background:${barColor};border-radius:3px;display:flex;align-items:center;overflow:hidden;min-width:4px;box-shadow:0 1px 3px rgba(0,0,0,.15);">
               <span style="font-size:10px;font-weight:700;color:#fff;padding:0 5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${m.name}</span>
             </div>
           </div>
@@ -1141,17 +1089,9 @@ function renderDraftShift(allData,fs){
     });
   });
 
-  tbl.innerHTML=`
-    <div style="display:flex;align-items:center;padding:3px 8px 3px 8px;border-bottom:2px solid var(--gray-200);background:var(--gray-50);">
-      <div style="min-width:82px;flex-shrink:0;font-size:9px;color:var(--gray-500);">日付/人数</div>
-      <div style="flex:1;position:relative;height:16px;">
-        ${hourLabels.map(({pct,label,isMidnight})=>`<div style="position:absolute;left:${pct}%;font-size:9px;color:${isMidnight?'var(--red)':'var(--gray-500)'};transform:translateX(-50%);white-space:nowrap;font-weight:${isMidnight?'700':'400'};">${label}</div>`).join('')}
-      </div>
-    </div>
-    ${rowsHtml}`;
+  tbl.innerHTML=globalHeaderHtml+rowsHtml;
 }
 
-// バータップでツールチップ表示
 let _barTooltipEl=null;
 function showShiftBarTooltip(el,text){
   if(_barTooltipEl){_barTooltipEl.remove();_barTooltipEl=null;}
@@ -1181,7 +1121,6 @@ function exportCSV(){
   a.download=`シフト希望_${new Date().toLocaleDateString('ja-JP').replace(/\//g,'')}.csv`;a.click();
 }
 
-// ★全データ削除 - 削除パスワードモーダルを開く
 function clearAll(){
   document.getElementById('clearPwModal').style.display='flex';
   document.getElementById('clearPwInput').value='';
@@ -1210,12 +1149,10 @@ async function executeClearAll(){
   closeClearPwModal();
   if(!confirm('本当に全データを削除しますか？\nこの操作は元に戻せません。'))return;
 
-  // ボタンをローディング状態に
   const btn=document.querySelector('.action-btn.danger');
   const origText=btn?btn.innerHTML:'';
   if(btn){btn.disabled=true;btn.innerHTML='🔄 削除中...';}
 
-  // GASスプレッドシート側を削除
   let gasOk=false;
   try{
     await new Promise((resolve,reject)=>{
@@ -1239,7 +1176,6 @@ async function executeClearAll(){
     console.warn('GAS clearAll failed:',e);
   }
 
-  // ブラウザのlocalStorageも削除
   localStorage.removeItem('shiftData');
   _dataCleared=true;
 
@@ -1253,7 +1189,6 @@ async function executeClearAll(){
   renderAdmin();
 }
 
-// ===== パスワード認証 =====
 const ADMIN_PW='Lawson3963';
 let adminUnlocked=false;
 
@@ -1315,13 +1250,11 @@ document.addEventListener('DOMContentLoaded',()=>{
   });
 });
 
-// 初期化
 buildStoreOpts('homeStore');buildStoreOpts('filterStore');
 buildOtherStoreGrid();renderDeadlineBanner();renderCalendar();renderDateTimeList();
 document.getElementById('prevMonthBtn').disabled=true;
 </script>
 
-<!-- パスワードモーダル -->
 <div id="pwModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:999;align-items:center;justify-content:center;padding:20px;backdrop-filter:blur(3px);">
   <div id="pwModalBox" style="background:#fff;border-radius:18px;padding:28px 24px;width:100%;max-width:340px;box-shadow:0 16px 48px rgba(0,0,0,.22);">
     <div style="text-align:center;margin-bottom:20px;">
@@ -1364,7 +1297,6 @@ function togglePwVisibility(){
 }
 </script>
 
-<!-- 削除パスワードモーダル -->
 <div id="clearPwModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:999;align-items:center;justify-content:center;padding:20px;backdrop-filter:blur(3px);">
   <div id="clearPwModalBox" style="background:#fff;border-radius:18px;padding:28px 24px;width:100%;max-width:340px;box-shadow:0 16px 48px rgba(0,0,0,.22);">
     <div style="text-align:center;margin-bottom:20px;">
@@ -1410,23 +1342,199 @@ function toggleClearPwVisibility(){
 }
 </script>
 
-<!-- シフト確定入力モーダル -->
-<div id="confirmModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:999;align-items:center;justify-content:center;padding:20px;backdrop-filter:blur(3px);">
-  <div id="confirmModalBox" style="background:#fff;border-radius:18px;padding:28px 24px;width:100%;max-width:380px;box-shadow:0 16px 48px rgba(0,0,0,.22);">
-    <div style="text-align:center;margin-bottom:16px;">
-      <div style="width:48px;height:48px;background:linear-gradient(135deg,#00703c,#00b050);border-radius:13px;display:flex;align-items:center;justify-content:center;margin:0 auto 10px;box-shadow:0 4px 12px rgba(0,176,80,.3);">
+<div id="rangePwModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:999;align-items:center;justify-content:center;padding:20px;backdrop-filter:blur(3px);">
+  <div id="rangePwModalBox" style="background:#fff;border-radius:18px;padding:28px 24px;width:100%;max-width:340px;box-shadow:0 16px 48px rgba(0,0,0,.22);">
+    <div style="text-align:center;margin-bottom:20px;">
+      <div style="width:52px;height:52px;background:linear-gradient(135deg,#c62828,#e53935);border-radius:14px;display:flex;align-items:center;justify-content:center;margin:0 auto 12px;box-shadow:0 4px 12px rgba(229,57,53,.35);">
         <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-          <path d="M20 6L9 17l-5-5" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+          <rect x="3" y="4" width="18" height="16" rx="2" fill="none" stroke="white" stroke-width="2"/>
+          <path d="M8 2v4M16 2v4M3 10h18" stroke="white" stroke-width="1.5" stroke-linecap="round"/>
+          <path d="M8 14h8M8 17h5" stroke="white" stroke-width="1.5" stroke-linecap="round"/>
         </svg>
+      </div>
+      <div style="font-size:16px;font-weight:800;color:#0f172a;">週単位削除</div>
+      <div style="font-size:12px;color:#64748b;margin-top:5px;line-height:1.5;">削除専用パスワードを入力してください。<br><span style="color:#e53935;font-weight:600;">この操作は元に戻せません。</span></div>
+    </div>
+    <div style="position:relative;margin-bottom:10px;">
+      <input type="password" id="rangePwInput"
+        placeholder="削除パスワードを入力"
+        inputmode="numeric"
+        style="width:100%;padding:12px 44px 12px 14px;border:1.5px solid #e2e8f0;border-radius:10px;font-size:15px;font-family:'DM Mono',monospace;letter-spacing:0.15em;background:#f8fafc;outline:none;transition:border-color .2s;"
+        onfocus="this.style.borderColor='#e53935';this.style.background='#fff';"
+        onblur="this.style.borderColor='#e2e8f0';this.style.background='#f8fafc';"
+        onkeydown="if(event.key==='Enter')submitRangePw();if(event.key==='Escape')closeRangePwModal();">
+      <span onclick="toggleRangePwVisibility()" style="position:absolute;right:13px;top:50%;transform:translateY(-50%);cursor:pointer;font-size:17px;user-select:none;" id="rangePwToggle">👁</span>
+    </div>
+    <div id="rangePwError" style="display:none;background:#fdecea;color:#e53935;font-size:12px;font-weight:600;padding:8px 12px;border-radius:8px;margin-bottom:10px;text-align:center;">
+      ❌ パスワードが違います。もう一度入力してください。
+    </div>
+    <button onclick="submitRangePw()" style="width:100%;padding:13px;background:linear-gradient(135deg,#c62828,#e53935);color:#fff;border:none;border-radius:10px;font-size:15px;font-weight:700;font-family:'Noto Sans JP',sans-serif;cursor:pointer;box-shadow:0 3px 10px rgba(229,57,53,.3);margin-bottom:10px;">
+      🗑 削除を実行する
+    </button>
+    <button onclick="closeRangePwModal()" style="width:100%;padding:10px;background:transparent;color:#64748b;border:1.5px solid #e2e8f0;border-radius:10px;font-size:13px;font-weight:600;font-family:'Noto Sans JP',sans-serif;cursor:pointer;">
+      キャンセル
+    </button>
+  </div>
+</div>
+<script>
+function toggleRangePwVisibility(){
+  const inp=document.getElementById('rangePwInput');
+  const tog=document.getElementById('rangePwToggle');
+  if(inp.type==='password'){inp.type='text';tog.textContent='🙈';}
+  else{inp.type='password';tog.textContent='👁';}
+}
+</script>
+
+<div id="rangeDeleteModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:999;align-items:center;justify-content:center;padding:20px;backdrop-filter:blur(3px);">
+  <div style="background:#fff;border-radius:18px;padding:26px 22px;width:100%;max-width:360px;box-shadow:0 16px 48px rgba(0,0,0,.22);">
+    <div style="text-align:center;margin-bottom:16px;">
+      <div style="font-size:16px;font-weight:800;color:#0f172a;">📅 週単位で削除</div>
+      <div style="font-size:12px;color:#64748b;margin-top:4px;">削除したい対象週を選択してください</div>
+    </div>
+    <div style="margin-bottom:16px;">
+      <div style="font-size:12px;font-weight:600;color:#334155;margin-bottom:8px;">対象週（月〜日）</div>
+      <div class="form-select-wrap">
+        <select id="deleteWeekSelect" class="form-select" style="font-size:14px;" onchange="updateRangeDeleteCount()">
+          <option value="">-- 週を選択 --</option>
+        </select>
+      </div>
+    </div>
+    <div id="rangeDeleteCount" style="text-align:center;font-size:12px;color:var(--gray-500);margin-bottom:12px;min-height:20px;background:var(--gray-50);border-radius:6px;padding:6px;"></div>
+    <button onclick="openRangeDeletePwModal()" style="width:100%;padding:13px;background:linear-gradient(135deg,#c62828,#e53935);color:#fff;border:none;border-radius:10px;font-size:15px;font-weight:700;font-family:'Noto Sans JP',sans-serif;cursor:pointer;margin-bottom:10px;">
+      🗑 この週を削除
+    </button>
+    <button onclick="document.getElementById('rangeDeleteModal').style.display='none'" style="width:100%;padding:10px;background:transparent;color:#64748b;border:1.5px solid #e2e8f0;border-radius:10px;font-size:13px;font-weight:600;font-family:'Noto Sans JP',sans-serif;cursor:pointer;">
+      キャンセル
+    </button>
+  </div>
+</div>
+
+<script>
+function getWeekMonday(dateStr){
+  const d=ds2d(dateStr);
+  if(isNaN(d.getTime()))return null;
+  const dow=d.getDay();
+  const daysFromMon=(dow+6)%7;
+  const mon=new Date(d);
+  mon.setDate(d.getDate()-daysFromMon);
+  return ds(mon);
+}
+
+function openRangeDeleteModal(){
+  const data=JSON.parse(localStorage.getItem('shiftData')||'[]');
+  const weekSet=new Set();
+  data.forEach(s=>(s.dates||[]).forEach(dt=>{
+    if(dt.date){const m=getWeekMonday(dt.date);if(m)weekSet.add(m);}
+  }));
+  const weeks=[...weekSet].sort();
+  const sel=document.getElementById('deleteWeekSelect');
+  sel.innerHTML='<option value="">-- 週を選択 --</option>';
+  weeks.forEach(monStr=>{
+    const mon=ds2d(monStr);
+    const sun=new Date(mon);sun.setDate(mon.getDate()+6);
+    const label=`${mon.getMonth()+1}/${mon.getDate()}(月) 〜 ${sun.getMonth()+1}/${sun.getDate()}(日)`;
+    const o=document.createElement('option');
+    o.value=monStr;o.textContent=label;
+    sel.appendChild(o);
+  });
+  if(!weeks.length)sel.innerHTML='<option value="">データがありません</option>';
+  document.getElementById('rangeDeleteCount').textContent='';
+  document.getElementById('rangeDeleteModal').style.display='flex';
+}
+
+function updateRangeDeleteCount(){
+  const monStr=document.getElementById('deleteWeekSelect').value;
+  const countEl=document.getElementById('rangeDeleteCount');
+  if(!monStr){countEl.textContent='';return;}
+  const mon=ds2d(monStr);
+  const sun=new Date(mon);sun.setDate(mon.getDate()+6);
+  const start=monStr,end=ds(sun);
+  const data=JSON.parse(localStorage.getItem('shiftData')||'[]');
+  const targets=data.filter(s=>(s.dates||[]).some(dt=>dt.date>=start&&dt.date<=end));
+  countEl.textContent=`対象：${targets.length}名分のシフト希望`;
+}
+
+function openRangeDeletePwModal(){
+  const monStr=document.getElementById('deleteWeekSelect').value;
+  if(!monStr){alert('週を選択してください');return;}
+  document.getElementById('rangeDeleteModal').style.display='none';
+  document.getElementById('rangePwModal').style.display='flex';
+  document.getElementById('rangePwInput').value='';
+  document.getElementById('rangePwError').style.display='none';
+  setTimeout(()=>document.getElementById('rangePwInput').focus(),100);
+}
+
+function closeRangePwModal(){
+  document.getElementById('rangePwModal').style.display='none';
+  document.getElementById('rangeDeleteModal').style.display='flex';
+}
+
+function submitRangePw(){
+  const val=document.getElementById('rangePwInput').value;
+  if(val!=='3272885'){
+    const box=document.getElementById('rangePwModalBox');
+    document.getElementById('rangePwError').style.display='block';
+    document.getElementById('rangePwInput').value='';
+    document.getElementById('rangePwInput').focus();
+    box.animate([
+      {transform:'translateX(-6px)'},{transform:'translateX(6px)'},
+      {transform:'translateX(-4px)'},{transform:'translateX(4px)'},
+      {transform:'translateX(0)'}
+    ],{duration:350,easing:'ease-out'});
+    return;
+  }
+  document.getElementById('rangePwModal').style.display='none';
+  executeRangeDelete();
+}
+
+async function executeRangeDelete(){
+  const monStr=document.getElementById('deleteWeekSelect').value;
+  if(!monStr){alert('週を選択してください');return;}
+  const mon=ds2d(monStr);
+  const sun=new Date(mon);sun.setDate(mon.getDate()+6);
+  const start=monStr,end=ds(sun);
+  const label=`${mon.getMonth()+1}/${mon.getDate()}(月)〜${sun.getMonth()+1}/${sun.getDate()}(日)`;
+  if(!confirm(`【${label}】の週のシフト希望を削除しますか？\nこの操作は元に戻せません。`))return;
+  document.getElementById('rangeDeleteModal').style.display='none';
+  const data=JSON.parse(localStorage.getItem('shiftData')||'[]');
+  const keep=data.filter(s=>!(s.dates||[]).some(dt=>dt.date>=start&&dt.date<=end));
+  localStorage.setItem('shiftData',JSON.stringify(keep));
+  _dataCleared=false;
+  alert(`✅ ${label} のデータを削除しました。\n※スプレッドシート側は手動での削除が必要です。`);
+  renderAdmin();
+}
+</script>
+
+<div id="confirmModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:999;align-items:center;justify-content:center;padding:20px;backdrop-filter:blur(3px);">
+  <div id="confirmModalBox" style="background:#fff;border-radius:18px;padding:24px 20px;width:100%;max-width:400px;box-shadow:0 16px 48px rgba(0,0,0,.22);max-height:90vh;overflow-y:auto;">
+    <div style="text-align:center;margin-bottom:14px;">
+      <div style="width:44px;height:44px;background:linear-gradient(135deg,#00703c,#00b050);border-radius:12px;display:flex;align-items:center;justify-content:center;margin:0 auto 8px;box-shadow:0 4px 12px rgba(0,176,80,.3);">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M20 6L9 17l-5-5" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
       </div>
       <div style="font-size:15px;font-weight:800;color:#0f172a;">シフト確定入力</div>
       <div style="font-size:12px;color:#64748b;margin-top:4px;" id="confirmModalDate"></div>
     </div>
-    <div style="font-size:12px;font-weight:600;color:#334155;margin-bottom:6px;">確定店舗を選択してください</div>
-    <div class="form-select-wrap" style="margin-bottom:14px;">
+
+    <div style="font-size:12px;font-weight:600;color:#334155;margin-bottom:5px;">確定店舗</div>
+    <div class="form-select-wrap" style="margin-bottom:12px;">
       <select id="confirmStoreSelect" class="form-select" style="font-size:14px;">
         <option value="">-- 店舗を選択 --</option>
       </select>
+    </div>
+
+    <div style="font-size:12px;font-weight:600;color:#334155;margin-bottom:5px;">
+      シフト時間
+      <span style="font-size:10px;font-weight:400;color:var(--gray-500);">（希望時間の範囲内で調整可）</span>
+    </div>
+    <div id="confirmTimeHint" style="font-size:11px;color:var(--lawson-blue);background:var(--lawson-light);border-radius:6px;padding:5px 9px;margin-bottom:8px;"></div>
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px;">
+      <div class="form-select-wrap" style="flex:1;">
+        <select id="confirmStartSel" class="form-select" style="font-size:14px;padding:9px 28px 9px 10px;"></select>
+      </div>
+      <span style="color:var(--gray-500);font-weight:600;flex-shrink:0;">〜</span>
+      <div class="form-select-wrap" style="flex:1;">
+        <select id="confirmEndSel" class="form-select" style="font-size:14px;padding:9px 28px 9px 10px;"></select>
+      </div>
     </div>
     <button onclick="submitConfirmModal()" style="width:100%;padding:13px;background:linear-gradient(135deg,#00703c,#00b050);color:#fff;border:none;border-radius:10px;font-size:15px;font-weight:700;font-family:'Noto Sans JP',sans-serif;cursor:pointer;box-shadow:0 3px 10px rgba(0,176,80,.25);margin-bottom:10px;">
       ✅ 確定する
@@ -1438,15 +1546,43 @@ function toggleClearPwVisibility(){
 </div>
 
 <script>
-let _pendingConfirm={sid:null,date:null};
+let _pendingConfirm={sid:null,date:null,origStart:null,origEnd:null,allday:false};
 
-function openConfirmModal(sid,date,currentStore){
-  _pendingConfirm={sid,date};
+function buildTimeOpts(selEl, currentVal, minH, minM, maxH, maxM){
+  selEl.innerHTML='';
+  const loopMax=Math.max(30, maxH+1);
+  for(let h=0;h<loopMax;h++){
+    for(let m=0;m<60;m+=30){
+      const totalMin=h*60+m;
+      const minTotalMin=minH*60+minM;
+      const maxTotalMin=maxH*60+maxM;
+      if(totalMin<minTotalMin||totalMin>maxTotalMin)continue;
+      const dispH=h<24?h:h-24;
+      const prefix=h<24?'':'翌';
+      const label=`${prefix}${String(dispH).padStart(2,'0')}:${String(m).padStart(2,'0')}`;
+      const val=`${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}`;
+      const o=document.createElement('option');
+      o.value=val;o.textContent=label;
+      if(val===currentVal)o.selected=true;
+      selEl.appendChild(o);
+    }
+  }
+}
+
+function parseHM(timeStr){
+  if(!timeStr)return null;
+  const m=String(timeStr).match(/(\d{1,2}):(\d{2})/);
+  if(!m)return null;
+  return{h:parseInt(m[1]),m:parseInt(m[2])};
+}
+
+function openConfirmModal(sid,date,currentStore,origStart,origEnd,allday){
+  _pendingConfirm={sid,date,origStart,origEnd,allday:false};
   const d=ds2d(date);
   const days=['日','月','火','水','木','金','土'];
   const dateJa=isNaN(d.getTime())?date:`${d.getMonth()+1}月${d.getDate()}日(${days[d.getDay()]})`;
   document.getElementById('confirmModalDate').textContent=`対象日：${dateJa}（${currentStore} 所属）`;
-  // 店舗セレクトを構築
+
   const sel=document.getElementById('confirmStoreSelect');
   sel.innerHTML='<option value="">-- 店舗を選択 --</option>';
   STORES.forEach(s=>{
@@ -1455,30 +1591,58 @@ function openConfirmModal(sid,date,currentStore){
     if(s.name===currentStore)o.selected=true;
     sel.appendChild(o);
   });
+
+  const startSel=document.getElementById('confirmStartSel');
+  const endSel=document.getElementById('confirmEndSel');
+  const hint=document.getElementById('confirmTimeHint');
+
+  if(allday||!origStart||!origEnd){
+    hint.textContent='希望：終日（時間を自由に設定できます）';
+    const existing=_confirmedCache[confirmedKey(sid,date)];
+    const curStart=(existing&&existing.adjustedStart)||'09:00';
+    const curEnd=(existing&&existing.adjustedEnd)||'17:00';
+    buildTimeOpts(startSel,curStart,0,0,29,30);
+    buildTimeOpts(endSel,curEnd,0,0,29,30);
+  }else{
+    const sHM=parseHM(origStart);
+    const eHM=parseHM(origEnd);
+    if(!sHM||!eHM){
+      startSel.innerHTML='<option>-</option>';
+      endSel.innerHTML='<option>-</option>';
+    }else{
+      let eH=eHM.h;
+      if(eH<sHM.h||(eH===sHM.h&&eHM.m<=sHM.m))eH+=24;
+      hint.textContent=`希望時間：${origStart}〜${origEnd}（この範囲内で調整してください）`;
+      const existing=_confirmedCache[confirmedKey(sid,date)];
+      let curStart=origStart,curEnd=origEnd;
+      if(existing&&existing.adjustedStart)curStart=existing.adjustedStart;
+      if(existing&&existing.adjustedEnd)curEnd=existing.adjustedEnd;
+      buildTimeOpts(startSel,curStart,sHM.h,sHM.m,eH,eHM.m,false);
+      buildTimeOpts(endSel,curEnd,sHM.h,sHM.m,eH,eHM.m,true);
+    }
+  }
   document.getElementById('confirmModal').style.display='flex';
 }
 
 function closeConfirmModal(){
   document.getElementById('confirmModal').style.display='none';
-  _pendingConfirm={sid:null,date:null};
+  _pendingConfirm={sid:null,date:null,origStart:null,origEnd:null,allday:false};
 }
 
 async function submitConfirmModal(){
   const store=document.getElementById('confirmStoreSelect').value;
   if(!store){alert('店舗を選択してください');return;}
-  const{sid,date}=_pendingConfirm;
+  const{sid,date,allday}=_pendingConfirm;
+  const adjustedStart=document.getElementById('confirmStartSel').value||null;
+  const adjustedEnd=document.getElementById('confirmEndSel').value||null;
   closeConfirmModal();
-  // キャッシュを即更新
   const key=confirmedKey(sid,date);
-  _confirmedCache[key]=store;
+  _confirmedCache[key]={store, adjustedStart, adjustedEnd, allday};
   localStorage.setItem('shiftConfirmed',JSON.stringify(_confirmedCache));
-  // ★GAS再取得なしでキャッシュだけで即描画
   renderAdminFromCache();
-  // バックグラウンドでGASに保存（待たない）
-  saveConfirmToGAS(sid,date,store);
+  saveConfirmToGAS(sid,date,store,adjustedStart,adjustedEnd);
 }
 
-// ★GAS通信なしでキャッシュデータだけで即描画
 function renderAdminFromCache(){
   const data=JSON.parse(localStorage.getItem('shiftData')||'[]');
   const fs=document.getElementById('filterStore').value;
