@@ -1,0 +1,615 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ローソン店利益シュミレーション管理 2026年3月</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;900&family=DM+Mono:wght@400;500&display=swap');
+  :root{--navy:#0f1f3d;--navy2:#1a3060;--blue:#1e5fa8;--blue2:#2563a8;
+    --teal:#0e7c6e;--amber:#92400e;--red:#c0392b;--green:#16a34a;
+    --purple:#6d28d9;--bg:#eef2f7;--card:#fff;--border:#ccd8e8;--text:#1a2a3a;--muted:#607080;}
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{font-family:'Noto Sans JP',sans-serif;background:var(--bg);color:var(--text);font-size:12px;min-height:100vh;}
+  header{background:linear-gradient(135deg,var(--navy) 0%,var(--navy2) 60%,var(--blue) 100%);
+    padding:14px 24px;display:flex;align-items:center;justify-content:space-between;
+    box-shadow:0 3px 16px rgba(0,0,0,.35);position:sticky;top:0;z-index:100;}
+  .hl h1{font-size:16px;font-weight:900;color:#fff;letter-spacing:.02em;}
+  .hl p{font-size:10px;color:#93b8e0;margin-top:3px;}
+  .hr{display:flex;gap:12px;align-items:center;}
+  .cbox{background:rgba(255,255,255,.13);border:1px solid rgba(255,255,255,.28);border-radius:8px;padding:5px 12px;color:#fff;font-size:11px;}
+  .cbox label{color:#93b8e0;font-size:10px;display:block;margin-bottom:1px;}
+  .cbox input{background:transparent;border:none;color:#fff;font-family:'DM Mono',monospace;font-size:14px;font-weight:500;width:50px;text-align:right;outline:none;}
+  .btn{background:rgba(255,255,255,.16);border:1px solid rgba(255,255,255,.32);color:#fff;border-radius:7px;padding:6px 14px;font-size:11px;cursor:pointer;font-family:'Noto Sans JP',sans-serif;font-weight:700;transition:background .15s;}
+  .btn:hover{background:rgba(255,255,255,.26);}
+  .sbar{display:flex;gap:10px;padding:12px 20px 0;overflow-x:auto;}
+  .sc{background:var(--card);border-radius:10px;padding:10px 16px;min-width:148px;border-left:4px solid var(--blue);box-shadow:0 2px 10px rgba(0,0,0,.08);flex-shrink:0;}
+  .sc.teal{border-color:var(--teal);}.sc.green{border-color:var(--green);}.sc.purple{border-color:var(--purple);}
+  .sc-label{font-size:10px;color:var(--muted);font-weight:500;}
+  .sc-val{font-size:19px;font-weight:900;margin-top:2px;font-family:'DM Mono',monospace;}
+  .sc-sub{font-size:10px;color:var(--muted);margin-top:1px;}
+  .tw{margin:12px 20px 8px;border-radius:12px;box-shadow:0 2px 20px rgba(0,0,0,.10);overflow-x:auto;}
+  table{width:100%;border-collapse:collapse;background:var(--card);white-space:nowrap;border-radius:12px;overflow:hidden;}
+  thead tr.gh th{padding:6px 8px;font-size:10px;font-weight:700;letter-spacing:.06em;color:#fff;border-right:2px solid rgba(255,255,255,.2);}
+  .gh-s{background:var(--navy);}.gh-b{background:var(--blue2);}.gh-a{background:var(--teal);}.gh-p{background:var(--purple);}.gh-r{background:var(--amber);}
+  thead tr.ch th{padding:7px 6px;font-size:10px;font-weight:700;border-bottom:2px solid var(--border);border-right:1px solid rgba(0,0,0,.07);text-align:center;color:#fff;line-height:1.35;}
+  .ch-s{background:#162a52;text-align:left!important;padding-left:12px!important;}
+  .ch-b{background:#1d5096;}.ch-a{background:#0c6e62;}.ch-p{background:#5b21b6;}.ch-r{background:#7c3500;}
+  tbody tr{border-bottom:1px solid #e6eef6;transition:background .1s;}
+  tbody tr:hover{background:#eef6ff!important;}
+  tbody tr:nth-child(even){background:#f6fafd;}
+  td{padding:7px 7px;text-align:right;border-right:1px solid rgba(0,0,0,.05);font-family:'DM Mono',monospace;font-size:11px;vertical-align:middle;}
+  td.sn{text-align:left;font-family:'Noto Sans JP',sans-serif;font-weight:700;font-size:12px;padding-left:12px;color:var(--navy2);min-width:148px;border-right:2px solid var(--border);}
+  td.bc{background:rgba(30,95,168,.05);}td.ac{background:rgba(14,124,110,.05);}
+  td.pc{background:rgba(109,40,217,.05);}td.rc{background:rgba(146,64,14,.05);}
+  td.h-over{background:rgba(192,57,43,.09);color:#b91c1c;font-weight:700;}
+  td.h-ok{background:rgba(22,163,74,.08);color:#15803d;font-weight:700;}
+  .up{color:var(--green);font-weight:700;}.dn{color:var(--red);font-weight:700;}
+  .badge{display:inline-block;padding:2px 9px;border-radius:20px;font-size:10px;font-weight:700;font-family:'Noto Sans JP',sans-serif;}
+  .ok{background:#dcfce7;color:#15803d;}.ng{background:#fee2e2;color:#b91c1c;}.na{background:#f1f5f9;color:#64748b;}
+  tfoot tr{background:var(--navy)!important;}
+  tfoot td{color:#fff!important;font-weight:700!important;border-color:rgba(255,255,255,.15)!important;background:transparent!important;}
+  tfoot td.sn{color:#93b8e0!important;letter-spacing:.04em;}
+  .tip-wrap{position:relative;display:inline-block;cursor:pointer;}
+  .tip-wrap .tip{display:none;position:absolute;right:0;top:120%;background:#1a2a3a;color:#fff;font-size:12px;border-radius:10px;padding:14px 16px;z-index:9999;min-width:260px;max-width:90vw;box-shadow:0 8px 32px rgba(0,0,0,.5);font-family:'Noto Sans JP',sans-serif;line-height:2.2;white-space:normal;}
+  @media(max-width:899px){.tip-wrap .tip{right:auto;left:0;min-width:240px;max-width:80vw;}}
+  .tip-wrap:hover .tip{display:block;}
+  .tip-wrap.active .tip{display:block;}
+  .tip-u{text-decoration:underline dotted;}
+  .legend{display:flex;gap:14px;align-items:center;padding:7px 20px 2px;font-size:10px;color:var(--muted);flex-wrap:wrap;}
+  .ld{width:9px;height:9px;border-radius:50%;display:inline-block;margin-right:3px;}
+  .footnote{background:var(--card);margin:0 20px 20px;border-radius:10px;padding:12px 18px;box-shadow:0 1px 6px rgba(0,0,0,.06);font-size:10px;color:var(--muted);line-height:2.0;}
+  .footnote b{color:var(--navy2);}
+  .fline{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:5px;}
+  .fi{background:#f0f4f8;border-radius:5px;padding:2px 8px;font-family:'DM Mono',monospace;font-size:10px;}
+  .fp{color:var(--green);font-weight:900;font-size:13px;}
+  .fm{color:var(--red);font-weight:900;font-size:13px;}
+  .fe{color:var(--navy);font-weight:900;font-size:13px;}
+  @media print{header{position:static;}.btn{display:none;}body{background:#fff;font-size:9px;}.tw{margin:5px;box-shadow:none;border:1px solid #ccc;}td,th{padding:3px 4px!important;font-size:8px!important;}.sbar,.legend,.footnote{display:none;}}
+</style>
+</head>
+<body>
+<header>
+  <div class="hl">
+    <h1>■ ローソン店利益シュミレーション管理表　2026年3月度</h1>
+    <p>更新：営業速報 2026/3/31 ／ DEPT速報 2026/3/31 ／ 本部支援(AICO) 2/17〜3/16実績　｜　残日数 0日（月次確定）　｜　荒利率：一律30%　廃棄：FF50%・その他70%原価換算　本部支援：売価×70%原価換算</p>
+  </div>
+  <div class="hr">
+    <div class="cbox"><label>チャージ率</label><input type="number" id="chargeRate" value="50" min="1" max="99" step="0.1" oninput="recalc()">%</div>
+    <button class="btn" onclick="window.print()">🖨 印刷</button>
+  </div>
+</header>
+
+<div class="sbar" id="summaryBar"></div>
+
+
+<!-- SC別サマリーカード -->
+<div style="background:#fff;border-bottom:2px solid var(--border);padding:14px 22px 16px;">
+  <div style="font-size:11px;font-weight:700;color:var(--navy2);margin-bottom:10px;display:flex;align-items:center;gap:8px">
+    <span>📊 SC別 着地店利益サマリー</span>
+    <span style="font-size:10px;font-weight:400;color:var(--muted)">※チャージ率変更時は自動更新</span>
+  </div>
+  <div id="scCards" style="display:flex;gap:12px;overflow-x:auto;padding-bottom:4px"></div>
+</div>
+
+<div class="legend">
+  <span><span class="ld" style="background:#dcfce7;border:1.5px solid #16a34a"></span>廃棄原価：予算以内</span>
+  <span><span class="ld" style="background:#fee2e2;border:1.5px solid #c0392b"></span>廃棄原価：予算超過</span>
+  <span><span class="ld" style="background:rgba(109,40,217,.18);border:1.5px solid #6d28d9"></span>本部支援（原価換算後）</span>
+  <span style="margin-left:4px">※ 各欄にマウスで内訳表示</span>
+</div>
+
+<div class="tw">
+<table>
+  <thead>
+    <tr class="gh">
+      <th class="gh-s" rowspan="2" style="text-align:left;padding-left:12px;min-width:148px">店舗名</th>
+      <th class="gh-b" colspan="2">予　算</th>
+      <th class="gh-a" colspan="6">実績速報</th>
+      <th class="gh-p" colspan="9">本部支援（AICO）・廃棄原価（内訳：1日あたり売価・円）</th>
+      <th class="gh-r" colspan="4">着地シュミレーション</th>
+    </tr>
+    <tr class="ch">
+      <th class="ch-b">店利益<br>予算<br>（千円）</th>
+      <th class="ch-b">予算<br>内訳※<br>（千円）</th>
+      <th class="ch-a">営業<br>日数</th>
+      <th class="ch-a">平均<br>日販<br>（千円）</th>
+      <th class="ch-a">日販<br>前年比</th>
+      <th class="ch-a" style="background:#0a5a50">売上<br>予算対比</th>
+      <th class="ch-a">累計<br>売上<br>（千円）</th>
+      <th class="ch-a">累計<br>荒利率</th>
+      <th class="ch-p">廃棄原価<br>累計実績<br>（千円）</th>
+      <th class="ch-p">廃棄原価<br>按分予算<br>（千円）</th>
+      <th class="ch-p">本部支援<br>累計原価<br>（千円）</th>
+      <th class="ch-p" style="background:#3b0764;font-size:9px">1日あたり<br>AI.CO<br>（円）</th>
+      <th class="ch-p" style="background:#3b0764;font-size:9px">1日あたり<br>FF<br>（円）</th>
+      <th class="ch-p" style="background:#3b0764;font-size:9px">1日あたり<br>厨　房<br>（円）</th>
+      <th class="ch-p" style="background:#3b0764;font-size:9px">1日あたり<br>OPケース<br>（円）</th>
+      <th class="ch-p" style="background:#3b0764;font-size:9px">1日あたり<br>ドライ系<br>（円）</th>
+      <th class="ch-p" style="background:#4a1042;font-size:9px">1日あたり<br>値　引<br>（円）</th>
+      <th class="ch-r">残<br>日数</th>
+      <th class="ch-r">着地<br>売上高<br>（千円）</th>
+      <th class="ch-r">着地<br>店利益<br>（千円）</th>
+      <th class="ch-r">予算比<br>達成見込</th>
+    </tr>
+  </thead>
+  <tbody id="tableBody"></tbody>
+  <tfoot id="tableFoot"></tfoot>
+</table>
+</div>
+
+<div class="footnote">
+  <b>■ 着地店利益の計算式（予算ベース増減方式）</b>
+  <div class="fline">
+    <span class="fi">店利益予算</span><span class="fp">＋</span>
+    <span class="fi">(平均日販－日販予算)×31日×30%×チャージ率</span><span class="fm">－</span>
+    <span class="fi">(廃棄実績/日－廃棄予算/日)×31日×70%</span>
+    <span class="fe">＝</span><span class="fi" style="background:#fff7ed;border:1px solid #d97706;font-weight:700">着地店利益</span>
+  </div>
+  <div style="margin-top:6px">
+    <b>■ 廃棄実績/日</b>：(DEPT売変累計 ＋ 値引累計) ÷ 営業日数　｜　
+    <b>■ 廃棄予算/日</b>：廃棄予算(原価) ÷ 75% ÷ 31日（売価換算）　｜　
+    <b>■ 廃棄超過原価</b>：(実績/日－予算/日) × 31日 × 70%
+  </div>
+</div>
+
+<script>
+const MAR_DAYS = 31;
+
+// ===== 店舗マスターデータ =====
+const STORES = [
+  {name:"吹田青山台三丁目", sc:"髙橋SC", scColor:"#1e5fa8",日販予算:624, 店利益予算:624,  FC収入予算:3064,雑益予算:238,人件費予算:1444,その他経費予算:1237,廃棄予算:580, 営業日数:31,平均日販:599.6, 前年比:99.64, 累計売上:18586, 荒利率:25.89},
+  {name:"五月ケ丘東", sc:"髙橋SC", scColor:"#1e5fa8",      日販予算:396, 店利益予算:1081, FC収入予算:1921,雑益予算:794,人件費予算:854, その他経費予算:783, 廃棄予算:368, 営業日数:31,平均日販:387.1, 前年比:99.66, 累計売上:12001, 荒利率:20.72},
+  {name:"江坂駅南口", sc:"髙橋SC", scColor:"#1e5fa8",      日販予算:1106,店利益予算:1696, FC収入予算:5297,雑益予算:302,人件費予算:2037,その他経費予算:1869,廃棄予算:1029,営業日数:31,平均日販:1055.3,前年比:97.32, 累計売上:32713, 荒利率:26.54},
+  {name:"吹田警察署前", sc:"五島SC", scColor:"#0e7c6e",    日販予算:444, 店利益予算:606,  FC収入予算:2179,雑益予算:206,人件費予算:869, その他経費予算:913, 廃棄予算:413, 営業日数:31,平均日販:451.4, 前年比:103.82, 累計売上:13994, 荒利率:23.99},
+  {name:"池田市役所前", sc:"五島SC", scColor:"#0e7c6e",    日販予算:363, 店利益予算:937,  FC収入予算:2203,雑益予算:246,人件費予算:647, その他経費予算:868, 廃棄予算:438, 営業日数:31,平均日販:375.0, 前年比:105.32,累計売上:11625, 荒利率:27.2},
+  {name:"東淀川大道南", sc:"プラカスSC", scColor:"#6d28d9",    日販予算:486, 店利益予算:274,  FC収入予算:2289,雑益予算:216,人件費予算:1180,その他経費予算:1054,廃棄予算:552, 営業日数:31,平均日販:502.9, 前年比:105.75,累計売上:15591, 荒利率:24.87},
+  {name:"大道南一丁目", sc:"プラカスSC", scColor:"#6d28d9",    日販予算:465, 店利益予算:359,  FC収入予算:2364,雑益予算:276,人件費予算:1218,その他経費予算:1066,廃棄予算:532, 営業日数:31,平均日販:490.0, 前年比:107.35,累計売上:15190, 荒利率:24.54},
+  {name:"豊里六丁目", sc:"プラカスSC", scColor:"#6d28d9",      日販予算:392, 店利益予算:794,  FC収入予算:2120,雑益予算:231,人件費予算:802, その他経費予算:758, 廃棄予算:365, 営業日数:31,平均日販:402.8, 前年比:105.01, 累計売上:12487, 荒利率:20.44},
+  {name:"吹田朝日町", sc:"プラカスSC", scColor:"#6d28d9",      日販予算:551, 店利益予算:1010, FC収入予算:2920,雑益予算:246,人件費予算:1026,その他経費予算:1133,廃棄予算:512, 営業日数:31,平均日販:616.0, 前年比:112.49,累計売上:19095, 荒利率:27.11},
+  {name:"東淀川豊里五丁目", sc:"プラカスSC", scColor:"#6d28d9",日販予算:619, 店利益予算:425,  FC収入予算:2854,雑益予算:235,人件費予算:1541,その他経費予算:1126,廃棄予算:576, 営業日数:31,平均日販:652.7, 前年比:107.52,累計売上:20233, 荒利率:24.34},
+  {name:"江坂東", sc:"ダハルSC", scColor:"#b45309",          日販予算:580, 店利益予算:751,  FC収入予算:2784,雑益予算:232,人件費予算:1145,その他経費予算:1123,廃棄予算:539, 営業日数:31,平均日販:616.0, 前年比:108.31,累計売上:19096, 荒利率:26.16},
+  {name:"豊中利倉東一丁目", sc:"ダハルSC", scColor:"#b45309",日販予算:623, 店利益予算:900,  FC収入予算:2865,雑益予算:258,人件費予算:1033,その他経費予算:1193,廃棄予算:579, 営業日数:31,平均日販:609.2, 前年比:99.67, 累計売上:18886, 荒利率:23.83},
+  {name:"豊中服部元町一丁目", sc:"ダハルSC", scColor:"#b45309",日販予算:571,店利益予算:934, FC収入予算:2740,雑益予算:229,人件費予算:954, その他経費予算:1084,廃棄予算:531, 営業日数:31,平均日販:586.1, 前年比:104.65,累計売上:18170, 荒利率:25.95},
+  {name:"箕面白島二丁目", sc:"ダハルSC", scColor:"#b45309",  日販予算:540, 店利益予算:738,  FC収入予算:2519,雑益予算:547,人件費予算:984, その他経費予算:1347,廃棄予算:753, 営業日数:31,平均日販:520.6, 前年比:0,     累計売上:16137, 荒利率:25.92},
+  {name:"豊中原田南一丁目", sc:"ビスワスSC", scColor:"#c0392b",日販予算:438, 店利益予算:715,  FC収入予算:2286,雑益予算:218,人件費予算:879, その他経費予算:913, 廃棄予算:407, 営業日数:31,平均日販:494.9, 前年比:115.3,累計売上:15342, 荒利率:23.85},
+  {name:"南金田二丁目", sc:"ビスワスSC", scColor:"#c0392b",    日販予算:720, 店利益予算:1203, FC収入予算:3401,雑益予算:251,人件費予算:1008,その他経費予算:1444,廃棄予算:770, 営業日数:31,平均日販:744.4, 前年比:105.43,累計売上:23076, 荒利率:25.82},
+  {name:"豊中服部西町三丁目", sc:"ビスワスSC", scColor:"#c0392b",日販予算:430,店利益予算:843, FC収入予算:2246,雑益予算:254,人件費予算:853, その他経費予算:807, 廃棄予算:400, 営業日数:31,平均日販:390.2, 前年比:92.53, 累計売上:12096, 荒利率:22.74},
+  {name:"吹田垂水三丁目", sc:"フィSC", scColor:"#0e7490",  日販予算:306, 店利益予算:541,  FC収入予算:1804,雑益予算:293,人件費予算:802, その他経費予算:791, 廃棄予算:285, 営業日数:31,平均日販:330.2, 前年比:110.11,累計売上:10237, 荒利率:24.57},
+  {name:"吹田豊津中学校前", sc:"フィSC", scColor:"#0e7490",日販予算:543, 店利益予算:1286, FC収入予算:2958,雑益予算:226,人件費予算:819, その他経費予算:1082,廃棄予算:505, 営業日数:31,平均日販:523.2, 前年比:98.29, 累計売上:16220, 荒利率:26.39},
+  {name:"新御堂筋上新田", sc:"フィSC", scColor:"#0e7490",  日販予算:708, 店利益予算:1176, FC収入予算:3347,雑益予算:245,人件費予算:1083,その他経費予算:1336,廃棄予算:658, 営業日数:31,平均日販:688.2, 前年比:99.14, 累計売上:21336, 荒利率:25.73},
+];
+
+// ===== DEPT別廃棄データ（売価千円）FF比率・原価 =====
+// ff_baika:FF・店内厨房の累計廃棄売価、other_baika:その他の累計廃棄売価（千円）
+const DEPT_HENKA = {
+  "吹田警察署前":    {ff:149.4, other:616.3},
+  "吹田朝日町":      {ff:113.8, other:628.9},
+  "池田市役所前":    {ff:111.2, other:542.1},
+  "吹田青山台三丁目":{ff:291.0, other:639.6},
+  "五月ケ丘東":      {ff:193.4, other:671.6},
+  "江坂東":          {ff:211.7, other:411.6},
+  "吹田豊津中学校前":{ff:163.7, other:581.4},
+  "豊中利倉東一丁目":{ff:193.4, other:608.1},
+  "豊中服部元町一丁目":{ff:208.5,other:512.1},
+  "東淀川大道南":    {ff:112.6, other:298.8},
+  "大道南一丁目":    {ff:97.0,  other:502.3},
+  "豊里六丁目":      {ff:70.6,  other:312.8},
+  "東淀川豊里五丁目":{ff:125.0, other:408.1},
+  "豊中原田南一丁目":{ff:194.9, other:760.6},
+  "南金田二丁目":    {ff:239.8, other:653.0},
+  "豊中服部西町三丁目":{ff:101.2,other:394.9},
+  "箕面白島二丁目":  {ff:302.8, other:596.5},
+  "吹田垂水三丁目":  {ff:91.9,  other:369.6},
+  "江坂駅南口":      {ff:472.2, other:743.6},
+  "新御堂筋上新田":  {ff:163.1, other:607.4},
+};
+
+
+
+const SC_MAP = [
+  {sc:'髙橋SC',    color:'#1e5fa8', stores:['吹田青山台三丁目','五月ケ丘東','江坂駅南口']},
+  {sc:'五島SC',    color:'#0e7c6e', stores:['吹田警察署前','池田市役所前']},
+  {sc:'プラカスSC',color:'#6d28d9', stores:['東淀川大道南','大道南一丁目','豊里六丁目','吹田朝日町','東淀川豊里五丁目']},
+  {sc:'ダハルSC',  color:'#b45309', stores:['江坂東','豊中利倉東一丁目','豊中服部元町一丁目','箕面白島二丁目']},
+  {sc:'ビスワスSC',color:'#c0392b', stores:['豊中原田南一丁目','南金田二丁目','豊中服部西町三丁目']},
+  {sc:'フィSC',    color:'#0e7490', stores:['吹田垂水三丁目','吹田豊津中学校前','新御堂筋上新田']},
+];
+// ===== 1日あたりカテゴリー別売変・本部支援データ（円） =====
+const DAILY_HENKA = {
+  "吹田警察署前":      {aico:16134,ff:2975, kitchen:1167,op:2114, dry:891,  sup_b:6607, sup_g:4625},
+  "吹田朝日町":        {aico:15964,ff:1664, kitchen:1639,op:1168, dry:325,  sup_b:9989, sup_g:6992},
+  "池田市役所前":      {aico:16490,ff:3799, kitchen:0,   op:1270, dry:839,  sup_b:5493, sup_g:3845},
+  "吹田青山台三丁目":  {aico:17251,ff:5497, kitchen:2901,op:2700, dry:1920, sup_b:11068,sup_g:7748},
+  "五月ケ丘東":        {aico:16085,ff:5428, kitchen:196, op:2787, dry:1739, sup_b:5461, sup_g:3822},
+  "江坂東":            {aico:10508,ff:5884, kitchen:1555,op:1653, dry:586,  sup_b:4386, sup_g:3070},
+  "吹田豊津中学校前":  {aico:14956,ff:4562, kitchen:474, op:1160, dry:363,  sup_b:6407, sup_g:4485},
+  "豊中利倉東一丁目":  {aico:16611,ff:4978, kitchen:2079,op:2012, dry:623,  sup_b:5339, sup_g:3738},
+  "豊中服部元町一丁目":{aico:11997,ff:4283, kitchen:1851,op:1476, dry:524,  sup_b:4354, sup_g:3047},
+  "東淀川大道南":      {aico:8250, ff:3421, kitchen:534, op:595,  dry:481,  sup_b:11257,sup_g:7880},
+  "大道南一丁目":      {aico:12892,ff:1887, kitchen:817, op:194,  dry:1781, sup_b:11521,sup_g:8065},
+  "豊里六丁目":        {aico:8668, ff:2167, kitchen:0,   op:1053, dry:790,  sup_b:8514, sup_g:5960},
+  "東淀川豊里五丁目":  {aico:10146,ff:2324, kitchen:1107,op:884,  dry:502,  sup_b:11136,sup_g:7795},
+  "豊中原田南一丁目":  {aico:17296,ff:2949, kitchen:1569,op:1935, dry:469,  sup_b:6321, sup_g:4425},
+  "南金田二丁目":      {aico:17158,ff:6644, kitchen:1670,op:1367, dry:4499, sup_b:7518, sup_g:5262},
+  "豊中服部西町三丁目":{aico:9755, ff:3324, kitchen:0,   op:1701, dry:299,  sup_b:4121, sup_g:2885},
+  "箕面白島二丁目":    {aico:16846,ff:5328, kitchen:4750,op:1284, dry:989,  sup_b:0,    sup_g:0},
+  "吹田垂水三丁目":    {aico:11078,ff:3334, kitchen:0,   op:603,  dry:680,  sup_b:4236, sup_g:2965},
+  "江坂駅南口":        {aico:20957,ff:8719, kitchen:4748,op:706,  dry:2388, sup_b:11354,sup_g:7948},
+  "新御堂筋上新田":    {aico:18710,ff:3070, kitchen:2426,op:1301, dry:253,  sup_b:7321, sup_g:5125},
+};
+// ===== 本部支援データ（売価千円・週別） =====
+// ===== 値引きデータ（1日あたり・円）営業速報売変IIIPSAD - DEPT売変PSA/D =====
+const NEBI_HENKA = {
+  "吹田青山台三丁目":   15710,
+  "五月ケ丘東":         5013,
+  "江坂駅南口":         25500,
+  "吹田警察署前":       13645,
+  "池田市役所前":       7069,
+  "東淀川大道南":       34607,
+  "大道南一丁目":       26387,
+  "豊里六丁目":         18152,
+  "吹田朝日町":         27799,
+  "東淀川豊里五丁目":   34694,
+  "江坂東":             21043,
+  "豊中利倉東一丁目":   15042,
+  "豊中服部元町一丁目": 18215,
+  "箕面白島二丁目":     14963,
+  "豊中原田南一丁目":   23145,
+  "南金田二丁目":       13806,
+  "豊中服部西町三丁目": 11851,
+  "吹田垂水三丁目":     8623,
+  "吹田豊津中学校前":   13258,
+  "新御堂筋上新田":     28053,
+};
+
+const SUPPORT = {
+  "吹田垂水三丁目":    {w:[27.1,25.9,23.5,42.1]},
+  "吹田豊津中学校前":  {w:[58.9,40.2,45.8,34.5]},
+  "新御堂筋上新田":    {w:[21.4,68.4,48.9,66.3]},
+  "豊中原田南一丁目":  {w:[44.2,33.1,46.1,53.6]},
+  "南金田二丁目":      {w:[67.3,51.6,61.3,30.3]},
+  "豊中服部西町三丁目":{w:[34.0,31.5,22.7,27.2]},
+  "箕面白島二丁目":    {w:[0.0,0.0,0.0,0.0]},
+  "吹田警察署前":      {w:[30.0,30.8,56.9,67.3]},
+  "池田市役所前":      {w:[31.3,25.9,40.7,55.9]},
+  "江坂駅南口":        {w:[165.1,71.0,37.0,44.8]},
+  "吹田青山台三丁目":  {w:[102.6,93.2,59.2,54.9]},
+  "五月ケ丘東":        {w:[48.4,33.2,33.5,37.8]},
+  "江坂東":            {w:[47.6,10.8,18.2,46.2]},
+  "豊中利倉東一丁目":  {w:[28.4,38.8,38.4,43.9]},
+  "豊中服部元町一丁目":{w:[18.0,38.8,24.3,40.8]},
+  "東淀川大道南":      {w:[73.0,91.5,57.0,93.7]},
+  "大道南一丁目":      {w:[75.8,92.8,82.7,71.3]},
+  "豊里六丁目":        {w:[67.7,69.5,54.3,46.9]},
+  "吹田朝日町":        {w:[60.4,78.7,69.4,71.2]},
+  "東淀川豊里五丁目":  {w:[88.5,76.5,59.8,87.0]},
+};
+
+const fmt  = n => (n===null||n===undefined) ? '—' : Math.round(n).toLocaleString();
+const fmtd = n => n > 0 ? n.toFixed(1)+'%' : '—';
+const ch   = () => (parseFloat(document.getElementById('chargeRate').value)||50) / 100;
+
+function calcRow(s) {
+  const dh  = DEPT_HENKA[s.name] || {ff:0, other:0};
+  const sup = SUPPORT[s.name]    || {w:[0,0,0,0]};
+  const nebi_psad = NEBI_HENKA[s.name] || 0;  // 値引PSA/D（円/日）
+
+  const 残日数 = MAR_DAYS - s.営業日数;
+
+  // ① 着地売上（累計実績 + 残日数 × 平均日販）
+  const landSales = Math.round(s.累計売上 + 残日数 * s.平均日販);
+
+  // ② 着地FC収入（着地売上 × 30% × チャージ率）
+  const landFC = Math.round(landSales * 0.30 * ch());
+
+  // ③ 本部支援
+  const supBaika = sup.w.reduce((a,v)=>a+v, 0);
+  const supGenka = Math.round(supBaika * 0.7);
+  const supDay   = supBaika / s.営業日数;  // 本部支援/日（÷営業日数）
+
+  // ④ 廃棄実績/日（売価・千円）= 営業速報売変IIIPSAD÷1000 - 本部支援/日
+  //    営業速報PSA/D = DEPT売変PSA/D + 値引PSA/D
+  const deptPsad  = (dh.ff + dh.other) / s.営業日数;       // DEPT売変/日（千円）
+  const nebiDay   = nebi_psad / 1000;                       // 値引/日（千円）
+  const eiPsad    = deptPsad + nebiDay;                     // 営業速報売変IIIPSAD（千円/日）
+  const wasteDay  = eiPsad - supDay;                        // 本部支援控除後の廃棄/日（千円）
+
+  // ⑤ 廃棄着地原価（廃棄/日 × 70%原価換算 × 31日）
+  const landHenkaGenka = Math.round(wasteDay * 0.70 * MAR_DAYS);
+
+  // ⑥ 廃棄按分予算（表示用）
+  const henkaYosanSoFar = Math.round(s.廃棄予算 / MAR_DAYS * s.営業日数);
+
+  // ⑦ 廃棄原価累計（表示用）
+  const deptGenka  = Math.round(dh.ff * 0.5 + dh.other * 0.7);
+  const nebiGenka  = Math.round(nebi_psad * s.営業日数 * 0.7 / 1000);
+  const henkaGenka = deptGenka + nebiGenka;
+
+  // ⑧ その他経費（廃棄除く）
+  const otherNonHenka = s.その他経費予算 - s.廃棄予算;
+
+  // ★ 着地店利益
+  const landProfit = Math.round(
+    landFC + s.雑益予算 + supGenka - s.人件費予算 - otherNonHenka - landHenkaGenka
+  );
+  const ratio = s.店利益予算 > 0 ? landProfit / s.店利益予算 : null;
+
+  // 廃棄予算/日（売価換算）= 廃棄予算(原価) ÷ 0.75 ÷ 31日
+  const wasteBudgetDay = s.廃棄予算 / 0.75 / MAR_DAYS;
+  // 廃棄超過/日 = 廃棄実質/日 - 廃棄予算/日（マイナスなら予算内）
+  const wasteDiffDay = wasteDay - wasteBudgetDay;
+
+  return {残日数, landSales, landFC, henkaGenka, henkaYosanSoFar,
+          landHenkaGenka, supBaika, supGenka, landProfit, ratio, supW:sup.w,
+          nebiGenka, deptGenka, wasteDay, eiPsad, supDay,
+          wasteBudgetDay, wasteDiffDay};
+}
+
+function buildTable() {
+  const tbody = document.getElementById('tableBody');
+  tbody.innerHTML = '';
+  STORES.forEach(s => {
+    const c  = calcRow(s);
+    const tr = document.createElement('tr');
+    const ynC = s.前年比>=100 ? 'up' : (s.前年比>0 ? 'dn' : '');
+    const ynS = s.前年比>0 ? fmtd(s.前年比) : '—';
+
+    // 廃棄判定（原価ベース）
+    const hCls   = c.wasteDiffDay <= 0 ? 'h-ok' : 'h-over';
+    const pColor = c.landProfit >= 0 ? 'var(--green)' : 'var(--red)';
+    const badge  = c.ratio===null ? '<span class="badge na">—</span>'
+      : c.ratio>=1 ? `<span class="badge ok">◎達成<br>${(c.ratio*100).toFixed(1)}%</span>`
+                   : `<span class="badge ng">▲要対策<br>${(c.ratio*100).toFixed(1)}%</span>`;
+
+    const WL = ['2/17〜2/23','2/24〜3/02','3/03〜3/09','3/10〜3/16'];
+    const supLines = WL.map((w,i)=>`${w}：${Math.round(c.supW[i]*10)/10}千円`).join('<br>');
+    const dh = DEPT_HENKA[s.name]||{ff:0,other:0};
+
+    // 廃棄ツールチップ（1日あたりカテゴリー内訳）
+    const dd  = DAILY_HENKA[s.name] || {aico:0,ff:0,kitchen:0,op:0,dry:0,sup_b:0,sup_g:0};
+    const nebi_day = NEBI_HENKA[s.name] || 0;
+    const fy  = n => Math.round(n).toLocaleString() + '円';
+    const tot = dd.aico+dd.ff+dd.kitchen+dd.op+dd.dry;
+    const hTip = `<div class="tip-wrap">
+      <span class="tip-u" style="color:${c.henkaGenka<=c.henkaYosanSoFar?'var(--green)':'var(--red)'}">${fmt(c.henkaGenka)}</span>
+      <div class="tip"><span onclick="this.closest('.tip-wrap').classList.remove('active')" style="float:right;cursor:pointer;font-size:14px;margin-left:10px;color:#93b8e0">✕</span>
+        <b>【1日あたり売変合計（売価）】</b><br>
+        合　計：${fy(tot)}<br>
+        ─────────────────<br>
+        廃棄実績/日(売価)：${c.eiPsad.toFixed(1)}千円<br>
+        本部支援控除/日：-${c.supDay.toFixed(1)}千円<br>
+        廃棄実質/日：${c.wasteDay.toFixed(1)}千円<br>
+        廃棄予算/日(売価)：${c.wasteBudgetDay.toFixed(1)}千円<br>
+        廃棄差/日：<b style="color:${c.wasteDiffDay>0?'#ef4444':'#22c55e'}">${c.wasteDiffDay.toFixed(1)}千円</b><br>
+        ─────────────────<br>
+        廃棄着地原価(実質×70%×31日)：${fmt(c.landHenkaGenka)}千円<br>
+        ─────────────────<br>
+        DEPT廃棄原価累計：${fmt(c.deptGenka)}千円<br>
+        値引原価累計：${fmt(c.nebiGenka)}千円<br>
+        廃棄原価合計：${fmt(c.henkaGenka)}千円<br>
+        按分予算：${fmt(c.henkaYosanSoFar)}千円
+      </div>
+    </div>`;
+
+    // 本部支援ツールチップ（1日あたり付き）
+    const sTip = `<div class="tip-wrap">
+      <span class="tip-u" style="color:var(--purple)">${fmt(c.supGenka)}</span>
+      <div class="tip"><span onclick="this.closest('.tip-wrap').classList.remove('active')" style="float:right;cursor:pointer;font-size:14px;margin-left:10px;color:#93b8e0">✕</span>
+        <b>【週別支援（売価）2/17〜3/16】</b><br>
+        ${supLines}<br>
+        支援累計（売価）：${fmt(c.supBaika)}千円<br>
+        ─────────────────<br>
+        <b>【1日あたり支援（AI.COのみ）】</b><br>
+        売　価：${fy(dd.sup_b)}<br>
+        原　価（×70%）：${fy(dd.sup_g)}<br>
+        ─────────────────<br>
+        月間支援原価合計：<b>${fmt(c.supGenka)}千円</b>
+      </div>
+    </div>`;
+
+    // 予算内訳ツールチップ
+    const bTip = `<div class="tip-wrap">
+      <span class="tip-u" style="color:var(--blue)">内訳</span>
+      <div class="tip"><span onclick="this.closest('.tip-wrap').classList.remove('active')" style="float:right;cursor:pointer;font-size:14px;margin-left:10px;color:#93b8e0">✕</span>
+        FC収入予算：${fmt(s.FC収入予算)}千円<br>
+        雑益予算：${fmt(s.雑益予算)}千円<br>
+        ────────────────<br>
+        人件費予算：${fmt(s.人件費予算)}千円<br>
+        廃棄予算（原価）：${fmt(s.廃棄予算)}千円<br>
+        その他経費（廃棄除く）：${fmt(s.その他経費予算-s.廃棄予算)}千円<br>
+        ────────────────<br>
+        <b>店利益予算：${fmt(s.店利益予算)}千円</b>
+      </div>
+    </div>`;
+
+    tr.innerHTML = `
+      <td class="sn">${s.name}<br><span style="font-size:9px;font-weight:500;color:${s.scColor};background:${s.scColor}18;padding:1px 5px;border-radius:6px">${s.sc}</span></td>
+      <td class="bc" style="font-weight:700">${fmt(s.店利益予算)}</td>
+      <td class="bc" style="text-align:center">${bTip}</td>
+      <td class="ac" style="text-align:center">${s.営業日数}</td>
+      <td class="ac">${fmt(s.平均日販)}</td>
+      <td class="ac ${ynC}">${ynS}</td>
+      <td class="ac" style="background:rgba(10,90,80,.07);font-weight:700;color:${s.平均日販/s.日販予算>=1?'var(--green)':'var(--red)'}">${(s.平均日販/s.日販予算*100).toFixed(1)}%</td>
+      <td class="ac">${fmt(s.累計売上)}</td>
+      <td class="ac" style="font-weight:700;color:${s.荒利率>=30?'var(--green)':'var(--amber)'}">${s.荒利率.toFixed(2)}%</td>
+      <td class="${hCls}">${hTip}</td>
+      <td class="pc">${fmt(c.henkaYosanSoFar)}</td>
+      <td class="pc">${sTip}</td>
+      <td class="pc" style="background:rgba(59,7,100,.06);color:#6d28d9">${dd.aico.toLocaleString()}</td>
+      <td class="pc" style="background:rgba(59,7,100,.06);color:#6d28d9">${dd.ff.toLocaleString()}</td>
+      <td class="pc" style="background:rgba(59,7,100,.06);color:#6d28d9">${dd.kitchen.toLocaleString()}</td>
+      <td class="pc" style="background:rgba(59,7,100,.06);color:#6d28d9">${dd.op.toLocaleString()}</td>
+      <td class="pc" style="background:rgba(59,7,100,.06);color:#6d28d9">${dd.dry.toLocaleString()}</td>
+      <td class="pc" style="background:rgba(74,4,66,.08);color:#9d174d;font-weight:700">${nebi_day.toLocaleString()}</td>
+      <td class="rc" style="text-align:center;color:#d97706;font-weight:700">${c.残日数}</td>
+      <td class="rc">${fmt(c.landSales)}</td>
+      <td class="rc" style="font-weight:700;font-size:12px;color:${pColor}">${fmt(c.landProfit)}</td>
+      <td class="rc" style="text-align:center">${badge}</td>`;
+    tbody.appendChild(tr);
+  });
+  buildFoot(); buildSummary(); buildSCCards();
+}
+
+
+function buildSCCards() {
+  const bar = document.getElementById('scCards');
+  if (!bar) return;
+  bar.innerHTML = '';
+
+  SC_MAP.forEach(({sc, color, stores}) => {
+    const scStores = STORES.filter(s => stores.includes(s.name));
+    const calcs    = scStores.map(s => calcRow(s));
+
+    const totBudget  = scStores.reduce((a,s)=>a+s.店利益予算, 0);
+    const totProfit  = calcs.reduce((a,c)=>a+c.landProfit, 0);
+    const totLandS   = calcs.reduce((a,c)=>a+c.landSales, 0);
+    const totSupG    = calcs.reduce((a,c)=>a+c.supGenka, 0);
+    const ratio      = totBudget > 0 ? totProfit / totBudget : 0;
+    const okCnt      = calcs.filter(c=>c.ratio!==null&&c.ratio>=1).length;
+    const ngCnt      = calcs.filter(c=>c.ratio!==null&&c.ratio<1).length;
+    const pColor     = totProfit >= totBudget ? '#16a34a' : '#c0392b';
+    const bgRatio    = Math.min(Math.max(ratio, 0), 1.5);
+    const barW       = Math.min(bgRatio / 1.5 * 100, 100).toFixed(1);
+    const barColor   = ratio >= 1 ? '#16a34a' : ratio >= 0.8 ? '#d97706' : '#c0392b';
+
+    const div = document.createElement('div');
+    div.style.cssText = `
+      background:#fff;border-radius:12px;padding:14px 18px;min-width:200px;flex-shrink:0;
+      border:2px solid ${color}40;
+      box-shadow:0 2px 12px rgba(0,0,0,.08);
+      position:relative;overflow:hidden;
+    `;
+    div.innerHTML = `
+      <div style="position:absolute;top:0;left:0;right:0;height:3px;background:${color}"></div>
+      <div style="font-size:12px;font-weight:900;color:${color};margin-bottom:2px">${sc}</div>
+      <div style="font-size:10px;color:var(--muted);margin-bottom:10px">${stores.length}店舗担当　達成 <b style="color:#16a34a">${okCnt}</b> / 未達 <b style="color:#c0392b">${ngCnt}</b></div>
+
+      <div style="font-size:10px;color:var(--muted)">着地店利益</div>
+      <div style="font-size:22px;font-weight:900;font-family:'DM Mono',monospace;color:${pColor};margin:1px 0 2px">${fmt(totProfit)}<span style="font-size:11px;font-weight:500">千円</span></div>
+
+      <div style="background:#f0f4f8;border-radius:6px;height:6px;margin:6px 0 4px;overflow:hidden">
+        <div style="height:100%;width:${barW}%;background:${barColor};border-radius:6px;transition:width .4s"></div>
+      </div>
+      <div style="display:flex;justify-content:space-between;font-size:10px">
+        <span style="color:var(--muted)">予算 ${fmt(totBudget)}千円</span>
+        <span style="font-weight:700;color:${pColor}">${(ratio*100).toFixed(1)}%</span>
+      </div>
+
+      <div style="margin-top:8px;padding-top:8px;border-top:1px solid #e8eff6;font-size:10px;color:var(--muted);display:flex;justify-content:space-between">
+        <span>着地売上 <b style="color:var(--navy2)">${fmt(totLandS)}千</b></span>
+        <span>本部支援 <b style="color:#6d28d9">${fmt(totSupG)}千</b></span>
+      </div>
+    `;
+    bar.appendChild(div);
+  });
+}
+
+function buildFoot() {
+  const tfoot = document.getElementById('tableFoot');
+  tfoot.innerHTML = '';
+  const C = STORES.map(calcRow);
+  const tot = {
+    利益予算: STORES.reduce((a,s)=>a+s.店利益予算,0),
+    売上:     STORES.reduce((a,s)=>a+s.累計売上,0),
+    henkaG:   C.reduce((a,c)=>a+c.henkaGenka,0),
+    supG:     C.reduce((a,c)=>a+c.supGenka,0),
+    landS:    C.reduce((a,c)=>a+c.landSales,0),
+    profit:   C.reduce((a,c)=>a+c.landProfit,0),
+    fcUp:     C.reduce((a,c)=>a+c.fcUp,0),
+  };
+  const ratio = tot.利益予算>0 ? tot.profit/tot.利益予算 : null;
+  const badge = ratio===null ? '—'
+    : ratio>=1 ? `<span class="badge ok">◎達成 ${(ratio*100).toFixed(1)}%</span>`
+               : `<span class="badge ng">▲要対策 ${(ratio*100).toFixed(1)}%</span>`;
+  const pc = tot.profit>=0 ? '#4ade80' : '#f87171';
+  const tr = document.createElement('tr');
+  tr.innerHTML = `<td class="sn">合　計</td>
+    <td style="font-weight:700">${fmt(tot.利益予算)}</td>
+    <td style="text-align:center">—</td>
+    <td style="text-align:center">—</td><td>—</td><td>—</td>
+    <td>${fmt(tot.売上)}</td>
+    <td>${fmt(tot.henkaG)}</td><td>—</td>
+    <td style="color:#c4b5fd;font-weight:700">${fmt(tot.supG)}</td>
+    <td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td>
+    <td style="text-align:center">—</td>
+    <td>${fmt(tot.landS)}</td>
+    <td style="font-weight:700;color:${pc}">${fmt(tot.profit)}</td>
+    <td style="text-align:center">${badge}</td>`;
+  tfoot.appendChild(tr);
+}
+
+function buildSummary() {
+  const bar = document.getElementById('summaryBar'); bar.innerHTML='';
+  const C   = STORES.map(calcRow);
+  const totP = C.reduce((a,c)=>a+c.landProfit,0);
+  const totB = STORES.reduce((a,s)=>a+s.店利益予算,0);
+  const totS = C.reduce((a,c)=>a+c.supGenka,0);
+  const okCnt= C.filter(c=>c.ratio!==null&&c.ratio>=1).length;
+  const ngCnt= C.filter(c=>c.ratio!==null&&c.ratio<1).length;
+  const ratio= totB>0 ? totP/totB : 0;
+  const pColor= totP>=totB ? 'var(--green)' : 'var(--red)';
+  [
+    {label:'着地店利益（全店合計）',val:`${fmt(totP)}千円`,sub:`予算比 ${(ratio*100).toFixed(1)}%`,cls:'',color:pColor},
+    {label:'店利益予算（全店合計）',val:`${fmt(totB)}千円`,sub:'月間目標',cls:'',color:'var(--blue)'},
+    {label:'本部支援合計（原価換算後）',val:`${fmt(totS)}千円`,sub:'2/17〜3/16実績',cls:'purple',color:'var(--purple)'},
+    {label:'達成見込み店舗',val:`${okCnt}店 / 20店`,sub:`未達:${ngCnt}店`,cls:'green',color:'var(--green)'},
+  ].forEach(c=>{
+    const d=document.createElement('div'); d.className='sc '+c.cls;
+    d.innerHTML=`<div class="sc-label">${c.label}</div>
+      <div class="sc-val" style="color:${c.color}">${c.val}</div>
+      <div class="sc-sub">${c.sub}</div>`;
+    bar.appendChild(d);
+  });
+}
+
+function recalc() { buildTable(); }
+
+// ===== スマホ対応：タップでポップアップ表示 =====
+document.addEventListener('click', function(e) {
+  const wrap = e.target.closest('.tip-wrap');
+  if (wrap) {
+    document.querySelectorAll('.tip-wrap.active').forEach(el => {
+      if (el !== wrap) el.classList.remove('active');
+    });
+    const wasActive = wrap.classList.contains('active');
+    wrap.classList.toggle('active');
+    if (!wasActive) {
+      // ポップアップの位置を画面内に収める
+      const tip = wrap.querySelector('.tip');
+      if (tip) {
+        tip.style.top = '';
+        tip.style.bottom = '';
+        tip.style.transform = '';
+        const rect = wrap.getBoundingClientRect();
+        const vh = window.innerHeight;
+        // 画面下半分なら上に、上半分なら下に表示
+        if (rect.top > vh / 2) {
+          tip.style.top = 'auto';
+          tip.style.bottom = '0px';
+          tip.style.transform = 'none';
+          // さらに画面上端を超えないか確認
+          requestAnimationFrame(() => {
+            const tr = tip.getBoundingClientRect();
+            if (tr.top < 8) {
+              tip.style.bottom = (parseInt(tip.style.bottom||0) - tr.top + 8) + 'px';
+            }
+          });
+        } else {
+          tip.style.top = '50%';
+          tip.style.transform = 'translateY(-50%)';
+        }
+      }
+    }
+    e.stopPropagation();
+  } else {
+    document.querySelectorAll('.tip-wrap.active').forEach(el => {
+      el.classList.remove('active');
+    });
+  }
+});
+
+buildTable();
+</script>
+</body>
+</html>
