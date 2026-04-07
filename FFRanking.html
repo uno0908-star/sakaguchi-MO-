@@ -15,6 +15,7 @@
     --green-light: #DCFCE7;
     --blue: #2563EB;
     --blue-light: #EFF6FF;
+    --purple: #7C3AED;
     --gray-50: #F9FAFB;
     --gray-100: #F3F4F6;
     --gray-200: #E5E7EB;
@@ -25,60 +26,55 @@
     --white: #FFFFFF;
   }
   * { box-sizing: border-box; margin: 0; padding: 0; }
-  body {
-    font-family: 'Noto Sans JP', sans-serif;
-    background: var(--gray-50);
-    color: var(--gray-900);
-    min-height: 100vh;
-  }
+  body { font-family: 'Noto Sans JP', sans-serif; background: var(--gray-50); color: var(--gray-900); min-height: 100vh; }
 
   /* ===== HEADER ===== */
   header {
-    background: var(--white);
-    border-bottom: 3px solid var(--red);
-    padding: 14px 16px;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    position: sticky;
-    top: 0;
-    z-index: 100;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+    background: var(--white); border-bottom: 3px solid var(--red);
+    padding: 14px 16px; display: flex; align-items: center; justify-content: space-between;
+    position: sticky; top: 0; z-index: 100; box-shadow: 0 2px 8px rgba(0,0,0,0.06);
   }
   .header-left { display: flex; align-items: center; gap: 12px; }
   .chicken-icon {
-    width: 40px; height: 40px;
-    background: var(--red);
-    border-radius: 10px;
-    display: flex; align-items: center; justify-content: center;
-    font-size: 20px; flex-shrink: 0;
+    width: 40px; height: 40px; background: var(--red); border-radius: 10px;
+    display: flex; align-items: center; justify-content: center; font-size: 20px; flex-shrink: 0;
   }
   .header-title h1 { font-size: 15px; font-weight: 900; color: var(--gray-900); }
   .header-title p  { font-size: 11px; color: var(--gray-400); margin-top: 1px; }
   .update-badge {
-    background: var(--red-light); color: var(--red);
-    font-size: 11px; font-weight: 700;
-    padding: 5px 10px; border-radius: 20px;
-    border: 1px solid #FCA5A5;
-    white-space: nowrap;
+    background: var(--blue-light); color: var(--blue);
+    font-size: 11px; font-weight: 700; padding: 5px 10px; border-radius: 20px;
+    border: 1px solid #BFDBFE; white-space: nowrap;
   }
+
+  /* ===== TAB NAV ===== */
+  .tab-nav {
+    display: flex; gap: 0; background: var(--white);
+    border-bottom: 2px solid var(--gray-200);
+    position: sticky; top: 69px; z-index: 99;
+    overflow-x: auto; scrollbar-width: none;
+  }
+  .tab-nav::-webkit-scrollbar { display: none; }
+  .tab-btn {
+    padding: 12px 20px; font-size: 13px; font-weight: 700;
+    font-family: 'Noto Sans JP', sans-serif;
+    border: none; background: none; cursor: pointer;
+    color: var(--gray-400); border-bottom: 3px solid transparent;
+    margin-bottom: -2px; white-space: nowrap; transition: all 0.15s;
+  }
+  .tab-btn.active { color: var(--red); border-bottom-color: var(--red); }
+  .tab-btn:hover  { color: var(--gray-800); }
 
   /* ===== MAIN ===== */
   main { padding: 16px; max-width: 900px; margin: 0 auto; }
+  .tab-panel { display: none; }
+  .tab-panel.active { display: block; }
 
   /* ===== SUMMARY CARDS ===== */
-  .summary-grid {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 10px;
-    margin-bottom: 20px;
-  }
+  .summary-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-bottom: 20px; }
   .summary-card {
-    background: var(--white);
-    border-radius: 14px;
-    padding: 14px 16px;
-    border: 1px solid var(--gray-200);
-    box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+    background: var(--white); border-radius: 14px; padding: 14px 16px;
+    border: 1px solid var(--gray-200); box-shadow: 0 1px 4px rgba(0,0,0,0.04);
   }
   .summary-card .label { font-size: 11px; color: var(--gray-400); font-weight: 500; margin-bottom: 6px; }
   .summary-card .value { font-size: 26px; font-weight: 900; font-family: 'DM Mono', monospace; letter-spacing: -1px; }
@@ -87,47 +83,30 @@
   .card-orange .value { color: var(--orange); }
   .card-green  .value { color: var(--green); }
   .card-blue   .value { color: var(--blue); }
+  .card-purple .value { color: var(--purple); }
 
   /* ===== VISUAL SECTION ===== */
-  .visual-section {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 14px;
-    margin-bottom: 20px;
-  }
+  .visual-section { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 20px; }
   .chart-card {
-    background: var(--white);
-    border-radius: 14px;
-    border: 1px solid var(--gray-200);
-    padding: 16px;
-    box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+    background: var(--white); border-radius: 14px; border: 1px solid var(--gray-200);
+    padding: 16px; box-shadow: 0 1px 4px rgba(0,0,0,0.04);
   }
   .chart-card h3 { font-size: 13px; font-weight: 700; color: var(--gray-800); margin-bottom: 3px; }
   .chart-card p  { font-size: 10px; color: var(--gray-400); margin-bottom: 14px; }
 
-  /* SC SUMMARY BARS */
+  /* SC BARS */
   .sc-row { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
   .sc-name { font-size: 11px; font-weight: 700; min-width: 90px; }
   .sc-bar-wrap { flex: 1; }
-  .sc-bar-bg {
-    height: 22px; background: var(--gray-100);
-    border-radius: 6px; overflow: hidden;
-    display: flex;
-  }
+  .sc-bar-bg { height: 22px; background: var(--gray-100); border-radius: 6px; overflow: hidden; display: flex; }
   .sc-bar-sold {
     height: 100%; display: flex; align-items: center; padding-left: 6px;
-    font-size: 10px; font-weight: 700; color: white;
-    font-family: 'DM Mono', monospace;
-    transition: width 0.8s;
-    border-radius: 6px 0 0 6px;
-    white-space: nowrap; overflow: hidden;
+    font-size: 10px; font-weight: 700; color: white; font-family: 'DM Mono', monospace;
+    transition: width 0.8s; border-radius: 6px 0 0 6px; white-space: nowrap; overflow: hidden;
   }
   .sc-bar-remain {
-    height: 100%; display: flex; align-items: center;
-    justify-content: flex-end; padding-right: 5px;
-    font-size: 9px; color: var(--gray-400);
-    font-family: 'DM Mono', monospace;
-    white-space: nowrap; overflow: hidden;
+    height: 100%; display: flex; align-items: center; justify-content: flex-end; padding-right: 5px;
+    font-size: 9px; color: var(--gray-400); font-family: 'DM Mono', monospace; white-space: nowrap; overflow: hidden;
   }
   .sc-stats { font-size: 10px; color: var(--gray-400); min-width: 52px; text-align: right; font-family: 'DM Mono', monospace; }
 
@@ -136,83 +115,35 @@
   .donut-item { display: flex; flex-direction: column; align-items: center; gap: 5px; }
   .donut-wrap { position: relative; width: 64px; height: 64px; }
   .donut-wrap svg { width: 64px; height: 64px; }
-  .donut-center {
-    position: absolute; top: 50%; left: 50%;
-    transform: translate(-50%, -50%);
-    text-align: center;
-  }
+  .donut-center { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); text-align: center; }
   .donut-pct   { font-size: 12px; font-weight: 900; font-family: 'DM Mono', monospace; }
   .donut-label { font-size: 9px; font-weight: 700; color: var(--gray-700); text-align: center; max-width: 64px; line-height: 1.3; }
   .donut-sub   { font-size: 9px; color: var(--gray-400); text-align: center; }
 
-  /* ===== STORE LIST SECTION ===== */
-  .list-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    margin-bottom: 12px;
-    flex-wrap: wrap;
-    gap: 8px;
-  }
-  .list-header h2 { font-size: 14px; font-weight: 700; color: var(--gray-800); }
-
-  /* フィルターボタン */
+  /* ===== FILTER ===== */
   .filter-scroll {
-    display: flex;
-    gap: 8px;
-    overflow-x: auto;
-    padding-bottom: 4px;
-    margin-bottom: 14px;
-    -webkit-overflow-scrolling: touch;
-    scrollbar-width: none;
+    display: flex; gap: 8px; overflow-x: auto; padding-bottom: 4px;
+    margin-bottom: 14px; -webkit-overflow-scrolling: touch; scrollbar-width: none;
   }
   .filter-scroll::-webkit-scrollbar { display: none; }
   .filter-btn {
-    padding: 7px 16px;
-    border-radius: 20px;
-    border: 1.5px solid var(--gray-200);
-    background: var(--white);
-    font-size: 12px;
-    font-family: 'Noto Sans JP', sans-serif;
-    color: var(--gray-600);
-    cursor: pointer;
-    font-weight: 600;
-    transition: all 0.15s;
-    white-space: nowrap;
-    flex-shrink: 0;
+    padding: 7px 16px; border-radius: 20px; border: 1.5px solid var(--gray-200);
+    background: var(--white); font-size: 12px; font-family: 'Noto Sans JP', sans-serif;
+    color: var(--gray-600); cursor: pointer; font-weight: 600;
+    transition: all 0.15s; white-space: nowrap; flex-shrink: 0;
   }
-  .filter-btn:hover { border-color: var(--red); color: var(--red); }
+  .filter-btn:hover  { border-color: var(--red); color: var(--red); }
   .filter-btn.active { background: var(--red); border-color: var(--red); color: white; }
 
-  /* ===== STORE CARDS ===== */
+  /* ===== STORE CARDS (TODAY) ===== */
   .store-list { display: flex; flex-direction: column; gap: 10px; margin-bottom: 24px; }
-
   .store-card {
-    background: var(--white);
-    border-radius: 14px;
-    border: 1px solid var(--gray-200);
-    padding: 14px 16px;
-    box-shadow: 0 1px 4px rgba(0,0,0,0.04);
-    animation: fadeUp 0.3s ease both;
+    background: var(--white); border-radius: 14px; border: 1px solid var(--gray-200);
+    padding: 14px 16px; box-shadow: 0 1px 4px rgba(0,0,0,0.04); animation: fadeUp 0.3s ease both;
   }
-  .store-card.achieved {
-    border-color: #86EFAC;
-    background: linear-gradient(135deg, #fff 60%, #f0fdf4);
-  }
-
-  /* カード上段: SC名 + 店舗名 + 達成バッジ */
-  .card-top {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    margin-bottom: 10px;
-  }
-  .sc-badge {
-    display: inline-block;
-    padding: 3px 9px; border-radius: 10px;
-    font-size: 10px; font-weight: 700; white-space: nowrap;
-    flex-shrink: 0;
-  }
+  .store-card.achieved { border-color: #86EFAC; background: linear-gradient(135deg, #fff 60%, #f0fdf4); }
+  .card-top { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
+  .sc-badge { display: inline-block; padding: 3px 9px; border-radius: 10px; font-size: 10px; font-weight: 700; white-space: nowrap; flex-shrink: 0; }
   .sc-takahashi { background: #FEF3C7; color: #92400E; }
   .sc-fi        { background: #FCE7F3; color: #9D174D; }
   .sc-goshima   { background: #E0E7FF; color: #3730A3; }
@@ -221,31 +152,10 @@
   .sc-dahal     { background: #FEE2E2; color: #991B1B; }
   .sc-suraz     { background: #F3E8FF; color: #6B21A8; }
   .sc-santos    { background: #FFF3E0; color: #E65100; }
-
-  .card-store-name {
-    font-size: 15px; font-weight: 700;
-    color: var(--gray-900); flex: 1;
-  }
-  .achieved-badge {
-    background: var(--green); color: white;
-    font-size: 10px; font-weight: 700;
-    padding: 3px 8px; border-radius: 8px;
-    white-space: nowrap; flex-shrink: 0;
-  }
-
-  /* カード中段: 数値3列 */
-  .card-nums {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 8px;
-    margin-bottom: 10px;
-  }
-  .num-cell {
-    background: var(--gray-50);
-    border-radius: 10px;
-    padding: 8px 10px;
-    text-align: center;
-  }
+  .card-store-name { font-size: 15px; font-weight: 700; color: var(--gray-900); flex: 1; }
+  .achieved-badge { background: var(--green); color: white; font-size: 10px; font-weight: 700; padding: 3px 8px; border-radius: 8px; white-space: nowrap; flex-shrink: 0; }
+  .card-nums { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 10px; }
+  .num-cell { background: var(--gray-50); border-radius: 10px; padding: 8px 10px; text-align: center; }
   .num-cell .n-label { font-size: 10px; color: var(--gray-400); font-weight: 500; margin-bottom: 3px; }
   .num-cell .n-val   { font-size: 20px; font-weight: 900; font-family: 'DM Mono', monospace; line-height: 1; }
   .num-cell .n-unit  { font-size: 10px; color: var(--gray-400); }
@@ -253,55 +163,81 @@
   .n-sold   { color: var(--blue); }
   .n-remain { color: var(--red); }
   .n-remain.done { color: var(--green); }
-
-  /* カード下段: 進捗バー */
   .card-bar-wrap { }
-  .card-bar-meta {
-    display: flex;
-    justify-content: space-between;
-    font-size: 11px;
-    color: var(--gray-400);
-    margin-bottom: 5px;
-  }
+  .card-bar-meta { display: flex; justify-content: space-between; font-size: 11px; color: var(--gray-400); margin-bottom: 5px; }
   .card-bar-meta strong { font-family: 'DM Mono', monospace; }
-  .card-bar-bg {
-    height: 10px; background: var(--gray-100);
-    border-radius: 6px; overflow: hidden;
+  .card-bar-bg { height: 10px; background: var(--gray-100); border-radius: 6px; overflow: hidden; }
+  .card-bar-fill { height: 100%; border-radius: 6px; transition: width 0.9s cubic-bezier(0.4,0,0.2,1); }
+
+  /* ===== 昨日結果検証 ===== */
+  .verify-section { margin-bottom: 24px; }
+  .section-title { font-size: 14px; font-weight: 700; color: var(--gray-800); margin-bottom: 12px; }
+
+  /* 昨日サマリーカード */
+  .yesterday-summary {
+    display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-bottom: 20px;
   }
-  .card-bar-fill {
-    height: 100%; border-radius: 6px;
-    transition: width 0.9s cubic-bezier(0.4,0,0.2,1);
+  .yday-card {
+    background: var(--white); border-radius: 14px; padding: 14px 16px;
+    border: 1px solid var(--gray-200); box-shadow: 0 1px 4px rgba(0,0,0,0.04);
   }
+  .yday-card .label { font-size: 11px; color: var(--gray-400); font-weight: 500; margin-bottom: 6px; }
+  .yday-card .value { font-size: 24px; font-weight: 900; font-family: 'DM Mono', monospace; }
+  .yday-card .sub   { font-size: 11px; color: var(--gray-400); margin-top: 3px; }
+  .yday-achieved .value { color: var(--green); }
+  .yday-total    .value { color: var(--blue); }
+  .yday-rate     .value { color: var(--orange); }
+  .yday-best     .value { color: var(--purple); font-size: 16px; }
+
+  /* 昨日検証カード */
+  .verify-card {
+    background: var(--white); border-radius: 14px; border: 1px solid var(--gray-200);
+    padding: 14px 16px; box-shadow: 0 1px 4px rgba(0,0,0,0.04); margin-bottom: 10px;
+    animation: fadeUp 0.3s ease both;
+  }
+  .verify-card.v-achieved { border-left: 4px solid var(--green); }
+  .verify-card.v-miss     { border-left: 4px solid var(--red); }
+
+  .v-top { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
+  .v-store-name { font-size: 14px; font-weight: 700; flex: 1; }
+  .v-result-badge {
+    font-size: 11px; font-weight: 700; padding: 3px 10px; border-radius: 8px; white-space: nowrap;
+  }
+  .v-result-badge.ok   { background: var(--green-light); color: var(--green); }
+  .v-result-badge.miss { background: var(--red-light);   color: var(--red); }
+
+  .v-nums { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; margin-bottom: 8px; }
+  .v-cell { background: var(--gray-50); border-radius: 8px; padding: 6px 8px; text-align: center; }
+  .v-cell .vl { font-size: 9px; color: var(--gray-400); margin-bottom: 2px; }
+  .v-cell .vv { font-size: 15px; font-weight: 900; font-family: 'DM Mono', monospace; }
+  .v-cell .vv.vt { color: var(--orange); }
+  .v-cell .vv.vs { color: var(--blue); }
+  .v-cell .vv.vd { color: var(--green); }
+  .v-cell .vv.vd.minus { color: var(--red); }
+  .v-cell .vv.vr { color: var(--purple); }
+
+  .v-bar-bg { height: 8px; background: var(--gray-100); border-radius: 5px; overflow: hidden; }
+  .v-bar-fill { height: 100%; border-radius: 5px; transition: width 0.9s; }
 
   /* ===== FOOTER ===== */
-  .note {
-    font-size: 11px; color: var(--gray-400);
-    text-align: center; padding: 16px;
-    border-top: 1px solid var(--gray-200);
-  }
+  .note { font-size: 11px; color: var(--gray-400); text-align: center; padding: 16px; border-top: 1px solid var(--gray-200); }
 
   /* ===== ANIMATIONS ===== */
   @keyframes fadeUp {
     from { opacity: 0; transform: translateY(10px); }
     to   { opacity: 1; transform: translateY(0); }
   }
-  .summary-card, .chart-card { animation: fadeUp 0.4s ease both; }
-  .summary-card:nth-child(1) { animation-delay: 0.05s; }
-  .summary-card:nth-child(2) { animation-delay: 0.10s; }
-  .summary-card:nth-child(3) { animation-delay: 0.15s; }
-  .summary-card:nth-child(4) { animation-delay: 0.20s; }
+  .summary-card, .chart-card, .yday-card { animation: fadeUp 0.4s ease both; }
 
-  /* ===== PC 2列レイアウト ===== */
+  /* ===== PC ===== */
   @media (min-width: 640px) {
-    main { padding: 24px 24px; }
+    main { padding: 24px; }
     .summary-grid { grid-template-columns: repeat(4, 1fr); gap: 14px; }
+    .yesterday-summary { grid-template-columns: repeat(4, 1fr); }
     .store-list { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
     .donut-grid { grid-template-columns: repeat(5, 1fr); }
     header { padding: 16px 24px; }
     .header-title h1 { font-size: 18px; }
-  }
-  @media (min-width: 900px) {
-    .donut-grid { grid-template-columns: repeat(5, 1fr); }
   }
 </style>
 </head>
@@ -315,97 +251,141 @@
       <p>阪口商店 全20店舗</p>
     </div>
   </div>
-  <div class="update-badge">📅 4/7（火）22:00</div>
+  <div class="update-badge">📅 4/8（水）8:30</div>
 </header>
+
+<!-- タブナビ -->
+<div class="tab-nav">
+  <button class="tab-btn active" onclick="switchTab('today', this)">📦 本日進捗</button>
+  <button class="tab-btn" onclick="switchTab('verify', this)">📊 昨日の結果検証</button>
+</div>
 
 <main>
 
-  <!-- サマリーカード -->
-  <div class="summary-grid">
-    <div class="summary-card card-red">
-      <div class="label">🎯 販売数目標（合計）</div>
-      <div class="value" id="totalTarget">-</div>
-      <div class="sub">全店合計目標</div>
+  <!-- ===== 本日進捗タブ ===== -->
+  <div class="tab-panel active" id="panel-today">
+
+    <div class="summary-grid">
+      <div class="summary-card card-red">
+        <div class="label">🎯 販売数目標（合計）</div>
+        <div class="value" id="totalTarget">-</div>
+        <div class="sub">全店合計目標</div>
+      </div>
+      <div class="summary-card card-orange">
+        <div class="label">📦 本日販売数（合計）</div>
+        <div class="value" id="totalSold">-</div>
+        <div class="sub">8:30 時点</div>
+      </div>
+      <div class="summary-card card-blue">
+        <div class="label">📊 あと必要な販売数</div>
+        <div class="value" id="totalRemain">-</div>
+        <div class="sub">目標達成まで残り</div>
+      </div>
+      <div class="summary-card card-green">
+        <div class="label">✅ 全体進捗率</div>
+        <div class="value" id="totalPct">-</div>
+        <div class="sub">目標に対する達成率</div>
+      </div>
     </div>
-    <div class="summary-card card-orange">
-      <div class="label">📦 現在の販売数（合計）</div>
-      <div class="value" id="totalSold">-</div>
-      <div class="sub">22:00 時点</div>
+
+    <div class="visual-section">
+      <div class="chart-card">
+        <h3>🏪 SC・ASC別 販売進捗バー</h3>
+        <p>販売済（色）vs 残り（グレー）</p>
+        <div id="sc-bars"></div>
+      </div>
+      <div class="chart-card">
+        <h3>🍩 店舗別 達成率</h3>
+        <p>各店舗の目標達成率</p>
+        <div class="donut-grid" id="donuts"></div>
+      </div>
     </div>
-    <div class="summary-card card-blue">
-      <div class="label">📊 あと必要な販売数</div>
-      <div class="value" id="totalRemain">-</div>
-      <div class="sub">目標達成まで残り</div>
+
+    <div style="font-size:14px;font-weight:700;color:var(--gray-800);margin-bottom:12px;">📋 店舗別 詳細進捗</div>
+    <div class="filter-scroll" id="filter-today">
+      <button class="filter-btn active" onclick="filterSC('all', this, 'today')">全店</button>
+      <button class="filter-btn" onclick="filterSC('高橋ＳＣ', this, 'today')">高橋SC</button>
+      <button class="filter-btn" onclick="filterSC('フィSC', this, 'today')">フィSC</button>
+      <button class="filter-btn" onclick="filterSC('五島ＳＣ', this, 'today')">五島SC</button>
+      <button class="filter-btn" onclick="filterSC('プラカスSC', this, 'today')">プラカスSC</button>
+      <button class="filter-btn" onclick="filterSC('ビスワスSC', this, 'today')">ビスワスSC</button>
+      <button class="filter-btn" onclick="filterSC('ダハルSC', this, 'today')">ダハルSC</button>
+      <button class="filter-btn" onclick="filterSC('スラズASC', this, 'today')">スラズASC</button>
+      <button class="filter-btn" onclick="filterSC('サントスASC', this, 'today')">サントスASC</button>
     </div>
-    <div class="summary-card card-green">
-      <div class="label">✅ 全体進捗率</div>
-      <div class="value" id="totalPct">-</div>
-      <div class="sub">目標に対する達成率</div>
-    </div>
+    <div class="store-list" id="storeList"></div>
+    <div class="note">※ データ基準：4/8（水）8:30 時点　／　作成：阪口商店</div>
   </div>
 
-  <!-- SC別バー＋ドーナツ -->
-  <div class="visual-section">
-    <div class="chart-card">
-      <h3>🏪 SC・ASC別 販売進捗バー</h3>
-      <p>販売済（色）vs 残り（グレー）</p>
-      <div id="sc-bars"></div>
+  <!-- ===== 昨日の結果検証タブ ===== -->
+  <div class="tab-panel" id="panel-verify">
+
+    <div class="yesterday-summary">
+      <div class="yday-card yday-total">
+        <div class="label">📦 昨日 最終販売数（合計）</div>
+        <div class="value" id="yday-total">-</div>
+        <div class="sub">4/7（火）全日合計</div>
+      </div>
+      <div class="yday-card yday-achieved">
+        <div class="label">🏆 目標達成店舗数</div>
+        <div class="value" id="yday-achieved">-</div>
+        <div class="sub">20店舗中</div>
+      </div>
+      <div class="yday-card yday-rate">
+        <div class="label">📊 全体達成率</div>
+        <div class="value" id="yday-rate">-</div>
+        <div class="sub">目標比</div>
+      </div>
+      <div class="yday-card yday-best">
+        <div class="label">👑 最高販売店舗</div>
+        <div class="value" id="yday-best">-</div>
+        <div class="sub" id="yday-best-sub">-</div>
+      </div>
     </div>
-    <div class="chart-card">
-      <h3>🍩 店舗別 達成率</h3>
-      <p>各店舗の目標達成率</p>
-      <div class="donut-grid" id="donuts"></div>
+
+    <div style="font-size:14px;font-weight:700;color:var(--gray-800);margin-bottom:12px;">🔍 店舗別 目標達成検証</div>
+    <div class="filter-scroll" id="filter-verify">
+      <button class="filter-btn active" onclick="filterVerify('all', this)">全店</button>
+      <button class="filter-btn" onclick="filterVerify('achieved', this)">✅ 達成のみ</button>
+      <button class="filter-btn" onclick="filterVerify('miss', this)">❌ 未達のみ</button>
+      <button class="filter-btn" onclick="filterVerify('高橋ＳＣ', this)">高橋SC</button>
+      <button class="filter-btn" onclick="filterVerify('フィSC', this)">フィSC</button>
+      <button class="filter-btn" onclick="filterVerify('五島ＳＣ', this)">五島SC</button>
+      <button class="filter-btn" onclick="filterVerify('プラカスSC', this)">プラカスSC</button>
+      <button class="filter-btn" onclick="filterVerify('ビスワスSC', this)">ビスワスSC</button>
+      <button class="filter-btn" onclick="filterVerify('ダハルSC', this)">ダハルSC</button>
+      <button class="filter-btn" onclick="filterVerify('スラズASC', this)">スラズASC</button>
+      <button class="filter-btn" onclick="filterVerify('サントスASC', this)">サントスASC</button>
     </div>
-  </div>
-
-  <!-- 店舗カードリスト -->
-  <div class="list-header">
-    <h2>📋 店舗別 詳細進捗</h2>
-  </div>
-
-  <!-- フィルターボタン（横スクロール） -->
-  <div class="filter-scroll">
-    <button class="filter-btn active" onclick="filterSC('all', this)">全店</button>
-    <button class="filter-btn" onclick="filterSC('高橋ＳＣ', this)">高橋SC</button>
-    <button class="filter-btn" onclick="filterSC('フィSC', this)">フィSC</button>
-    <button class="filter-btn" onclick="filterSC('五島ＳＣ', this)">五島SC</button>
-    <button class="filter-btn" onclick="filterSC('プラカスSC', this)">プラカスSC</button>
-    <button class="filter-btn" onclick="filterSC('ビスワスSC', this)">ビスワスSC</button>
-    <button class="filter-btn" onclick="filterSC('ダハルSC', this)">ダハルSC</button>
-    <button class="filter-btn" onclick="filterSC('スラズASC', this)">スラズASC</button>
-    <button class="filter-btn" onclick="filterSC('サントスASC', this)">サントスASC</button>
-  </div>
-
-  <div class="store-list" id="storeList"></div>
-
-  <div class="note">
-    ※ データ基準：4/7（火）22:00 時点　／　作成：阪口商店
+    <div class="store-list" id="verifyList"></div>
+    <div class="note">※ 昨日（4/7火）最終実績データ　／　作成：阪口商店</div>
   </div>
 
 </main>
 
 <script>
+// ===== データ定義 =====
 const stores = [
-  { sc: '高橋ＳＣ',   name: '五月ケ丘東',        makeTarget: 97,  sellTarget: 75,  dec: 70.4,  sold: 54 },
-  { sc: 'フィSC',     name: '吹田垂水三丁目',     makeTarget: 57,  sellTarget: 45,  dec: 48.3,  sold: 70 },
-  { sc: '五島ＳＣ',   name: '池田市役所前',       makeTarget: 69,  sellTarget: 61,  dec: 66.7,  sold: 77 },
-  { sc: 'プラカスSC', name: '豊里六丁目',          makeTarget: 78,  sellTarget: 64,  dec: 58.1,  sold: 83 },
-  { sc: 'ビスワスSC', name: '豊中服部西町三丁目',  makeTarget: 100, sellTarget: 91,  dec: 77.0,  sold: 95 },
-  { sc: 'スラズASC',  name: '豊中原田南一丁目',    makeTarget: 116, sellTarget: 105, dec: 140.9, sold: 159 },
-  { sc: 'サントスASC',name: '大道南一丁目',        makeTarget: 113, sellTarget: 107, dec: 83.6,  sold: 81 },
-  { sc: '五島ＳＣ',   name: '吹田警察署前',        makeTarget: 112, sellTarget: 100, dec: 80.7,  sold: 94 },
-  { sc: '高橋ＳＣ',   name: '江坂駅南口',          makeTarget: 239, sellTarget: 216, dec: 187.9, sold: 217 },
-  { sc: 'プラカスSC', name: '東淀川大道南',         makeTarget: 118, sellTarget: 104, dec: 105.7, sold: 77 },
-  { sc: 'ダハルSC',   name: '江坂東',              makeTarget: 134, sellTarget: 112, dec: 116.1, sold: 109 },
-  { sc: 'フィSC',     name: '吹田豊津中学校前',    makeTarget: 147, sellTarget: 130, dec: 87.6,  sold: 106 },
-  { sc: '五島ＳＣ',   name: '南金田二丁目',        makeTarget: 184, sellTarget: 165, dec: 142.1, sold: 132 },
-  { sc: '高橋ＳＣ',   name: '新御堂筋上新田',      makeTarget: 147, sellTarget: 142, dec: 124.1, sold: 163 },
-  { sc: '高橋ＳＣ',   name: '吹田青山台三丁目',    makeTarget: 173, sellTarget: 146, dec: 129.0, sold: 130 },
-  { sc: 'ビスワスSC', name: '豊中服部元町一丁目',  makeTarget: 133, sellTarget: 118, dec: 106.6, sold: 111 },
-  { sc: 'ダハルSC',   name: '豊中利倉東一丁目',    makeTarget: 124, sellTarget: 107, dec: 95.4,  sold: 91 },
-  { sc: 'プラカスSC', name: '吹田朝日町',           makeTarget: 145, sellTarget: 136, dec: 127.9, sold: 128 },
-  { sc: 'サントスASC',name: '東淀川豊里五丁目',     makeTarget: 128, sellTarget: 122, dec: 142.1, sold: 120 },
-  { sc: 'スラズASC',  name: '箕面白島二丁目',       makeTarget: 160, sellTarget: 135, dec: 107.7, sold: 118 },
+  { sc: '高橋ＳＣ',   name: '五月ケ丘東',        makeTarget: 97,  sellTarget: 75,  dec: 70.4,  sold: 17,  ydaySold: 64  },
+  { sc: 'フィSC',     name: '吹田垂水三丁目',     makeTarget: 57,  sellTarget: 45,  dec: 48.3,  sold: 2,   ydaySold: 70  },
+  { sc: '五島ＳＣ',   name: '池田市役所前',       makeTarget: 69,  sellTarget: 61,  dec: 66.7,  sold: 3,   ydaySold: 79  },
+  { sc: 'プラカスSC', name: '豊里六丁目',          makeTarget: 78,  sellTarget: 64,  dec: 58.1,  sold: 5,   ydaySold: 83  },
+  { sc: 'ビスワスSC', name: '豊中服部西町三丁目',  makeTarget: 100, sellTarget: 91,  dec: 77.0,  sold: 18,  ydaySold: 101 },
+  { sc: 'スラズASC',  name: '豊中原田南一丁目',    makeTarget: 116, sellTarget: 105, dec: 140.9, sold: 18,  ydaySold: 168 },
+  { sc: 'サントスASC',name: '大道南一丁目',        makeTarget: 113, sellTarget: 107, dec: 83.6,  sold: 10,  ydaySold: 88  },
+  { sc: '五島ＳＣ',   name: '吹田警察署前',        makeTarget: 112, sellTarget: 100, dec: 80.7,  sold: 6,   ydaySold: 98  },
+  { sc: '高橋ＳＣ',   name: '江坂駅南口',          makeTarget: 239, sellTarget: 216, dec: 187.9, sold: 38,  ydaySold: 243 },
+  { sc: 'プラカスSC', name: '東淀川大道南',         makeTarget: 118, sellTarget: 104, dec: 105.7, sold: 32,  ydaySold: 87  },
+  { sc: 'ダハルSC',   name: '江坂東',              makeTarget: 134, sellTarget: 112, dec: 116.1, sold: 10,  ydaySold: 117 },
+  { sc: 'フィSC',     name: '吹田豊津中学校前',    makeTarget: 147, sellTarget: 130, dec: 87.6,  sold: 7,   ydaySold: 113 },
+  { sc: '五島ＳＣ',   name: '南金田二丁目',        makeTarget: 184, sellTarget: 165, dec: 142.1, sold: 23,  ydaySold: 140 },
+  { sc: '高橋ＳＣ',   name: '新御堂筋上新田',      makeTarget: 147, sellTarget: 142, dec: 124.1, sold: 20,  ydaySold: 189 },
+  { sc: '高橋ＳＣ',   name: '吹田青山台三丁目',    makeTarget: 173, sellTarget: 146, dec: 129.0, sold: 25,  ydaySold: 136 },
+  { sc: 'ビスワスSC', name: '豊中服部元町一丁目',  makeTarget: 133, sellTarget: 118, dec: 106.6, sold: 10,  ydaySold: 124 },
+  { sc: 'ダハルSC',   name: '豊中利倉東一丁目',    makeTarget: 124, sellTarget: 107, dec: 95.4,  sold: 16,  ydaySold: 97  },
+  { sc: 'プラカスSC', name: '吹田朝日町',           makeTarget: 145, sellTarget: 136, dec: 127.9, sold: 13,  ydaySold: 139 },
+  { sc: 'サントスASC',name: '東淀川豊里五丁目',     makeTarget: 128, sellTarget: 122, dec: 142.1, sold: 17,  ydaySold: 129 },
+  { sc: 'スラズASC',  name: '箕面白島二丁目',       makeTarget: 160, sellTarget: 135, dec: 107.7, sold: 18,  ydaySold: 129 },
 ];
 
 const scColorMap = {
@@ -419,34 +399,37 @@ const scColorMap = {
   'サントスASC':{ cls: 'sc-santos',    bar: '#EA580C' },
 };
 
-// ===== サマリー =====
+// ===== タブ切り替え =====
+function switchTab(id, btn) {
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('panel-' + id).classList.add('active');
+}
+
+// ===== 本日サマリー =====
 const totalTarget = stores.reduce((s,x) => s + x.sellTarget, 0);
 const totalSold   = stores.reduce((s,x) => s + x.sold, 0);
 const totalRemain = Math.max(0, totalTarget - totalSold);
 const totalPct    = (totalSold / totalTarget * 100).toFixed(1);
-
 document.getElementById('totalTarget').textContent = totalTarget.toLocaleString();
 document.getElementById('totalSold').textContent   = totalSold.toLocaleString();
 document.getElementById('totalRemain').textContent = totalRemain.toLocaleString();
 document.getElementById('totalPct').textContent    = totalPct + '%';
 
-// ===== 店舗カード描画 =====
+// ===== 本日店舗カード =====
 function buildCards(filter) {
   const list = document.getElementById('storeList');
   list.innerHTML = '';
   const filtered = filter === 'all' ? stores : stores.filter(s => s.sc === filter);
-
   filtered.forEach((s, i) => {
     const pct      = Math.min(100, s.sold / s.sellTarget * 100);
     const remain   = Math.max(0, s.sellTarget - s.sold);
     const isDone   = s.sold >= s.sellTarget;
-    const color    = scColorMap[s.sc].bar;
     const barColor = pct >= 80 ? '#16A34A' : pct >= 50 ? '#F97316' : '#E8313A';
-
     const card = document.createElement('div');
     card.className = 'store-card' + (isDone ? ' achieved' : '');
     card.style.animationDelay = (i * 0.04) + 's';
-
     card.innerHTML = `
       <div class="card-top">
         <span class="sc-badge ${scColorMap[s.sc].cls}">${s.sc}</span>
@@ -459,7 +442,7 @@ function buildCards(filter) {
           <div class="n-val n-target">${s.sellTarget}<span class="n-unit">個</span></div>
         </div>
         <div class="num-cell">
-          <div class="n-label">📦 現在販売数</div>
+          <div class="n-label">📦 本日販売数</div>
           <div class="n-val n-sold">${s.sold}<span class="n-unit">個</span></div>
         </div>
         <div class="num-cell">
@@ -479,19 +462,15 @@ function buildCards(filter) {
     `;
     list.appendChild(card);
   });
-
-  // バーアニメーション
   setTimeout(() => {
-    document.querySelectorAll('.card-bar-fill').forEach(el => {
-      el.style.width = el.dataset.pct + '%';
-    });
+    document.querySelectorAll('#storeList .card-bar-fill').forEach(el => { el.style.width = el.dataset.pct + '%'; });
   }, 80);
 }
-
 buildCards('all');
 
-function filterSC(sc, btn) {
-  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+function filterSC(sc, btn, ctx) {
+  const parent = btn.closest('.filter-scroll');
+  parent.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
   btn.classList.add('active');
   buildCards(sc);
 }
@@ -503,7 +482,6 @@ stores.forEach(s => {
   scGroups[s.sc].target += s.sellTarget;
   scGroups[s.sc].sold   += s.sold;
 });
-
 const scBarsEl = document.getElementById('sc-bars');
 Object.entries(scGroups).forEach(([sc, data]) => {
   const pct    = Math.min(100, data.sold / data.target * 100);
@@ -524,37 +502,100 @@ Object.entries(scGroups).forEach(([sc, data]) => {
   scBarsEl.appendChild(div);
 });
 
-// ===== ドーナツチャート =====
+// ===== ドーナツ =====
 function makeDonut(pct, color) {
-  const r    = 22;
-  const circ = 2 * Math.PI * r;
-  const dash = circ * Math.min(pct, 100) / 100;
-  const gap  = circ - dash;
-  const textColor = pct >= 100 ? '#16A34A' : pct >= 50 ? '#F97316' : '#E8313A';
-  return `
-    <svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">
-      <circle cx="32" cy="32" r="${r}" fill="none" stroke="#F3F4F6" stroke-width="8"/>
-      <circle cx="32" cy="32" r="${r}" fill="none" stroke="${color}" stroke-width="8"
-        stroke-dasharray="${dash} ${gap}" stroke-dashoffset="${circ * 0.25}"
-        stroke-linecap="round"/>
-    </svg>
-    <div class="donut-center"><span class="donut-pct" style="color:${textColor}">${Math.round(pct)}%</span></div>
-  `;
+  const r = 22, circ = 2 * Math.PI * r;
+  const dash = circ * Math.min(pct, 100) / 100, gap = circ - dash;
+  const tc = pct >= 100 ? '#16A34A' : pct >= 50 ? '#F97316' : '#E8313A';
+  return `<svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">
+    <circle cx="32" cy="32" r="${r}" fill="none" stroke="#F3F4F6" stroke-width="8"/>
+    <circle cx="32" cy="32" r="${r}" fill="none" stroke="${color}" stroke-width="8"
+      stroke-dasharray="${dash} ${gap}" stroke-dashoffset="${circ*0.25}" stroke-linecap="round"/>
+  </svg><div class="donut-center"><span class="donut-pct" style="color:${tc}">${Math.round(pct)}%</span></div>`;
 }
-
 const donutsEl = document.getElementById('donuts');
 stores.forEach(s => {
-  const pct   = s.sold / s.sellTarget * 100;
-  const color = scColorMap[s.sc].bar;
-  const item  = document.createElement('div');
+  const pct = s.sold / s.sellTarget * 100, color = scColorMap[s.sc].bar;
+  const item = document.createElement('div');
   item.className = 'donut-item';
-  item.innerHTML = `
-    <div class="donut-wrap">${makeDonut(pct, color)}</div>
-    <div class="donut-label">${s.name}</div>
-    <div class="donut-sub">${s.sold}／${s.sellTarget}</div>
-  `;
+  item.innerHTML = `<div class="donut-wrap">${makeDonut(pct, color)}</div><div class="donut-label">${s.name}</div><div class="donut-sub">${s.sold}／${s.sellTarget}</div>`;
   donutsEl.appendChild(item);
 });
+
+// ===== 昨日の結果検証 =====
+const ydayTotal     = stores.reduce((s,x) => s + x.ydaySold, 0);
+const ydayAchieved  = stores.filter(s => s.ydaySold >= s.sellTarget).length;
+const ydayRate      = (ydayTotal / totalTarget * 100).toFixed(1);
+const ydayBest      = stores.reduce((a, b) => a.ydaySold > b.ydaySold ? a : b);
+
+document.getElementById('yday-total').textContent    = ydayTotal.toLocaleString();
+document.getElementById('yday-achieved').textContent = ydayAchieved + ' 店舗';
+document.getElementById('yday-rate').textContent     = ydayRate + '%';
+document.getElementById('yday-best').textContent     = ydayBest.name;
+document.getElementById('yday-best-sub').textContent = ydayBest.ydaySold + '個（目標' + ydayBest.sellTarget + '個）';
+
+function buildVerify(filter) {
+  const list = document.getElementById('verifyList');
+  list.innerHTML = '';
+  let filtered = stores;
+  if (filter === 'achieved') filtered = stores.filter(s => s.ydaySold >= s.sellTarget);
+  else if (filter === 'miss') filtered = stores.filter(s => s.ydaySold < s.sellTarget);
+  else if (filter !== 'all')  filtered = stores.filter(s => s.sc === filter);
+
+  // 達成率降順ソート
+  filtered = [...filtered].sort((a, b) => (b.ydaySold / b.sellTarget) - (a.ydaySold / a.sellTarget));
+
+  filtered.forEach((s, i) => {
+    const isDone = s.ydaySold >= s.sellTarget;
+    const pct    = Math.min(100, s.ydaySold / s.sellTarget * 100);
+    const diff   = s.ydaySold - s.sellTarget;
+    const color  = scColorMap[s.sc].bar;
+    const barColor = isDone ? '#16A34A' : pct >= 70 ? '#F97316' : '#E8313A';
+
+    const card = document.createElement('div');
+    card.className = 'verify-card ' + (isDone ? 'v-achieved' : 'v-miss');
+    card.style.animationDelay = (i * 0.04) + 's';
+    card.innerHTML = `
+      <div class="v-top">
+        <span class="sc-badge ${scColorMap[s.sc].cls}">${s.sc}</span>
+        <span class="v-store-name">${s.name}</span>
+        <span class="v-result-badge ${isDone ? 'ok' : 'miss'}">${isDone ? '🏆 達成' : '❌ 未達'}</span>
+      </div>
+      <div class="v-nums">
+        <div class="v-cell">
+          <div class="vl">🎯 目標</div>
+          <div class="vv vt">${s.sellTarget}</div>
+        </div>
+        <div class="v-cell">
+          <div class="vl">📦 実績</div>
+          <div class="vv vs">${s.ydaySold}</div>
+        </div>
+        <div class="v-cell">
+          <div class="vl">差異</div>
+          <div class="vv vd ${diff < 0 ? 'minus' : ''}">${diff >= 0 ? '+' : ''}${diff}</div>
+        </div>
+        <div class="v-cell">
+          <div class="vl">達成率</div>
+          <div class="vv vr">${pct.toFixed(1)}%</div>
+        </div>
+      </div>
+      <div class="v-bar-bg">
+        <div class="v-bar-fill" data-pct="${pct}" style="width:0%;background:${barColor}"></div>
+      </div>
+    `;
+    list.appendChild(card);
+  });
+  setTimeout(() => {
+    document.querySelectorAll('#verifyList .v-bar-fill').forEach(el => { el.style.width = el.dataset.pct + '%'; });
+  }, 80);
+}
+buildVerify('all');
+
+function filterVerify(filter, btn) {
+  document.querySelectorAll('#filter-verify .filter-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  buildVerify(filter);
+}
 </script>
 </body>
 </html>
