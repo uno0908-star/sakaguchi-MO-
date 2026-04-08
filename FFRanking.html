@@ -251,7 +251,7 @@
       <p>阪口商店 全20店舗</p>
     </div>
   </div>
-  <div class="update-badge">📅 4/8（水）14:00</div>
+  <div class="update-badge">📅 4/8（水）16:00</div>
 </header>
 
 <!-- タブナビ -->
@@ -274,7 +274,7 @@
       <div class="summary-card card-orange">
         <div class="label">📦 本日販売数（合計）</div>
         <div class="value" id="totalSold">-</div>
-        <div class="sub">14:00 時点</div>
+        <div class="sub">16:00 時点</div>
       </div>
       <div class="summary-card card-blue">
         <div class="label">📊 あと必要な販売数</div>
@@ -314,7 +314,7 @@
       <button class="filter-btn" onclick="filterSC('サントスASC', this, 'today')">サントスASC</button>
     </div>
     <div class="store-list" id="storeList"></div>
-    <div class="note">※ データ基準：4/8（水）14:00 時点　／　作成：阪口商店</div>
+    <div class="note">※ データ基準：4/8（水）16:00 時点　／　作成：阪口商店</div>
   </div>
 
   <!-- ===== 昨日の結果検証タブ ===== -->
@@ -366,26 +366,26 @@
 <script>
 // ===== データ定義 =====
 const stores = [
-  { sc: '高橋ＳＣ',   name: '五月ケ丘東',        makeTarget: 97,  sellTarget: 75,  dec: 70.4,  sold: 52,  ydaySold: 64  },
-  { sc: 'フィSC',     name: '吹田垂水三丁目',     makeTarget: 57,  sellTarget: 45,  dec: 48.3,  sold: 28,  ydaySold: 70  },
-  { sc: '五島ＳＣ',   name: '池田市役所前',       makeTarget: 69,  sellTarget: 61,  dec: 66.7,  sold: 41,  ydaySold: 79  },
-  { sc: 'プラカスSC', name: '豊里六丁目',          makeTarget: 78,  sellTarget: 64,  dec: 58.1,  sold: 49,  ydaySold: 83  },
-  { sc: 'ビスワスSC', name: '豊中服部西町三丁目',  makeTarget: 100, sellTarget: 91,  dec: 77.0,  sold: 45,  ydaySold: 101 },
-  { sc: 'スラズASC',  name: '豊中原田南一丁目',    makeTarget: 116, sellTarget: 105, dec: 140.9, sold: 75,  ydaySold: 168 },
-  { sc: 'サントスASC',name: '大道南一丁目',        makeTarget: 113, sellTarget: 107, dec: 83.6,  sold: 38,  ydaySold: 88  },
-  { sc: '五島ＳＣ',   name: '吹田警察署前',        makeTarget: 112, sellTarget: 100, dec: 80.7,  sold: 43,  ydaySold: 98  },
-  { sc: '高橋ＳＣ',   name: '江坂駅南口',          makeTarget: 239, sellTarget: 216, dec: 187.9, sold: 110, ydaySold: 243 },
-  { sc: 'プラカスSC', name: '東淀川大道南',         makeTarget: 118, sellTarget: 104, dec: 105.7, sold: 68,  ydaySold: 87  },
-  { sc: 'ダハルSC',   name: '江坂東',              makeTarget: 134, sellTarget: 112, dec: 116.1, sold: 59,  ydaySold: 117 },
-  { sc: 'フィSC',     name: '吹田豊津中学校前',    makeTarget: 147, sellTarget: 130, dec: 87.6,  sold: 53,  ydaySold: 113 },
-  { sc: '五島ＳＣ',   name: '南金田二丁目',        makeTarget: 184, sellTarget: 165, dec: 142.1, sold: 83,  ydaySold: 140 },
-  { sc: '高橋ＳＣ',   name: '新御堂筋上新田',      makeTarget: 147, sellTarget: 142, dec: 124.1, sold: 61,  ydaySold: 189 },
-  { sc: '高橋ＳＣ',   name: '吹田青山台三丁目',    makeTarget: 173, sellTarget: 146, dec: 129.0, sold: 90,  ydaySold: 136 },
-  { sc: 'ビスワスSC', name: '豊中服部元町一丁目',  makeTarget: 133, sellTarget: 118, dec: 106.6, sold: 43,  ydaySold: 124 },
-  { sc: 'ダハルSC',   name: '豊中利倉東一丁目',    makeTarget: 124, sellTarget: 107, dec: 95.4,  sold: 50,  ydaySold: 97  },
-  { sc: 'プラカスSC', name: '吹田朝日町',           makeTarget: 145, sellTarget: 136, dec: 127.9, sold: 49,  ydaySold: 139 },
-  { sc: 'サントスASC',name: '東淀川豊里五丁目',     makeTarget: 128, sellTarget: 122, dec: 142.1, sold: 75,  ydaySold: 129 },
-  { sc: 'スラズASC',  name: '箕面白島二丁目',       makeTarget: 160, sellTarget: 135, dec: 107.7, sold: 71,  ydaySold: 129 },
+  { sc: '高橋ＳＣ',   name: '五月ケ丘東',        makeTarget: 97,  sellTarget: 75,  dec: 70.4,  sold: 60,  ydaySold: 64  },
+  { sc: 'フィSC',     name: '吹田垂水三丁目',     makeTarget: 57,  sellTarget: 45,  dec: 48.3,  sold: 34,  ydaySold: 70  },
+  { sc: '五島ＳＣ',   name: '池田市役所前',       makeTarget: 69,  sellTarget: 61,  dec: 66.7,  sold: 47,  ydaySold: 79  },
+  { sc: 'プラカスSC', name: '豊里六丁目',          makeTarget: 78,  sellTarget: 64,  dec: 58.1,  sold: 73,  ydaySold: 83  },
+  { sc: 'ビスワスSC', name: '豊中服部西町三丁目',  makeTarget: 100, sellTarget: 91,  dec: 77.0,  sold: 61,  ydaySold: 101 },
+  { sc: 'スラズASC',  name: '豊中原田南一丁目',    makeTarget: 116, sellTarget: 105, dec: 140.9, sold: 92,  ydaySold: 168 },
+  { sc: 'サントスASC',name: '大道南一丁目',        makeTarget: 113, sellTarget: 107, dec: 83.6,  sold: 46,  ydaySold: 88  },
+  { sc: '五島ＳＣ',   name: '吹田警察署前',        makeTarget: 112, sellTarget: 100, dec: 80.7,  sold: 61,  ydaySold: 98  },
+  { sc: '高橋ＳＣ',   name: '江坂駅南口',          makeTarget: 239, sellTarget: 216, dec: 187.9, sold: 124, ydaySold: 243 },
+  { sc: 'プラカスSC', name: '東淀川大道南',         makeTarget: 118, sellTarget: 104, dec: 105.7, sold: 85,  ydaySold: 87  },
+  { sc: 'ダハルSC',   name: '江坂東',              makeTarget: 134, sellTarget: 112, dec: 116.1, sold: 68,  ydaySold: 117 },
+  { sc: 'フィSC',     name: '吹田豊津中学校前',    makeTarget: 147, sellTarget: 130, dec: 87.6,  sold: 65,  ydaySold: 113 },
+  { sc: '五島ＳＣ',   name: '南金田二丁目',        makeTarget: 184, sellTarget: 165, dec: 142.1, sold: 101, ydaySold: 140 },
+  { sc: '高橋ＳＣ',   name: '新御堂筋上新田',      makeTarget: 147, sellTarget: 142, dec: 124.1, sold: 80,  ydaySold: 189 },
+  { sc: '高橋ＳＣ',   name: '吹田青山台三丁目',    makeTarget: 173, sellTarget: 146, dec: 129.0, sold: 103, ydaySold: 136 },
+  { sc: 'ビスワスSC', name: '豊中服部元町一丁目',  makeTarget: 133, sellTarget: 118, dec: 106.6, sold: 54,  ydaySold: 124 },
+  { sc: 'ダハルSC',   name: '豊中利倉東一丁目',    makeTarget: 124, sellTarget: 107, dec: 95.4,  sold: 61,  ydaySold: 97  },
+  { sc: 'プラカスSC', name: '吹田朝日町',           makeTarget: 145, sellTarget: 136, dec: 127.9, sold: 56,  ydaySold: 139 },
+  { sc: 'サントスASC',name: '東淀川豊里五丁目',     makeTarget: 128, sellTarget: 122, dec: 142.1, sold: 97,  ydaySold: 129 },
+  { sc: 'スラズASC',  name: '箕面白島二丁目',       makeTarget: 160, sellTarget: 135, dec: 107.7, sold: 83,  ydaySold: 129 },
 ];
 
 const scColorMap = {
