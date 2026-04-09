@@ -251,13 +251,14 @@
       <p>阪口商店 全20店舗</p>
     </div>
   </div>
-  <div class="update-badge">📅 4/8（水）20:15</div>
+  <div class="update-badge">📅 4/9（木）10:00</div>
 </header>
 
 <!-- タブナビ -->
 <div class="tab-nav">
   <button class="tab-btn active" onclick="switchTab('today', this)">📦 本日進捗</button>
-  <button class="tab-btn" onclick="switchTab('verify', this)">📊 昨日の結果検証</button>
+  <button class="tab-btn" onclick="switchTab('verify8', this)">📊 4/8（水）結果検証</button>
+  <button class="tab-btn" onclick="switchTab('verify7', this)">📊 4/7（火）結果検証</button>
 </div>
 
 <main>
@@ -274,7 +275,7 @@
       <div class="summary-card card-orange">
         <div class="label">📦 本日販売数（合計）</div>
         <div class="value" id="totalSold">-</div>
-        <div class="sub">20:15 時点</div>
+        <div class="sub">4/9 10:00 時点</div>
       </div>
       <div class="summary-card card-blue">
         <div class="label">📊 あと必要な販売数</div>
@@ -314,51 +315,91 @@
       <button class="filter-btn" onclick="filterSC('サントスASC', this, 'today')">サントスASC</button>
     </div>
     <div class="store-list" id="storeList"></div>
-    <div class="note">※ データ基準：4/8（水）20:15 時点　／　作成：阪口商店</div>
+    <div class="note">※ データ基準：4/9（木）10:00 時点　／　作成：阪口商店</div>
   </div>
 
-  <!-- ===== 昨日の結果検証タブ ===== -->
-  <div class="tab-panel" id="panel-verify">
-
+  <!-- ===== 4/8（水）結果検証タブ ===== -->
+  <div class="tab-panel" id="panel-verify8">
     <div class="yesterday-summary">
       <div class="yday-card yday-total">
-        <div class="label">📦 昨日 最終販売数（合計）</div>
-        <div class="value" id="yday-total">-</div>
-        <div class="sub">4/7（火）全日合計</div>
+        <div class="label">📦 最終販売数（合計）</div>
+        <div class="value" id="v8-total">-</div>
+        <div class="sub">4/8（水）全日合計</div>
       </div>
       <div class="yday-card yday-achieved">
         <div class="label">🏆 目標達成店舗数</div>
-        <div class="value" id="yday-achieved">-</div>
+        <div class="value" id="v8-achieved">-</div>
         <div class="sub">20店舗中</div>
       </div>
       <div class="yday-card yday-rate">
         <div class="label">📊 全体達成率</div>
-        <div class="value" id="yday-rate">-</div>
+        <div class="value" id="v8-rate">-</div>
         <div class="sub">目標比</div>
       </div>
       <div class="yday-card yday-best">
         <div class="label">👑 最高販売店舗</div>
-        <div class="value" id="yday-best">-</div>
-        <div class="sub" id="yday-best-sub">-</div>
+        <div class="value" id="v8-best">-</div>
+        <div class="sub" id="v8-best-sub">-</div>
       </div>
     </div>
-
-    <div style="font-size:14px;font-weight:700;color:var(--gray-800);margin-bottom:12px;">🔍 店舗別 目標達成検証</div>
-    <div class="filter-scroll" id="filter-verify">
-      <button class="filter-btn active" onclick="filterVerify('all', this)">全店</button>
-      <button class="filter-btn" onclick="filterVerify('achieved', this)">✅ 達成のみ</button>
-      <button class="filter-btn" onclick="filterVerify('miss', this)">❌ 未達のみ</button>
-      <button class="filter-btn" onclick="filterVerify('高橋ＳＣ', this)">高橋SC</button>
-      <button class="filter-btn" onclick="filterVerify('フィSC', this)">フィSC</button>
-      <button class="filter-btn" onclick="filterVerify('五島ＳＣ', this)">五島SC</button>
-      <button class="filter-btn" onclick="filterVerify('プラカスSC', this)">プラカスSC</button>
-      <button class="filter-btn" onclick="filterVerify('ビスワスSC', this)">ビスワスSC</button>
-      <button class="filter-btn" onclick="filterVerify('ダハルSC', this)">ダハルSC</button>
-      <button class="filter-btn" onclick="filterVerify('スラズASC', this)">スラズASC</button>
-      <button class="filter-btn" onclick="filterVerify('サントスASC', this)">サントスASC</button>
+    <div style="font-size:14px;font-weight:700;color:var(--gray-800);margin-bottom:12px;">🔍 店舗別 目標達成検証（4/8水）</div>
+    <div class="filter-scroll" id="filter-verify8">
+      <button class="filter-btn active" onclick="filterVerifyDay('all', this, 'v8')">全店</button>
+      <button class="filter-btn" onclick="filterVerifyDay('achieved', this, 'v8')">✅ 達成のみ</button>
+      <button class="filter-btn" onclick="filterVerifyDay('miss', this, 'v8')">❌ 未達のみ</button>
+      <button class="filter-btn" onclick="filterVerifyDay('高橋ＳＣ', this, 'v8')">高橋SC</button>
+      <button class="filter-btn" onclick="filterVerifyDay('フィSC', this, 'v8')">フィSC</button>
+      <button class="filter-btn" onclick="filterVerifyDay('五島ＳＣ', this, 'v8')">五島SC</button>
+      <button class="filter-btn" onclick="filterVerifyDay('プラカスSC', this, 'v8')">プラカスSC</button>
+      <button class="filter-btn" onclick="filterVerifyDay('ビスワスSC', this, 'v8')">ビスワスSC</button>
+      <button class="filter-btn" onclick="filterVerifyDay('ダハルSC', this, 'v8')">ダハルSC</button>
+      <button class="filter-btn" onclick="filterVerifyDay('スラズASC', this, 'v8')">スラズASC</button>
+      <button class="filter-btn" onclick="filterVerifyDay('サントスASC', this, 'v8')">サントスASC</button>
     </div>
-    <div class="store-list" id="verifyList"></div>
-    <div class="note">※ 昨日（4/7火）最終実績データ　／　作成：阪口商店</div>
+    <div class="store-list" id="verifyList8"></div>
+    <div class="note">※ 4/8（水）最終実績データ　／　作成：阪口商店</div>
+  </div>
+
+  <!-- ===== 4/7（火）結果検証タブ ===== -->
+  <div class="tab-panel" id="panel-verify7">
+    <div class="yesterday-summary">
+      <div class="yday-card yday-total">
+        <div class="label">📦 最終販売数（合計）</div>
+        <div class="value" id="v7-total">-</div>
+        <div class="sub">4/7（火）全日合計</div>
+      </div>
+      <div class="yday-card yday-achieved">
+        <div class="label">🏆 目標達成店舗数</div>
+        <div class="value" id="v7-achieved">-</div>
+        <div class="sub">20店舗中</div>
+      </div>
+      <div class="yday-card yday-rate">
+        <div class="label">📊 全体達成率</div>
+        <div class="value" id="v7-rate">-</div>
+        <div class="sub">目標比</div>
+      </div>
+      <div class="yday-card yday-best">
+        <div class="label">👑 最高販売店舗</div>
+        <div class="value" id="v7-best">-</div>
+        <div class="sub" id="v7-best-sub">-</div>
+      </div>
+    </div>
+    <div style="font-size:14px;font-weight:700;color:var(--gray-800);margin-bottom:12px;">🔍 店舗別 目標達成検証（4/7火）</div>
+    <div class="filter-scroll" id="filter-verify7">
+      <button class="filter-btn active" onclick="filterVerifyDay('all', this, 'v7')">全店</button>
+      <button class="filter-btn" onclick="filterVerifyDay('achieved', this, 'v7')">✅ 達成のみ</button>
+      <button class="filter-btn" onclick="filterVerifyDay('miss', this, 'v7')">❌ 未達のみ</button>
+      <button class="filter-btn" onclick="filterVerifyDay('高橋ＳＣ', this, 'v7')">高橋SC</button>
+      <button class="filter-btn" onclick="filterVerifyDay('フィSC', this, 'v7')">フィSC</button>
+      <button class="filter-btn" onclick="filterVerifyDay('五島ＳＣ', this, 'v7')">五島SC</button>
+      <button class="filter-btn" onclick="filterVerifyDay('プラカスSC', this, 'v7')">プラカスSC</button>
+      <button class="filter-btn" onclick="filterVerifyDay('ビスワスSC', this, 'v7')">ビスワスSC</button>
+      <button class="filter-btn" onclick="filterVerifyDay('ダハルSC', this, 'v7')">ダハルSC</button>
+      <button class="filter-btn" onclick="filterVerifyDay('スラズASC', this, 'v7')">スラズASC</button>
+      <button class="filter-btn" onclick="filterVerifyDay('サントスASC', this, 'v7')">サントスASC</button>
+    </div>
+    <div class="store-list" id="verifyList7"></div>
+    <div class="note">※ 4/7（火）最終実績データ　／　作成：阪口商店</div>
   </div>
 
 </main>
@@ -366,26 +407,26 @@
 <script>
 // ===== データ定義 =====
 const stores = [
-  { sc: '高橋ＳＣ',   name: '五月ケ丘東',        makeTarget: 97,  sellTarget: 75,  dec: 70.4,  sold: 86,  ydaySold: 64  },
-  { sc: 'フィSC',     name: '吹田垂水三丁目',     makeTarget: 57,  sellTarget: 45,  dec: 48.3,  sold: 45,  ydaySold: 70  },
-  { sc: '五島ＳＣ',   name: '池田市役所前',       makeTarget: 69,  sellTarget: 61,  dec: 66.7,  sold: 79,  ydaySold: 79  },
-  { sc: 'プラカスSC', name: '豊里六丁目',          makeTarget: 78,  sellTarget: 64,  dec: 58.1,  sold: 85,  ydaySold: 83  },
-  { sc: 'ビスワスSC', name: '豊中服部西町三丁目',  makeTarget: 100, sellTarget: 91,  dec: 77.0,  sold: 89,  ydaySold: 101 },
-  { sc: 'スラズASC',  name: '豊中原田南一丁目',    makeTarget: 116, sellTarget: 105, dec: 140.9, sold: 123, ydaySold: 168 },
-  { sc: 'サントスASC',name: '大道南一丁目',        makeTarget: 113, sellTarget: 107, dec: 83.6,  sold: 65,  ydaySold: 88  },
-  { sc: '五島ＳＣ',   name: '吹田警察署前',        makeTarget: 112, sellTarget: 100, dec: 80.7,  sold: 82,  ydaySold: 98  },
-  { sc: '高橋ＳＣ',   name: '江坂駅南口',          makeTarget: 239, sellTarget: 216, dec: 187.9, sold: 178, ydaySold: 243 },
-  { sc: 'プラカスSC', name: '東淀川大道南',         makeTarget: 118, sellTarget: 104, dec: 105.7, sold: 117, ydaySold: 87  },
-  { sc: 'ダハルSC',   name: '江坂東',              makeTarget: 134, sellTarget: 112, dec: 116.1, sold: 105, ydaySold: 117 },
-  { sc: 'フィSC',     name: '吹田豊津中学校前',    makeTarget: 147, sellTarget: 130, dec: 87.6,  sold: 80,  ydaySold: 113 },
-  { sc: '五島ＳＣ',   name: '南金田二丁目',        makeTarget: 184, sellTarget: 165, dec: 142.1, sold: 140, ydaySold: 140 },
-  { sc: '高橋ＳＣ',   name: '新御堂筋上新田',      makeTarget: 147, sellTarget: 142, dec: 124.1, sold: 120, ydaySold: 189 },
-  { sc: '高橋ＳＣ',   name: '吹田青山台三丁目',    makeTarget: 173, sellTarget: 146, dec: 129.0, sold: 136, ydaySold: 136 },
-  { sc: 'ビスワスSC', name: '豊中服部元町一丁目',  makeTarget: 133, sellTarget: 118, dec: 106.6, sold: 102, ydaySold: 124 },
-  { sc: 'ダハルSC',   name: '豊中利倉東一丁目',    makeTarget: 124, sellTarget: 107, dec: 95.4,  sold: 83,  ydaySold: 97  },
-  { sc: 'プラカスSC', name: '吹田朝日町',           makeTarget: 145, sellTarget: 136, dec: 127.9, sold: 129, ydaySold: 139 },
-  { sc: 'サントスASC',name: '東淀川豊里五丁目',     makeTarget: 128, sellTarget: 122, dec: 142.1, sold: 127, ydaySold: 129 },
-  { sc: 'スラズASC',  name: '箕面白島二丁目',       makeTarget: 160, sellTarget: 135, dec: 107.7, sold: 120, ydaySold: 129 },
+  { sc: '高橋ＳＣ',   name: '五月ケ丘東',        makeTarget: 97,  sellTarget: 75,  dec: 70.4,  sold: 18,  ydaySold: 105 },
+  { sc: 'フィSC',     name: '吹田垂水三丁目',     makeTarget: 57,  sellTarget: 45,  dec: 48.3,  sold: 8,   ydaySold: 58  },
+  { sc: '五島ＳＣ',   name: '池田市役所前',       makeTarget: 69,  sellTarget: 61,  dec: 66.7,  sold: 14,  ydaySold: 100 },
+  { sc: 'プラカスSC', name: '豊里六丁目',          makeTarget: 78,  sellTarget: 64,  dec: 58.1,  sold: 10,  ydaySold: 93  },
+  { sc: 'ビスワスSC', name: '豊中服部西町三丁目',  makeTarget: 100, sellTarget: 91,  dec: 77.0,  sold: 15,  ydaySold: 108 },
+  { sc: 'スラズASC',  name: '豊中原田南一丁目',    makeTarget: 116, sellTarget: 105, dec: 140.9, sold: 44,  ydaySold: 143 },
+  { sc: 'サントスASC',name: '大道南一丁目',        makeTarget: 113, sellTarget: 107, dec: 83.6,  sold: 20,  ydaySold: 81  },
+  { sc: '五島ＳＣ',   name: '吹田警察署前',        makeTarget: 112, sellTarget: 100, dec: 80.7,  sold: 26,  ydaySold: 101 },
+  { sc: '高橋ＳＣ',   name: '江坂駅南口',          makeTarget: 239, sellTarget: 216, dec: 187.9, sold: 55,  ydaySold: 210 },
+  { sc: 'プラカスSC', name: '東淀川大道南',         makeTarget: 118, sellTarget: 104, dec: 105.7, sold: 15,  ydaySold: 142 },
+  { sc: 'ダハルSC',   name: '江坂東',              makeTarget: 134, sellTarget: 112, dec: 116.1, sold: 19,  ydaySold: 138 },
+  { sc: 'フィSC',     name: '吹田豊津中学校前',    makeTarget: 147, sellTarget: 130, dec: 87.6,  sold: 14,  ydaySold: 99  },
+  { sc: '五島ＳＣ',   name: '南金田二丁目',        makeTarget: 184, sellTarget: 165, dec: 142.1, sold: 32,  ydaySold: 164 },
+  { sc: '高橋ＳＣ',   name: '新御堂筋上新田',      makeTarget: 147, sellTarget: 142, dec: 124.1, sold: 39,  ydaySold: 152 },
+  { sc: '高橋ＳＣ',   name: '吹田青山台三丁目',    makeTarget: 173, sellTarget: 146, dec: 129.0, sold: 29,  ydaySold: 162 },
+  { sc: 'ビスワスSC', name: '豊中服部元町一丁目',  makeTarget: 133, sellTarget: 118, dec: 106.6, sold: 26,  ydaySold: 145 },
+  { sc: 'ダハルSC',   name: '豊中利倉東一丁目',    makeTarget: 124, sellTarget: 107, dec: 95.4,  sold: 28,  ydaySold: 94  },
+  { sc: 'プラカスSC', name: '吹田朝日町',           makeTarget: 145, sellTarget: 136, dec: 127.9, sold: 27,  ydaySold: 168 },
+  { sc: 'サントスASC',name: '東淀川豊里五丁目',     makeTarget: 128, sellTarget: 122, dec: 142.1, sold: 16,  ydaySold: 151 },
+  { sc: 'スラズASC',  name: '箕面白島二丁目',       makeTarget: 160, sellTarget: 135, dec: 107.7, sold: 25,  ydaySold: 135 },
 ];
 
 const scColorMap = {
@@ -522,36 +563,67 @@ stores.forEach(s => {
   donutsEl.appendChild(item);
 });
 
-// ===== 昨日の結果検証 =====
+// ===== 昨日の結果検証（4/8水） =====
 const ydayTotal     = stores.reduce((s,x) => s + x.ydaySold, 0);
 const ydayAchieved  = stores.filter(s => s.ydaySold >= s.sellTarget).length;
 const ydayRate      = (ydayTotal / totalTarget * 100).toFixed(1);
 const ydayBest      = stores.reduce((a, b) => a.ydaySold > b.ydaySold ? a : b);
+document.getElementById('v8-total').textContent    = ydayTotal.toLocaleString();
+document.getElementById('v8-achieved').textContent = ydayAchieved + ' 店舗';
+document.getElementById('v8-rate').textContent     = ydayRate + '%';
+document.getElementById('v8-best').textContent     = ydayBest.name;
+document.getElementById('v8-best-sub').textContent = ydayBest.ydaySold + '個（目標' + ydayBest.sellTarget + '個）';
 
-document.getElementById('yday-total').textContent    = ydayTotal.toLocaleString();
-document.getElementById('yday-achieved').textContent = ydayAchieved + ' 店舗';
-document.getElementById('yday-rate').textContent     = ydayRate + '%';
-document.getElementById('yday-best').textContent     = ydayBest.name;
-document.getElementById('yday-best-sub').textContent = ydayBest.ydaySold + '個（目標' + ydayBest.sellTarget + '個）';
+// ===== 4/7（火）データ =====
+const stores47 = [
+  { sc: '高橋ＳＣ',   name: '五月ケ丘東',        sellTarget: 75,  sold47: 64  },
+  { sc: 'フィSC',     name: '吹田垂水三丁目',     sellTarget: 45,  sold47: 70  },
+  { sc: '五島ＳＣ',   name: '池田市役所前',       sellTarget: 61,  sold47: 79  },
+  { sc: 'プラカスSC', name: '豊里六丁目',          sellTarget: 64,  sold47: 83  },
+  { sc: 'ビスワスSC', name: '豊中服部西町三丁目',  sellTarget: 91,  sold47: 101 },
+  { sc: 'スラズASC',  name: '豊中原田南一丁目',    sellTarget: 105, sold47: 168 },
+  { sc: 'サントスASC',name: '大道南一丁目',        sellTarget: 107, sold47: 88  },
+  { sc: '五島ＳＣ',   name: '吹田警察署前',        sellTarget: 100, sold47: 98  },
+  { sc: '高橋ＳＣ',   name: '江坂駅南口',          sellTarget: 216, sold47: 243 },
+  { sc: 'プラカスSC', name: '東淀川大道南',         sellTarget: 104, sold47: 87  },
+  { sc: 'ダハルSC',   name: '江坂東',              sellTarget: 112, sold47: 117 },
+  { sc: 'フィSC',     name: '吹田豊津中学校前',    sellTarget: 130, sold47: 113 },
+  { sc: '五島ＳＣ',   name: '南金田二丁目',        sellTarget: 165, sold47: 140 },
+  { sc: '高橋ＳＣ',   name: '新御堂筋上新田',      sellTarget: 142, sold47: 189 },
+  { sc: '高橋ＳＣ',   name: '吹田青山台三丁目',    sellTarget: 146, sold47: 136 },
+  { sc: 'ビスワスSC', name: '豊中服部元町一丁目',  sellTarget: 118, sold47: 124 },
+  { sc: 'ダハルSC',   name: '豊中利倉東一丁目',    sellTarget: 107, sold47: 97  },
+  { sc: 'プラカスSC', name: '吹田朝日町',           sellTarget: 136, sold47: 139 },
+  { sc: 'サントスASC',name: '東淀川豊里五丁目',     sellTarget: 122, sold47: 129 },
+  { sc: 'スラズASC',  name: '箕面白島二丁目',       sellTarget: 135, sold47: 135 },
+];
 
-function buildVerify(filter) {
-  const list = document.getElementById('verifyList');
+const t47Total    = stores47.reduce((s,x) => s + x.sold47, 0);
+const t47Achieved = stores47.filter(s => s.sold47 >= s.sellTarget).length;
+const t47Rate     = (t47Total / totalTarget * 100).toFixed(1);
+const t47Best     = stores47.reduce((a, b) => a.sold47 > b.sold47 ? a : b);
+document.getElementById('v7-total').textContent    = t47Total.toLocaleString();
+document.getElementById('v7-achieved').textContent = t47Achieved + ' 店舗';
+document.getElementById('v7-rate').textContent     = t47Rate + '%';
+document.getElementById('v7-best').textContent     = t47Best.name;
+document.getElementById('v7-best-sub').textContent = t47Best.sold47 + '個（目標' + t47Best.sellTarget + '個）';
+
+// ===== 共通検証カード描画 =====
+function buildVerifyCards(listId, dataArr, soldKey, filterStr) {
+  const list = document.getElementById(listId);
   list.innerHTML = '';
-  let filtered = stores;
-  if (filter === 'achieved') filtered = stores.filter(s => s.ydaySold >= s.sellTarget);
-  else if (filter === 'miss') filtered = stores.filter(s => s.ydaySold < s.sellTarget);
-  else if (filter !== 'all')  filtered = stores.filter(s => s.sc === filter);
+  let filtered = dataArr;
+  if (filterStr === 'achieved') filtered = dataArr.filter(s => s[soldKey] >= s.sellTarget);
+  else if (filterStr === 'miss') filtered = dataArr.filter(s => s[soldKey] < s.sellTarget);
+  else if (filterStr !== 'all')  filtered = dataArr.filter(s => s.sc === filterStr);
 
-  // 達成率降順ソート
-  filtered = [...filtered].sort((a, b) => (b.ydaySold / b.sellTarget) - (a.ydaySold / a.sellTarget));
+  filtered = [...filtered].sort((a, b) => (b[soldKey] / b.sellTarget) - (a[soldKey] / a.sellTarget));
 
   filtered.forEach((s, i) => {
-    const isDone = s.ydaySold >= s.sellTarget;
-    const pct    = Math.min(100, s.ydaySold / s.sellTarget * 100);
-    const diff   = s.ydaySold - s.sellTarget;
-    const color  = scColorMap[s.sc].bar;
+    const isDone   = s[soldKey] >= s.sellTarget;
+    const pct      = Math.min(100, s[soldKey] / s.sellTarget * 100);
+    const diff     = s[soldKey] - s.sellTarget;
     const barColor = isDone ? '#16A34A' : pct >= 70 ? '#F97316' : '#E8313A';
-
     const card = document.createElement('div');
     card.className = 'verify-card ' + (isDone ? 'v-achieved' : 'v-miss');
     card.style.animationDelay = (i * 0.04) + 's';
@@ -562,22 +634,10 @@ function buildVerify(filter) {
         <span class="v-result-badge ${isDone ? 'ok' : 'miss'}">${isDone ? '🏆 達成' : '❌ 未達'}</span>
       </div>
       <div class="v-nums">
-        <div class="v-cell">
-          <div class="vl">🎯 目標</div>
-          <div class="vv vt">${s.sellTarget}</div>
-        </div>
-        <div class="v-cell">
-          <div class="vl">📦 実績</div>
-          <div class="vv vs">${s.ydaySold}</div>
-        </div>
-        <div class="v-cell">
-          <div class="vl">差異</div>
-          <div class="vv vd ${diff < 0 ? 'minus' : ''}">${diff >= 0 ? '+' : ''}${diff}</div>
-        </div>
-        <div class="v-cell">
-          <div class="vl">達成率</div>
-          <div class="vv vr">${pct.toFixed(1)}%</div>
-        </div>
+        <div class="v-cell"><div class="vl">🎯 目標</div><div class="vv vt">${s.sellTarget}</div></div>
+        <div class="v-cell"><div class="vl">📦 実績</div><div class="vv vs">${s[soldKey]}</div></div>
+        <div class="v-cell"><div class="vl">差異</div><div class="vv vd ${diff < 0 ? 'minus' : ''}">${diff >= 0 ? '+' : ''}${diff}</div></div>
+        <div class="v-cell"><div class="vl">達成率</div><div class="vv vr">${pct.toFixed(1)}%</div></div>
       </div>
       <div class="v-bar-bg">
         <div class="v-bar-fill" data-pct="${pct}" style="width:0%;background:${barColor}"></div>
@@ -586,15 +646,20 @@ function buildVerify(filter) {
     list.appendChild(card);
   });
   setTimeout(() => {
-    document.querySelectorAll('#verifyList .v-bar-fill').forEach(el => { el.style.width = el.dataset.pct + '%'; });
+    list.querySelectorAll('.v-bar-fill').forEach(el => { el.style.width = el.dataset.pct + '%'; });
   }, 80);
 }
-buildVerify('all');
 
-function filterVerify(filter, btn) {
-  document.querySelectorAll('#filter-verify .filter-btn').forEach(b => b.classList.remove('active'));
+// 初期描画
+buildVerifyCards('verifyList8', stores,   'ydaySold', 'all');
+buildVerifyCards('verifyList7', stores47,  'sold47',   'all');
+
+function filterVerifyDay(filter, btn, day) {
+  const parent = btn.closest('.filter-scroll');
+  parent.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
   btn.classList.add('active');
-  buildVerify(filter);
+  if (day === 'v8') buildVerifyCards('verifyList8', stores,   'ydaySold', filter);
+  if (day === 'v7') buildVerifyCards('verifyList7', stores47,  'sold47',   filter);
 }
 </script>
 </body>
