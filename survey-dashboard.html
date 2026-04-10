@@ -1,0 +1,753 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>アンケート集計ダッシュボード</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Helvetica Neue', Arial, 'Hiragino Kaku Gothic ProN', sans-serif; background: #f0f4f8; min-height: 100vh; }
+
+  /* ログイン */
+  .login-screen {
+    min-height: 100vh; display: flex; align-items: center; justify-content: center;
+    background: linear-gradient(135deg, #003087 0%, #0057b8 100%);
+  }
+  .login-box {
+    background: white; border-radius: 16px; padding: 36px 32px;
+    width: 90%; max-width: 360px; text-align: center;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+  }
+  .login-logo { font-size: 40px; margin-bottom: 12px; }
+  .login-title { font-size: 18px; font-weight: 700; color: #003087; margin-bottom: 4px; }
+  .login-sub { font-size: 12px; color: #718096; margin-bottom: 24px; }
+  .login-input {
+    width: 100%; padding: 12px 14px; border: 2px solid #e2e8f0;
+    border-radius: 8px; font-size: 16px; margin-bottom: 12px;
+    text-align: center; letter-spacing: 4px;
+  }
+  .login-btn {
+    width: 100%; padding: 13px; background: #003087; color: white;
+    border: none; border-radius: 8px; font-size: 15px; font-weight: 700; cursor: pointer;
+  }
+  .login-err { color: #e53e3e; font-size: 13px; margin-top: 8px; display: none; }
+
+  /* ヘッダー */
+  .header {
+    background: linear-gradient(135deg, #003087 0%, #0057b8 100%);
+    color: white; padding: 16px 20px;
+    display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px;
+  }
+  .header-left h1 { font-size: 17px; font-weight: 700; }
+  .header-left p { font-size: 12px; opacity: 0.8; margin-top: 2px; }
+  .header-right { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+  .month-select {
+    padding: 6px 10px; border-radius: 6px; border: none;
+    font-size: 13px; font-weight: 600; color: #003087; cursor: pointer;
+  }
+  .icon-btn {
+    padding: 6px 12px; background: rgba(255,255,255,0.2); color: white;
+    border: 1px solid rgba(255,255,255,0.4); border-radius: 6px;
+    font-size: 13px; cursor: pointer; white-space: nowrap;
+  }
+
+  .container { max-width: 960px; margin: 0 auto; padding: 14px; }
+
+  /* セクション見出し */
+  .section-label {
+    font-size: 11px; font-weight: 700; letter-spacing: 1px;
+    color: #718096; text-transform: uppercase; margin-bottom: 8px; margin-top: 4px;
+  }
+  .divider {
+    border: none; border-top: 2px dashed #cbd5e0; margin: 20px 0 16px;
+  }
+
+  /* カード */
+  .card {
+    background: white; border-radius: 12px; padding: 16px;
+    margin-bottom: 14px; box-shadow: 0 2px 8px rgba(0,0,0,0.07);
+  }
+  .card-title {
+    font-size: 14px; font-weight: 700; color: #003087;
+    margin-bottom: 14px; padding-bottom: 8px;
+    border-bottom: 2px solid #e2e8f0;
+    display: flex; align-items: center; gap: 6px;
+  }
+
+  /* KPIグリッド（店長用 2列） */
+  .kpi-grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 14px; }
+  .kpi-card {
+    background: white; border-radius: 12px; padding: 14px 12px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.07); text-align: center;
+  }
+  .kpi-label { font-size: 11px; color: #718096; font-weight: 600; margin-bottom: 4px; }
+  .kpi-value { font-size: 30px; font-weight: 800; color: #003087; line-height: 1; display: inline; }
+  .kpi-unit { font-size: 13px; color: #4a5568; }
+  .kpi-badge {
+    display: inline-block; padding: 2px 10px; border-radius: 12px;
+    font-size: 12px; font-weight: 700; margin-top: 5px;
+  }
+  .badge-ok  { background: #c6f6d5; color: #276749; }
+  .badge-ng  { background: #fed7d7; color: #9b2335; }
+  .badge-na  { background: #e2e8f0; color: #718096; }
+
+  /* 定性評価判定 */
+  .judge-box {
+    display: flex; align-items: center; gap: 20px; padding: 14px 18px;
+    border-radius: 10px; margin-bottom: 14px;
+  }
+  .judge-box.ok  { background: #f0fff4; border: 2px solid #68d391; }
+  .judge-box.ng  { background: #fff5f5; border: 2px solid #fc8181; }
+  .judge-box.na  { background: #f7fafc; border: 2px solid #cbd5e0; }
+  .judge-circle { font-size: 52px; line-height: 1; flex-shrink: 0; }
+  .judge-text strong { font-size: 16px; color: #2d3748; display: block; margin-bottom: 4px; }
+  .judge-text span { font-size: 12px; color: #718096; line-height: 1.5; display: block; }
+
+  /* クルー人数入力モーダル */
+  .modal-overlay {
+    display: none; position: fixed; inset: 0;
+    background: rgba(0,0,0,0.5); z-index: 200; align-items: center; justify-content: center;
+  }
+  .modal-overlay.open { display: flex; }
+  .modal-box {
+    background: white; border-radius: 14px; padding: 24px;
+    width: 92%; max-width: 520px; max-height: 85vh; overflow-y: auto;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+  }
+  .modal-title { font-size: 16px; font-weight: 700; color: #003087; margin-bottom: 4px; }
+  .modal-sub { font-size: 12px; color: #718096; margin-bottom: 16px; }
+  .crew-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 16px; }
+  .crew-row { display: flex; align-items: center; gap: 6px; }
+  .crew-label { font-size: 12px; color: #4a5568; flex: 1; line-height: 1.3; }
+  .crew-input {
+    width: 56px; padding: 6px 8px; border: 2px solid #e2e8f0;
+    border-radius: 6px; font-size: 14px; font-weight: 700; text-align: center; color: #003087;
+  }
+  .crew-input:focus { outline: none; border-color: #003087; }
+  .modal-btn-row { display: flex; gap: 8px; }
+  .modal-save { flex: 1; padding: 11px; background: #003087; color: white; border: none; border-radius: 8px; font-size: 14px; font-weight: 700; cursor: pointer; }
+  .modal-cancel { padding: 11px 16px; background: #e2e8f0; color: #4a5568; border: none; border-radius: 8px; font-size: 14px; cursor: pointer; }
+
+  /* テーブル共通 */
+  .data-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  .data-table th {
+    background: #003087; color: white; padding: 8px 8px;
+    text-align: center; font-weight: 600; font-size: 11px; white-space: nowrap;
+  }
+  .data-table th:first-child { text-align: left; }
+  .data-table td { padding: 8px 8px; border-bottom: 1px solid #edf2f7; vertical-align: middle; }
+  .data-table tr:last-child td { border-bottom: none; }
+  .data-table tr:hover td { background: #f7fafc; }
+  .data-table td:not(:first-child) { text-align: center; }
+
+  .ok-circle { color: #276749; font-weight: 800; font-size: 18px; }
+  .ng-cross  { color: #9b2335; font-weight: 800; font-size: 18px; }
+  .na-dash   { color: #a0aec0; }
+
+  /* バー */
+  .bar-wrap { display: flex; align-items: center; gap: 5px; }
+  .bar-bg { flex: 1; height: 7px; background: #e2e8f0; border-radius: 4px; overflow: hidden; min-width: 40px; }
+  .bar-fill { height: 100%; border-radius: 4px; }
+  .bar-ok   { background: #38a169; }
+  .bar-ng   { background: #e53e3e; }
+  .bar-none { background: #cbd5e0; }
+  .bar-ct   { background: #805ad5; }
+  .bar-num  { font-size: 11px; font-weight: 700; white-space: nowrap; }
+
+  /* 設問グリッド */
+  .q-grid { display: grid; gap: 10px; }
+  .q-row { display: flex; align-items: center; gap: 10px; }
+  .q-label { font-size: 12px; color: #4a5568; width: 180px; flex-shrink: 0; line-height: 1.3; }
+  .q-bar-bg { flex: 1; height: 10px; background: #e2e8f0; border-radius: 5px; overflow: hidden; }
+  .q-bar-mgr { height: 100%; border-radius: 5px; background: linear-gradient(90deg, #003087, #0057b8); }
+  .q-bar-ct  { height: 100%; border-radius: 5px; background: linear-gradient(90deg, #553c9a, #805ad5); }
+  .q-score { font-size: 13px; font-weight: 700; width: 44px; text-align: right; }
+
+  /* 契約社員カード */
+  .ct-note {
+    background: #faf5ff; border: 1px solid #d6bcfa; border-radius: 8px;
+    padding: 10px 12px; font-size: 12px; color: #553c9a; margin-bottom: 14px;
+    display: flex; align-items: flex-start; gap: 6px;
+  }
+
+  canvas { width: 100% !important; }
+  .loading-msg { text-align: center; padding: 40px; color: #718096; }
+  .spinner { display: inline-block; width: 22px; height: 22px; border: 3px solid #e2e8f0; border-top-color: #003087; border-radius: 50%; animation: spin 0.8s linear infinite; margin-right: 8px; vertical-align: middle; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  @media (max-width: 480px) {
+    .kpi-grid-2 { grid-template-columns: 1fr 1fr; }
+    .q-label { width: 110px; font-size: 11px; }
+    .data-table { font-size: 11px; }
+    .data-table th, .data-table td { padding: 6px 5px; }
+    .crew-grid { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ===== ログイン ===== -->
+<div class="login-screen" id="loginScreen">
+  <div class="login-box">
+    <div class="login-logo">📊</div>
+    <div class="login-title">アンケート集計ダッシュボード</div>
+    <div class="login-sub">ローソン阪口商店グループ | 統括管理者専用</div>
+    <input type="password" class="login-input" id="pwInput" placeholder="パスワード"
+      onkeydown="if(event.key==='Enter')checkPw()">
+    <button class="login-btn" onclick="checkPw()">ログイン</button>
+    <div class="login-err" id="loginErr">パスワードが違います</div>
+  </div>
+</div>
+
+<!-- ===== クルー人数入力モーダル ===== -->
+<div class="modal-overlay" id="crewModal">
+  <div class="modal-box">
+    <div class="modal-title">👥 クルー在籍人数の入力</div>
+    <div class="modal-sub">今月の各店舗の在籍クルー数を入力してください（回答率の計算に使用）</div>
+    <div class="crew-grid" id="crewGrid"></div>
+    <div class="modal-btn-row">
+      <button class="modal-cancel" onclick="closeCrewModal()">キャンセル</button>
+      <button class="modal-save" onclick="saveCrewCounts()">💾 保存して反映</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== メイン ===== -->
+<div id="mainScreen" style="display:none">
+  <div class="header">
+    <div class="header-left">
+      <h1>📊 アンケート集計ダッシュボード</h1>
+      <p id="headerSub">データ読み込み中...</p>
+    </div>
+    <div class="header-right">
+      <select class="month-select" id="monthSelect" onchange="renderDashboard()"></select>
+      <button class="icon-btn" onclick="openCrewModal()">👥 クルー人数</button>
+      <button class="icon-btn" onclick="loadData()">🔄 更新</button>
+    </div>
+  </div>
+
+  <div class="container">
+    <div class="loading-msg" id="loadingMsg">
+      <span class="spinner"></span>データを読み込んでいます...
+    </div>
+
+    <div id="dashContent" style="display:none">
+
+      <!-- ========== 店長アンケート ========== -->
+      <div class="section-label">🏆 店長アンケート（定性評価対象）</div>
+
+      <!-- 定性評価判定 -->
+      <div id="judgeBox" class="judge-box na">
+        <div class="judge-circle" id="judgeCircle">－</div>
+        <div class="judge-text">
+          <strong id="judgeTitle">集計中...</strong>
+          <span id="judgeSub"></span>
+        </div>
+      </div>
+
+      <!-- KPI（店長） -->
+      <div class="kpi-grid-2">
+        <div class="kpi-card">
+          <div class="kpi-label">全店舗 回答率（店長）</div>
+          <div><span class="kpi-value" id="kpiRateVal">--</span><span class="kpi-unit">%</span></div>
+          <div><span class="kpi-badge" id="kpiRateBadge">--</span></div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">全店舗 平均スコア（店長）</div>
+          <div><span class="kpi-value" id="kpiScoreVal">--</span><span class="kpi-unit">点</span></div>
+          <div><span class="kpi-badge" id="kpiScoreBadge">--</span></div>
+        </div>
+      </div>
+
+      <!-- 店長：店舗別テーブル -->
+      <div class="card">
+        <div class="card-title">🏪 店舗別 回答率・スコア（店長）</div>
+        <div style="overflow-x:auto">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>店舗</th>
+                <th>クルー数</th>
+                <th>回答数</th>
+                <th>回答率</th>
+                <th>店長スコア</th>
+                <th>判定</th>
+              </tr>
+            </thead>
+            <tbody id="mgrTableBody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- 店長：設問別スコア -->
+      <div class="card">
+        <div class="card-title">📋 設問別 平均スコア（店長）</div>
+        <div class="q-grid" id="mgrQGrid"></div>
+      </div>
+
+      <!-- 店長：月別推移 -->
+      <div class="card">
+        <div class="card-title">📈 月別スコア推移（店長）</div>
+        <canvas id="mgrTrendChart" height="200"></canvas>
+      </div>
+
+      <!-- ========== 区切り ========== -->
+      <hr class="divider">
+
+      <!-- ========== 契約社員アンケート ========== -->
+      <div class="section-label">👥 契約社員アンケート（更新面談用参考情報）</div>
+
+      <div class="ct-note">
+        ℹ️ 契約社員アンケートは定性評価の判定には含まれません。更新面談時の参考情報としてご活用ください。
+      </div>
+
+      <!-- KPI（契約社員） -->
+      <div class="kpi-grid-2" style="margin-bottom:14px">
+        <div class="kpi-card">
+          <div class="kpi-label">契約社員対象店舗 回答率</div>
+          <div><span class="kpi-value" id="kpiCtRateVal">--</span><span class="kpi-unit">%</span></div>
+          <div><span class="kpi-badge badge-na" id="kpiCtRateBadge">参考値</span></div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">平均スコア（契約社員）</div>
+          <div><span class="kpi-value" id="kpiCtScoreVal">--</span><span class="kpi-unit">点</span></div>
+          <div><span class="kpi-badge badge-na" id="kpiCtScoreBadge">参考値</span></div>
+        </div>
+      </div>
+
+      <!-- 契約社員：店舗別テーブル -->
+      <div class="card">
+        <div class="card-title">🏪 店舗別 スコア（契約社員）</div>
+        <div style="overflow-x:auto">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>店舗</th>
+                <th>契約社員</th>
+                <th>回答数</th>
+                <th>契約社員スコア</th>
+                <th>Q1</th><th>Q2</th><th>Q3</th><th>Q4</th><th>Q5</th>
+              </tr>
+            </thead>
+            <tbody id="ctTableBody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- 契約社員：設問別スコア -->
+      <div class="card">
+        <div class="card-title">📋 設問別 平均スコア（契約社員）</div>
+        <div class="q-grid" id="ctQGrid"></div>
+      </div>
+
+    </div><!-- /dashContent -->
+  </div><!-- /container -->
+</div><!-- /mainScreen -->
+
+<script>
+// ============================================================
+// 設定
+// ============================================================
+const PASSWORD  = 'Lawson3963';
+const GAS_URL   = 'https://script.google.com/macros/s/AKfycbxQCwsnF7hIXUXouap_EgPuD91znuj58M4n-ue_aewt_wROW8zH0wr2XR8TCDk3mGfc/exec';
+
+const STORE_LIST = [
+  '吹田垂水三丁目','江坂東','江坂駅南口','吹田警察署前','豊中原田南一丁目',
+  '南金田二丁目','吹田豊津中学校前','新御堂筋上新田','東淀川大道南','豊中服部西町三丁目',
+  '大道南一丁目','豊里六丁目','吹田青山台三丁目','豊中利倉東一丁目','五月ケ丘東',
+  '豊中服部元町一丁目','吹田朝日町','東淀川豊里五丁目','池田市役所前','箕面白島二丁目'
+];
+
+const STORES_WITH_CT = {
+  '江坂東':            '山田幸代・中村俊哉',
+  '吹田警察署前':      '速水裕大',
+  '豊中原田南一丁目':  '林典子・北川富美子',
+  '大道南一丁目':      '本間美樹',
+  '吹田青山台三丁目':  '清水こゆき・松山翔平',
+  '東淀川豊里五丁目':  '南田美和子・原田友依絵',
+  '池田市役所前':      '原田陽介',
+};
+
+const MGR_Q = ['相談しやすい', '公平に接する', '仕事を教える', '感謝の言葉', 'ルールを伝える'];
+const CT_Q  = ['仕事サポート', '困時に助ける', '明るく接する', '仕事を教える', 'ルールを守る'];
+
+// ローカルストレージからクルー人数を読み込み（初期値15名）
+let crewCounts = JSON.parse(localStorage.getItem('crewCounts') || 'null')
+  || Object.fromEntries(STORE_LIST.map(s => [s, 15]));
+
+let allData = [];
+
+// ============================================================
+// ユーティリティ
+// ============================================================
+function avg(arr) { return arr.length ? arr.reduce((a,b)=>a+b,0)/arr.length : null; }
+
+// ============================================================
+// ログイン
+// ============================================================
+function checkPw() {
+  if (document.getElementById('pwInput').value === PASSWORD) {
+    document.getElementById('loginScreen').style.display = 'none';
+    document.getElementById('mainScreen').style.display = 'block';
+    buildMonthSelect();
+    loadData();
+  } else {
+    document.getElementById('loginErr').style.display = 'block';
+  }
+}
+
+function buildMonthSelect() {
+  const sel = document.getElementById('monthSelect');
+  const now = new Date();
+  for (let i = 0; i < 8; i++) {
+    const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+    const label = `${d.getFullYear()}年${d.getMonth()+1}月`;
+    const opt = document.createElement('option');
+    opt.value = label; opt.textContent = label;
+    sel.appendChild(opt);
+  }
+}
+
+// ============================================================
+// クルー人数モーダル
+// ============================================================
+function openCrewModal() {
+  const grid = document.getElementById('crewGrid');
+  grid.innerHTML = '';
+  STORE_LIST.forEach(store => {
+    const row = document.createElement('div');
+    row.className = 'crew-row';
+    row.innerHTML = `
+      <div class="crew-label">${store}</div>
+      <input type="number" class="crew-input" id="crew_${store.replace(/\s/g,'_')}"
+        value="${crewCounts[store] || 15}" min="1" max="99">
+    `;
+    grid.appendChild(row);
+  });
+  document.getElementById('crewModal').classList.add('open');
+}
+
+function closeCrewModal() {
+  document.getElementById('crewModal').classList.remove('open');
+}
+
+function saveCrewCounts() {
+  STORE_LIST.forEach(store => {
+    const id = 'crew_' + store.replace(/\s/g,'_');
+    const el = document.getElementById(id);
+    if (el) crewCounts[store] = parseInt(el.value) || 15;
+  });
+  localStorage.setItem('crewCounts', JSON.stringify(crewCounts));
+  closeCrewModal();
+  renderDashboard();
+}
+
+// ============================================================
+// データ読み込み
+// ============================================================
+async function loadData() {
+  document.getElementById('loadingMsg').style.display = 'block';
+  document.getElementById('dashContent').style.display = 'none';
+  try {
+    const res = await fetch(GAS_URL + '?action=get');
+    const json = await res.json();
+    allData = json.data || [];
+  } catch(e) {
+    allData = generateSampleData();
+  }
+  renderDashboard();
+}
+
+// ============================================================
+// ダッシュボード描画
+// ============================================================
+function renderDashboard() {
+  const month = document.getElementById('monthSelect').value;
+  const md = allData.filter(r => r.yearMonth === month);
+
+  document.getElementById('headerSub').textContent = `${month} ｜ ${md.length}件の回答`;
+  document.getElementById('loadingMsg').style.display = 'none';
+  document.getElementById('dashContent').style.display = 'block';
+
+  renderManagerSection(md);
+  renderContractSection(md);
+  renderTrend();
+}
+
+// ============================================================
+// ★ 店長セクション（定性評価対象）
+// ============================================================
+function renderManagerSection(md) {
+  // 全店舗合計クルー数
+  const totalCrew = STORE_LIST.reduce((s,st) => s + (crewCounts[st]||15), 0);
+  const rate = md.length ? md.length / totalCrew * 100 : 0;
+
+  // 店長スコア（100点換算）
+  const mgrScores100 = [];
+  md.forEach(r => {
+    const vals = [r.mgr1,r.mgr2,r.mgr3,r.mgr4,r.mgr5].filter(v=>v!==null&&v!=='');
+    if (vals.length) mgrScores100.push(avg(vals) / 5 * 100);
+  });
+  const scoreAvg = avg(mgrScores100);
+
+  // KPI表示
+  setKpi('kpiRateVal','kpiRateBadge', rate.toFixed(1)+'%',
+    rate>=70 ? 'badge-ok' : 'badge-ng',
+    rate>=70 ? `✅ 達成（基準70%以上）` : `❌ 未達（基準70%以上）`);
+  setKpi('kpiScoreVal','kpiScoreBadge', scoreAvg ? scoreAvg.toFixed(1)+'点' : '--',
+    scoreAvg===null ? 'badge-na' : scoreAvg>=80 ? 'badge-ok' : 'badge-ng',
+    scoreAvg===null ? '回答なし' : scoreAvg>=80 ? '✅ 達成（基準80点以上）' : '❌ 未達（基準80点以上）');
+
+  // 定性評価判定
+  const okRate  = rate >= 70;
+  const okScore = scoreAvg !== null && scoreAvg >= 80;
+  const both = okRate && okScore;
+  const noData = md.length === 0;
+  const box = document.getElementById('judgeBox');
+  box.className = 'judge-box ' + (noData ? 'na' : both ? 'ok' : 'ng');
+  document.getElementById('judgeCircle').textContent = noData ? '－' : both ? '○' : '×';
+  document.getElementById('judgeTitle').textContent = noData
+    ? 'まだ回答がありません'
+    : both ? '定性評価：○（基準達成）' : '定性評価：×（基準未達）';
+  document.getElementById('judgeSub').innerHTML = noData ? '' :
+    `回答率 <b>${rate.toFixed(1)}%</b>（基準70%以上）　／　平均スコア <b>${scoreAvg?scoreAvg.toFixed(1):'--'}点</b>（基準80点以上）`;
+
+  // 店舗別テーブル
+  const tbody = document.getElementById('mgrTableBody');
+  tbody.innerHTML = '';
+  STORE_LIST.forEach(store => {
+    const rows = md.filter(r => r.store === store);
+    const crew = crewCounts[store] || 15;
+    const rate_s = rows.length / crew * 100;
+    const scores = rows.map(r => {
+      const v = [r.mgr1,r.mgr2,r.mgr3,r.mgr4,r.mgr5].filter(v=>v!==null&&v!=='');
+      return v.length ? avg(v)/5*100 : null;
+    }).filter(v=>v!==null);
+    const sc = avg(scores);
+    const rOk = rate_s >= 70;
+    const sOk = sc !== null && sc >= 80;
+    const judge = rows.length === 0 ? '<span class="na-dash">－</span>'
+      : (rOk && sOk) ? '<span class="ok-circle">○</span>' : '<span class="ng-cross">×</span>';
+    const rClass = rOk ? 'bar-ok' : rows.length ? 'bar-ng' : 'bar-none';
+    const sClass = sc===null ? 'bar-none' : sOk ? 'bar-ok' : 'bar-ng';
+    const sColor = sc===null ? '#a0aec0' : sOk ? '#276749' : '#9b2335';
+    tbody.innerHTML += `
+      <tr>
+        <td><b>${store}</b></td>
+        <td>${crew}名</td>
+        <td>${rows.length}件</td>
+        <td>
+          <div class="bar-wrap">
+            <div class="bar-bg"><div class="bar-fill ${rClass}" style="width:${Math.min(rate_s,100)}%"></div></div>
+            <span class="bar-num" style="color:${rOk?'#276749':'#9b2335'}">${rate_s.toFixed(0)}%</span>
+          </div>
+        </td>
+        <td>
+          <div class="bar-wrap">
+            <div class="bar-bg"><div class="bar-fill ${sClass}" style="width:${Math.min(sc||0,100)}%"></div></div>
+            <span class="bar-num" style="color:${sColor}">${sc?sc.toFixed(1):'--'}</span>
+          </div>
+        </td>
+        <td>${judge}</td>
+      </tr>`;
+  });
+
+  // 設問別スコア
+  const qGrid = document.getElementById('mgrQGrid');
+  qGrid.innerHTML = '';
+  MGR_Q.forEach((q,i) => {
+    const vals = md.map(r=>r[`mgr${i+1}`]).filter(v=>v!==null&&v!=='');
+    const sc = vals.length ? avg(vals)/5*100 : 0;
+    qGrid.innerHTML += `
+      <div class="q-row">
+        <div class="q-label">Q${i+1}. ${q}</div>
+        <div class="q-bar-bg"><div class="q-bar-mgr" style="width:${sc}%"></div></div>
+        <span class="q-score" style="color:#003087">${sc.toFixed(1)}</span>
+      </div>`;
+  });
+}
+
+// ============================================================
+// ★ 契約社員セクション（参考情報のみ）
+// ============================================================
+function renderContractSection(md) {
+  const ctStores = Object.keys(STORES_WITH_CT);
+
+  // 契約社員対象店舗の回答数（ct1が入力されているもの）
+  const ctRows = md.filter(r => ctStores.includes(r.store));
+  const totalCtCrew = ctStores.reduce((s,st)=>s+(crewCounts[st]||15),0);
+  const ctRate = ctRows.length ? ctRows.length / totalCtCrew * 100 : 0;
+
+  const ctScores100 = [];
+  ctRows.forEach(r => {
+    const vals = [r.ct1,r.ct2,r.ct3,r.ct4,r.ct5].filter(v=>v!==null&&v!=='');
+    if (vals.length) ctScores100.push(avg(vals)/5*100);
+  });
+  const ctAvg = avg(ctScores100);
+
+  setKpi('kpiCtRateVal','kpiCtRateBadge', ctRate.toFixed(1)+'%', 'badge-na', '参考値（判定対象外）');
+  setKpi('kpiCtScoreVal','kpiCtScoreBadge', ctAvg ? ctAvg.toFixed(1)+'点' : '--', 'badge-na', '参考値（判定対象外）');
+
+  // 店舗別テーブル
+  const tbody = document.getElementById('ctTableBody');
+  tbody.innerHTML = '';
+  ctStores.forEach(store => {
+    const rows = md.filter(r => r.store === store && [r.ct1,r.ct2,r.ct3,r.ct4,r.ct5].some(v=>v!==null&&v!==''));
+    const qs = [1,2,3,4,5].map(i => {
+      const vals = rows.map(r=>r[`ct${i}`]).filter(v=>v!==null&&v!=='');
+      return vals.length ? (avg(vals)/5*100).toFixed(1) : '－';
+    });
+    const allVals = rows.flatMap(r=>[r.ct1,r.ct2,r.ct3,r.ct4,r.ct5].filter(v=>v!==null&&v!==''));
+    const sc = allVals.length ? (avg(allVals)/5*100).toFixed(1) : null;
+    const crew = crewCounts[store] || 15;
+    tbody.innerHTML += `
+      <tr>
+        <td><b>${store}</b></td>
+        <td style="font-size:11px;color:#718096">${STORES_WITH_CT[store]}</td>
+        <td>${rows.length}件</td>
+        <td>
+          <div class="bar-wrap">
+            <div class="bar-bg"><div class="bar-fill bar-ct" style="width:${sc||0}%"></div></div>
+            <span class="bar-num" style="color:#553c9a">${sc||'－'}</span>
+          </div>
+        </td>
+        ${qs.map(v=>`<td style="font-size:12px;color:#553c9a;font-weight:600">${v}</td>`).join('')}
+      </tr>`;
+  });
+
+  // 設問別スコア
+  const qGrid = document.getElementById('ctQGrid');
+  qGrid.innerHTML = '';
+  CT_Q.forEach((q,i) => {
+    const vals = ctRows.map(r=>r[`ct${i+1}`]).filter(v=>v!==null&&v!=='');
+    const sc = vals.length ? avg(vals)/5*100 : 0;
+    qGrid.innerHTML += `
+      <div class="q-row">
+        <div class="q-label">Q${i+1}. ${q}</div>
+        <div class="q-bar-bg"><div class="q-bar-ct" style="width:${sc}%"></div></div>
+        <span class="q-score" style="color:#553c9a">${sc.toFixed(1)}</span>
+      </div>`;
+  });
+}
+
+function setKpi(valId, badgeId, val, badgeClass, label) {
+  document.getElementById(valId).textContent = val;
+  const b = document.getElementById(badgeId);
+  b.textContent = label; b.className = 'kpi-badge ' + badgeClass;
+}
+
+// ============================================================
+// 月別推移（店長のみ）
+// ============================================================
+function renderTrend() {
+  const months = [];
+  const now = new Date();
+  for (let i = 5; i >= 0; i--) {
+    const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+    months.push(`${d.getFullYear()}年${d.getMonth()+1}月`);
+  }
+
+  const mgrTrend = [], rateTrend = [];
+  months.forEach(m => {
+    const md = allData.filter(r => r.yearMonth === m);
+    const totalCrew = STORE_LIST.reduce((s,st)=>s+(crewCounts[st]||15),0);
+    const rate = md.length ? md.length/totalCrew*100 : null;
+    const scores = md.map(r=>{
+      const v=[r.mgr1,r.mgr2,r.mgr3,r.mgr4,r.mgr5].filter(v=>v!==null&&v!=='');
+      return v.length ? avg(v)/5*100 : null;
+    }).filter(v=>v!==null);
+    mgrTrend.push(avg(scores) ? avg(scores).toFixed(1) : null);
+    rateTrend.push(rate ? rate.toFixed(1) : null);
+  });
+
+  const canvas = document.getElementById('mgrTrendChart');
+  const ctx = canvas.getContext('2d');
+  canvas.width = canvas.offsetWidth || 600;
+  canvas.height = 220;
+  const W=canvas.width, H=canvas.height;
+  const pad={top:24,right:24,bottom:52,left:46};
+  const gW=W-pad.left-pad.right, gH=H-pad.top-pad.bottom;
+  ctx.clearRect(0,0,W,H);
+
+  // グリッド・軸
+  ctx.strokeStyle='#e2e8f0'; ctx.lineWidth=1;
+  [0,25,50,75,100].forEach(v=>{
+    const y=pad.top+gH-(v/100*gH);
+    ctx.beginPath(); ctx.moveTo(pad.left,y); ctx.lineTo(pad.left+gW,y); ctx.stroke();
+    ctx.fillStyle='#a0aec0'; ctx.font='10px sans-serif'; ctx.textAlign='right';
+    ctx.fillText(v, pad.left-4, y+3);
+  });
+
+  // 基準線80点
+  const y80=pad.top+gH-(80/100*gH);
+  ctx.strokeStyle='#f6ad55'; ctx.lineWidth=1.5; ctx.setLineDash([4,3]);
+  ctx.beginPath(); ctx.moveTo(pad.left,y80); ctx.lineTo(pad.left+gW,y80); ctx.stroke();
+  ctx.setLineDash([]);
+  ctx.fillStyle='#d69e2e'; ctx.font='bold 10px sans-serif'; ctx.textAlign='left';
+  ctx.fillText('基準80点', pad.left+4, y80-5);
+
+  // X軸
+  const step = gW/(months.length-1);
+  months.forEach((m,i)=>{
+    const x=pad.left+i*step;
+    ctx.fillStyle='#4a5568'; ctx.font='10px sans-serif'; ctx.textAlign='center';
+    ctx.fillText(m.replace('年','/').replace('月',''), x, H-pad.bottom+16);
+  });
+
+  function drawLine(vals, color, dotColor) {
+    ctx.strokeStyle=color; ctx.lineWidth=2.5;
+    ctx.beginPath(); let started=false;
+    vals.forEach((v,i)=>{
+      if(!v){started=false;return;}
+      const x=pad.left+i*step, y=pad.top+gH-(v/100*gH);
+      if(!started){ctx.moveTo(x,y);started=true;}else{ctx.lineTo(x,y);}
+    });
+    ctx.stroke();
+    vals.forEach((v,i)=>{
+      if(!v) return;
+      const x=pad.left+i*step, y=pad.top+gH-(v/100*gH);
+      ctx.fillStyle=dotColor||color; ctx.beginPath(); ctx.arc(x,y,5,0,Math.PI*2); ctx.fill();
+      ctx.fillStyle='white'; ctx.beginPath(); ctx.arc(x,y,2.5,0,Math.PI*2); ctx.fill();
+      ctx.fillStyle='#2d3748'; ctx.font='bold 10px sans-serif'; ctx.textAlign='center';
+      ctx.fillText(v, x, y-10);
+    });
+  }
+
+  drawLine(mgrTrend, '#003087');
+  drawLine(rateTrend, '#38a169');
+
+  // 凡例
+  ctx.fillStyle='#003087'; ctx.fillRect(pad.left, H-20, 16, 4);
+  ctx.fillStyle='#2d3748'; ctx.font='11px sans-serif'; ctx.textAlign='left';
+  ctx.fillText('店長スコア（点）', pad.left+20, H-16);
+  ctx.fillStyle='#38a169'; ctx.fillRect(pad.left+120, H-20, 16, 4);
+  ctx.fillStyle='#2d3748'; ctx.fillText('回答率（%）', pad.left+140, H-16);
+}
+
+// ============================================================
+// サンプルデータ（GAS未接続デモ用）
+// ============================================================
+function generateSampleData() {
+  const data = [];
+  const now = new Date();
+  for (let mo=0; mo<4; mo++) {
+    const d = new Date(now.getFullYear(), now.getMonth()-mo, 1);
+    const ym = `${d.getFullYear()}年${d.getMonth()+1}月`;
+    STORE_LIST.forEach(store => {
+      const crew = crewCounts[store] || 15;
+      const cnt = Math.floor(crew * (0.65+Math.random()*0.35));
+      for (let c=0; c<cnt; c++) {
+        const r = { yearMonth:ym, store };
+        for (let q=1;q<=5;q++) r[`mgr${q}`] = Math.floor(3+Math.random()*2.5);
+        if (STORES_WITH_CT[store]) {
+          for (let q=1;q<=5;q++) r[`ct${q}`] = Math.floor(3+Math.random()*2.5);
+        }
+        data.push(r);
+      }
+    });
+  }
+  return data;
+}
+</script>
+</body>
+</html>
