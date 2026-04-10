@@ -562,7 +562,7 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
 // ============================================================
 //  設定
 // ============================================================
-const GAS_URL = "https://script.google.com/macros/s/AKfycbxkO2o8xt2DG2PlSP3Kg7Um3ywfZvIxpPgzImAS2LMbkmy8PTGpf7bqQdVkjgmes5mq/exec";
+const GAS_URL = "https://script.google.com/macros/s/YOUR_GAS_DEPLOYMENT_ID/exec";
 const MANAGER_PASSWORD = "Lawson3963";
 const QR_PASSWORD      = "Lawson3963"; // QR管理ページのパスワード（別にする場合は変更）
 const THIS_URL = "https://uno0908-star.github.io/sakaguchi-MO-/baito.html";
@@ -670,7 +670,20 @@ function applyStore(key){
   document.getElementById("mpStoreName").textContent   = s.name;
   document.title = "アルバイト応募 | " + s.name;
 
-  // 停止状態の反映
+  // GASからこの店舗の登録済み店長メールを取得して表示
+  if(GAS_URL && !GAS_URL.includes("YOUR_GAS")){
+    fetch(GAS_URL + "?storeKey=" + encodeURIComponent(key))
+      .then(r=>r.json())
+      .then(json=>{
+        if(json.status==="ok" && json.value){
+          settings.managerEmail = json.value;
+          saveSettingsStore(key, settings);
+          const el = document.getElementById("mpEmail");
+          if(el) el.value = json.value;
+        }
+      }).catch(()=>{});
+  }
+
   applyStoppedUI(settings.stopped);
   refreshBadge();
   buildTimebandSelect();
@@ -832,27 +845,39 @@ function removeCustomShift(idx){
   settings.shifts.splice(idx,1);buildShiftCheckList();
 }
 function saveManagerSettings(){
-  settings.stopped      = document.getElementById("stopToggle").checked;
-  settings.count        = document.getElementById("mpCount").value;
-  settings.comment      = document.getElementById("mpComment").value.trim();
-  settings.managerEmail = document.getElementById("mpEmail").value.trim();
+  settings.stopped = document.getElementById("stopToggle").checked;
+  settings.count   = document.getElementById("mpCount").value;
+  settings.comment = document.getElementById("mpComment").value.trim();
+  const email      = document.getElementById("mpEmail").value.trim();
 
-  // メールアドレスの簡易バリデーション
   const emailStatus = document.getElementById("mpEmailStatus");
-  if(settings.managerEmail && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(settings.managerEmail)){
+  if(email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)){
     emailStatus.textContent = "⚠ メールアドレスの形式が正しくありません";
     emailStatus.style.display = "block";
     return;
   }
   emailStatus.style.display = "none";
-
+  settings.managerEmail = email;
   saveSettingsStore(currentKey, settings);
+
+  // GASのスプレッドシートにも保存（端末をまたいで有効・CORS回避）
+  if(email && GAS_URL && !GAS_URL.includes("YOUR_GAS")){
+    const params = new URLSearchParams({
+      action:       "saveManager",
+      storeKey:     currentKey,
+      storeName:    currentStore.name,
+      managerEmail: email
+    });
+    const img = new Image();
+    img.src = GAS_URL + "?" + params.toString();
+  }
+
   applyStoppedUI(settings.stopped);
   refreshBadge();
   buildTimebandSelect();
   closeManagerPanel();
-  showToast(settings.managerEmail
-    ? `✅ 保存しました！通知先：${settings.managerEmail}`
+  showToast(email
+    ? `✅ 保存しました！通知先：${email}`
     : "✅ 募集内容を保存しました！");
 }
 function closeManagerPanel(){ document.getElementById("managerPanel").style.display="none"; }
@@ -946,8 +971,23 @@ document.getElementById("ouboForm").addEventListener("submit", async function(e)
   fd.delete("days_check");
 
   const payload={};fd.forEach((v,k)=>{payload[k]=v;});
+  payload.action = "oubo";
+
   try{
-    await fetch(GAS_URL,{method:"POST",mode:"no-cors",headers:{"Content-Type":"application/json"},body:JSON.stringify(payload)});
+    // GitHub Pages→GASのCORSを回避するためimg src方式で送信
+    const queryString = Object.entries(payload)
+      .map(([k,v])=>encodeURIComponent(k)+"="+encodeURIComponent(v||""))
+      .join("&");
+
+    await new Promise((resolve)=>{
+      const img = new Image();
+      img.onload  = ()=>resolve();
+      img.onerror = ()=>resolve(); // エラーでも成功扱い（no-corsのため）
+      img.src = GAS_URL + "?" + queryString;
+      // 3秒タイムアウト
+      setTimeout(resolve, 3000);
+    });
+
     document.getElementById("formArea").style.display="none";
     document.getElementById("successScreen").style.display="block";
     document.getElementById("successMsg").innerHTML=`<strong>${currentStore.name}</strong> への応募ありがとうございます。<br>担当者より2〜3営業日以内にご連絡いたします。`;
