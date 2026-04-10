@@ -157,7 +157,7 @@
 
   <!-- 送信完了画面 -->
   <div class="success-screen" id="successScreen">
-    <div class="success-icon">✅</div>
+    <div class="success-icon" id="success-icon">✅</div>
     <div class="success-title" id="success-title">回答を送信しました！</div>
     <div class="success-sub" id="success-sub">
       ご協力ありがとうございました。<br>
@@ -324,6 +324,47 @@ let lang = 'ja';
 const answers = {}; // { 'mgr_1': 5, 'ct_3': 2, ... }
 
 // ============================================================
+// 回答済みチェック（端末制限）
+// ============================================================
+function getAnsweredKey() {
+  const now = new Date();
+  // 日本時間で年月を取得
+  const jst = new Date(now.getTime() + 9 * 60 * 60 * 1000);
+  const ym = `${jst.getUTCFullYear()}${String(jst.getUTCMonth()+1).padStart(2,'0')}`;
+  return `lawson_survey_answered_${ym}`;
+}
+
+function checkAlreadyAnswered() {
+  const key = getAnsweredKey();
+  const answered = localStorage.getItem(key);
+  if (answered) {
+    // 回答済み画面を表示
+    document.getElementById('mainForm').style.display = 'none';
+    const s = document.getElementById('successScreen');
+    s.style.display = 'block';
+    document.getElementById('success-icon').textContent = '✅';
+    document.getElementById('success-title').textContent =
+      lang === 'ja' ? '今月はすでに回答済みです' : 'You have already submitted this month';
+    document.getElementById('success-sub').textContent =
+      lang === 'ja'
+        ? 'このアンケートは1端末につき月1回のみ回答できます。\nご協力ありがとうございました！\n\nThis survey can only be submitted once per device per month.'
+        : 'This survey can only be submitted once per device per month.\nご協力ありがとうございました！';
+    return true;
+  }
+  return false;
+}
+
+function markAsAnswered() {
+  const key = getAnsweredKey();
+  localStorage.setItem(key, '1');
+}
+
+// ページ読み込み時に回答済みチェック
+window.addEventListener('DOMContentLoaded', () => {
+  checkAlreadyAnswered();
+});
+
+// ============================================================
 // 言語切替
 // ============================================================
 function setLang(l) {
@@ -480,6 +521,7 @@ async function submitSurvey() {
       body: JSON.stringify(payload)
     });
     // no-corsのためレスポンス確認不可→成功とみなす
+    markAsAnswered(); // 回答済みフラグをブラウザに保存
     showSuccess();
   } catch (e) {
     alert(lang==='ja' ? '送信エラーが発生しました。もう一度お試しください。' : 'Submission error. Please try again.');
