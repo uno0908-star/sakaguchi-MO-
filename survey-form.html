@@ -1,0 +1,500 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>店舗アンケート / Store Survey</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Helvetica Neue', Arial, 'Hiragino Kaku Gothic ProN', sans-serif; background: #f0f4f8; min-height: 100vh; }
+
+  .header {
+    background: linear-gradient(135deg, #003087 0%, #0057b8 100%);
+    color: white; padding: 20px 16px; text-align: center;
+  }
+  .header h1 { font-size: 20px; font-weight: 700; margin-bottom: 4px; }
+  .header p { font-size: 13px; opacity: 0.85; }
+
+  .lang-toggle {
+    display: flex; justify-content: center; gap: 8px;
+    background: white; padding: 12px; border-bottom: 1px solid #e2e8f0;
+    position: sticky; top: 0; z-index: 100;
+  }
+  .lang-btn {
+    padding: 6px 20px; border-radius: 20px; border: 2px solid #003087;
+    font-size: 14px; font-weight: 600; cursor: pointer;
+    transition: all 0.2s;
+  }
+  .lang-btn.active { background: #003087; color: white; }
+  .lang-btn:not(.active) { background: white; color: #003087; }
+
+  .container { max-width: 600px; margin: 0 auto; padding: 16px; }
+
+  .card {
+    background: white; border-radius: 12px; padding: 20px;
+    margin-bottom: 16px; box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+  }
+
+  .card-title {
+    font-size: 16px; font-weight: 700; color: #003087;
+    margin-bottom: 16px; padding-bottom: 10px;
+    border-bottom: 2px solid #e2e8f0;
+    display: flex; align-items: center; gap: 8px;
+  }
+
+  select, input[type="text"] {
+    width: 100%; padding: 12px 14px; border: 2px solid #e2e8f0;
+    border-radius: 8px; font-size: 15px; color: #1a202c;
+    background: #f7fafc; transition: border-color 0.2s;
+    appearance: none; -webkit-appearance: none;
+  }
+  select:focus, input[type="text"]:focus {
+    outline: none; border-color: #003087; background: white;
+  }
+
+  .store-info {
+    background: #ebf8ff; border-left: 4px solid #003087;
+    border-radius: 8px; padding: 12px 14px; margin-top: 12px;
+    font-size: 14px; line-height: 1.6; color: #2d3748;
+    display: none;
+  }
+  .store-info.visible { display: block; }
+  .store-info strong { color: #003087; }
+
+  .section-header {
+    background: linear-gradient(135deg, #003087, #0057b8);
+    color: white; border-radius: 10px; padding: 12px 16px;
+    font-size: 15px; font-weight: 700; margin-bottom: 14px;
+    display: flex; align-items: center; gap: 8px;
+  }
+
+  .question-block { margin-bottom: 20px; }
+  .question-text {
+    font-size: 14px; font-weight: 600; color: #2d3748;
+    margin-bottom: 4px; line-height: 1.5;
+  }
+  .question-text-en {
+    font-size: 12px; color: #718096; margin-bottom: 10px; line-height: 1.4;
+  }
+
+  .scale-row {
+    display: flex; gap: 6px;
+  }
+  .scale-btn {
+    flex: 1; padding: 10px 4px; border: 2px solid #e2e8f0;
+    border-radius: 8px; background: white; cursor: pointer;
+    text-align: center; transition: all 0.15s;
+    font-size: 13px; font-weight: 600; color: #4a5568;
+    line-height: 1.3;
+  }
+  .scale-btn:hover { border-color: #003087; background: #ebf8ff; }
+  .scale-btn.selected { border-color: #003087; background: #003087; color: white; }
+  .scale-num { font-size: 16px; display: block; }
+  .scale-label { font-size: 9px; display: block; margin-top: 2px; }
+
+  .name-input-row { display: flex; align-items: center; gap: 8px; margin-bottom: 14px; }
+  .name-input-row label { font-size: 13px; color: #4a5568; white-space: nowrap; }
+
+  .anon-note {
+    background: #f0fff4; border: 1px solid #9ae6b4; border-radius: 8px;
+    padding: 10px 12px; font-size: 12px; color: #276749;
+    margin-bottom: 16px; display: flex; align-items: flex-start; gap: 6px;
+  }
+
+  .submit-btn {
+    width: 100%; padding: 16px; background: linear-gradient(135deg, #003087, #0057b8);
+    color: white; border: none; border-radius: 10px; font-size: 16px;
+    font-weight: 700; cursor: pointer; transition: opacity 0.2s;
+    letter-spacing: 0.5px;
+  }
+  .submit-btn:hover { opacity: 0.9; }
+  .submit-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+  .progress-bar {
+    height: 4px; background: #e2e8f0; border-radius: 2px; margin-bottom: 16px;
+  }
+  .progress-fill {
+    height: 100%; background: #003087; border-radius: 2px;
+    transition: width 0.3s ease;
+  }
+  .progress-text { font-size: 12px; color: #718096; text-align: right; margin-top: 4px; }
+
+  .success-screen {
+    display: none; text-align: center; padding: 40px 20px;
+  }
+  .success-icon { font-size: 60px; margin-bottom: 16px; }
+  .success-title { font-size: 22px; font-weight: 700; color: #003087; margin-bottom: 8px; }
+  .success-sub { font-size: 14px; color: #718096; line-height: 1.6; }
+
+  .skip-notice {
+    background: #fff3cd; border: 1px solid #ffc107; border-radius: 8px;
+    padding: 10px 12px; font-size: 13px; color: #856404; margin-bottom: 12px;
+  }
+
+  .loading { text-align: center; padding: 20px; color: #718096; font-size: 14px; }
+  .spinner {
+    display: inline-block; width: 20px; height: 20px;
+    border: 3px solid #e2e8f0; border-top-color: #003087;
+    border-radius: 50%; animation: spin 0.8s linear infinite;
+    margin-right: 8px; vertical-align: middle;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1 id="h-title">📋 店舗アンケート</h1>
+  <p id="h-sub">ローソン阪口商店グループ | 匿名回答</p>
+</div>
+
+<div class="lang-toggle">
+  <button class="lang-btn active" onclick="setLang('ja')">日本語</button>
+  <button class="lang-btn" onclick="setLang('en')">English</button>
+</div>
+
+<div class="container">
+
+  <!-- 送信完了画面 -->
+  <div class="success-screen" id="successScreen">
+    <div class="success-icon">✅</div>
+    <div class="success-title" id="success-title">回答を送信しました！</div>
+    <div class="success-sub" id="success-sub">
+      ご協力ありがとうございました。<br>
+      Thank you for your participation.
+    </div>
+  </div>
+
+  <!-- メインフォーム -->
+  <div id="mainForm">
+
+    <!-- 進捗バー -->
+    <div class="progress-bar"><div class="progress-fill" id="progressFill" style="width:0%"></div></div>
+    <div class="progress-text" id="progressText">0 / 10 回答済み</div>
+
+    <!-- STEP1: 店舗選択 -->
+    <div class="card">
+      <div class="card-title">🏪 <span id="t-store-select">あなたの店舗を選んでください</span></div>
+      <select id="storeSelect" onchange="onStoreChange()">
+        <option value="">-- 店舗を選択 / Select your store --</option>
+        <option value="吹田垂水三丁目">ローソン 吹田垂水三丁目店</option>
+        <option value="江坂東">ローソン 江坂東店</option>
+        <option value="江坂駅南口">ローソン 江坂駅南口店</option>
+        <option value="吹田警察署前">ローソン 吹田警察署前店</option>
+        <option value="豊中原田南一丁目">ローソン 豊中原田南一丁目店</option>
+        <option value="南金田二丁目">ローソン 南金田二丁目店</option>
+        <option value="吹田豊津中学校前">ローソン 吹田豊津中学校前店</option>
+        <option value="新御堂筋上新田">ローソン 新御堂筋上新田店</option>
+        <option value="東淀川大道南">ローソン 東淀川大道南店</option>
+        <option value="豊中服部西町三丁目">ローソン 豊中服部西町三丁目店</option>
+        <option value="大道南一丁目">ローソン 大道南一丁目店</option>
+        <option value="豊里六丁目">ローソン 豊里六丁目店</option>
+        <option value="吹田青山台三丁目">ローソン 吹田青山台三丁目店</option>
+        <option value="豊中利倉東一丁目">ローソン 豊中利倉東一丁目店</option>
+        <option value="五月ケ丘東">ローソン 五月ケ丘東店</option>
+        <option value="豊中服部元町一丁目">ローソン 豊中服部元町一丁目店</option>
+        <option value="吹田朝日町">ローソン 吹田朝日町店</option>
+        <option value="東淀川豊里五丁目">ローソン 東淀川豊里五丁目店</option>
+        <option value="池田市役所前">ローソン 池田市役所前店</option>
+        <option value="箕面白島二丁目">ローソン 箕面白島二丁目店</option>
+      </select>
+
+      <div class="store-info" id="storeInfo"></div>
+    </div>
+
+    <!-- 匿名メモ -->
+    <div class="anon-note" id="anonNote">
+      🔒 <span id="t-anon">このアンケートは完全匿名です。回答者が特定されることはありません。</span>
+    </div>
+
+    <!-- 店長アンケート -->
+    <div class="card" id="managerSection" style="display:none">
+      <div class="section-header">👔 <span id="t-mgr-header">店長への評価</span></div>
+      <div id="managerQuestions"></div>
+    </div>
+
+    <!-- 契約社員アンケート -->
+    <div class="card" id="contractSection" style="display:none">
+      <div class="section-header">👥 <span id="t-ct-header">契約社員への評価</span></div>
+      <div id="contractQuestions"></div>
+    </div>
+
+    <!-- 送信ボタン -->
+    <div id="submitArea" style="display:none">
+      <button class="submit-btn" id="submitBtn" onclick="submitSurvey()">
+        <span id="t-submit">📨 回答を送信する</span>
+      </button>
+    </div>
+
+  </div><!-- /mainForm -->
+</div><!-- /container -->
+
+<script>
+// ============================================================
+// GAS URL（デプロイ後に差し替えてください）
+// ============================================================
+const GAS_URL = 'https://script.google.com/macros/s/AKfycbxQCwsnF7hIXUXouap_EgPuD91znuj58M4n-ue_aewt_wROW8zH0wr2XR8TCDk3mGfc/exec';
+
+// ============================================================
+// 店舗データ
+// ============================================================
+const STORES = {
+  '吹田垂水三丁目':    { mgr: 'フィさん',               ct: null },
+  '江坂東':           { mgr: 'ダハルさん',              ct: '山田幸代さん・中村俊哉さん' },
+  '江坂駅南口':       { mgr: 'トゥアンさん・ジティシュさん', ct: null },
+  '吹田警察署前':     { mgr: 'ヘムラジさん',            ct: '速水裕大さん' },
+  '豊中原田南一丁目': { mgr: 'ナレスさん',              ct: '林典子さん・北川富美子さん' },
+  '南金田二丁目':     { mgr: '三國さん・レグミさん',    ct: null },
+  '吹田豊津中学校前': { mgr: 'フィさん',               ct: null },
+  '新御堂筋上新田':   { mgr: 'ボガティさん・ズンさん',  ct: null },
+  '東淀川大道南':     { mgr: 'ビノダさん',              ct: null },
+  '豊中服部西町三丁目':{ mgr: 'ビカスさん',             ct: null },
+  '大道南一丁目':     { mgr: 'グルンさん',              ct: '本間美樹さん' },
+  '豊里六丁目':       { mgr: 'リルさん',               ct: null },
+  '吹田青山台三丁目': { mgr: 'マヘンドラさん',          ct: '清水こゆきさん・松山翔平さん' },
+  '豊中利倉東一丁目': { mgr: 'プラディプさん',          ct: null },
+  '五月ケ丘東':       { mgr: 'ゴレさん',               ct: null },
+  '豊中服部元町一丁目':{ mgr: 'ラジトさん',             ct: null },
+  '吹田朝日町':       { mgr: 'レサムさん・ネパリさん',  ct: null },
+  '東淀川豊里五丁目': { mgr: 'サントスさん',            ct: '南田美和子さん・原田友依絵さん' },
+  '池田市役所前':     { mgr: '五島さん',               ct: '原田陽介さん' },
+  '箕面白島二丁目':   { mgr: 'スラズさん',             ct: null },
+};
+
+// ============================================================
+// 設問データ
+// ============================================================
+const MGR_QUESTIONS = [
+  { ja: '店長に相談しやすいですか？', en: 'Is it easy to talk to the store manager when you have a problem?' },
+  { ja: '店長はみんなに公平に接していますか？', en: 'Does the store manager treat everyone fairly?' },
+  { ja: '店長は仕事のやり方をわかりやすく教えてくれますか？', en: 'Does the store manager explain how to do the work clearly?' },
+  { ja: '店長は「ありがとう」など感謝の言葉をかけてくれますか？', en: 'Does the store manager say thank you or show appreciation?' },
+  { ja: '店長はお店のルールや決まりをわかりやすく伝えてくれますか？', en: 'Does the store manager communicate store rules and policies clearly?' },
+];
+const CT_QUESTIONS = [
+  { ja: '契約社員はあなたの仕事をサポートしてくれますか？', en: 'Does the contract staff support your work?' },
+  { ja: '困ったとき、契約社員は助けてくれますか？', en: 'When you have a problem, does the contract staff help you?' },
+  { ja: '契約社員は明るく、気持ちよく接してくれますか？', en: 'Does the contract staff treat you in a friendly and pleasant way?' },
+  { ja: '契約社員は仕事のやり方をわかりやすく伝えてくれますか？', en: 'Does the contract staff explain how to do the work clearly?' },
+  { ja: '契約社員はお店のルールをしっかり守っていますか？', en: 'Does the contract staff follow the store rules properly?' },
+];
+
+const SCALE = [
+  { ja: 'とてもそう思う',       en: 'Strongly agree' },
+  { ja: 'そう思う',             en: 'Agree' },
+  { ja: 'どちらでもない',       en: 'Neutral' },
+  { ja: 'あまりそう思わない',   en: 'Disagree' },
+  { ja: 'そう思わない',         en: 'Strongly disagree' },
+];
+
+const TEXT = {
+  ja: {
+    title: '📋 店舗アンケート',
+    sub: 'ローソン阪口商店グループ | 匿名回答',
+    storeSelect: 'あなたの店舗を選んでください',
+    anon: 'このアンケートは完全匿名です。回答者が特定されることはありません。',
+    mgrHeader: '店長への評価',
+    ctHeader: '契約社員への評価',
+    submit: '📨 回答を送信する',
+    successTitle: '回答を送信しました！',
+    successSub: 'ご協力ありがとうございました。\nThank you for your participation.',
+    mgrInfo: (name) => `👔 この店舗の店長：<strong>${name}</strong>`,
+    ctInfo: (name) => `👥 この店舗の契約社員：<strong>${name}</strong>`,
+    noct: '※ この店舗には契約社員がいないため、契約社員への評価はありません。',
+    progress: (done, total) => `${done} / ${total} 回答済み`,
+  },
+  en: {
+    title: '📋 Store Survey',
+    sub: 'Lawson Sakaguchi Store Group | Anonymous',
+    storeSelect: 'Please select your store',
+    anon: 'This survey is completely anonymous. Your identity will not be revealed.',
+    mgrHeader: 'Evaluation of Store Manager',
+    ctHeader: 'Evaluation of Contract Staff',
+    submit: '📨 Submit Answers',
+    successTitle: 'Thank you!',
+    successSub: 'Your answers have been submitted.\nご協力ありがとうございました。',
+    mgrInfo: (name) => `👔 Store Manager: <strong>${name}</strong>`,
+    ctInfo: (name) => `👥 Contract Staff: <strong>${name}</strong>`,
+    noct: '※ This store has no contract staff. No contract staff evaluation needed.',
+    progress: (done, total) => `${done} / ${total} answered`,
+  }
+};
+
+let lang = 'ja';
+const answers = {}; // { 'mgr_1': 5, 'ct_3': 2, ... }
+
+// ============================================================
+// 言語切替
+// ============================================================
+function setLang(l) {
+  lang = l;
+  document.querySelectorAll('.lang-btn').forEach(b => b.classList.remove('active'));
+  document.querySelector(`.lang-btn[onclick="setLang('${l}')"]`).classList.add('active');
+  applyText();
+  rebuildQuestions();
+  updateProgress();
+}
+
+function applyText() {
+  const t = TEXT[lang];
+  document.getElementById('h-title').textContent = t.title;
+  document.getElementById('h-sub').textContent = t.sub;
+  document.getElementById('t-store-select').textContent = t.storeSelect;
+  document.getElementById('t-anon').textContent = t.anon;
+  document.getElementById('t-mgr-header').textContent = t.mgrHeader;
+  document.getElementById('t-ct-header').textContent = t.ctHeader;
+  document.getElementById('t-submit').innerHTML = t.submit;
+}
+
+// ============================================================
+// 店舗選択
+// ============================================================
+function onStoreChange() {
+  const store = document.getElementById('storeSelect').value;
+  const info = document.getElementById('storeInfo');
+  const t = TEXT[lang];
+
+  if (!store) {
+    info.classList.remove('visible');
+    document.getElementById('managerSection').style.display = 'none';
+    document.getElementById('contractSection').style.display = 'none';
+    document.getElementById('submitArea').style.display = 'none';
+    return;
+  }
+
+  const d = STORES[store];
+  let html = t.mgrInfo(d.mgr);
+  if (d.ct) html += '<br>' + t.ctInfo(d.ct);
+  else html += '<br><span style="color:#718096;font-size:12px">' + t.noct + '</span>';
+  info.innerHTML = html;
+  info.classList.add('visible');
+
+  // セクション表示
+  document.getElementById('managerSection').style.display = 'block';
+  document.getElementById('contractSection').style.display = d.ct ? 'block' : 'none';
+  document.getElementById('submitArea').style.display = 'block';
+
+  // 回答リセット
+  Object.keys(answers).forEach(k => delete answers[k]);
+  rebuildQuestions();
+  updateProgress();
+}
+
+// ============================================================
+// 設問生成
+// ============================================================
+function rebuildQuestions() {
+  renderQuestions('managerQuestions', MGR_QUESTIONS, 'mgr');
+  const store = document.getElementById('storeSelect').value;
+  if (store && STORES[store].ct) {
+    renderQuestions('contractQuestions', CT_QUESTIONS, 'ct');
+  }
+}
+
+function renderQuestions(containerId, questions, prefix) {
+  const container = document.getElementById(containerId);
+  container.innerHTML = '';
+  questions.forEach((q, i) => {
+    const key = `${prefix}_${i+1}`;
+    const selected = answers[key] || null;
+    const div = document.createElement('div');
+    div.className = 'question-block';
+    div.innerHTML = `
+      <div class="question-text">Q${i+1}. ${q.ja}</div>
+      <div class="question-text-en">${q.en}</div>
+      <div class="scale-row">
+        ${[5,4,3,2,1].map((score, si) => `
+          <button class="scale-btn ${selected===score?'selected':''}"
+            onclick="selectAnswer('${key}', ${score}, this)"
+            data-key="${key}" data-score="${score}">
+            <span class="scale-num">${score}</span>
+            <span class="scale-label">${lang==='ja' ? SCALE[si].ja : SCALE[si].en}</span>
+          </button>
+        `).join('')}
+      </div>
+    `;
+    container.appendChild(div);
+  });
+}
+
+function selectAnswer(key, score, btn) {
+  answers[key] = score;
+  // 同じkeyのボタンのselected解除
+  document.querySelectorAll(`[data-key="${key}"]`).forEach(b => b.classList.remove('selected'));
+  btn.classList.add('selected');
+  updateProgress();
+}
+
+// ============================================================
+// 進捗
+// ============================================================
+function updateProgress() {
+  const store = document.getElementById('storeSelect').value;
+  if (!store) return;
+  const hasCt = STORES[store].ct !== null;
+  const total = hasCt ? 10 : 5;
+  const done = Object.keys(answers).length;
+  const pct = Math.round(done / total * 100);
+  document.getElementById('progressFill').style.width = pct + '%';
+  document.getElementById('progressText').textContent = TEXT[lang].progress(done, total);
+}
+
+// ============================================================
+// 送信
+// ============================================================
+async function submitSurvey() {
+  const store = document.getElementById('storeSelect').value;
+  if (!store) { alert('店舗を選択してください / Please select your store'); return; }
+
+  const hasCt = STORES[store].ct !== null;
+  const total = hasCt ? 10 : 5;
+  if (Object.keys(answers).length < total) {
+    const msg = lang === 'ja'
+      ? `まだ回答していない項目があります（${Object.keys(answers).length}/${total}）`
+      : `Please answer all questions (${Object.keys(answers).length}/${total})`;
+    alert(msg); return;
+  }
+
+  const btn = document.getElementById('submitBtn');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span>' + (lang==='ja' ? '送信中...' : 'Submitting...');
+
+  const now = new Date();
+  const payload = {
+    timestamp: now.toISOString(),
+    yearMonth: `${now.getFullYear()}年${now.getMonth()+1}月`,
+    store: store,
+    mgr1: answers['mgr_1'] || '', mgr2: answers['mgr_2'] || '',
+    mgr3: answers['mgr_3'] || '', mgr4: answers['mgr_4'] || '',
+    mgr5: answers['mgr_5'] || '',
+    ct1: answers['ct_1'] || '', ct2: answers['ct_2'] || '',
+    ct3: answers['ct_3'] || '', ct4: answers['ct_4'] || '',
+    ct5: answers['ct_5'] || '',
+  };
+
+  try {
+    await fetch(GAS_URL, {
+      method: 'POST',
+      mode: 'no-cors',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    // no-corsのためレスポンス確認不可→成功とみなす
+    showSuccess();
+  } catch (e) {
+    alert(lang==='ja' ? '送信エラーが発生しました。もう一度お試しください。' : 'Submission error. Please try again.');
+    btn.disabled = false;
+    btn.innerHTML = '<span id="t-submit">' + TEXT[lang].submit + '</span>';
+  }
+}
+
+function showSuccess() {
+  document.getElementById('mainForm').style.display = 'none';
+  const s = document.getElementById('successScreen');
+  s.style.display = 'block';
+  document.getElementById('success-title').textContent = TEXT[lang].successTitle;
+  document.getElementById('success-sub').textContent = TEXT[lang].successSub;
+}
+</script>
+</body>
+</html>
