@@ -251,12 +251,14 @@
       <p>阪口商店 全20店舗</p>
     </div>
   </div>
-  <div class="update-badge">📅 4/11（土）10:30</div>
+  <div class="update-badge">📅 4/13（月）8:15</div>
 </header>
 
 <!-- タブナビ -->
 <div class="tab-nav">
   <button class="tab-btn active" onclick="switchTab('today', this)">📦 本日進捗</button>
+  <button class="tab-btn" onclick="switchTab('verify12', this)">📊 4/12（日）結果検証</button>
+  <button class="tab-btn" onclick="switchTab('verify11', this)">📊 4/11（土）結果検証</button>
   <button class="tab-btn" onclick="switchTab('verify8', this)">📊 4/10（金）結果検証</button>
   <button class="tab-btn" onclick="switchTab('verify8b', this)">📊 4/9（木）結果検証</button>
   <button class="tab-btn" onclick="switchTab('verify7', this)">📊 4/8（水）結果検証</button>
@@ -277,7 +279,7 @@
       <div class="summary-card card-orange">
         <div class="label">📦 本日販売数（合計）</div>
         <div class="value" id="totalSold">-</div>
-        <div class="sub">4/11 10:30 時点</div>
+        <div class="sub">4/13 8:15 時点</div>
       </div>
       <div class="summary-card card-blue">
         <div class="label">📊 あと必要な販売数</div>
@@ -317,7 +319,7 @@
       <button class="filter-btn" onclick="filterSC('サントスASC', this, 'today')">サントスASC</button>
     </div>
     <div class="store-list" id="storeList"></div>
-    <div class="note">※ データ基準：4/11（土）10:30 時点　／　作成：阪口商店</div>
+    <div class="note">※ データ基準：4/13（月）8:15 時点　／　作成：阪口商店</div>
   </div>
 
   <!-- ===== 4/8（水）結果検証タブ ===== -->
@@ -530,31 +532,83 @@
     <div class="note">※ 4/9（木）最終実績データ　／　作成：阪口商店</div>
   </div>
 
+  <!-- ===== 4/12（日）結果検証タブ ===== -->
+  <div class="tab-panel" id="panel-verify12">
+    <div class="yesterday-summary">
+      <div class="yday-card yday-total"><div class="label">📦 最終販売数（合計）</div><div class="value" id="v12-total">-</div><div class="sub">4/12（日）全日合計</div></div>
+      <div class="yday-card yday-achieved"><div class="label">🏆 目標達成店舗数</div><div class="value" id="v12-achieved">-</div><div class="sub">20店舗中</div></div>
+      <div class="yday-card yday-rate"><div class="label">📊 全体達成率</div><div class="value" id="v12-rate">-</div><div class="sub">目標比</div></div>
+      <div class="yday-card yday-best"><div class="label">👑 最高販売店舗</div><div class="value" id="v12-best">-</div><div class="sub" id="v12-best-sub">-</div></div>
+    </div>
+    <div style="font-size:14px;font-weight:700;color:var(--gray-800);margin-bottom:12px;">🔍 店舗別 目標達成検証（4/12日）</div>
+    <div class="filter-scroll" id="filter-verify12">
+      <button class="filter-btn active" onclick="filterVerifyDay('all', this, 'v12')">全店</button>
+      <button class="filter-btn" onclick="filterVerifyDay('achieved', this, 'v12')">✅ 達成のみ</button>
+      <button class="filter-btn" onclick="filterVerifyDay('miss', this, 'v12')">❌ 未達のみ</button>
+      <button class="filter-btn" onclick="filterVerifyDay('高橋ＳＣ', this, 'v12')">高橋SC</button>
+      <button class="filter-btn" onclick="filterVerifyDay('フィSC', this, 'v12')">フィSC</button>
+      <button class="filter-btn" onclick="filterVerifyDay('五島ＳＣ', this, 'v12')">五島SC</button>
+      <button class="filter-btn" onclick="filterVerifyDay('プラカスSC', this, 'v12')">プラカスSC</button>
+      <button class="filter-btn" onclick="filterVerifyDay('ビスワスSC', this, 'v12')">ビスワスSC</button>
+      <button class="filter-btn" onclick="filterVerifyDay('ダハルSC', this, 'v12')">ダハルSC</button>
+      <button class="filter-btn" onclick="filterVerifyDay('スラズASC', this, 'v12')">スラズASC</button>
+      <button class="filter-btn" onclick="filterVerifyDay('サントスASC', this, 'v12')">サントスASC</button>
+    </div>
+    <div class="store-list" id="verifyList12"></div>
+    <div class="note">※ 4/12（日）最終実績データ　／　作成：阪口商店</div>
+  </div>
+
+  <!-- ===== 4/11（土）結果検証タブ ===== -->
+  <div class="tab-panel" id="panel-verify11">
+    <div class="yesterday-summary">
+      <div class="yday-card yday-total"><div class="label">📦 最終販売数（合計）</div><div class="value" id="v11-total">-</div><div class="sub">4/11（土）全日合計</div></div>
+      <div class="yday-card yday-achieved"><div class="label">🏆 目標達成店舗数</div><div class="value" id="v11-achieved">-</div><div class="sub">20店舗中</div></div>
+      <div class="yday-card yday-rate"><div class="label">📊 全体達成率</div><div class="value" id="v11-rate">-</div><div class="sub">目標比</div></div>
+      <div class="yday-card yday-best"><div class="label">👑 最高販売店舗</div><div class="value" id="v11-best">-</div><div class="sub" id="v11-best-sub">-</div></div>
+    </div>
+    <div style="font-size:14px;font-weight:700;color:var(--gray-800);margin-bottom:12px;">🔍 店舗別 目標達成検証（4/11土）</div>
+    <div class="filter-scroll" id="filter-verify11">
+      <button class="filter-btn active" onclick="filterVerifyDay('all', this, 'v11')">全店</button>
+      <button class="filter-btn" onclick="filterVerifyDay('achieved', this, 'v11')">✅ 達成のみ</button>
+      <button class="filter-btn" onclick="filterVerifyDay('miss', this, 'v11')">❌ 未達のみ</button>
+      <button class="filter-btn" onclick="filterVerifyDay('高橋ＳＣ', this, 'v11')">高橋SC</button>
+      <button class="filter-btn" onclick="filterVerifyDay('フィSC', this, 'v11')">フィSC</button>
+      <button class="filter-btn" onclick="filterVerifyDay('五島ＳＣ', this, 'v11')">五島SC</button>
+      <button class="filter-btn" onclick="filterVerifyDay('プラカスSC', this, 'v11')">プラカスSC</button>
+      <button class="filter-btn" onclick="filterVerifyDay('ビスワスSC', this, 'v11')">ビスワスSC</button>
+      <button class="filter-btn" onclick="filterVerifyDay('ダハルSC', this, 'v11')">ダハルSC</button>
+      <button class="filter-btn" onclick="filterVerifyDay('スラズASC', this, 'v11')">スラズASC</button>
+      <button class="filter-btn" onclick="filterVerifyDay('サントスASC', this, 'v11')">サントスASC</button>
+    </div>
+    <div class="store-list" id="verifyList11"></div>
+    <div class="note">※ 4/11（土）最終実績データ　／　作成：阪口商店</div>
+  </div>
+
 </main>
 
 <script>
 // ===== データ定義 =====
 const stores = [
-  { sc: '高橋ＳＣ',   name: '五月ケ丘東',        makeTarget: 97,  sellTarget: 75,  dec: 70.4,  sold: 19,  ydaySold: 92  },
-  { sc: 'フィSC',     name: '吹田垂水三丁目',     makeTarget: 57,  sellTarget: 45,  dec: 48.3,  sold: 7,   ydaySold: 42  },
-  { sc: '五島ＳＣ',   name: '池田市役所前',       makeTarget: 69,  sellTarget: 61,  dec: 66.7,  sold: 14,  ydaySold: 100 },
-  { sc: 'プラカスSC', name: '豊里六丁目',          makeTarget: 78,  sellTarget: 64,  dec: 58.1,  sold: 17,  ydaySold: 62  },
-  { sc: 'ビスワスSC', name: '豊中服部西町三丁目',  makeTarget: 100, sellTarget: 91,  dec: 77.0,  sold: 21,  ydaySold: 94  },
-  { sc: 'スラズASC',  name: '豊中原田南一丁目',    makeTarget: 116, sellTarget: 105, dec: 140.9, sold: 50,  ydaySold: 163 },
-  { sc: 'サントスASC',name: '大道南一丁目',        makeTarget: 113, sellTarget: 107, dec: 83.6,  sold: 29,  ydaySold: 88  },
-  { sc: '五島ＳＣ',   name: '吹田警察署前',        makeTarget: 112, sellTarget: 100, dec: 80.7,  sold: 21,  ydaySold: 87  },
-  { sc: '高橋ＳＣ',   name: '江坂駅南口',          makeTarget: 239, sellTarget: 216, dec: 187.9, sold: 46,  ydaySold: 212 },
-  { sc: 'プラカスSC', name: '東淀川大道南',         makeTarget: 118, sellTarget: 104, dec: 105.7, sold: 22,  ydaySold: 84  },
-  { sc: 'ダハルSC',   name: '江坂東',              makeTarget: 134, sellTarget: 112, dec: 116.1, sold: 21,  ydaySold: 97  },
-  { sc: 'フィSC',     name: '吹田豊津中学校前',    makeTarget: 147, sellTarget: 130, dec: 87.6,  sold: 21,  ydaySold: 106 },
-  { sc: '五島ＳＣ',   name: '南金田二丁目',        makeTarget: 184, sellTarget: 165, dec: 142.1, sold: 44,  ydaySold: 155 },
-  { sc: '高橋ＳＣ',   name: '新御堂筋上新田',      makeTarget: 147, sellTarget: 142, dec: 124.1, sold: 26,  ydaySold: 149 },
-  { sc: '高橋ＳＣ',   name: '吹田青山台三丁目',    makeTarget: 173, sellTarget: 146, dec: 129.0, sold: 33,  ydaySold: 147 },
-  { sc: 'ビスワスSC', name: '豊中服部元町一丁目',  makeTarget: 133, sellTarget: 118, dec: 106.6, sold: 33,  ydaySold: 157 },
-  { sc: 'ダハルSC',   name: '豊中利倉東一丁目',    makeTarget: 124, sellTarget: 107, dec: 95.4,  sold: 32,  ydaySold: 96  },
-  { sc: 'プラカスSC', name: '吹田朝日町',           makeTarget: 145, sellTarget: 136, dec: 127.9, sold: 28,  ydaySold: 137 },
-  { sc: 'サントスASC',name: '東淀川豊里五丁目',     makeTarget: 128, sellTarget: 122, dec: 142.1, sold: 29,  ydaySold: 111 },
-  { sc: 'スラズASC',  name: '箕面白島二丁目',       makeTarget: 160, sellTarget: 135, dec: 107.7, sold: 25,  ydaySold: 100 },
+  { sc: '高橋ＳＣ',   name: '五月ケ丘東',        makeTarget: 97,  sellTarget: 75,  dec: 70.4,  sold: 14,  ydaySold: 92  },
+  { sc: 'フィSC',     name: '吹田垂水三丁目',     makeTarget: 57,  sellTarget: 45,  dec: 48.3,  sold: 3,   ydaySold: 42  },
+  { sc: '五島ＳＣ',   name: '池田市役所前',       makeTarget: 69,  sellTarget: 61,  dec: 66.7,  sold: 8,   ydaySold: 100 },
+  { sc: 'プラカスSC', name: '豊里六丁目',          makeTarget: 78,  sellTarget: 64,  dec: 58.1,  sold: 1,   ydaySold: 62  },
+  { sc: 'ビスワスSC', name: '豊中服部西町三丁目',  makeTarget: 100, sellTarget: 91,  dec: 77.0,  sold: 10,  ydaySold: 94  },
+  { sc: 'スラズASC',  name: '豊中原田南一丁目',    makeTarget: 116, sellTarget: 105, dec: 140.9, sold: 17,  ydaySold: 163 },
+  { sc: 'サントスASC',name: '大道南一丁目',        makeTarget: 113, sellTarget: 107, dec: 83.6,  sold: 11,  ydaySold: 88  },
+  { sc: '五島ＳＣ',   name: '吹田警察署前',        makeTarget: 112, sellTarget: 100, dec: 80.7,  sold: 10,  ydaySold: 87  },
+  { sc: '高橋ＳＣ',   name: '江坂駅南口',          makeTarget: 239, sellTarget: 216, dec: 187.9, sold: 9,   ydaySold: 212 },
+  { sc: 'プラカスSC', name: '東淀川大道南',         makeTarget: 118, sellTarget: 104, dec: 105.7, sold: 9,   ydaySold: 84  },
+  { sc: 'ダハルSC',   name: '江坂東',              makeTarget: 134, sellTarget: 112, dec: 116.1, sold: 3,   ydaySold: 97  },
+  { sc: 'フィSC',     name: '吹田豊津中学校前',    makeTarget: 147, sellTarget: 130, dec: 87.6,  sold: 4,   ydaySold: 106 },
+  { sc: '五島ＳＣ',   name: '南金田二丁目',        makeTarget: 184, sellTarget: 165, dec: 142.1, sold: 13,  ydaySold: 155 },
+  { sc: '高橋ＳＣ',   name: '新御堂筋上新田',      makeTarget: 147, sellTarget: 142, dec: 124.1, sold: 16,  ydaySold: 149 },
+  { sc: '高橋ＳＣ',   name: '吹田青山台三丁目',    makeTarget: 173, sellTarget: 146, dec: 129.0, sold: 13,  ydaySold: 147 },
+  { sc: 'ビスワスSC', name: '豊中服部元町一丁目',  makeTarget: 133, sellTarget: 118, dec: 106.6, sold: 16,  ydaySold: 157 },
+  { sc: 'ダハルSC',   name: '豊中利倉東一丁目',    makeTarget: 124, sellTarget: 107, dec: 95.4,  sold: 18,  ydaySold: 96  },
+  { sc: 'プラカスSC', name: '吹田朝日町',           makeTarget: 145, sellTarget: 136, dec: 127.9, sold: 6,   ydaySold: 137 },
+  { sc: 'サントスASC',name: '東淀川豊里五丁目',     makeTarget: 128, sellTarget: 122, dec: 142.1, sold: 13,  ydaySold: 111 },
+  { sc: 'スラズASC',  name: '箕面白島二丁目',       makeTarget: 160, sellTarget: 135, dec: 107.7, sold: 7,   ydaySold: 100 },
 ];
 
 const scColorMap = {
@@ -849,16 +903,86 @@ document.getElementById('v6-best').textContent     = t46Best.name;
 document.getElementById('v6-best-sub').textContent = t46Best.sold47 + '個（目標' + t46Best.sellTarget + '個）';
 
 // 初期描画
-buildVerifyCards('verifyList8',  stores,   'ydaySold', 'all');
+buildVerifyCards('verifyList8',  stores,    'ydaySold', 'all');
 buildVerifyCards('verifyList8b', stores49,  'sold47',   'all');
 buildVerifyCards('verifyList7',  stores47,  'sold47',   'all');
 buildVerifyCards('verifyList6',  stores46,  'sold47',   'all');
+
+// ===== 4/12（日）データ =====
+const stores412 = [
+  { sc: '高橋ＳＣ',   name: '五月ケ丘東',        sellTarget: 75,  sold47: 75  },
+  { sc: 'フィSC',     name: '吹田垂水三丁目',     sellTarget: 45,  sold47: 46  },
+  { sc: '五島ＳＣ',   name: '池田市役所前',       sellTarget: 61,  sold47: 72  },
+  { sc: 'プラカスSC', name: '豊里六丁目',          sellTarget: 64,  sold47: 51  },
+  { sc: 'ビスワスSC', name: '豊中服部西町三丁目',  sellTarget: 91,  sold47: 160 },
+  { sc: 'スラズASC',  name: '豊中原田南一丁目',    sellTarget: 105, sold47: 112 },
+  { sc: 'サントスASC',name: '大道南一丁目',        sellTarget: 107, sold47: 86  },
+  { sc: '五島ＳＣ',   name: '吹田警察署前',        sellTarget: 100, sold47: 62  },
+  { sc: '高橋ＳＣ',   name: '江坂駅南口',          sellTarget: 216, sold47: 143 },
+  { sc: 'プラカスSC', name: '東淀川大道南',         sellTarget: 104, sold47: 86  },
+  { sc: 'ダハルSC',   name: '江坂東',              sellTarget: 112, sold47: 64  },
+  { sc: 'フィSC',     name: '吹田豊津中学校前',    sellTarget: 130, sold47: 74  },
+  { sc: '五島ＳＣ',   name: '南金田二丁目',        sellTarget: 165, sold47: 192 },
+  { sc: '高橋ＳＣ',   name: '新御堂筋上新田',      sellTarget: 142, sold47: 160 },
+  { sc: '高橋ＳＣ',   name: '吹田青山台三丁目',    sellTarget: 146, sold47: 147 },
+  { sc: 'ビスワスSC', name: '豊中服部元町一丁目',  sellTarget: 118, sold47: 88  },
+  { sc: 'ダハルSC',   name: '豊中利倉東一丁目',    sellTarget: 107, sold47: 121 },
+  { sc: 'プラカスSC', name: '吹田朝日町',           sellTarget: 136, sold47: 156 },
+  { sc: 'サントスASC',name: '東淀川豊里五丁目',     sellTarget: 122, sold47: 110 },
+  { sc: 'スラズASC',  name: '箕面白島二丁目',       sellTarget: 135, sold47: 132 },
+];
+const t412Total    = stores412.reduce((s,x) => s + x.sold47, 0);
+const t412Achieved = stores412.filter(s => s.sold47 >= s.sellTarget).length;
+const t412Rate     = (t412Total / totalTarget * 100).toFixed(1);
+const t412Best     = stores412.reduce((a, b) => a.sold47 > b.sold47 ? a : b);
+document.getElementById('v12-total').textContent    = t412Total.toLocaleString();
+document.getElementById('v12-achieved').textContent = t412Achieved + ' 店舗';
+document.getElementById('v12-rate').textContent     = t412Rate + '%';
+document.getElementById('v12-best').textContent     = t412Best.name;
+document.getElementById('v12-best-sub').textContent = t412Best.sold47 + '個（目標' + t412Best.sellTarget + '個）';
+buildVerifyCards('verifyList12', stores412, 'sold47', 'all');
+
+// ===== 4/11（土）データ（画像2の前日列）=====
+const stores411 = [
+  { sc: '高橋ＳＣ',   name: '五月ケ丘東',        sellTarget: 75,  sold47: 72  },
+  { sc: 'フィSC',     name: '吹田垂水三丁目',     sellTarget: 45,  sold47: 50  },
+  { sc: '五島ＳＣ',   name: '池田市役所前',       sellTarget: 61,  sold47: 73  },
+  { sc: 'プラカスSC', name: '豊里六丁目',          sellTarget: 64,  sold47: 68  },
+  { sc: 'ビスワスSC', name: '豊中服部西町三丁目',  sellTarget: 91,  sold47: 115 },
+  { sc: 'スラズASC',  name: '豊中原田南一丁目',    sellTarget: 105, sold47: 158 },
+  { sc: 'サントスASC',name: '大道南一丁目',        sellTarget: 107, sold47: 114 },
+  { sc: '五島ＳＣ',   name: '吹田警察署前',        sellTarget: 100, sold47: 83  },
+  { sc: '高橋ＳＣ',   name: '江坂駅南口',          sellTarget: 216, sold47: 178 },
+  { sc: 'プラカスSC', name: '東淀川大道南',         sellTarget: 104, sold47: 119 },
+  { sc: 'ダハルSC',   name: '江坂東',              sellTarget: 112, sold47: 102 },
+  { sc: 'フィSC',     name: '吹田豊津中学校前',    sellTarget: 130, sold47: 79  },
+  { sc: '五島ＳＣ',   name: '南金田二丁目',        sellTarget: 165, sold47: 149 },
+  { sc: '高橋ＳＣ',   name: '新御堂筋上新田',      sellTarget: 142, sold47: 141 },
+  { sc: '高橋ＳＣ',   name: '吹田青山台三丁目',    sellTarget: 146, sold47: 185 },
+  { sc: 'ビスワスSC', name: '豊中服部元町一丁目',  sellTarget: 118, sold47: 137 },
+  { sc: 'ダハルSC',   name: '豊中利倉東一丁目',    sellTarget: 107, sold47: 106 },
+  { sc: 'プラカスSC', name: '吹田朝日町',           sellTarget: 136, sold47: 173 },
+  { sc: 'サントスASC',name: '東淀川豊里五丁目',     sellTarget: 122, sold47: 152 },
+  { sc: 'スラズASC',  name: '箕面白島二丁目',       sellTarget: 135, sold47: 153 },
+];
+const t411Total    = stores411.reduce((s,x) => s + x.sold47, 0);
+const t411Achieved = stores411.filter(s => s.sold47 >= s.sellTarget).length;
+const t411Rate     = (t411Total / totalTarget * 100).toFixed(1);
+const t411Best     = stores411.reduce((a, b) => a.sold47 > b.sold47 ? a : b);
+document.getElementById('v11-total').textContent    = t411Total.toLocaleString();
+document.getElementById('v11-achieved').textContent = t411Achieved + ' 店舗';
+document.getElementById('v11-rate').textContent     = t411Rate + '%';
+document.getElementById('v11-best').textContent     = t411Best.name;
+document.getElementById('v11-best-sub').textContent = t411Best.sold47 + '個（目標' + t411Best.sellTarget + '個）';
+buildVerifyCards('verifyList11', stores411, 'sold47', 'all');
 
 function filterVerifyDay(filter, btn, day) {
   const parent = btn.closest('.filter-scroll');
   parent.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
   btn.classList.add('active');
-  if (day === 'v8')  buildVerifyCards('verifyList8',  stores,   'ydaySold', filter);
+  if (day === 'v12') buildVerifyCards('verifyList12', stores412, 'sold47',   filter);
+  if (day === 'v11') buildVerifyCards('verifyList11', stores411, 'sold47',   filter);
+  if (day === 'v8')  buildVerifyCards('verifyList8',  stores,    'ydaySold', filter);
   if (day === 'v8b') buildVerifyCards('verifyList8b', stores49,  'sold47',   filter);
   if (day === 'v7')  buildVerifyCards('verifyList7',  stores47,  'sold47',   filter);
   if (day === 'v6')  buildVerifyCards('verifyList6',  stores46,  'sold47',   filter);
