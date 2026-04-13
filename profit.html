@@ -3,613 +3,909 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>ローソン店利益シュミレーション管理 2026年3月</title>
+<title>26年4月度 統合ダッシュボード</title>
 <style>
-  @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;900&family=DM+Mono:wght@400;500&display=swap');
-  :root{--navy:#0f1f3d;--navy2:#1a3060;--blue:#1e5fa8;--blue2:#2563a8;
-    --teal:#0e7c6e;--amber:#92400e;--red:#c0392b;--green:#16a34a;
-    --purple:#6d28d9;--bg:#eef2f7;--card:#fff;--border:#ccd8e8;--text:#1a2a3a;--muted:#607080;}
-  *{box-sizing:border-box;margin:0;padding:0;}
-  body{font-family:'Noto Sans JP',sans-serif;background:var(--bg);color:var(--text);font-size:12px;min-height:100vh;}
-  header{background:linear-gradient(135deg,var(--navy) 0%,var(--navy2) 60%,var(--blue) 100%);
-    padding:14px 24px;display:flex;align-items:center;justify-content:space-between;
-    box-shadow:0 3px 16px rgba(0,0,0,.35);position:sticky;top:0;z-index:100;}
-  .hl h1{font-size:16px;font-weight:900;color:#fff;letter-spacing:.02em;}
-  .hl p{font-size:10px;color:#93b8e0;margin-top:3px;}
-  .hr{display:flex;gap:12px;align-items:center;}
-  .cbox{background:rgba(255,255,255,.13);border:1px solid rgba(255,255,255,.28);border-radius:8px;padding:5px 12px;color:#fff;font-size:11px;}
-  .cbox label{color:#93b8e0;font-size:10px;display:block;margin-bottom:1px;}
-  .cbox input{background:transparent;border:none;color:#fff;font-family:'DM Mono',monospace;font-size:14px;font-weight:500;width:50px;text-align:right;outline:none;}
-  .btn{background:rgba(255,255,255,.16);border:1px solid rgba(255,255,255,.32);color:#fff;border-radius:7px;padding:6px 14px;font-size:11px;cursor:pointer;font-family:'Noto Sans JP',sans-serif;font-weight:700;transition:background .15s;}
-  .btn:hover{background:rgba(255,255,255,.26);}
-  .sbar{display:flex;gap:10px;padding:12px 20px 0;overflow-x:auto;}
-  .sc{background:var(--card);border-radius:10px;padding:10px 16px;min-width:148px;border-left:4px solid var(--blue);box-shadow:0 2px 10px rgba(0,0,0,.08);flex-shrink:0;}
-  .sc.teal{border-color:var(--teal);}.sc.green{border-color:var(--green);}.sc.purple{border-color:var(--purple);}
-  .sc-label{font-size:10px;color:var(--muted);font-weight:500;}
-  .sc-val{font-size:19px;font-weight:900;margin-top:2px;font-family:'DM Mono',monospace;}
-  .sc-sub{font-size:10px;color:var(--muted);margin-top:1px;}
-  .tw{margin:12px 20px 8px;border-radius:12px;box-shadow:0 2px 20px rgba(0,0,0,.10);overflow-x:auto;}
-  table{width:100%;border-collapse:collapse;background:var(--card);white-space:nowrap;border-radius:12px;overflow:hidden;}
-  thead tr.gh th{padding:6px 8px;font-size:10px;font-weight:700;letter-spacing:.06em;color:#fff;border-right:2px solid rgba(255,255,255,.2);}
-  .gh-s{background:var(--navy);}.gh-b{background:var(--blue2);}.gh-a{background:var(--teal);}.gh-p{background:var(--purple);}.gh-r{background:var(--amber);}
-  thead tr.ch th{padding:7px 6px;font-size:10px;font-weight:700;border-bottom:2px solid var(--border);border-right:1px solid rgba(0,0,0,.07);text-align:center;color:#fff;line-height:1.35;}
-  .ch-s{background:#162a52;text-align:left!important;padding-left:12px!important;}
-  .ch-b{background:#1d5096;}.ch-a{background:#0c6e62;}.ch-p{background:#5b21b6;}.ch-r{background:#7c3500;}
-  tbody tr{border-bottom:1px solid #e6eef6;transition:background .1s;}
-  tbody tr:hover{background:#eef6ff!important;}
-  tbody tr:nth-child(even){background:#f6fafd;}
-  td{padding:7px 7px;text-align:right;border-right:1px solid rgba(0,0,0,.05);font-family:'DM Mono',monospace;font-size:11px;vertical-align:middle;}
-  td.sn{text-align:left;font-family:'Noto Sans JP',sans-serif;font-weight:700;font-size:12px;padding-left:12px;color:var(--navy2);min-width:148px;border-right:2px solid var(--border);}
-  td.bc{background:rgba(30,95,168,.05);}td.ac{background:rgba(14,124,110,.05);}
-  td.pc{background:rgba(109,40,217,.05);}td.rc{background:rgba(146,64,14,.05);}
-  td.h-over{background:rgba(192,57,43,.09);color:#b91c1c;font-weight:700;}
-  td.h-ok{background:rgba(22,163,74,.08);color:#15803d;font-weight:700;}
-  .up{color:var(--green);font-weight:700;}.dn{color:var(--red);font-weight:700;}
-  .badge{display:inline-block;padding:2px 9px;border-radius:20px;font-size:10px;font-weight:700;font-family:'Noto Sans JP',sans-serif;}
-  .ok{background:#dcfce7;color:#15803d;}.ng{background:#fee2e2;color:#b91c1c;}.na{background:#f1f5f9;color:#64748b;}
-  tfoot tr{background:var(--navy)!important;}
-  tfoot td{color:#fff!important;font-weight:700!important;border-color:rgba(255,255,255,.15)!important;background:transparent!important;}
-  tfoot td.sn{color:#93b8e0!important;letter-spacing:.04em;}
-  .tip-wrap{position:relative;display:inline-block;cursor:pointer;}
-  .tip-wrap .tip{display:none;position:absolute;right:0;top:120%;background:#1a2a3a;color:#fff;font-size:12px;border-radius:10px;padding:14px 16px;z-index:9999;min-width:260px;max-width:90vw;box-shadow:0 8px 32px rgba(0,0,0,.5);font-family:'Noto Sans JP',sans-serif;line-height:2.2;white-space:normal;}
-  @media(max-width:899px){.tip-wrap .tip{right:auto;left:0;min-width:240px;max-width:80vw;}}
-  .tip-wrap:hover .tip{display:block;}
-  .tip-wrap.active .tip{display:block;}
-  .tip-u{text-decoration:underline dotted;}
-  .legend{display:flex;gap:14px;align-items:center;padding:7px 20px 2px;font-size:10px;color:var(--muted);flex-wrap:wrap;}
-  .ld{width:9px;height:9px;border-radius:50%;display:inline-block;margin-right:3px;}
-  .footnote{background:var(--card);margin:0 20px 20px;border-radius:10px;padding:12px 18px;box-shadow:0 1px 6px rgba(0,0,0,.06);font-size:10px;color:var(--muted);line-height:2.0;}
-  .footnote b{color:var(--navy2);}
-  .fline{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:5px;}
-  .fi{background:#f0f4f8;border-radius:5px;padding:2px 8px;font-family:'DM Mono',monospace;font-size:10px;}
-  .fp{color:var(--green);font-weight:900;font-size:13px;}
-  .fm{color:var(--red);font-weight:900;font-size:13px;}
-  .fe{color:var(--navy);font-weight:900;font-size:13px;}
-  @media print{header{position:static;}.btn{display:none;}body{background:#fff;font-size:9px;}.tw{margin:5px;box-shadow:none;border:1px solid #ccc;}td,th{padding:3px 4px!important;font-size:8px!important;}.sbar,.legend,.footnote{display:none;}}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#f0f2f7;color:#1a1a2e;font-family:'Hiragino Sans','Meiryo',sans-serif;font-size:14px;min-height:100vh}
+
+/* ===== HEADER ===== */
+.top-bar{background:#003087;color:#fff;padding:12px 16px;position:sticky;top:0;z-index:100;box-shadow:0 2px 8px rgba(0,0,0,.3)}
+.top-bar h1{font-size:16px;font-weight:700;margin-bottom:8px}
+.tab-row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.tab-btn{padding:5px 14px;border-radius:20px;border:1.5px solid rgba(255,255,255,.5);background:transparent;color:#fff;font-size:12px;font-weight:600;cursor:pointer;transition:all .2s}
+.tab-btn.active{background:#fff;color:#003087}
+.tab-btn:hover:not(.active){background:rgba(255,255,255,.15)}
+.sep{color:rgba(255,255,255,.4);font-size:10px;margin:0 4px}
+
+/* SC filter */
+.sc-row{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px;align-items:center}
+.sc-label{font-size:11px;color:rgba(255,255,255,.7);margin-right:2px}
+.sc-btn{padding:3px 10px;border-radius:14px;border:1px solid rgba(255,255,255,.4);background:transparent;color:rgba(255,255,255,.85);font-size:11px;cursor:pointer;transition:all .2s}
+.sc-btn.active{background:#ffb300;color:#1a1a2e;border-color:#ffb300;font-weight:700}
+.sc-btn:hover:not(.active){background:rgba(255,255,255,.15)}
+
+/* ===== MAIN ===== */
+.content{padding:16px;max-width:1200px;margin:0 auto}
+.tab-panel{display:none}
+.tab-panel.active{display:block}
+
+/* ===== CARDS ===== */
+.card-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin-bottom:20px}
+.card{background:#fff;border-radius:10px;padding:12px 14px;border-left:4px solid #003087;box-shadow:0 1px 4px rgba(0,0,0,.08)}
+.card.red{border-left-color:#e53935}
+.card.green{border-left-color:#2e7d32}
+.card.amber{border-left-color:#f57c00}
+.card.blue{border-left-color:#1565c0}
+.card.gray{border-left-color:#757575}
+.card-label{font-size:11px;color:#666;margin-bottom:4px;line-height:1.3}
+.card-value{font-size:20px;font-weight:700;line-height:1.1}
+.card-unit{font-size:11px;color:#888;margin-left:2px}
+.card-sub{font-size:11px;color:#888;margin-top:3px}
+
+/* ===== SECTION ===== */
+.section{background:#fff;border-radius:12px;padding:16px;margin-bottom:20px;box-shadow:0 1px 4px rgba(0,0,0,.08)}
+.section-title{font-size:14px;font-weight:700;color:#003087;margin-bottom:14px;padding-bottom:8px;border-bottom:2px solid #003087}
+
+/* ===== DONUT GRID ===== */
+.donut-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:14px}
+.donut-item{display:flex;flex-direction:column;align-items:center;gap:8px;padding:12px 8px;border-radius:10px;background:#f8f9fb;cursor:pointer;transition:box-shadow .2s}
+.donut-item:hover{box-shadow:0 3px 12px rgba(0,0,0,.12)}
+.donut-label{font-size:11px;font-weight:700;color:#333;text-align:center;line-height:1.3}
+.donut-sub{font-size:10px;color:#888;text-align:center;line-height:1.4}
+.donut-wrap{position:relative;width:90px;height:90px}
+.donut-wrap svg{transform:rotate(-90deg)}
+.donut-center{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);text-align:center}
+.donut-pct{font-size:16px;font-weight:700;line-height:1}
+.donut-pct-unit{font-size:9px;color:#888}
+
+/* ===== TABLE ===== */
+.table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch}
+table{width:100%;border-collapse:collapse;font-size:12px;min-width:600px}
+thead tr{background:#003087;color:#fff}
+thead th{padding:8px 6px;text-align:right;white-space:nowrap;font-size:11px;font-weight:600}
+thead th:first-child{text-align:left;padding-left:10px}
+thead th:nth-child(2){text-align:center}
+tbody tr{transition:background .15s;cursor:pointer}
+tbody tr:hover{background:#e8f0fe !important}
+tbody tr:nth-child(even){background:#f8f9fb}
+tbody tr.avg-row{background:#e8ecf3;font-weight:700}
+tbody td{padding:7px 6px;text-align:right;border-bottom:1px solid #eaecf0;white-space:nowrap;font-size:12px}
+tbody td:first-child{text-align:left;padding-left:10px;font-weight:600}
+tbody td:nth-child(2){text-align:center}
+.pos{color:#2e7d32;font-weight:700}
+.neg{color:#e53935;font-weight:700}
+.tag{display:inline-block;padding:1px 6px;border-radius:10px;font-size:10px;font-weight:700}
+.tag-cn{background:#e3f2fd;color:#1565c0}
+.tag-ts{background:#fce4ec;color:#c62828}
+.sc-chip{display:inline-block;padding:2px 7px;border-radius:10px;font-size:10px;font-weight:600;background:#ede7f6;color:#4527a0}
+
+/* 廃棄ヒートカラー */
+.h0{background:transparent}
+.h1{background:#fff9c4;color:#827717;font-weight:700}
+.h2{background:#ffcc80;color:#bf360c;font-weight:700}
+.h3{background:#ef5350;color:#fff;font-weight:700}
+.hg{background:#c8e6c9;color:#1b5e20;font-weight:700}
+
+/* ===== POPUP ===== */
+.overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:200;align-items:center;justify-content:center}
+.overlay.show{display:flex}
+.popup{background:#fff;border-radius:16px;padding:20px;max-width:560px;width:92%;max-height:85vh;overflow-y:auto;position:relative;box-shadow:0 8px 32px rgba(0,0,0,.25)}
+.popup-close{position:absolute;top:12px;right:14px;background:none;border:none;font-size:20px;cursor:pointer;color:#666;line-height:1}
+.popup h2{font-size:15px;font-weight:700;color:#003087;margin-bottom:14px;padding-right:24px}
+.popup-section{margin-bottom:16px}
+.popup-section h3{font-size:12px;font-weight:700;color:#555;text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;border-bottom:1px solid #eee;padding-bottom:4px}
+.popup-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.popup-kv{background:#f8f9fb;border-radius:8px;padding:8px 10px}
+.popup-kv .k{font-size:10px;color:#888;margin-bottom:2px}
+.popup-kv .v{font-size:14px;font-weight:700}
+.mini-donut-row{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin-top:6px}
+.mini-donut{display:flex;flex-direction:column;align-items:center;gap:4px}
+.mini-donut-label{font-size:10px;color:#555;text-align:center}
+
+/* ===== NOTE ===== */
+.note{background:#fff8e1;border-left:4px solid #f9a825;border-radius:6px;padding:8px 12px;margin-bottom:16px;font-size:11px;color:#5d4037;line-height:1.8}
+.note strong{color:#e65100}
+
+@media(max-width:480px){
+  .top-bar h1{font-size:14px}
+  .card-value{font-size:17px}
+  .donut-grid{grid-template-columns:repeat(auto-fill,minmax(130px,1fr))}
+}
 </style>
 </head>
 <body>
-<header>
-  <div class="hl">
-    <h1>■ ローソン店利益シュミレーション管理表　2026年3月度</h1>
-    <p>更新：営業速報 2026/3/31 ／ DEPT速報 2026/3/31 ／ 本部支援(AICO) 2/17〜3/16実績　｜　残日数 0日（月次確定）　｜　荒利率：一律30%　廃棄：FF50%・その他70%原価換算　本部支援：売価×70%原価換算</p>
-  </div>
-  <div class="hr">
-    <div class="cbox"><label>チャージ率</label><input type="number" id="chargeRate" value="50" min="1" max="99" step="0.1" oninput="recalc()">%</div>
-    <button class="btn" onclick="window.print()">🖨 印刷</button>
-  </div>
-</header>
 
-<div class="sbar" id="summaryBar"></div>
-
-
-<!-- SC別サマリーカード -->
-<div style="background:#fff;border-bottom:2px solid var(--border);padding:14px 22px 16px;">
-  <div style="font-size:11px;font-weight:700;color:var(--navy2);margin-bottom:10px;display:flex;align-items:center;gap:8px">
-    <span>📊 SC別 着地店利益サマリー</span>
-    <span style="font-size:10px;font-weight:400;color:var(--muted)">※チャージ率変更時は自動更新</span>
+<div class="top-bar">
+  <h1>26年4月度 店舗管理 統合ダッシュボード　<span style="font-size:11px;opacity:.7">4/16時点</span></h1>
+  <div class="tab-row">
+    <button class="tab-btn active" onclick="switchTab('profit')">📊 店利益着地</button>
+    <button class="tab-btn" onclick="switchTab('waste')">♻️ 廃棄検証</button>
   </div>
-  <div id="scCards" style="display:flex;gap:12px;overflow-x:auto;padding-bottom:4px"></div>
+  <div class="sc-row">
+    <span class="sc-label">担当SC：</span>
+    <button class="sc-btn active" onclick="filterSC('all')">全体</button>
+  </div>
 </div>
 
-<div class="legend">
-  <span><span class="ld" style="background:#dcfce7;border:1.5px solid #16a34a"></span>廃棄原価：予算以内</span>
-  <span><span class="ld" style="background:#fee2e2;border:1.5px solid #c0392b"></span>廃棄原価：予算超過</span>
-  <span><span class="ld" style="background:rgba(109,40,217,.18);border:1.5px solid #6d28d9"></span>本部支援（原価換算後）</span>
-  <span style="margin-left:4px">※ 各欄にマウスで内訳表示</span>
-</div>
+<div class="content">
 
-<div class="tw">
-<table>
-  <thead>
-    <tr class="gh">
-      <th class="gh-s" rowspan="2" style="text-align:left;padding-left:12px;min-width:148px">店舗名</th>
-      <th class="gh-b" colspan="2">予　算</th>
-      <th class="gh-a" colspan="6">実績速報</th>
-      <th class="gh-p" colspan="9">本部支援（AICO）・廃棄原価（内訳：1日あたり売価・円）</th>
-      <th class="gh-r" colspan="4">着地シュミレーション</th>
-    </tr>
-    <tr class="ch">
-      <th class="ch-b">店利益<br>予算<br>（千円）</th>
-      <th class="ch-b">予算<br>内訳※<br>（千円）</th>
-      <th class="ch-a">営業<br>日数</th>
-      <th class="ch-a">平均<br>日販<br>（千円）</th>
-      <th class="ch-a">日販<br>前年比</th>
-      <th class="ch-a" style="background:#0a5a50">売上<br>予算対比</th>
-      <th class="ch-a">累計<br>売上<br>（千円）</th>
-      <th class="ch-a">累計<br>荒利率</th>
-      <th class="ch-p">廃棄原価<br>累計実績<br>（千円）</th>
-      <th class="ch-p">廃棄原価<br>按分予算<br>（千円）</th>
-      <th class="ch-p">本部支援<br>累計原価<br>（千円）</th>
-      <th class="ch-p" style="background:#3b0764;font-size:9px">1日あたり<br>AI.CO<br>（円）</th>
-      <th class="ch-p" style="background:#3b0764;font-size:9px">1日あたり<br>FF<br>（円）</th>
-      <th class="ch-p" style="background:#3b0764;font-size:9px">1日あたり<br>厨　房<br>（円）</th>
-      <th class="ch-p" style="background:#3b0764;font-size:9px">1日あたり<br>OPケース<br>（円）</th>
-      <th class="ch-p" style="background:#3b0764;font-size:9px">1日あたり<br>ドライ系<br>（円）</th>
-      <th class="ch-p" style="background:#4a1042;font-size:9px">1日あたり<br>値　引<br>（円）</th>
-      <th class="ch-r">残<br>日数</th>
-      <th class="ch-r">着地<br>売上高<br>（千円）</th>
-      <th class="ch-r">着地<br>店利益<br>（千円）</th>
-      <th class="ch-r">予算比<br>達成見込</th>
-    </tr>
-  </thead>
-  <tbody id="tableBody"></tbody>
-  <tfoot id="tableFoot"></tfoot>
-</table>
-</div>
-
-<div class="footnote">
-  <b>■ 着地店利益の計算式（予算ベース増減方式）</b>
-  <div class="fline">
-    <span class="fi">店利益予算</span><span class="fp">＋</span>
-    <span class="fi">(平均日販－日販予算)×31日×30%×チャージ率</span><span class="fm">－</span>
-    <span class="fi">(廃棄実績/日－廃棄予算/日)×31日×70%</span>
-    <span class="fe">＝</span><span class="fi" style="background:#fff7ed;border:1px solid #d97706;font-weight:700">着地店利益</span>
+<!-- =========== TAB 1: 店利益着地 =========== -->
+<div class="tab-panel active" id="panel-profit">
+  <div class="card-grid" id="profitCards"></div>
+  <div class="section">
+    <div class="section-title">SC別 店利益 着地率（着地÷予算）</div>
+    <div class="donut-grid" id="profitDonutGrid"></div>
   </div>
-  <div style="margin-top:6px">
-    <b>■ 廃棄実績/日</b>：(DEPT売変累計 ＋ 値引累計) ÷ 営業日数　｜　
-    <b>■ 廃棄予算/日</b>：廃棄予算(原価) ÷ 75% ÷ 31日（売価換算）　｜　
-    <b>■ 廃棄超過原価</b>：(実績/日－予算/日) × 31日 × 70%
+  <div class="section">
+    <div class="section-title">全店舗 詳細データ</div>
+    <div class="table-wrap"><table><thead>
+      <tr>
+        <th>店名</th><th>契約</th><th>担当SC</th>
+        <th>平均日販<br>(千円)</th><th>前年比<br>(%)</th>
+        <th>本部支援着地<br>/月(千円)</th>
+        <th>厨房売上<br>/日(千円)</th><th>厨房支援<br>/月(千円)</th>
+        <th>雑益追加分<br>(千円)</th>
+        <th>見切処分<br>実績(千円)</th><th>見切処分<br>予算(千円)</th>
+        <th>店利益着地<br>(千円)</th><th>予算<br>(千円)</th>
+        <th>差異<br>(千円)</th>
+      </tr>
+    </thead><tbody id="profitBody"></tbody></table></div>
+  </div>
+</div>
+
+<!-- =========== TAB 2: 廃棄検証 =========== -->
+<div class="tab-panel" id="panel-waste">
+  <div class="note">
+    <strong>廃棄指標（売上PSA/D比）：</strong>
+    AICO(米飯・調理パン・麺・デリカ・デザート・ベーカリー・生鮮)×<strong>10%</strong>　／
+    OPケース(チルド・常温和洋菓子・日配)×<strong>5%</strong>　／
+    ファストフーズ×<strong>8%</strong>　／
+    店内厨房×<strong>15%</strong>　／
+    ドライ系×<strong>0.3%</strong>
+  </div>
+  <div class="card-grid" id="wasteCards"></div>
+  <div class="section">
+    <div class="section-title">カテゴリ別 廃棄 実績÷指標（全体 / 組織平均）</div>
+    <div class="donut-grid" id="wasteCatDonutGrid"></div>
+  </div>
+  <div class="section">
+    <div class="section-title">SC別 廃棄合計 実績÷指標</div>
+    <div class="donut-grid" id="wasteScDonutGrid"></div>
+  </div>
+  <div class="section">
+    <div class="section-title">全店舗 カテゴリ別 廃棄差異（実績−指標 / 千円/日）　<span style="font-size:11px;font-weight:400;color:#888">■赤＝超過　■緑＝適正以下</span></div>
+    <div class="table-wrap"><table>
+      <thead>
+        <tr>
+          <th rowspan="2">店名</th><th rowspan="2">担当SC</th>
+          <th colspan="3">AICO（×10%）</th>
+          <th colspan="3">OP（×5%）</th>
+          <th colspan="3">FF（×8%）</th>
+          <th colspan="3">厨房（×15%）</th>
+          <th colspan="3">ドライ（×0.3%）</th>
+          <th colspan="2">合計</th>
+        </tr>
+        <tr>
+          <th>実績</th><th>指標</th><th>差異</th>
+          <th>実績</th><th>指標</th><th>差異</th>
+          <th>実績</th><th>指標</th><th>差異</th>
+          <th>実績</th><th>指標</th><th>差異</th>
+          <th>実績</th><th>指標</th><th>差異</th>
+          <th>実績</th><th>指標</th>
+        </tr>
+      </thead>
+      <tbody id="wasteBody"></tbody>
+    </table></div>
+  </div>
+</div>
+
+</div><!-- /content -->
+
+<!-- ===== POPUP ===== -->
+<div class="overlay" id="overlay" onclick="closePopup(event)">
+  <div class="popup" id="popup">
+    <button class="popup-close" onclick="closePopup()">✕</button>
+    <h2 id="popupTitle"></h2>
+    <div id="popupBody"></div>
   </div>
 </div>
 
 <script>
-const MAR_DAYS = 31;
+// ===================================================================
+// DATA
+// ===================================================================
+const SC_MAP = {
+  '吹田青山台三丁目':'髙橋SC','五月ケ丘東':'髙橋SC','江坂駅南口':'髙橋SC','新御堂筋上新田':'髙橋SC',
+  '吹田警察署前':'五島SC','池田市役所前':'五島SC','南金田二丁目':'五島SC',
+  '東淀川大道南':'プラカスSC','豊里六丁目':'プラカスSC','吹田朝日町':'プラカスSC',
+  '大道南一丁目':'プラカスSC（サントスASC）','東淀川豊里五丁目':'プラカスSC（サントスASC）',
+  '江坂東':'ダハルSC','豊中利倉東一丁目':'ダハルSC',
+  '豊中服部西町三丁目':'ビスワスSC','豊中服部元町一丁目':'ビスワスSC',
+  '豊中原田南一丁目':'ビスワスSC（スラズASC）','箕面白島二丁目':'ビスワスSC（スラズASC）',
+  '吹田垂水三丁目':'フィSC','吹田豊津中学校前':'フィSC'
+};
 
-// ===== 店舗マスターデータ =====
-const STORES = [
-  {name:"吹田青山台三丁目", sc:"髙橋SC", scColor:"#1e5fa8",日販予算:624, 店利益予算:624,  FC収入予算:3064,雑益予算:238,人件費予算:1444,その他経費予算:1237,廃棄予算:580, 営業日数:31,平均日販:599.6, 前年比:99.64, 累計売上:18586, 荒利率:25.89},
-  {name:"五月ケ丘東", sc:"髙橋SC", scColor:"#1e5fa8",      日販予算:396, 店利益予算:1081, FC収入予算:1921,雑益予算:794,人件費予算:854, その他経費予算:783, 廃棄予算:368, 営業日数:31,平均日販:387.1, 前年比:99.66, 累計売上:12001, 荒利率:20.72},
-  {name:"江坂駅南口", sc:"髙橋SC", scColor:"#1e5fa8",      日販予算:1106,店利益予算:1696, FC収入予算:5297,雑益予算:302,人件費予算:2037,その他経費予算:1869,廃棄予算:1029,営業日数:31,平均日販:1055.3,前年比:97.32, 累計売上:32713, 荒利率:26.54},
-  {name:"吹田警察署前", sc:"五島SC", scColor:"#0e7c6e",    日販予算:444, 店利益予算:606,  FC収入予算:2179,雑益予算:206,人件費予算:869, その他経費予算:913, 廃棄予算:413, 営業日数:31,平均日販:451.4, 前年比:103.82, 累計売上:13994, 荒利率:23.99},
-  {name:"池田市役所前", sc:"五島SC", scColor:"#0e7c6e",    日販予算:363, 店利益予算:937,  FC収入予算:2203,雑益予算:246,人件費予算:647, その他経費予算:868, 廃棄予算:438, 営業日数:31,平均日販:375.0, 前年比:105.32,累計売上:11625, 荒利率:27.2},
-  {name:"東淀川大道南", sc:"プラカスSC", scColor:"#6d28d9",    日販予算:486, 店利益予算:274,  FC収入予算:2289,雑益予算:216,人件費予算:1180,その他経費予算:1054,廃棄予算:552, 営業日数:31,平均日販:502.9, 前年比:105.75,累計売上:15591, 荒利率:24.87},
-  {name:"大道南一丁目", sc:"プラカスSC", scColor:"#6d28d9",    日販予算:465, 店利益予算:359,  FC収入予算:2364,雑益予算:276,人件費予算:1218,その他経費予算:1066,廃棄予算:532, 営業日数:31,平均日販:490.0, 前年比:107.35,累計売上:15190, 荒利率:24.54},
-  {name:"豊里六丁目", sc:"プラカスSC", scColor:"#6d28d9",      日販予算:392, 店利益予算:794,  FC収入予算:2120,雑益予算:231,人件費予算:802, その他経費予算:758, 廃棄予算:365, 営業日数:31,平均日販:402.8, 前年比:105.01, 累計売上:12487, 荒利率:20.44},
-  {name:"吹田朝日町", sc:"プラカスSC", scColor:"#6d28d9",      日販予算:551, 店利益予算:1010, FC収入予算:2920,雑益予算:246,人件費予算:1026,その他経費予算:1133,廃棄予算:512, 営業日数:31,平均日販:616.0, 前年比:112.49,累計売上:19095, 荒利率:27.11},
-  {name:"東淀川豊里五丁目", sc:"プラカスSC", scColor:"#6d28d9",日販予算:619, 店利益予算:425,  FC収入予算:2854,雑益予算:235,人件費予算:1541,その他経費予算:1126,廃棄予算:576, 営業日数:31,平均日販:652.7, 前年比:107.52,累計売上:20233, 荒利率:24.34},
-  {name:"江坂東", sc:"ダハルSC", scColor:"#b45309",          日販予算:580, 店利益予算:751,  FC収入予算:2784,雑益予算:232,人件費予算:1145,その他経費予算:1123,廃棄予算:539, 営業日数:31,平均日販:616.0, 前年比:108.31,累計売上:19096, 荒利率:26.16},
-  {name:"豊中利倉東一丁目", sc:"ダハルSC", scColor:"#b45309",日販予算:623, 店利益予算:900,  FC収入予算:2865,雑益予算:258,人件費予算:1033,その他経費予算:1193,廃棄予算:579, 営業日数:31,平均日販:609.2, 前年比:99.67, 累計売上:18886, 荒利率:23.83},
-  {name:"豊中服部元町一丁目", sc:"ダハルSC", scColor:"#b45309",日販予算:571,店利益予算:934, FC収入予算:2740,雑益予算:229,人件費予算:954, その他経費予算:1084,廃棄予算:531, 営業日数:31,平均日販:586.1, 前年比:104.65,累計売上:18170, 荒利率:25.95},
-  {name:"箕面白島二丁目", sc:"ダハルSC", scColor:"#b45309",  日販予算:540, 店利益予算:738,  FC収入予算:2519,雑益予算:547,人件費予算:984, その他経費予算:1347,廃棄予算:753, 営業日数:31,平均日販:520.6, 前年比:0,     累計売上:16137, 荒利率:25.92},
-  {name:"豊中原田南一丁目", sc:"ビスワスSC", scColor:"#c0392b",日販予算:438, 店利益予算:715,  FC収入予算:2286,雑益予算:218,人件費予算:879, その他経費予算:913, 廃棄予算:407, 営業日数:31,平均日販:494.9, 前年比:115.3,累計売上:15342, 荒利率:23.85},
-  {name:"南金田二丁目", sc:"ビスワスSC", scColor:"#c0392b",    日販予算:720, 店利益予算:1203, FC収入予算:3401,雑益予算:251,人件費予算:1008,その他経費予算:1444,廃棄予算:770, 営業日数:31,平均日販:744.4, 前年比:105.43,累計売上:23076, 荒利率:25.82},
-  {name:"豊中服部西町三丁目", sc:"ビスワスSC", scColor:"#c0392b",日販予算:430,店利益予算:843, FC収入予算:2246,雑益予算:254,人件費予算:853, その他経費予算:807, 廃棄予算:400, 営業日数:31,平均日販:390.2, 前年比:92.53, 累計売上:12096, 荒利率:22.74},
-  {name:"吹田垂水三丁目", sc:"フィSC", scColor:"#0e7490",  日販予算:306, 店利益予算:541,  FC収入予算:1804,雑益予算:293,人件費予算:802, その他経費予算:791, 廃棄予算:285, 営業日数:31,平均日販:330.2, 前年比:110.11,累計売上:10237, 荒利率:24.57},
-  {name:"吹田豊津中学校前", sc:"フィSC", scColor:"#0e7490",日販予算:543, 店利益予算:1286, FC収入予算:2958,雑益予算:226,人件費予算:819, その他経費予算:1082,廃棄予算:505, 営業日数:31,平均日販:523.2, 前年比:98.29, 累計売上:16220, 荒利率:26.39},
-  {name:"新御堂筋上新田", sc:"フィSC", scColor:"#0e7490",  日販予算:708, 店利益予算:1176, FC収入予算:3347,雑益予算:245,人件費予算:1083,その他経費予算:1336,廃棄予算:658, 営業日数:31,平均日販:688.2, 前年比:99.14, 累計売上:21336, 荒利率:25.73},
+const SC_LIST = [...new Set(Object.values(SC_MAP))];
+
+// 店利益データ
+// fjIncome=FJ収入実績, miscBudget=雑益予算, laborBudget=人件費予算, otherExp=その他経費予算
+// markdownActual=見切処分実績, markdownBudget=見切処分予算
+// hqSupport=本部支援着地(原価)/月, kitchenSalesDay=厨房売上高/日
+// kitchenSupportMonth=厨房支援金/月, kitchenSupportRate=厨房支援金率
+// miscExtra=雑益追加分(CN店舗)
+const PROFIT = [
+  {name:'吹田警察署前',      type:'CN', nisshu:472.1, yoy:103.37, sales:14163, profit:4293,  landing:330,  budget:393,  diff:-63,
+   fjIncome:2146, miscBudget:214, laborBudget:1013, otherExp:514, markdownActual:920, markdownBudget:404,
+   hqSupport:131,  kitchenSalesDay:13.4, kitchenSupportMonth:28,  kitchenSupportRate:0.07, miscExtra:258},
+  {name:'吹田朝日町',        type:'CN', nisshu:625.3, yoy:114.78, sales:18758, profit:6423,  landing:1560, budget:1289, diff:271,
+   fjIncome:3211, miscBudget:235, laborBudget:750,  otherExp:592, markdownActual:1101, markdownBudget:508,
+   hqSupport:200,  kitchenSalesDay:25.2, kitchenSupportMonth:60,  kitchenSupportRate:0.08, miscExtra:296},
+  {name:'池田市役所前',      type:'TS', nisshu:402.9, yoy:104.39, sales:12086, profit:4131,  landing:447,  budget:828,  diff:-381,
+   fjIncome:2065, miscBudget:254, laborBudget:950,  otherExp:384, markdownActual:611,  markdownBudget:341,
+   hqSupport:72,   kitchenSalesDay:0,    kitchenSupportMonth:0,   kitchenSupportRate:0,    miscExtra:null},
+  {name:'吹田青山台三丁目',  type:'CN', nisshu:625.7, yoy:102.16, sales:18772, profit:6048,  landing:498,  budget:429,  diff:69,
+   fjIncome:3024, miscBudget:224, laborBudget:1607, otherExp:623, markdownActual:801,  markdownBudget:568,
+   hqSupport:104,  kitchenSalesDay:25.2, kitchenSupportMonth:60,  kitchenSupportRate:0.08, miscExtra:117},
+  {name:'五月ケ丘東',        type:'CN', nisshu:388.4, yoy:98.68,  sales:11652, profit:3282,  landing:671,  budget:974,  diff:-303,
+   fjIncome:1641, miscBudget:803, laborBudget:944,  otherExp:423, markdownActual:639,  markdownBudget:360,
+   hqSupport:93,   kitchenSalesDay:1.7,  kitchenSupportMonth:0,   kitchenSupportRate:0,    miscExtra:140},
+  {name:'江坂東',            type:'CN', nisshu:628.3, yoy:106.48, sales:18850, profit:6075,  landing:634,  budget:438,  diff:196,
+   fjIncome:3038, miscBudget:254, laborBudget:1384, otherExp:730, markdownActual:856,  markdownBudget:530,
+   hqSupport:96,   kitchenSalesDay:22.2, kitchenSupportMonth:53,  kitchenSupportRate:0.08, miscExtra:163},
+  {name:'吹田豊津中学校前',  type:'CN', nisshu:556.4, yoy:100.59, sales:16693, profit:5385,  landing:637,  budget:781,  diff:-144,
+   fjIncome:2693, miscBudget:232, laborBudget:1246, otherExp:590, markdownActual:707,  markdownBudget:491,
+   hqSupport:106,  kitchenSalesDay:19.6, kitchenSupportMonth:41,  kitchenSupportRate:0.07, miscExtra:108},
+  {name:'豊中利倉東一丁目',  type:'CN', nisshu:612.8, yoy:105.45, sales:18385, profit:5925,  landing:942,  budget:803,  diff:139,
+   fjIncome:2963, miscBudget:224, laborBudget:1141, otherExp:553, markdownActual:866,  markdownBudget:529,
+   hqSupport:114,  kitchenSalesDay:16.0, kitchenSupportMonth:34,  kitchenSupportRate:0.07, miscExtra:168},
+  {name:'豊中服部元町一丁目',type:'CN', nisshu:579.7, yoy:103.21, sales:17392, profit:5607,  landing:753,  budget:704,  diff:49,
+   fjIncome:2804, miscBudget:212, laborBudget:1112, otherExp:621, markdownActual:947,  markdownBudget:513,
+   hqSupport:152,  kitchenSalesDay:20.0, kitchenSupportMonth:48,  kitchenSupportRate:0.08, miscExtra:217},
+  {name:'東淀川大道南',      type:'CN', nisshu:512.2, yoy:105.22, sales:15367, profit:4652,  landing:463,  budget:506,  diff:-43,
+   fjIncome:2326, miscBudget:225, laborBudget:1036, otherExp:520, markdownActual:1012, markdownBudget:452,
+   hqSupport:171,  kitchenSalesDay:13.9, kitchenSupportMonth:29,  kitchenSupportRate:0.07, miscExtra:280},
+  {name:'大道南一丁目',      type:'TS', nisshu:493.8, yoy:107.27, sales:14814, profit:4340,  landing:2,    budget:410,  diff:-408,
+   fjIncome:2170, miscBudget:262, laborBudget:1208, otherExp:514, markdownActual:915,  markdownBudget:418,
+   hqSupport:181,  kitchenSalesDay:12.2, kitchenSupportMonth:26,  kitchenSupportRate:0.07, miscExtra:null},
+  {name:'豊里六丁目',        type:'TS', nisshu:410.3, yoy:106.78, sales:12310, profit:3591,  landing:206,  budget:747,  diff:-541,
+   fjIncome:1795, miscBudget:233, laborBudget:886,  otherExp:379, markdownActual:696,  markdownBudget:356,
+   hqSupport:138,  kitchenSalesDay:0,    kitchenSupportMonth:0,   kitchenSupportRate:0,    miscExtra:null},
+  {name:'東淀川豊里五丁目',  type:'CN', nisshu:670.5, yoy:113.09, sales:20116, profit:5876,  landing:919,  budget:811,  diff:108,
+   fjIncome:2938, miscBudget:237, laborBudget:1120, otherExp:551, markdownActual:1066, markdownBudget:591,
+   hqSupport:194,  kitchenSalesDay:20.8, kitchenSupportMonth:50,  kitchenSupportRate:0.08, miscExtra:238},
+  {name:'豊中原田南一丁目',  type:'CN', nisshu:504.8, yoy:110.92, sales:15145, profit:4893,  landing:748,  budget:731,  diff:17,
+   fjIncome:2447, miscBudget:199, laborBudget:970,  otherExp:466, markdownActual:948,  markdownBudget:401,
+   hqSupport:174,  kitchenSalesDay:18.6, kitchenSupportMonth:39,  kitchenSupportRate:0.07, miscExtra:274},
+  {name:'南金田二丁目',      type:'CN', nisshu:740.6, yoy:104.82, sales:22219, profit:7152,  landing:1262, budget:1127, diff:135,
+   fjIncome:3576, miscBudget:288, laborBudget:1186, otherExp:754, markdownActual:1027, markdownBudget:655,
+   hqSupport:129,  kitchenSalesDay:20.7, kitchenSupportMonth:50,  kitchenSupportRate:0.08, miscExtra:186},
+  {name:'豊中服部西町三丁目',type:'TS', nisshu:403.2, yoy:102.04, sales:12097, profit:3770,  landing:331,  budget:753,  diff:-422,
+   fjIncome:1885, miscBudget:247, laborBudget:943,  otherExp:400, markdownActual:527,  markdownBudget:361,
+   hqSupport:69,   kitchenSalesDay:0,    kitchenSupportMonth:0,   kitchenSupportRate:0,    miscExtra:null},
+  {name:'箕面白島二丁目',    type:'CN', nisshu:524.8, yoy:null,   sales:15743, profit:4764,  landing:32,   budget:137,  diff:-105,
+   fjIncome:2382, miscBudget:535, laborBudget:1521, otherExp:594, markdownActual:894,  markdownBudget:729,
+   hqSupport:0,    kitchenSalesDay:19.9, kitchenSupportMonth:42,  kitchenSupportRate:0.07, miscExtra:82},
+  {name:'吹田垂水三丁目',    type:'CN', nisshu:335.9, yoy:113.83, sales:10076, profit:3146,  landing:293,  budget:497,  diff:-204,
+   fjIncome:1573, miscBudget:379, laborBudget:857,  otherExp:507, markdownActual:445,  markdownBudget:275,
+   hqSupport:65,   kitchenSalesDay:0,    kitchenSupportMonth:0,   kitchenSupportRate:0,    miscExtra:85},
+  {name:'新御堂筋上新田',    type:'CN', nisshu:708.7, yoy:101.99, sales:21260, profit:6846,  landing:1166, budget:967,  diff:199,
+   fjIncome:3423, miscBudget:372, laborBudget:1143, otherExp:805, markdownActual:1067, markdownBudget:672,
+   hqSupport:130,  kitchenSalesDay:24.5, kitchenSupportMonth:59,  kitchenSupportRate:0.08, miscExtra:198},
+  {name:'江坂駅南口',        type:'CN', nisshu:1054.1,yoy:97.16,  sales:31622, profit:10189, landing:1310, budget:1480, diff:-170,
+   fjIncome:5094, miscBudget:310, laborBudget:2250, otherExp:955, markdownActual:1243, markdownBudget:1013,
+   hqSupport:143,  kitchenSalesDay:31.6, kitchenSupportMonth:95,  kitchenSupportRate:0.10, miscExtra:115},
 ];
 
-// ===== DEPT別廃棄データ（売価千円）FF比率・原価 =====
-// ff_baika:FF・店内厨房の累計廃棄売価、other_baika:その他の累計廃棄売価（千円）
-const DEPT_HENKA = {
-  "吹田警察署前":    {ff:149.4, other:616.3},
-  "吹田朝日町":      {ff:113.8, other:628.9},
-  "池田市役所前":    {ff:111.2, other:542.1},
-  "吹田青山台三丁目":{ff:291.0, other:639.6},
-  "五月ケ丘東":      {ff:193.4, other:671.6},
-  "江坂東":          {ff:211.7, other:411.6},
-  "吹田豊津中学校前":{ff:163.7, other:581.4},
-  "豊中利倉東一丁目":{ff:193.4, other:608.1},
-  "豊中服部元町一丁目":{ff:208.5,other:512.1},
-  "東淀川大道南":    {ff:112.6, other:298.8},
-  "大道南一丁目":    {ff:97.0,  other:502.3},
-  "豊里六丁目":      {ff:70.6,  other:312.8},
-  "東淀川豊里五丁目":{ff:125.0, other:408.1},
-  "豊中原田南一丁目":{ff:194.9, other:760.6},
-  "南金田二丁目":    {ff:239.8, other:653.0},
-  "豊中服部西町三丁目":{ff:101.2,other:394.9},
-  "箕面白島二丁目":  {ff:302.8, other:596.5},
-  "吹田垂水三丁目":  {ff:91.9,  other:369.6},
-  "江坂駅南口":      {ff:472.2, other:743.6},
-  "新御堂筋上新田":  {ff:163.1, other:607.4},
-};
-
-
-
-const SC_MAP = [
-  {sc:'髙橋SC',    color:'#1e5fa8', stores:['吹田青山台三丁目','五月ケ丘東','江坂駅南口']},
-  {sc:'五島SC',    color:'#0e7c6e', stores:['吹田警察署前','池田市役所前']},
-  {sc:'プラカスSC',color:'#6d28d9', stores:['東淀川大道南','大道南一丁目','豊里六丁目','吹田朝日町','東淀川豊里五丁目']},
-  {sc:'ダハルSC',  color:'#b45309', stores:['江坂東','豊中利倉東一丁目','豊中服部元町一丁目','箕面白島二丁目']},
-  {sc:'ビスワスSC',color:'#c0392b', stores:['豊中原田南一丁目','南金田二丁目','豊中服部西町三丁目']},
-  {sc:'フィSC',    color:'#0e7490', stores:['吹田垂水三丁目','吹田豊津中学校前','新御堂筋上新田']},
+// 廃棄データ (PSA/D 千円/日)
+const WASTE = [
+  {name:'吹田警察署前',       aico:{bench:10.81,actual:16.95,diff:6.14},   op:{bench:1.29,actual:3.804,diff:2.51},  ff:{bench:2.72,actual:6.515,diff:3.79},  kitch:{bench:2.02,actual:3.211,diff:1.19},  dry:{bench:0.87,actual:0.315,diff:-0.55}},
+  {name:'吹田朝日町',         aico:{bench:14.53,actual:17.575,diff:3.04},  op:{bench:1.90,actual:0.943,diff:-0.96}, ff:{bench:4.17,actual:2.177,diff:-1.99}, kitch:{bench:3.77,actual:1.789,diff:-1.98}, dry:{bench:1.09,actual:0.253,diff:-0.84}},
+  {name:'池田市役所前',       aico:{bench:12.62,actual:16.005,diff:3.38},  op:{bench:1.48,actual:1.606,diff:0.13},  ff:{bench:2.40,actual:4.468,diff:2.07},  kitch:{bench:0.00,actual:0,diff:0},         dry:{bench:0.65,actual:0.342,diff:-0.31}},
+  {name:'吹田青山台三丁目',   aico:{bench:14.89,actual:11.224,diff:-3.67}, op:{bench:1.76,actual:2.410,diff:0.65},  ff:{bench:4.31,actual:8.484,diff:4.17},  kitch:{bench:3.77,actual:3.896,diff:0.13},  dry:{bench:1.09,actual:0.534,diff:-0.56}},
+  {name:'五月ケ丘東',         aico:{bench:7.21,actual:17.598,diff:10.39},  op:{bench:0.95,actual:2.124,diff:1.17},  ff:{bench:2.06,actual:5.171,diff:3.11},  kitch:{bench:0.26,actual:0.735,diff:0.47},  dry:{bench:0.81,actual:0.276,diff:-0.53}},
+  {name:'江坂東',             aico:{bench:14.23,actual:11.270,diff:-2.96}, op:{bench:1.78,actual:2.348,diff:0.57},  ff:{bench:3.81,actual:4.813,diff:1.00},  kitch:{bench:3.33,actual:1.201,diff:-2.13}, dry:{bench:1.14,actual:0.518,diff:-0.62}},
+  {name:'吹田豊津中学校前',   aico:{bench:14.43,actual:14.007,diff:-0.42}, op:{bench:1.94,actual:1.877,diff:-0.06}, ff:{bench:3.41,actual:5.084,diff:1.67},  kitch:{bench:2.94,actual:1.122,diff:-1.82}, dry:{bench:0.93,actual:0.372,diff:-0.56}},
+  {name:'豊中利倉東一丁目',   aico:{bench:12.52,actual:18.466,diff:5.95},  op:{bench:1.62,actual:2.714,diff:1.09},  ff:{bench:4.04,actual:3.228,diff:-0.81}, kitch:{bench:2.39,actual:1.742,diff:-0.65}, dry:{bench:1.17,actual:0.447,diff:-0.72}},
+  {name:'豊中服部元町一丁目', aico:{bench:14.36,actual:16.320,diff:1.96},  op:{bench:1.73,actual:1.903,diff:0.17},  ff:{bench:3.76,actual:4.205,diff:0.45},  kitch:{bench:3.00,actual:1.489,diff:-1.51}, dry:{bench:1.00,actual:0.356,diff:-0.64}},
+  {name:'東淀川大道南',       aico:{bench:10.40,actual:8.706,diff:-1.69},  op:{bench:1.27,actual:0.961,diff:-0.31}, ff:{bench:3.24,actual:2.638,diff:-0.60}, kitch:{bench:2.08,actual:1.259,diff:-0.82}, dry:{bench:0.99,actual:0.894,diff:-0.10}},
+  {name:'大道南一丁目',       aico:{bench:9.32,actual:11.578,diff:2.26},   op:{bench:1.27,actual:0.634,diff:-0.64}, ff:{bench:2.85,actual:2.448,diff:-0.40}, kitch:{bench:1.83,actual:1.079,diff:-0.75}, dry:{bench:0.98,actual:0.755,diff:-0.22}},
+  {name:'豊里六丁目',         aico:{bench:7.81,actual:8.481,diff:0.67},    op:{bench:1.13,actual:1.494,diff:0.36},  ff:{bench:1.81,actual:1.241,diff:-0.57}, kitch:{bench:0.00,actual:0,diff:0},         dry:{bench:0.86,actual:0.207,diff:-0.65}},
+  {name:'東淀川豊里五丁目',   aico:{bench:13.77,actual:14.569,diff:0.80},  op:{bench:1.71,actual:1.049,diff:-0.66}, ff:{bench:4.01,actual:2.727,diff:-1.28}, kitch:{bench:3.13,actual:2.375,diff:-0.75}, dry:{bench:1.28,actual:0.322,diff:-0.96}},
+  {name:'豊中原田南一丁目',   aico:{bench:10.31,actual:18.417,diff:8.11},  op:{bench:1.08,actual:2.019,diff:0.94},  ff:{bench:3.68,actual:3.262,diff:-0.42}, kitch:{bench:2.78,actual:3.538,diff:0.76},  dry:{bench:0.95,actual:0.341,diff:-0.61}},
+  {name:'南金田二丁目',       aico:{bench:17.58,actual:21.427,diff:3.85},  op:{bench:2.13,actual:1.894,diff:-0.24}, ff:{bench:4.65,actual:5.381,diff:0.73},  kitch:{bench:3.11,actual:4.272,diff:1.16},  dry:{bench:1.33,actual:0.682,diff:-0.65}},
+  {name:'豊中服部西町三丁目', aico:{bench:9.17,actual:8.829,diff:-0.34},   op:{bench:1.10,actual:1.301,diff:0.20},  ff:{bench:2.64,actual:3.881,diff:1.24},  kitch:{bench:0.00,actual:0,diff:0},         dry:{bench:0.77,actual:0.659,diff:-0.11}},
+  {name:'箕面白島二丁目',     aico:{bench:12.26,actual:17.697,diff:5.44},  op:{bench:1.47,actual:1.838,diff:0.37},  ff:{bench:4.21,actual:7.000,diff:2.79},  kitch:{bench:2.99,actual:2.682,diff:-0.31}, dry:{bench:0.90,actual:1.020,diff:0.12}},
+  {name:'吹田垂水三丁目',     aico:{bench:8.71,actual:8.925,diff:0.21},    op:{bench:1.11,actual:0.679,diff:-0.43}, ff:{bench:1.72,actual:3.228,diff:1.51},  kitch:{bench:0.00,actual:0,diff:0},         dry:{bench:0.62,actual:1.619,diff:1.00}},
+  {name:'新御堂筋上新田',     aico:{bench:17.67,actual:17.955,diff:0.28},  op:{bench:2.03,actual:1.353,diff:-0.68}, ff:{bench:4.42,actual:1.604,diff:-2.82}, kitch:{bench:3.67,actual:2.655,diff:-1.02}, dry:{bench:1.23,actual:0.464,diff:-0.77}},
+  {name:'江坂駅南口',         aico:{bench:23.82,actual:18.535,diff:-5.29}, op:{bench:2.97,actual:0.878,diff:-2.09}, ff:{bench:6.04,actual:10.596,diff:4.56}, kitch:{bench:4.75,actual:7.536,diff:2.79},  dry:{bench:1.95,actual:1.144,diff:-0.81}},
 ];
-// ===== 1日あたりカテゴリー別売変・本部支援データ（円） =====
-const DAILY_HENKA = {
-  "吹田警察署前":      {aico:16134,ff:2975, kitchen:1167,op:2114, dry:891,  sup_b:6607, sup_g:4625},
-  "吹田朝日町":        {aico:15964,ff:1664, kitchen:1639,op:1168, dry:325,  sup_b:9989, sup_g:6992},
-  "池田市役所前":      {aico:16490,ff:3799, kitchen:0,   op:1270, dry:839,  sup_b:5493, sup_g:3845},
-  "吹田青山台三丁目":  {aico:17251,ff:5497, kitchen:2901,op:2700, dry:1920, sup_b:11068,sup_g:7748},
-  "五月ケ丘東":        {aico:16085,ff:5428, kitchen:196, op:2787, dry:1739, sup_b:5461, sup_g:3822},
-  "江坂東":            {aico:10508,ff:5884, kitchen:1555,op:1653, dry:586,  sup_b:4386, sup_g:3070},
-  "吹田豊津中学校前":  {aico:14956,ff:4562, kitchen:474, op:1160, dry:363,  sup_b:6407, sup_g:4485},
-  "豊中利倉東一丁目":  {aico:16611,ff:4978, kitchen:2079,op:2012, dry:623,  sup_b:5339, sup_g:3738},
-  "豊中服部元町一丁目":{aico:11997,ff:4283, kitchen:1851,op:1476, dry:524,  sup_b:4354, sup_g:3047},
-  "東淀川大道南":      {aico:8250, ff:3421, kitchen:534, op:595,  dry:481,  sup_b:11257,sup_g:7880},
-  "大道南一丁目":      {aico:12892,ff:1887, kitchen:817, op:194,  dry:1781, sup_b:11521,sup_g:8065},
-  "豊里六丁目":        {aico:8668, ff:2167, kitchen:0,   op:1053, dry:790,  sup_b:8514, sup_g:5960},
-  "東淀川豊里五丁目":  {aico:10146,ff:2324, kitchen:1107,op:884,  dry:502,  sup_b:11136,sup_g:7795},
-  "豊中原田南一丁目":  {aico:17296,ff:2949, kitchen:1569,op:1935, dry:469,  sup_b:6321, sup_g:4425},
-  "南金田二丁目":      {aico:17158,ff:6644, kitchen:1670,op:1367, dry:4499, sup_b:7518, sup_g:5262},
-  "豊中服部西町三丁目":{aico:9755, ff:3324, kitchen:0,   op:1701, dry:299,  sup_b:4121, sup_g:2885},
-  "箕面白島二丁目":    {aico:16846,ff:5328, kitchen:4750,op:1284, dry:989,  sup_b:0,    sup_g:0},
-  "吹田垂水三丁目":    {aico:11078,ff:3334, kitchen:0,   op:603,  dry:680,  sup_b:4236, sup_g:2965},
-  "江坂駅南口":        {aico:20957,ff:8719, kitchen:4748,op:706,  dry:2388, sup_b:11354,sup_g:7948},
-  "新御堂筋上新田":    {aico:18710,ff:3070, kitchen:2426,op:1301, dry:253,  sup_b:7321, sup_g:5125},
-};
-// ===== 本部支援データ（売価千円・週別） =====
-// ===== 値引きデータ（1日あたり・円）営業速報売変IIIPSAD - DEPT売変PSA/D =====
-const NEBI_HENKA = {
-  "吹田青山台三丁目":   15710,
-  "五月ケ丘東":         5013,
-  "江坂駅南口":         25500,
-  "吹田警察署前":       13645,
-  "池田市役所前":       7069,
-  "東淀川大道南":       34607,
-  "大道南一丁目":       26387,
-  "豊里六丁目":         18152,
-  "吹田朝日町":         27799,
-  "東淀川豊里五丁目":   34694,
-  "江坂東":             21043,
-  "豊中利倉東一丁目":   15042,
-  "豊中服部元町一丁目": 18215,
-  "箕面白島二丁目":     14963,
-  "豊中原田南一丁目":   23145,
-  "南金田二丁目":       13806,
-  "豊中服部西町三丁目": 11851,
-  "吹田垂水三丁目":     8623,
-  "吹田豊津中学校前":   13258,
-  "新御堂筋上新田":     28053,
-};
 
-const SUPPORT = {
-  "吹田垂水三丁目":    {w:[27.1,25.9,23.5,42.1]},
-  "吹田豊津中学校前":  {w:[58.9,40.2,45.8,34.5]},
-  "新御堂筋上新田":    {w:[21.4,68.4,48.9,66.3]},
-  "豊中原田南一丁目":  {w:[44.2,33.1,46.1,53.6]},
-  "南金田二丁目":      {w:[67.3,51.6,61.3,30.3]},
-  "豊中服部西町三丁目":{w:[34.0,31.5,22.7,27.2]},
-  "箕面白島二丁目":    {w:[0.0,0.0,0.0,0.0]},
-  "吹田警察署前":      {w:[30.0,30.8,56.9,67.3]},
-  "池田市役所前":      {w:[31.3,25.9,40.7,55.9]},
-  "江坂駅南口":        {w:[165.1,71.0,37.0,44.8]},
-  "吹田青山台三丁目":  {w:[102.6,93.2,59.2,54.9]},
-  "五月ケ丘東":        {w:[48.4,33.2,33.5,37.8]},
-  "江坂東":            {w:[47.6,10.8,18.2,46.2]},
-  "豊中利倉東一丁目":  {w:[28.4,38.8,38.4,43.9]},
-  "豊中服部元町一丁目":{w:[18.0,38.8,24.3,40.8]},
-  "東淀川大道南":      {w:[73.0,91.5,57.0,93.7]},
-  "大道南一丁目":      {w:[75.8,92.8,82.7,71.3]},
-  "豊里六丁目":        {w:[67.7,69.5,54.3,46.9]},
-  "吹田朝日町":        {w:[60.4,78.7,69.4,71.2]},
-  "東淀川豊里五丁目":  {w:[88.5,76.5,59.8,87.0]},
-};
+const WCATS = ['aico','op','ff','kitch','dry'];
+const WLABEL = {aico:'AICO',op:'OPケース',ff:'ファストフーズ',kitch:'店内厨房',dry:'ドライ系'};
 
-const fmt  = n => (n===null||n===undefined) ? '—' : Math.round(n).toLocaleString();
-const fmtd = n => n > 0 ? n.toFixed(1)+'%' : '—';
-const ch   = () => (parseFloat(document.getElementById('chargeRate').value)||50) / 100;
-
-function calcRow(s) {
-  const dh  = DEPT_HENKA[s.name] || {ff:0, other:0};
-  const sup = SUPPORT[s.name]    || {w:[0,0,0,0]};
-  const nebi_psad = NEBI_HENKA[s.name] || 0;  // 値引PSA/D（円/日）
-
-  const 残日数 = MAR_DAYS - s.営業日数;
-
-  // ① 着地売上（累計実績 + 残日数 × 平均日販）
-  const landSales = Math.round(s.累計売上 + 残日数 * s.平均日販);
-
-  // ② 着地FC収入（着地売上 × 30% × チャージ率）
-  const landFC = Math.round(landSales * 0.30 * ch());
-
-  // ③ 本部支援
-  const supBaika = sup.w.reduce((a,v)=>a+v, 0);
-  const supGenka = Math.round(supBaika * 0.7);
-  const supDay   = supBaika / s.営業日数;  // 本部支援/日（÷営業日数）
-
-  // ④ 廃棄実績/日（売価・千円）= 営業速報売変IIIPSAD÷1000 - 本部支援/日
-  //    営業速報PSA/D = DEPT売変PSA/D + 値引PSA/D
-  const deptPsad  = (dh.ff + dh.other) / s.営業日数;       // DEPT売変/日（千円）
-  const nebiDay   = nebi_psad / 1000;                       // 値引/日（千円）
-  const eiPsad    = deptPsad + nebiDay;                     // 営業速報売変IIIPSAD（千円/日）
-  const wasteDay  = eiPsad - supDay;                        // 本部支援控除後の廃棄/日（千円）
-
-  // ⑤ 廃棄着地原価（廃棄/日 × 70%原価換算 × 31日）
-  const landHenkaGenka = Math.round(wasteDay * 0.70 * MAR_DAYS);
-
-  // ⑥ 廃棄按分予算（表示用）
-  const henkaYosanSoFar = Math.round(s.廃棄予算 / MAR_DAYS * s.営業日数);
-
-  // ⑦ 廃棄原価累計（表示用）
-  const deptGenka  = Math.round(dh.ff * 0.5 + dh.other * 0.7);
-  const nebiGenka  = Math.round(nebi_psad * s.営業日数 * 0.7 / 1000);
-  const henkaGenka = deptGenka + nebiGenka;
-
-  // ⑧ その他経費（廃棄除く）
-  const otherNonHenka = s.その他経費予算 - s.廃棄予算;
-
-  // ★ 着地店利益
-  const landProfit = Math.round(
-    landFC + s.雑益予算 + supGenka - s.人件費予算 - otherNonHenka - landHenkaGenka
-  );
-  const ratio = s.店利益予算 > 0 ? landProfit / s.店利益予算 : null;
-
-  // 廃棄予算/日（売価換算）= 廃棄予算(原価) ÷ 0.75 ÷ 31日
-  const wasteBudgetDay = s.廃棄予算 / 0.75 / MAR_DAYS;
-  // 廃棄超過/日 = 廃棄実質/日 - 廃棄予算/日（マイナスなら予算内）
-  const wasteDiffDay = wasteDay - wasteBudgetDay;
-
-  return {残日数, landSales, landFC, henkaGenka, henkaYosanSoFar,
-          landHenkaGenka, supBaika, supGenka, landProfit, ratio, supW:sup.w,
-          nebiGenka, deptGenka, wasteDay, eiPsad, supDay,
-          wasteBudgetDay, wasteDiffDay};
-}
-
-function buildTable() {
-  const tbody = document.getElementById('tableBody');
-  tbody.innerHTML = '';
-  STORES.forEach(s => {
-    const c  = calcRow(s);
-    const tr = document.createElement('tr');
-    const ynC = s.前年比>=100 ? 'up' : (s.前年比>0 ? 'dn' : '');
-    const ynS = s.前年比>0 ? fmtd(s.前年比) : '—';
-
-    // 廃棄判定（原価ベース）
-    const hCls   = c.wasteDiffDay <= 0 ? 'h-ok' : 'h-over';
-    const pColor = c.landProfit >= 0 ? 'var(--green)' : 'var(--red)';
-    const badge  = c.ratio===null ? '<span class="badge na">—</span>'
-      : c.ratio>=1 ? `<span class="badge ok">◎達成<br>${(c.ratio*100).toFixed(1)}%</span>`
-                   : `<span class="badge ng">▲要対策<br>${(c.ratio*100).toFixed(1)}%</span>`;
-
-    const WL = ['2/17〜2/23','2/24〜3/02','3/03〜3/09','3/10〜3/16'];
-    const supLines = WL.map((w,i)=>`${w}：${Math.round(c.supW[i]*10)/10}千円`).join('<br>');
-    const dh = DEPT_HENKA[s.name]||{ff:0,other:0};
-
-    // 廃棄ツールチップ（1日あたりカテゴリー内訳）
-    const dd  = DAILY_HENKA[s.name] || {aico:0,ff:0,kitchen:0,op:0,dry:0,sup_b:0,sup_g:0};
-    const nebi_day = NEBI_HENKA[s.name] || 0;
-    const fy  = n => Math.round(n).toLocaleString() + '円';
-    const tot = dd.aico+dd.ff+dd.kitchen+dd.op+dd.dry;
-    const hTip = `<div class="tip-wrap">
-      <span class="tip-u" style="color:${c.henkaGenka<=c.henkaYosanSoFar?'var(--green)':'var(--red)'}">${fmt(c.henkaGenka)}</span>
-      <div class="tip"><span onclick="this.closest('.tip-wrap').classList.remove('active')" style="float:right;cursor:pointer;font-size:14px;margin-left:10px;color:#93b8e0">✕</span>
-        <b>【1日あたり売変合計（売価）】</b><br>
-        合　計：${fy(tot)}<br>
-        ─────────────────<br>
-        廃棄実績/日(売価)：${c.eiPsad.toFixed(1)}千円<br>
-        本部支援控除/日：-${c.supDay.toFixed(1)}千円<br>
-        廃棄実質/日：${c.wasteDay.toFixed(1)}千円<br>
-        廃棄予算/日(売価)：${c.wasteBudgetDay.toFixed(1)}千円<br>
-        廃棄差/日：<b style="color:${c.wasteDiffDay>0?'#ef4444':'#22c55e'}">${c.wasteDiffDay.toFixed(1)}千円</b><br>
-        ─────────────────<br>
-        廃棄着地原価(実質×70%×31日)：${fmt(c.landHenkaGenka)}千円<br>
-        ─────────────────<br>
-        DEPT廃棄原価累計：${fmt(c.deptGenka)}千円<br>
-        値引原価累計：${fmt(c.nebiGenka)}千円<br>
-        廃棄原価合計：${fmt(c.henkaGenka)}千円<br>
-        按分予算：${fmt(c.henkaYosanSoFar)}千円
-      </div>
-    </div>`;
-
-    // 本部支援ツールチップ（1日あたり付き）
-    const sTip = `<div class="tip-wrap">
-      <span class="tip-u" style="color:var(--purple)">${fmt(c.supGenka)}</span>
-      <div class="tip"><span onclick="this.closest('.tip-wrap').classList.remove('active')" style="float:right;cursor:pointer;font-size:14px;margin-left:10px;color:#93b8e0">✕</span>
-        <b>【週別支援（売価）2/17〜3/16】</b><br>
-        ${supLines}<br>
-        支援累計（売価）：${fmt(c.supBaika)}千円<br>
-        ─────────────────<br>
-        <b>【1日あたり支援（AI.COのみ）】</b><br>
-        売　価：${fy(dd.sup_b)}<br>
-        原　価（×70%）：${fy(dd.sup_g)}<br>
-        ─────────────────<br>
-        月間支援原価合計：<b>${fmt(c.supGenka)}千円</b>
-      </div>
-    </div>`;
-
-    // 予算内訳ツールチップ
-    const bTip = `<div class="tip-wrap">
-      <span class="tip-u" style="color:var(--blue)">内訳</span>
-      <div class="tip"><span onclick="this.closest('.tip-wrap').classList.remove('active')" style="float:right;cursor:pointer;font-size:14px;margin-left:10px;color:#93b8e0">✕</span>
-        FC収入予算：${fmt(s.FC収入予算)}千円<br>
-        雑益予算：${fmt(s.雑益予算)}千円<br>
-        ────────────────<br>
-        人件費予算：${fmt(s.人件費予算)}千円<br>
-        廃棄予算（原価）：${fmt(s.廃棄予算)}千円<br>
-        その他経費（廃棄除く）：${fmt(s.その他経費予算-s.廃棄予算)}千円<br>
-        ────────────────<br>
-        <b>店利益予算：${fmt(s.店利益予算)}千円</b>
-      </div>
-    </div>`;
-
-    tr.innerHTML = `
-      <td class="sn">${s.name}<br><span style="font-size:9px;font-weight:500;color:${s.scColor};background:${s.scColor}18;padding:1px 5px;border-radius:6px">${s.sc}</span></td>
-      <td class="bc" style="font-weight:700">${fmt(s.店利益予算)}</td>
-      <td class="bc" style="text-align:center">${bTip}</td>
-      <td class="ac" style="text-align:center">${s.営業日数}</td>
-      <td class="ac">${fmt(s.平均日販)}</td>
-      <td class="ac ${ynC}">${ynS}</td>
-      <td class="ac" style="background:rgba(10,90,80,.07);font-weight:700;color:${s.平均日販/s.日販予算>=1?'var(--green)':'var(--red)'}">${(s.平均日販/s.日販予算*100).toFixed(1)}%</td>
-      <td class="ac">${fmt(s.累計売上)}</td>
-      <td class="ac" style="font-weight:700;color:${s.荒利率>=30?'var(--green)':'var(--amber)'}">${s.荒利率.toFixed(2)}%</td>
-      <td class="${hCls}">${hTip}</td>
-      <td class="pc">${fmt(c.henkaYosanSoFar)}</td>
-      <td class="pc">${sTip}</td>
-      <td class="pc" style="background:rgba(59,7,100,.06);color:#6d28d9">${dd.aico.toLocaleString()}</td>
-      <td class="pc" style="background:rgba(59,7,100,.06);color:#6d28d9">${dd.ff.toLocaleString()}</td>
-      <td class="pc" style="background:rgba(59,7,100,.06);color:#6d28d9">${dd.kitchen.toLocaleString()}</td>
-      <td class="pc" style="background:rgba(59,7,100,.06);color:#6d28d9">${dd.op.toLocaleString()}</td>
-      <td class="pc" style="background:rgba(59,7,100,.06);color:#6d28d9">${dd.dry.toLocaleString()}</td>
-      <td class="pc" style="background:rgba(74,4,66,.08);color:#9d174d;font-weight:700">${nebi_day.toLocaleString()}</td>
-      <td class="rc" style="text-align:center;color:#d97706;font-weight:700">${c.残日数}</td>
-      <td class="rc">${fmt(c.landSales)}</td>
-      <td class="rc" style="font-weight:700;font-size:12px;color:${pColor}">${fmt(c.landProfit)}</td>
-      <td class="rc" style="text-align:center">${badge}</td>`;
-    tbody.appendChild(tr);
-  });
-  buildFoot(); buildSummary(); buildSCCards();
-}
-
-
-function buildSCCards() {
-  const bar = document.getElementById('scCards');
-  if (!bar) return;
-  bar.innerHTML = '';
-
-  SC_MAP.forEach(({sc, color, stores}) => {
-    const scStores = STORES.filter(s => stores.includes(s.name));
-    const calcs    = scStores.map(s => calcRow(s));
-
-    const totBudget  = scStores.reduce((a,s)=>a+s.店利益予算, 0);
-    const totProfit  = calcs.reduce((a,c)=>a+c.landProfit, 0);
-    const totLandS   = calcs.reduce((a,c)=>a+c.landSales, 0);
-    const totSupG    = calcs.reduce((a,c)=>a+c.supGenka, 0);
-    const ratio      = totBudget > 0 ? totProfit / totBudget : 0;
-    const okCnt      = calcs.filter(c=>c.ratio!==null&&c.ratio>=1).length;
-    const ngCnt      = calcs.filter(c=>c.ratio!==null&&c.ratio<1).length;
-    const pColor     = totProfit >= totBudget ? '#16a34a' : '#c0392b';
-    const bgRatio    = Math.min(Math.max(ratio, 0), 1.5);
-    const barW       = Math.min(bgRatio / 1.5 * 100, 100).toFixed(1);
-    const barColor   = ratio >= 1 ? '#16a34a' : ratio >= 0.8 ? '#d97706' : '#c0392b';
-
-    const div = document.createElement('div');
-    div.style.cssText = `
-      background:#fff;border-radius:12px;padding:14px 18px;min-width:200px;flex-shrink:0;
-      border:2px solid ${color}40;
-      box-shadow:0 2px 12px rgba(0,0,0,.08);
-      position:relative;overflow:hidden;
-    `;
-    div.innerHTML = `
-      <div style="position:absolute;top:0;left:0;right:0;height:3px;background:${color}"></div>
-      <div style="font-size:12px;font-weight:900;color:${color};margin-bottom:2px">${sc}</div>
-      <div style="font-size:10px;color:var(--muted);margin-bottom:10px">${stores.length}店舗担当　達成 <b style="color:#16a34a">${okCnt}</b> / 未達 <b style="color:#c0392b">${ngCnt}</b></div>
-
-      <div style="font-size:10px;color:var(--muted)">着地店利益</div>
-      <div style="font-size:22px;font-weight:900;font-family:'DM Mono',monospace;color:${pColor};margin:1px 0 2px">${fmt(totProfit)}<span style="font-size:11px;font-weight:500">千円</span></div>
-
-      <div style="background:#f0f4f8;border-radius:6px;height:6px;margin:6px 0 4px;overflow:hidden">
-        <div style="height:100%;width:${barW}%;background:${barColor};border-radius:6px;transition:width .4s"></div>
-      </div>
-      <div style="display:flex;justify-content:space-between;font-size:10px">
-        <span style="color:var(--muted)">予算 ${fmt(totBudget)}千円</span>
-        <span style="font-weight:700;color:${pColor}">${(ratio*100).toFixed(1)}%</span>
-      </div>
-
-      <div style="margin-top:8px;padding-top:8px;border-top:1px solid #e8eff6;font-size:10px;color:var(--muted);display:flex;justify-content:space-between">
-        <span>着地売上 <b style="color:var(--navy2)">${fmt(totLandS)}千</b></span>
-        <span>本部支援 <b style="color:#6d28d9">${fmt(totSupG)}千</b></span>
-      </div>
-    `;
-    bar.appendChild(div);
-  });
-}
-
-function buildFoot() {
-  const tfoot = document.getElementById('tableFoot');
-  tfoot.innerHTML = '';
-  const C = STORES.map(calcRow);
-  const tot = {
-    利益予算: STORES.reduce((a,s)=>a+s.店利益予算,0),
-    売上:     STORES.reduce((a,s)=>a+s.累計売上,0),
-    henkaG:   C.reduce((a,c)=>a+c.henkaGenka,0),
-    supG:     C.reduce((a,c)=>a+c.supGenka,0),
-    landS:    C.reduce((a,c)=>a+c.landSales,0),
-    profit:   C.reduce((a,c)=>a+c.landProfit,0),
-    fcUp:     C.reduce((a,c)=>a+c.fcUp,0),
+// 廃棄合計計算
+WASTE.forEach(s => {
+  s.total = {
+    actual: WCATS.reduce((a,c)=>a+s[c].actual,0),
+    bench:  WCATS.reduce((a,c)=>a+s[c].bench, 0),
+    diff:   WCATS.reduce((a,c)=>a+s[c].diff,  0)
   };
-  const ratio = tot.利益予算>0 ? tot.profit/tot.利益予算 : null;
-  const badge = ratio===null ? '—'
-    : ratio>=1 ? `<span class="badge ok">◎達成 ${(ratio*100).toFixed(1)}%</span>`
-               : `<span class="badge ng">▲要対策 ${(ratio*100).toFixed(1)}%</span>`;
-  const pc = tot.profit>=0 ? '#4ade80' : '#f87171';
-  const tr = document.createElement('tr');
-  tr.innerHTML = `<td class="sn">合　計</td>
-    <td style="font-weight:700">${fmt(tot.利益予算)}</td>
-    <td style="text-align:center">—</td>
-    <td style="text-align:center">—</td><td>—</td><td>—</td>
-    <td>${fmt(tot.売上)}</td>
-    <td>${fmt(tot.henkaG)}</td><td>—</td>
-    <td style="color:#c4b5fd;font-weight:700">${fmt(tot.supG)}</td>
-    <td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td>
-    <td style="text-align:center">—</td>
-    <td>${fmt(tot.landS)}</td>
-    <td style="font-weight:700;color:${pc}">${fmt(tot.profit)}</td>
-    <td style="text-align:center">${badge}</td>`;
-  tfoot.appendChild(tr);
-}
-
-function buildSummary() {
-  const bar = document.getElementById('summaryBar'); bar.innerHTML='';
-  const C   = STORES.map(calcRow);
-  const totP = C.reduce((a,c)=>a+c.landProfit,0);
-  const totB = STORES.reduce((a,s)=>a+s.店利益予算,0);
-  const totS = C.reduce((a,c)=>a+c.supGenka,0);
-  const okCnt= C.filter(c=>c.ratio!==null&&c.ratio>=1).length;
-  const ngCnt= C.filter(c=>c.ratio!==null&&c.ratio<1).length;
-  const ratio= totB>0 ? totP/totB : 0;
-  const pColor= totP>=totB ? 'var(--green)' : 'var(--red)';
-  [
-    {label:'着地店利益（全店合計）',val:`${fmt(totP)}千円`,sub:`予算比 ${(ratio*100).toFixed(1)}%`,cls:'',color:pColor},
-    {label:'店利益予算（全店合計）',val:`${fmt(totB)}千円`,sub:'月間目標',cls:'',color:'var(--blue)'},
-    {label:'本部支援合計（原価換算後）',val:`${fmt(totS)}千円`,sub:'2/17〜3/16実績',cls:'purple',color:'var(--purple)'},
-    {label:'達成見込み店舗',val:`${okCnt}店 / 20店`,sub:`未達:${ngCnt}店`,cls:'green',color:'var(--green)'},
-  ].forEach(c=>{
-    const d=document.createElement('div'); d.className='sc '+c.cls;
-    d.innerHTML=`<div class="sc-label">${c.label}</div>
-      <div class="sc-val" style="color:${c.color}">${c.val}</div>
-      <div class="sc-sub">${c.sub}</div>`;
-    bar.appendChild(d);
-  });
-}
-
-function recalc() { buildTable(); }
-
-// ===== スマホ対応：タップでポップアップ表示 =====
-document.addEventListener('click', function(e) {
-  const wrap = e.target.closest('.tip-wrap');
-  if (wrap) {
-    document.querySelectorAll('.tip-wrap.active').forEach(el => {
-      if (el !== wrap) el.classList.remove('active');
-    });
-    const wasActive = wrap.classList.contains('active');
-    wrap.classList.toggle('active');
-    if (!wasActive) {
-      // ポップアップの位置を画面内に収める
-      const tip = wrap.querySelector('.tip');
-      if (tip) {
-        tip.style.top = '';
-        tip.style.bottom = '';
-        tip.style.transform = '';
-        const rect = wrap.getBoundingClientRect();
-        const vh = window.innerHeight;
-        // 画面下半分なら上に、上半分なら下に表示
-        if (rect.top > vh / 2) {
-          tip.style.top = 'auto';
-          tip.style.bottom = '0px';
-          tip.style.transform = 'none';
-          // さらに画面上端を超えないか確認
-          requestAnimationFrame(() => {
-            const tr = tip.getBoundingClientRect();
-            if (tr.top < 8) {
-              tip.style.bottom = (parseInt(tip.style.bottom||0) - tr.top + 8) + 'px';
-            }
-          });
-        } else {
-          tip.style.top = '50%';
-          tip.style.transform = 'translateY(-50%)';
-        }
-      }
-    }
-    e.stopPropagation();
-  } else {
-    document.querySelectorAll('.tip-wrap.active').forEach(el => {
-      el.classList.remove('active');
-    });
-  }
 });
 
-buildTable();
+// ===================================================================
+// STATE
+// ===================================================================
+let currentSC = 'all';
+let currentTab = 'profit';
+
+// ===================================================================
+// SC BUTTONS
+// ===================================================================
+const scRow = document.querySelector('.sc-row');
+SC_LIST.forEach(sc => {
+  const btn = document.createElement('button');
+  btn.className = 'sc-btn';
+  btn.textContent = sc;
+  btn.onclick = () => filterSC(sc);
+  scRow.appendChild(btn);
+});
+
+function filterSC(sc) {
+  currentSC = sc;
+  document.querySelectorAll('.sc-btn').forEach(b => b.classList.toggle('active', b.textContent === sc || (sc==='all' && b.textContent==='全体')));
+  renderAll();
+}
+function switchTab(tab) {
+  currentTab = tab;
+  document.querySelectorAll('.tab-btn').forEach((b,i)=>b.classList.toggle('active',['profit','waste'][i]===tab));
+  document.querySelectorAll('.tab-panel').forEach(p=>p.classList.toggle('active',p.id==='panel-'+tab));
+  renderAll();
+}
+
+function filteredProfit() { return currentSC==='all' ? PROFIT : PROFIT.filter(s=>SC_MAP[s.name]===currentSC); }
+function filteredWaste()  { return currentSC==='all' ? WASTE  : WASTE.filter(s=>SC_MAP[s.name]===currentSC); }
+
+// ===================================================================
+// DONUT HELPER
+// ===================================================================
+function donut(actual, total, color, r=38) {
+  const pct = total > 0 ? Math.min(actual/total, 1.5) : 0;
+  const circ = 2 * Math.PI * r;
+  const fill = circ * Math.min(pct, 1);
+  const trackColor = '#e8ecf3';
+  const c = color;
+  const display = total > 0 ? Math.round(actual/total*100) : 0;
+  return `<div class="donut-wrap">
+    <svg width="90" height="90" viewBox="0 0 90 90">
+      <circle cx="45" cy="45" r="${r}" fill="none" stroke="${trackColor}" stroke-width="10"/>
+      <circle cx="45" cy="45" r="${r}" fill="none" stroke="${c}" stroke-width="10"
+        stroke-dasharray="${fill.toFixed(1)} ${circ.toFixed(1)}"
+        stroke-linecap="round"/>
+    </svg>
+    <div class="donut-center">
+      <div class="donut-pct" style="color:${c}">${display}<span class="donut-pct-unit">%</span></div>
+    </div>
+  </div>`;
+}
+
+function donutColor(pct) {
+  if (pct >= 100) return '#2e7d32';
+  if (pct >= 85)  return '#1565c0';
+  return '#e53935';
+}
+function wasteDonutColor(ratio) {
+  // ratio = actual/bench. >1 = over = bad
+  if (ratio <= 0.8) return '#2e7d32';
+  if (ratio <= 1.0) return '#1565c0';
+  if (ratio <= 1.3) return '#f57c00';
+  return '#e53935';
+}
+
+// ===================================================================
+// RENDER PROFIT
+// ===================================================================
+function renderProfit() {
+  const fp = filteredProfit();
+  if (!fp.length) { document.getElementById('profitCards').innerHTML='<div style="color:#999;padding:16px">対象店舗なし</div>'; return; }
+
+  const totalLanding = fp.reduce((a,s)=>a+s.landing,0);
+  const totalBudget  = fp.reduce((a,s)=>a+s.budget, 0);
+  const totalDiff    = totalLanding - totalBudget;
+  const overCount    = fp.filter(s=>s.diff>0).length;
+  const avgNisshu    = fp.reduce((a,s)=>a+s.nisshu,0)/fp.length;
+  // 加重平均（今年日販合計÷昨年日販合計）で算出。新店（箕面白島二丁目）は昨年データなし除外
+  const yoyStores    = fp.filter(s=>s.yoy && s.name !== '箕面白島二丁目');
+  const avgYoy       = yoyStores.length
+    ? yoyStores.reduce((a,s)=>a+s.nisshu,0) / yoyStores.reduce((a,s)=>a+s.nisshu/(s.yoy/100),0) * 100
+    : null;
+
+  // Cards
+  const pctBudget = Math.round(totalLanding/totalBudget*100);
+  document.getElementById('profitCards').innerHTML = `
+    <div class="card ${totalDiff>=0?'green':'red'}">
+      <div class="card-label">合算 店利益着地</div>
+      <div class="card-value" style="color:${totalDiff>=0?'#2e7d32':'#e53935'}">${totalLanding.toLocaleString()}<span class="card-unit">千円</span></div>
+      <div class="card-sub">予算 ${totalBudget.toLocaleString()}千円</div>
+    </div>
+    <div class="card ${totalDiff>=0?'green':'red'}">
+      <div class="card-label">合算 差異</div>
+      <div class="card-value" style="color:${totalDiff>=0?'#2e7d32':'#e53935'}">${totalDiff>=0?'+':''}${totalDiff.toLocaleString()}<span class="card-unit">千円</span></div>
+      <div class="card-sub">予算比 ${pctBudget}%</div>
+    </div>
+    <div class="card blue">
+      <div class="card-label">平均日販</div>
+      <div class="card-value">${Math.round(avgNisshu).toLocaleString()}<span class="card-unit">千円</span></div>
+      <div class="card-sub">前年比 ${avgYoy?avgYoy.toFixed(1)+'%':'—'}</div>
+    </div>
+    <div class="card gray">
+      <div class="card-label">予算達成店 / 対象店</div>
+      <div class="card-value">${overCount}<span class="card-unit"> / ${fp.length}店</span></div>
+      <div class="card-sub">達成率 ${Math.round(overCount/fp.length*100)}%</div>
+    </div>`;
+
+  // SC別ドーナツ
+  const scGroups = currentSC === 'all' ? SC_LIST : [currentSC];
+  let donutHtml = '';
+  scGroups.forEach(sc => {
+    const stores = PROFIT.filter(s=>SC_MAP[s.name]===sc);
+    const la = stores.reduce((a,s)=>a+s.landing,0);
+    const bu = stores.reduce((a,s)=>a+s.budget, 0);
+    const pct = bu>0 ? Math.round(la/bu*100) : 0;
+    const col = donutColor(pct);
+    donutHtml += `<div class="donut-item" onclick="showSCDetail('${sc}','profit')">
+      ${donut(la, bu, col)}
+      <div class="donut-label">${sc}</div>
+      <div class="donut-sub">${la.toLocaleString()} / ${bu.toLocaleString()}千円<br>差異 ${(la-bu)>=0?'+':''}${(la-bu).toLocaleString()}</div>
+    </div>`;
+  });
+  document.getElementById('profitDonutGrid').innerHTML = donutHtml;
+
+  // テーブル
+  let html = '';
+  fp.forEach(s => {
+    const sc = SC_MAP[s.name] || '';
+    const yoyStr = s.yoy ? s.yoy.toFixed(2)+'%' : '—';
+    const dc = s.diff>0?'pos':s.diff<0?'neg':'';
+    const ds = s.diff>0?'+'+s.diff.toLocaleString():s.diff.toLocaleString();
+    const mdOver = s.markdownActual - s.markdownBudget;
+    html += `<tr onclick="showStoreDetail('${s.name}')">
+      <td>${s.name}</td>
+      <td><span class="tag tag-${s.type.toLowerCase()}">${s.type}</span></td>
+      <td><span class="sc-chip">${sc}</span></td>
+      <td>${s.nisshu.toFixed(1)}</td><td>${yoyStr}</td>
+      <td>${s.hqSupport>0?s.hqSupport.toLocaleString():'—'}</td>
+      <td>${s.kitchenSalesDay>0?s.kitchenSalesDay.toFixed(1):'—'}</td>
+      <td>${s.kitchenSupportMonth>0?s.kitchenSupportMonth.toLocaleString():'—'}</td>
+      <td>${s.miscExtra!=null?s.miscExtra.toLocaleString():'—'}</td>
+      <td class="${mdOver>0?'neg':''}">${s.markdownActual.toLocaleString()}</td>
+      <td>${s.markdownBudget.toLocaleString()}</td>
+      <td>${s.landing.toLocaleString()}</td><td>${s.budget.toLocaleString()}</td>
+      <td class="${dc}">${ds}</td>
+    </tr>`;
+  });
+  document.getElementById('profitBody').innerHTML = html;
+}
+
+// ===================================================================
+// RENDER WASTE
+// ===================================================================
+function renderWaste() {
+  const fw = filteredWaste();
+  if (!fw.length) { document.getElementById('wasteCards').innerHTML='<div style="color:#999;padding:16px">対象店舗なし</div>'; return; }
+
+  const totAct  = fw.reduce((a,s)=>a+s.total.actual,0);
+  const totBnc  = fw.reduce((a,s)=>a+s.total.bench, 0);
+  const totDiff = totAct - totBnc;
+  const overCnt = fw.filter(s=>s.total.diff>0).length;
+  const worst   = [...fw].sort((a,b)=>b.total.diff-a.total.diff)[0];
+
+  document.getElementById('wasteCards').innerHTML = `
+    <div class="card ${totDiff>0?'red':'green'}">
+      <div class="card-label">廃棄合計差異（日次）</div>
+      <div class="card-value" style="color:${totDiff>0?'#e53935':'#2e7d32'}">${totDiff>0?'▲':'▼'}${Math.abs(totDiff).toFixed(1)}<span class="card-unit">千円/日</span></div>
+      <div class="card-sub">月換算 ${(totDiff*30).toFixed(0)}千円/月</div>
+    </div>
+    <div class="card red">
+      <div class="card-label">指標超過店舗数</div>
+      <div class="card-value" style="color:${overCnt>fw.length/2?'#e53935':'#f57c00'}">${overCnt}<span class="card-unit"> / ${fw.length}店</span></div>
+      <div class="card-sub">適正以下 ${fw.length-overCnt}店</div>
+    </div>
+    <div class="card amber">
+      <div class="card-label">最大超過店</div>
+      <div class="card-value" style="font-size:14px;padding-top:2px">${worst.name}</div>
+      <div class="card-sub">+${worst.total.diff.toFixed(1)}千円/日（月+${(worst.total.diff*30).toFixed(0)}千円）</div>
+    </div>
+    <div class="card red">
+      <div class="card-label">最大超過カテゴリ</div>
+      <div class="card-value" style="font-size:15px;padding-top:2px">${getMostOverCat(fw)}</div>
+      <div class="card-sub">${fw.filter(s=>s[getMostOverCatKey(fw)].diff>0).length}店が超過</div>
+    </div>`;
+
+  // カテゴリ別ドーナツ（実績÷指標）
+  let catHtml = '';
+  WCATS.forEach(c => {
+    const totA = fw.reduce((a,s)=>a+s[c].actual,0);
+    const totB = fw.reduce((a,s)=>a+s[c].bench, 0);
+    const ratio = totB>0 ? totA/totB : 0;
+    const col = wasteDonutColor(ratio);
+    const pct = Math.round(ratio*100);
+    catHtml += `<div class="donut-item" onclick="showCatDetail('${c}')">
+      ${donut(totA, totB, col)}
+      <div class="donut-label">${WLABEL[c]}</div>
+      <div class="donut-sub">実績 ${(totA/fw.length).toFixed(1)} / 指標 ${(totB/fw.length).toFixed(1)}千円/日<br>達成率 ${pct}%</div>
+    </div>`;
+  });
+  document.getElementById('wasteCatDonutGrid').innerHTML = catHtml;
+
+  // SC別ドーナツ
+  const scGroups = currentSC === 'all' ? SC_LIST : [currentSC];
+  let scHtml = '';
+  scGroups.forEach(sc => {
+    const sw = WASTE.filter(s=>SC_MAP[s.name]===sc);
+    const a = sw.reduce((s,r)=>s+r.total.actual,0);
+    const b = sw.reduce((s,r)=>s+r.total.bench, 0);
+    const ratio = b>0?a/b:0;
+    const col = wasteDonutColor(ratio);
+    const pct = Math.round(ratio*100);
+    scHtml += `<div class="donut-item" onclick="showSCDetail('${sc}','waste')">
+      ${donut(a, b, col)}
+      <div class="donut-label">${sc}</div>
+      <div class="donut-sub">実績/指標比 ${pct}%<br>${a.toFixed(1)} / ${b.toFixed(1)}</div>
+    </div>`;
+  });
+  document.getElementById('wasteScDonutGrid').innerHTML = scHtml;
+
+  // 廃棄テーブル
+  function hcls(d, th) {
+    if (d<=0) return 'hg';
+    if (d<th*0.4) return 'h0';
+    if (d<th) return 'h1';
+    if (d<th*2) return 'h2';
+    return 'h3';
+  }
+  function fd(d) { return d===0?'—':(d>0?'+':'')+d.toFixed(2); }
+  let rows = '';
+  fw.forEach(s => {
+    const sc = SC_MAP[s.name]||'';
+    rows += `<tr onclick="showStoreDetail('${s.name}')">
+      <td>${s.name}</td>
+      <td><span class="sc-chip" style="font-size:9px">${sc}</span></td>
+      <td>${s.aico.actual.toFixed(2)}</td><td>${s.aico.bench.toFixed(2)}</td><td class="${hcls(s.aico.diff,3)}">${fd(s.aico.diff)}</td>
+      <td>${s.op.actual.toFixed(2)}</td><td>${s.op.bench.toFixed(2)}</td><td class="${hcls(s.op.diff,1)}">${fd(s.op.diff)}</td>
+      <td>${s.ff.actual.toFixed(2)}</td><td>${s.ff.bench.toFixed(2)}</td><td class="${hcls(s.ff.diff,2)}">${fd(s.ff.diff)}</td>
+      <td>${s.kitch.bench===0?'—':s.kitch.actual.toFixed(2)}</td><td>${s.kitch.bench===0?'—':s.kitch.bench.toFixed(2)}</td><td class="${s.kitch.bench===0?'h0':hcls(s.kitch.diff,1)}">${s.kitch.bench===0?'—':fd(s.kitch.diff)}</td>
+      <td>${s.dry.actual.toFixed(2)}</td><td>${s.dry.bench.toFixed(2)}</td><td class="${hcls(s.dry.diff,0.3)}">${fd(s.dry.diff)}</td>
+      <td><strong>${s.total.actual.toFixed(1)}</strong></td><td><strong>${s.total.bench.toFixed(1)}</strong></td>
+    </tr>`;
+  });
+  // 平均行
+  const mk = c => ({
+    actual: fw.reduce((a,s)=>a+s[c].actual,0)/fw.length,
+    bench:  fw.reduce((a,s)=>a+s[c].bench, 0)/fw.length,
+    diff:   fw.reduce((a,s)=>a+s[c].diff,  0)/fw.length
+  });
+  const av = {}; WCATS.forEach(c=>av[c]=mk(c));
+  rows += `<tr class="avg-row">
+    <td>組織平均</td><td></td>
+    <td>${av.aico.actual.toFixed(2)}</td><td>${av.aico.bench.toFixed(2)}</td><td class="${hcls(av.aico.diff,3)}">${fd(av.aico.diff)}</td>
+    <td>${av.op.actual.toFixed(2)}</td><td>${av.op.bench.toFixed(2)}</td><td class="${hcls(av.op.diff,1)}">${fd(av.op.diff)}</td>
+    <td>${av.ff.actual.toFixed(2)}</td><td>${av.ff.bench.toFixed(2)}</td><td class="${hcls(av.ff.diff,2)}">${fd(av.ff.diff)}</td>
+    <td>${av.kitch.actual.toFixed(2)}</td><td>${av.kitch.bench.toFixed(2)}</td><td class="${hcls(av.kitch.diff,1)}">${fd(av.kitch.diff)}</td>
+    <td>${av.dry.actual.toFixed(2)}</td><td>${av.dry.bench.toFixed(2)}</td><td class="${hcls(av.dry.diff,0.3)}">${fd(av.dry.diff)}</td>
+    <td><strong>${(fw.reduce((a,s)=>a+s.total.actual,0)/fw.length).toFixed(1)}</strong></td>
+    <td><strong>${(fw.reduce((a,s)=>a+s.total.bench, 0)/fw.length).toFixed(1)}</strong></td>
+  </tr>`;
+  document.getElementById('wasteBody').innerHTML = rows;
+}
+
+function getMostOverCatKey(fw) {
+  let best = WCATS[0], bestAvg = -999;
+  WCATS.forEach(c => {
+    const avg = fw.reduce((a,s)=>a+s[c].diff,0)/fw.length;
+    if (avg > bestAvg) { bestAvg = avg; best = c; }
+  });
+  return best;
+}
+function getMostOverCat(fw) { return WLABEL[getMostOverCatKey(fw)]; }
+
+// ===================================================================
+// POPUP
+// ===================================================================
+function showStoreDetail(name) {
+  const p = PROFIT.find(s=>s.name===name);
+  const w = WASTE.find(s=>s.name===name);
+  const sc = SC_MAP[name]||'';
+  document.getElementById('popupTitle').textContent = `${name}　店舗詳細`;
+
+  // ---- 1. 基本情報 ----
+  let html = `<div class="popup-section"><h3>基本情報</h3>
+    <div class="popup-grid">
+      <div class="popup-kv"><div class="k">担当SC</div><div class="v" style="font-size:11px">${sc}</div></div>
+      <div class="popup-kv"><div class="k">契約形態</div><div class="v">${p.type}</div></div>
+      <div class="popup-kv"><div class="k">平均日販</div><div class="v">${p.nisshu.toFixed(1)}千円</div></div>
+      <div class="popup-kv"><div class="k">前年比</div><div class="v" style="color:${p.yoy&&p.yoy>=100?'#2e7d32':'#e53935'}">${p.yoy?p.yoy.toFixed(2)+'%':'—'}</div></div>
+    </div></div>`;
+
+  // ---- 2. 店利益 構成（ウォーターフォール型テーブル） ----
+  const totalIncome = p.fjIncome + p.miscBudget + p.hqSupport + p.kitchenSupportMonth + (p.miscExtra||0);
+  const totalCost   = p.laborBudget + p.otherExp + p.markdownActual;
+  html += `<div class="popup-section"><h3>店利益 構成（千円/月）</h3>
+    <table style="width:100%;font-size:11px;border-collapse:collapse">
+      <tr style="background:#e3f2fd">
+        <td style="padding:5px 8px">📥 FJ収入（実績）</td>
+        <td style="padding:5px 8px;text-align:right;font-weight:700;color:#1565c0">+${p.fjIncome.toLocaleString()}</td>
+        <td style="padding:5px 8px;font-size:10px;color:#888">荒利×FC率</td>
+      </tr>
+      <tr style="background:#e8f5e9">
+        <td style="padding:5px 8px">📥 雑益予算</td>
+        <td style="padding:5px 8px;text-align:right;font-weight:700;color:#2e7d32">+${p.miscBudget.toLocaleString()}</td>
+        <td style="padding:5px 8px;font-size:10px;color:#888">雑収入</td>
+      </tr>
+      <tr style="background:#e8f5e9">
+        <td style="padding:5px 8px">📥 本部支援着地（原価）/月</td>
+        <td style="padding:5px 8px;text-align:right;font-weight:700;color:#2e7d32">+${p.hqSupport.toLocaleString()}</td>
+        <td style="padding:5px 8px;font-size:10px;color:#888">本部支援金</td>
+      </tr>
+      <tr style="background:#e8f5e9">
+        <td style="padding:5px 8px">📥 厨房支援金/月　<span style="font-size:10px;background:#fff3e0;padding:1px 5px;border-radius:8px">${p.kitchenSalesDay>0?p.kitchenSalesDay.toFixed(1)+'千円/日 × '+Math.round(p.kitchenSupportRate*100)+'%':'厨房なし'}</span></td>
+        <td style="padding:5px 8px;text-align:right;font-weight:700;color:#2e7d32">+${p.kitchenSupportMonth.toLocaleString()}</td>
+        <td style="padding:5px 8px;font-size:10px;color:#888">厨房売上連動</td>
+      </tr>
+      ${p.miscExtra!=null?`<tr style="background:#e8f5e9">
+        <td style="padding:5px 8px">📥 雑益追加分（CN）</td>
+        <td style="padding:5px 8px;text-align:right;font-weight:700;color:#2e7d32">+${p.miscExtra.toLocaleString()}</td>
+        <td style="padding:5px 8px;font-size:10px;color:#888">CN店加算分</td>
+      </tr>`:''}
+      <tr style="background:#fce4ec">
+        <td style="padding:5px 8px">📤 人件費</td>
+        <td style="padding:5px 8px;text-align:right;font-weight:700;color:#c62828">−${p.laborBudget.toLocaleString()}</td>
+        <td style="padding:5px 8px;font-size:10px;color:#888">予算</td>
+      </tr>
+      <tr style="background:#fce4ec">
+        <td style="padding:5px 8px">📤 その他経費</td>
+        <td style="padding:5px 8px;text-align:right;font-weight:700;color:#c62828">−${p.otherExp.toLocaleString()}</td>
+        <td style="padding:5px 8px;font-size:10px;color:#888">予算</td>
+      </tr>
+      <tr style="background:${p.markdownActual>p.markdownBudget?'#ffcdd2':'#fce4ec'}">
+        <td style="padding:5px 8px">📤 見切処分実績　<span style="font-size:10px;background:#fff3e0;padding:1px 5px;border-radius:8px">予算${p.markdownBudget.toLocaleString()}</span></td>
+        <td style="padding:5px 8px;text-align:right;font-weight:700;color:#c62828">−${p.markdownActual.toLocaleString()}</td>
+        <td style="padding:5px 8px;font-size:10px;color:${p.markdownActual>p.markdownBudget?'#e53935':'#888'}">${p.markdownActual>p.markdownBudget?'⚠ 超過+'+(p.markdownActual-p.markdownBudget).toLocaleString():'適正'}</td>
+      </tr>
+      <tr style="background:#003087;color:#fff">
+        <td style="padding:6px 8px;font-weight:700">= 店利益着地</td>
+        <td style="padding:6px 8px;text-align:right;font-weight:700;font-size:14px">${p.landing.toLocaleString()}</td>
+        <td style="padding:6px 8px;font-size:11px">予算${p.budget.toLocaleString()} / <span style="color:${p.diff>=0?'#a5d6a7':'#ef9a9a'}">${p.diff>=0?'+':''}${p.diff.toLocaleString()}</span></td>
+      </tr>
+    </table></div>`;
+
+  // ---- 3. 廃棄検証 ドーナツ ----
+  if (w) {
+    html += `<div class="popup-section"><h3>廃棄検証（PSA/D千円/日）</h3>
+      <div class="mini-donut-row">`;
+    WCATS.forEach(c => {
+      const ratio = w[c].bench>0 ? w[c].actual/w[c].bench : 0;
+      const col = wasteDonutColor(ratio);
+      const pct = w[c].bench>0 ? Math.round(ratio*100) : 0;
+      html += `<div class="mini-donut">
+        <div style="position:relative;width:70px;height:70px">
+          <svg width="70" height="70" viewBox="0 0 70 70" style="transform:rotate(-90deg)">
+            <circle cx="35" cy="35" r="28" fill="none" stroke="#e8ecf3" stroke-width="8"/>
+            <circle cx="35" cy="35" r="28" fill="none" stroke="${col}" stroke-width="8"
+              stroke-dasharray="${(2*Math.PI*28*Math.min(ratio,1.5)).toFixed(1)} ${(2*Math.PI*28).toFixed(1)}"
+              stroke-linecap="round"/>
+          </svg>
+          <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);text-align:center">
+            <div style="font-size:12px;font-weight:700;color:${col}">${pct}%</div>
+          </div>
+        </div>
+        <div class="mini-donut-label">${WLABEL[c]}</div>
+        <div style="font-size:10px;color:#888">${w[c].actual.toFixed(1)} / 指${w[c].bench.toFixed(1)}</div>
+        <div style="font-size:10px;font-weight:700;color:${w[c].diff>0?'#e53935':'#2e7d32'}">${w[c].diff>0?'+':''}${w[c].diff.toFixed(2)}</div>
+      </div>`;
+    });
+    html += `</div></div>`;
+  }
+
+  // ---- 4. 改善ポイント ----
+  const improvements = [];
+
+  // 廃棄削減（見切処分実績 vs 予算）
+  const mdOver = p.markdownActual - p.markdownBudget;
+  if (mdOver > 0) {
+    improvements.push({
+      priority: mdOver > 300 ? 'high' : mdOver > 100 ? 'mid' : 'low',
+      icon: '♻️',
+      title: '見切処分の削減',
+      detail: `予算比 +${mdOver.toLocaleString()}千円/月 超過中。廃棄指標を参照して削減余地を確認。`,
+      effect: `最大 +${mdOver.toLocaleString()}千円/月 改善`
+    });
+  }
+
+  // 廃棄指標 PSA/D超過
+  if (w) {
+    const wDiffMonth = Math.round(w.total.diff * 30);
+    if (wDiffMonth > 0) {
+      improvements.push({
+        priority: wDiffMonth > 300 ? 'high' : wDiffMonth > 100 ? 'mid' : 'low',
+        icon: '📉',
+        title: '廃棄率の適正化（指標比）',
+        detail: `廃棄指標を超過 +${w.total.diff.toFixed(1)}千円/日。月換算 +${wDiffMonth.toLocaleString()}千円分の改善余地あり。`,
+        effect: `最大 +${wDiffMonth.toLocaleString()}千円/月 改善`
+      });
+    }
+    // 最もコスパ高いカテゴリ
+    const worstCat = WCATS.filter(c=>w[c].diff>0).sort((a,b)=>w[b].diff-w[a].diff)[0];
+    if (worstCat) {
+      improvements.push({
+        priority: 'low',
+        icon: '🎯',
+        title: `${WLABEL[worstCat]}廃棄の重点改善`,
+        detail: `差異 +${w[worstCat].diff.toFixed(2)}千円/日が最大。発注精度・鮮度管理の見直しを推奨。`,
+        effect: `${WLABEL[worstCat]}のみで月+${Math.round(w[worstCat].diff*30).toLocaleString()}千円`
+      });
+    }
+  }
+
+  // 厨房売上強化
+  if (p.kitchenSalesDay > 0 && p.kitchenSupportRate > 0) {
+    const orgAvgKitchen = PROFIT.filter(s=>s.kitchenSalesDay>0).reduce((a,s)=>a+s.kitchenSalesDay,0) /
+                          PROFIT.filter(s=>s.kitchenSalesDay>0).length;
+    if (p.kitchenSalesDay < orgAvgKitchen * 0.85) {
+      const potentialGain = Math.round((orgAvgKitchen - p.kitchenSalesDay) * p.kitchenSupportRate * 30);
+      improvements.push({
+        priority: 'mid',
+        icon: '🍱',
+        title: '厨房売上の強化',
+        detail: `厨房売上 ${p.kitchenSalesDay.toFixed(1)}千円/日（組織平均${orgAvgKitchen.toFixed(1)}千円/日）。売上増加で支援金アップ。`,
+        effect: `組織平均まで改善で +${potentialGain.toLocaleString()}千円/月`
+      });
+    }
+  } else if (p.type === 'CN' && p.kitchenSalesDay === 0) {
+    improvements.push({
+      priority: 'mid',
+      icon: '🍱',
+      title: '厨房・FFの導入検討',
+      detail: '厨房・FF売上がゼロ。厨房支援金の機会損失あり。導入・強化で収入増加の可能性。',
+      effect: '厨房売上に応じて支援金発生'
+    });
+  }
+
+  // 売上前年比
+  if (p.yoy && p.yoy < 100) {
+    improvements.push({
+      priority: 'high',
+      icon: '📈',
+      title: '売上の前年比回復',
+      detail: `前年比 ${p.yoy.toFixed(2)}%。FJ収入は売上連動のため、売上回復が直接利益改善に直結。`,
+      effect: `1%改善ごとに約 ${Math.round(p.fjIncome * 0.01).toLocaleString()}千円/月 増収`
+    });
+  }
+
+  // 本部支援
+  if (p.hqSupport === 0 && p.type === 'CN') {
+    improvements.push({
+      priority: 'mid',
+      icon: '🏢',
+      title: '本部支援の確認',
+      detail: '本部支援着地がゼロ。本部支援の申請・確認を推奨。',
+      effect: '他店平均 約130千円/月の機会損失'
+    });
+  }
+
+  if (improvements.length > 0) {
+    const priorityColor = {high:'#e53935', mid:'#f57c00', low:'#1565c0'};
+    const priorityLabel = {high:'⚡ 優先', mid:'📌 要対応', low:'💡 参考'};
+    html += `<div class="popup-section"><h3>🔧 改善ポイント（利益改善余地）</h3>`;
+    improvements.sort((a,b) => {
+      const order = {high:0,mid:1,low:2};
+      return order[a.priority] - order[b.priority];
+    }).forEach(imp => {
+      html += `<div style="border-left:3px solid ${priorityColor[imp.priority]};padding:8px 10px;margin-bottom:8px;background:#fafafa;border-radius:0 6px 6px 0">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:3px">
+          <div style="font-size:12px;font-weight:700">${imp.icon} ${imp.title}</div>
+          <div style="font-size:10px;padding:1px 6px;border-radius:10px;background:${priorityColor[imp.priority]};color:#fff">${priorityLabel[imp.priority]}</div>
+        </div>
+        <div style="font-size:11px;color:#555;margin-bottom:3px">${imp.detail}</div>
+        <div style="font-size:11px;font-weight:700;color:${priorityColor[imp.priority]}">${imp.effect}</div>
+      </div>`;
+    });
+    html += `</div>`;
+  } else {
+    html += `<div class="popup-section"><div style="background:#e8f5e9;padding:10px;border-radius:8px;font-size:12px;color:#2e7d32;font-weight:700">✅ 主要な改善ポイントは見当たりません。現状維持を心がけてください。</div></div>`;
+  }
+
+  document.getElementById('popupBody').innerHTML = html;
+  document.getElementById('overlay').classList.add('show');
+}
+
+function showSCDetail(sc, tab) {
+  document.getElementById('popupTitle').textContent = `${sc}　SC担当店一覧`;
+  const stores = PROFIT.filter(s=>SC_MAP[s.name]===sc);
+  let html = `<div class="popup-section"><h3>店利益</h3><table style="width:100%;font-size:11px;border-collapse:collapse">
+    <tr style="background:#003087;color:#fff"><th style="padding:5px;text-align:left">店名</th><th style="padding:5px">着地</th><th style="padding:5px">予算</th><th style="padding:5px">差異</th></tr>`;
+  stores.forEach(s => {
+    html += `<tr style="border-bottom:1px solid #eee;cursor:pointer" onclick="closePopup();setTimeout(()=>showStoreDetail('${s.name}'),100)">
+      <td style="padding:5px;font-weight:600">${s.name}</td>
+      <td style="padding:5px;text-align:right">${s.landing.toLocaleString()}</td>
+      <td style="padding:5px;text-align:right">${s.budget.toLocaleString()}</td>
+      <td style="padding:5px;text-align:right;color:${s.diff>=0?'#2e7d32':'#e53935'};font-weight:700">${s.diff>=0?'+':''}${s.diff.toLocaleString()}</td>
+    </tr>`;
+  });
+  const tla = stores.reduce((a,s)=>a+s.landing,0);
+  const tbu = stores.reduce((a,s)=>a+s.budget, 0);
+  html += `<tr style="background:#e8ecf3;font-weight:700">
+    <td style="padding:5px">合計</td>
+    <td style="padding:5px;text-align:right">${tla.toLocaleString()}</td>
+    <td style="padding:5px;text-align:right">${tbu.toLocaleString()}</td>
+    <td style="padding:5px;text-align:right;color:${(tla-tbu)>=0?'#2e7d32':'#e53935'}">${(tla-tbu)>=0?'+':''}${(tla-tbu).toLocaleString()}</td>
+  </tr></table></div>`;
+
+  if (tab === 'waste') {
+    const sw = WASTE.filter(s=>SC_MAP[s.name]===sc);
+    html += `<div class="popup-section"><h3>廃棄　実績÷指標</h3><div class="mini-donut-row">`;
+    WCATS.forEach(c => {
+      const a = sw.reduce((x,s)=>x+s[c].actual,0)/sw.length;
+      const b = sw.reduce((x,s)=>x+s[c].bench, 0)/sw.length;
+      const ratio = b>0?a/b:0;
+      const col = wasteDonutColor(ratio);
+      html += `<div class="mini-donut">
+        <div style="position:relative;width:70px;height:70px">
+          <svg width="70" height="70" viewBox="0 0 70 70" style="transform:rotate(-90deg)">
+            <circle cx="35" cy="35" r="28" fill="none" stroke="#e8ecf3" stroke-width="8"/>
+            <circle cx="35" cy="35" r="28" fill="none" stroke="${col}" stroke-width="8"
+              stroke-dasharray="${(2*Math.PI*28*Math.min(ratio,1.5)).toFixed(1)} ${(2*Math.PI*28).toFixed(1)}"
+              stroke-linecap="round"/>
+          </svg>
+          <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);text-align:center">
+            <div style="font-size:12px;font-weight:700;color:${col}">${Math.round(ratio*100)}%</div>
+          </div>
+        </div>
+        <div class="mini-donut-label">${WLABEL[c]}</div>
+        <div style="font-size:10px;font-weight:700;color:${(a-b)>0?'#e53935':'#2e7d32'}">${(a-b)>0?'+':''}${(a-b).toFixed(2)}</div>
+      </div>`;
+    });
+    html += `</div></div>`;
+  }
+
+  document.getElementById('popupBody').innerHTML = html;
+  document.getElementById('overlay').classList.add('show');
+}
+
+function showCatDetail(cat) {
+  const fw = filteredWaste();
+  document.getElementById('popupTitle').textContent = `${WLABEL[cat]}　廃棄詳細`;
+  const sorted = [...fw].sort((a,b)=>b[cat].diff-a[cat].diff);
+  let html = `<div class="popup-section"><h3>全店 差異ランキング（千円/日）</h3>
+    <table style="width:100%;font-size:11px;border-collapse:collapse">
+    <tr style="background:#003087;color:#fff"><th style="padding:5px;text-align:left">店名</th><th style="padding:5px">実績</th><th style="padding:5px">指標</th><th style="padding:5px">差異</th></tr>`;
+  sorted.forEach(s => {
+    html += `<tr style="border-bottom:1px solid #eee;cursor:pointer" onclick="closePopup();setTimeout(()=>showStoreDetail('${s.name}'),100)">
+      <td style="padding:5px;font-weight:600">${s.name}</td>
+      <td style="padding:5px;text-align:right">${s[cat].actual.toFixed(2)}</td>
+      <td style="padding:5px;text-align:right">${s[cat].bench.toFixed(2)}</td>
+      <td style="padding:5px;text-align:right;font-weight:700;color:${s[cat].diff>0?'#e53935':'#2e7d32'}">${s[cat].diff>0?'+':''}${s[cat].diff.toFixed(2)}</td>
+    </tr>`;
+  });
+  html += `</table></div>`;
+  document.getElementById('popupBody').innerHTML = html;
+  document.getElementById('overlay').classList.add('show');
+}
+
+function closePopup(e) {
+  if (!e || e.target === document.getElementById('overlay')) {
+    document.getElementById('overlay').classList.remove('show');
+  }
+}
+
+// ===================================================================
+// MAIN RENDER
+// ===================================================================
+function renderAll() {
+  renderProfit();
+  renderWaste();
+}
+
+renderAll();
 </script>
 </body>
 </html>
