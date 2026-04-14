@@ -1,0 +1,637 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>からあげクン感謝祭 事前共有ダッシュボード 4/21〜4/27</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:'Hiragino Sans','Hiragino Kaku Gothic ProN','Meiryo',sans-serif;background:#F0F4F8;color:#1A2B4A;-webkit-text-size-adjust:100%}
+  .header{background:linear-gradient(135deg,#0054A6 0%,#003E7E 100%);color:#fff;padding:16px;text-align:center;position:sticky;top:0;z-index:100;box-shadow:0 2px 8px rgba(0,0,0,.25)}
+  .header h1{font-size:17px;font-weight:700;letter-spacing:.5px}
+  .header p{font-size:12px;opacity:.85;margin-top:3px}
+  .badge-danger{background:#E63946;color:#fff;border-radius:20px;padding:2px 10px;font-size:11px;font-weight:700;display:inline-block;margin-left:8px;animation:pulse 2s infinite}
+  @keyframes pulse{0%,100%{opacity:1}50%{opacity:.7}}
+  .container{max-width:520px;margin:0 auto;padding:12px}
+  .section-title{font-size:13px;font-weight:700;color:#0054A6;text-transform:uppercase;letter-spacing:.8px;margin:20px 0 8px;padding-left:8px;border-left:3px solid #0054A6}
+  .card{background:#fff;border-radius:14px;padding:16px;margin-bottom:12px;box-shadow:0 2px 8px rgba(0,84,166,.10)}
+  .card-title{font-size:13px;color:#5A6A8A;font-weight:600;margin-bottom:10px}
+  .campaign-name{font-size:15px;font-weight:700;color:#1A2B4A;line-height:1.5;margin-bottom:10px}
+  .meta-row{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
+  .meta-chip{background:#EEF4FF;color:#0054A6;border-radius:20px;padding:4px 12px;font-size:12px;font-weight:600}
+  .meta-chip.warn{background:#FFF3E0;color:#E65100}
+  .summary-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px}
+  .summary-item{background:#EEF4FF;border-radius:10px;padding:12px;text-align:center}
+  .summary-item.alert-item{background:#FFF1F1;cursor:pointer}
+  .summary-num{font-size:26px;font-weight:800;color:#0054A6;line-height:1}
+  .summary-num.danger{color:#E63946}
+  .summary-label{font-size:11px;color:#5A6A8A;margin-top:4px}
+  .donut-wrap{position:relative;width:180px;height:180px;margin:0 auto}
+  .donut-center{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);text-align:center;pointer-events:none}
+  .donut-main-num{font-size:28px;font-weight:800;color:#0054A6;line-height:1}
+  .donut-sub{font-size:11px;color:#5A6A8A;margin-top:2px}
+  .target-stats{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px}
+  .target-stat{background:#F5F7FA;border-radius:8px;padding:10px;text-align:center}
+  .target-stat-num{font-size:22px;font-weight:800;color:#0054A6}
+  .target-stat-label{font-size:10px;color:#5A6A8A;margin-top:2px}
+  .yoy-badge{background:#E8F5E9;color:#2E7D32;border-radius:6px;padding:4px 8px;font-size:12px;font-weight:700;text-align:center;margin-top:8px}
+  .day-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;margin-top:10px}
+  .day-card{background:#F5F7FA;border-radius:8px;padding:6px 3px;text-align:center}
+  .day-card.sat{background:#FFF3E0}
+  .day-card.sun{background:#FFF1F1}
+  .day-label{font-size:9px;color:#5A6A8A;font-weight:600}
+  .day-num{font-size:16px;font-weight:800;color:#1A2B4A;line-height:1.2}
+  .day-unit{font-size:8px;color:#7A8AA0}
+  .day-bar{height:4px;background:#0054A6;border-radius:2px;margin-top:4px}
+  .day-card.sat .day-bar{background:#FF8C00}
+  .day-card.sun .day-bar{background:#E63946}
+  .alert-block{margin-bottom:10px}
+  .alert-header{display:flex;align-items:center;gap:6px;padding:10px 12px;border-radius:10px 10px 0 0;font-size:13px;font-weight:700}
+  .alert-header.critical{background:#E63946;color:#fff}
+  .alert-header.warning{background:#FF8C00;color:#fff}
+  .alert-header.warning0{background:#FF5722;color:#fff}
+  .alert-rows{border:2px solid;border-top:none;border-radius:0 0 10px 10px;overflow:hidden}
+  .alert-rows.critical{border-color:#E63946}
+  .alert-rows.warning{border-color:#FF8C00}
+  .alert-rows.warning0{border-color:#FF5722}
+  .alert-row{display:flex;align-items:center;padding:10px 12px;border-bottom:1px solid #F0F0F0;background:#fff;gap:8px}
+  .alert-row:last-child{border-bottom:none}
+  .alert-store{font-size:13px;font-weight:700;color:#1A2B4A;flex:1}
+  .alert-product{font-size:11px;color:#5A6A8A;margin-top:1px}
+  .alert-stock{font-size:20px;font-weight:800;text-align:right;min-width:52px}
+  .alert-stock.critical{color:#E63946}
+  .alert-stock.warning{color:#FF8C00}
+  .alert-stock.warning0{color:#FF5722}
+  .alert-action{font-size:10px;border-radius:4px;padding:2px 6px;font-weight:700;white-space:nowrap}
+  .alert-action.critical{background:#E63946;color:#fff}
+  .alert-action.warning{background:#FF8C00;color:#fff}
+  .alert-action.warning0{background:#FF5722;color:#fff}
+  .stock-note{font-size:11px;color:#E63946;margin-top:4px;font-weight:600}
+  table{width:100%;border-collapse:collapse;font-size:12px}
+  th{background:#0054A6;color:#fff;padding:8px 6px;text-align:center;font-size:11px;font-weight:700;position:sticky;top:48px}
+  td{padding:8px 6px;text-align:center;border-bottom:1px solid #EEF2F7}
+  tr:nth-child(even) td{background:#F8FAFD}
+  td:first-child{text-align:left;font-weight:600}
+  .detail-toggle{background:#0054A6;color:#fff;border:none;width:100%;padding:12px;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;margin-top:4px;display:flex;align-items:center;justify-content:center;gap:6px}
+  .detail-panel{display:none;margin-top:8px}
+  .detail-panel.open{display:block}
+  .legend-grid{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px;justify-content:center}
+  .legend-item{display:flex;align-items:center;gap:4px;font-size:10px;color:#5A6A8A}
+  .legend-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
+  .footer{text-align:center;padding:20px;color:#9AA5B4;font-size:11px}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>🍗 からあげクン感謝祭 事前共有</h1>
+  <p>4/21(火) 〜 4/27(月)&nbsp;
+    <span class="badge-danger">在庫異常 2件</span>
+  </p>
+</div>
+
+<div class="container">
+
+<!-- ① 施策サマリー -->
+<div class="section-title">① 来週施策サマリー</div>
+<div class="card">
+  <div class="card-title">施策内容</div>
+  <div class="campaign-name">おにぎり・からあげクン<br>400円購入ごとに<br>飲料無料キャンペーン</div>
+  <div class="meta-row">
+    <span class="meta-chip">📅 4/21(火)〜4/27(月)</span>
+    <span class="meta-chip">🏪 19店舗</span>
+    <span class="meta-chip">⏱ 7日間</span>
+  </div>
+  <div class="meta-row">
+    <span class="meta-chip warn">⚠️ 飲料引換対象：5種</span>
+  </div>
+
+  <div class="summary-grid" style="margin-top:14px">
+    <div class="summary-item">
+      <div class="summary-num">102<span style="font-size:14px">個</span></div>
+      <div class="summary-label">組織平均目標/日/店</div>
+    </div>
+    <div class="summary-item">
+      <div class="summary-num">13,503<span style="font-size:14px">個</span></div>
+      <div class="summary-label">週間組織合計目標</div>
+    </div>
+    <div class="summary-item">
+      <div class="summary-num" style="color:#2E7D32">+60<span style="font-size:14px">%</span></div>
+      <div class="summary-label">前年比（目標）</div>
+    </div>
+    <div class="summary-item alert-item" onclick="document.getElementById('alert-section').scrollIntoView({behavior:'smooth'})">
+      <div class="summary-num danger">2<span style="font-size:14px">件</span></div>
+      <div class="summary-label">⚠️ 在庫異常（要対応）</div>
+    </div>
+  </div>
+</div>
+
+<!-- ② からあげクン目標共有 -->
+<div class="section-title">② からあげクン目標共有</div>
+<div class="card">
+  <div class="card-title">組織平均販売目標（PSA/D）</div>
+  <div class="donut-wrap">
+    <canvas id="targetDonut"></canvas>
+    <div class="donut-center">
+      <div class="donut-main-num">102</div>
+      <div class="donut-sub">個/日/店</div>
+    </div>
+  </div>
+  <div class="yoy-badge">📈 昨年実績 64個 → 今年目標 102個（前年比 +59.4%）</div>
+  <div class="target-stats">
+    <div class="target-stat">
+      <div class="target-stat-num">1,929</div>
+      <div class="target-stat-label">組織合計/日</div>
+    </div>
+    <div class="target-stat">
+      <div class="target-stat-num">13,503</div>
+      <div class="target-stat-label">組織合計/週</div>
+    </div>
+  </div>
+  <div style="margin-top:14px">
+    <div class="card-title">店舗別 目標分布（個/日）</div>
+    <div class="donut-wrap" style="width:220px;height:220px">
+      <canvas id="storeDonut"></canvas>
+    </div>
+    <div class="legend-grid" id="storeLegend"></div>
+  </div>
+</div>
+
+<!-- ③ 曜日別販売目標 -->
+<div class="section-title">③ 曜日別販売目標（組織平均 個/日/店）</div>
+<div class="card">
+  <div class="card-title">1週間の曜日別目標比率</div>
+  <div class="donut-wrap" style="width:200px;height:200px">
+    <canvas id="dayDonut"></canvas>
+    <div class="donut-center">
+      <div style="font-size:13px;font-weight:800;color:#0054A6">711個</div>
+      <div class="donut-sub">週合計/店</div>
+    </div>
+  </div>
+  <div class="day-grid" style="margin-top:14px">
+    <div class="day-card"><div class="day-label">火</div><div class="day-num">90</div><div class="day-unit">個</div><div class="day-bar" style="width:75%"></div></div>
+    <div class="day-card"><div class="day-label">水</div><div class="day-num">84</div><div class="day-unit">個</div><div class="day-bar" style="width:70%"></div></div>
+    <div class="day-card"><div class="day-label">木</div><div class="day-num">96</div><div class="day-unit">個</div><div class="day-bar" style="width:80%"></div></div>
+    <div class="day-card"><div class="day-label">金</div><div class="day-num">113</div><div class="day-unit">個</div><div class="day-bar" style="width:94%"></div></div>
+    <div class="day-card sat"><div class="day-label">土</div><div class="day-num">116</div><div class="day-unit">個</div><div class="day-bar" style="width:97%"></div></div>
+    <div class="day-card sun"><div class="day-label">日</div><div class="day-num">113</div><div class="day-unit">個</div><div class="day-bar" style="width:94%"></div></div>
+    <div class="day-card"><div class="day-label">月</div><div class="day-num">99</div><div class="day-unit">個</div><div class="day-bar" style="width:83%"></div></div>
+  </div>
+  <div style="margin-top:8px;font-size:11px;color:#5A6A8A;text-align:center">
+    ※ 組織MO平均（阪口清治MO）の曜日別目標
+  </div>
+</div>
+
+<!-- ④ 在庫アラート -->
+<div class="section-title" id="alert-section">④ 飲料引換在庫アラート</div>
+
+<div class="alert-block">
+  <div class="alert-header critical">🚨 在庫異常 — 簡易棚卸登録を早急に実施（2件）</div>
+  <div class="alert-rows critical">
+    <div class="alert-row">
+      <div style="flex:1">
+        <div class="alert-store">江坂駅南口</div>
+        <div class="alert-product">十六茶（引換対象）</div>
+        <div class="stock-note">簡易棚卸登録を早急に実施してください</div>
+      </div>
+      <div>
+        <div class="alert-stock critical">−122本</div>
+        <div class="alert-action critical" style="margin-top:4px">在庫異常</div>
+      </div>
+    </div>
+    <div class="alert-row">
+      <div style="flex:1">
+        <div class="alert-store">吹田垂水三丁目</div>
+        <div class="alert-product">十六茶（引換対象）</div>
+        <div class="stock-note">簡易棚卸登録を早急に実施してください</div>
+      </div>
+      <div>
+        <div class="alert-stock critical">−20本</div>
+        <div class="alert-action critical" style="margin-top:4px">在庫異常</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="alert-block">
+  <div class="alert-header warning0">🟠 在庫0本 — 即時発注推奨（4件）</div>
+  <div class="alert-rows warning0">
+    <div class="alert-row">
+      <div style="flex:1">
+        <div class="alert-store">江坂駅南口</div>
+        <div class="alert-product">やさしい麦茶（引換対象）</div>
+      </div>
+      <div>
+        <div class="alert-stock warning0">0本</div>
+        <div class="alert-action warning0" style="margin-top:4px">即時発注</div>
+      </div>
+    </div>
+    <div class="alert-row">
+      <div style="flex:1">
+        <div class="alert-store">吹田豊津中学校前</div>
+        <div class="alert-product">やさしい麦茶（引換対象）</div>
+      </div>
+      <div>
+        <div class="alert-stock warning0">0本</div>
+        <div class="alert-action warning0" style="margin-top:4px">即時発注</div>
+      </div>
+    </div>
+    <div class="alert-row">
+      <div style="flex:1">
+        <div class="alert-store">吹田垂水三丁目</div>
+        <div class="alert-product">黒豆茶（引換対象）</div>
+      </div>
+      <div>
+        <div class="alert-stock warning0">0本</div>
+        <div class="alert-action warning0" style="margin-top:4px">即時発注</div>
+      </div>
+    </div>
+    <div class="alert-row">
+      <div style="flex:1">
+        <div class="alert-store">豊里六丁目</div>
+        <div class="alert-product">黒豆茶（引換対象）</div>
+      </div>
+      <div>
+        <div class="alert-stock warning0">0本</div>
+        <div class="alert-action warning0" style="margin-top:4px">即時発注</div>
+      </div>
+    </div>
+    <div class="alert-row">
+      <div style="flex:1">
+        <div class="alert-store">豊中服部元町一丁目</div>
+        <div class="alert-product">黒豆茶（引換対象）</div>
+      </div>
+      <div>
+        <div class="alert-stock warning0">0本</div>
+        <div class="alert-action warning0" style="margin-top:4px">即時発注</div>
+      </div>
+    </div>
+    <div class="alert-row">
+      <div style="flex:1">
+        <div class="alert-store">池田市役所前</div>
+        <div class="alert-product">黒豆茶（引換対象）</div>
+      </div>
+      <div>
+        <div class="alert-stock warning0">0本</div>
+        <div class="alert-action warning0" style="margin-top:4px">即時発注</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="alert-block">
+  <div class="alert-header warning">⚠️ 発注推奨（24本以下）</div>
+  <div class="alert-rows warning">
+    <!-- 1〜9本 -->
+    <div class="alert-row">
+      <div style="flex:1">
+        <div class="alert-store">豊中服部西町三丁目</div>
+        <div class="alert-product">生茶 3本 ／ やさしい麦茶 9本 ／ 十六茶 14本 ／ 黒豆茶 21本</div>
+      </div>
+      <div>
+        <div class="alert-stock warning" style="font-size:14px">4品目</div>
+        <div class="alert-action warning" style="margin-top:4px">発注推奨</div>
+      </div>
+    </div>
+    <div class="alert-row">
+      <div style="flex:1">
+        <div class="alert-store">吹田垂水三丁目</div>
+        <div class="alert-product">生茶 4本 ／ やさしい麦茶 14本 ／ 爽健美茶 14本</div>
+      </div>
+      <div>
+        <div class="alert-stock warning" style="font-size:14px">3品目</div>
+        <div class="alert-action warning" style="margin-top:4px">発注推奨</div>
+      </div>
+    </div>
+    <div class="alert-row">
+      <div style="flex:1">
+        <div class="alert-store">吹田豊津中学校前</div>
+        <div class="alert-product">生茶 8本 ／ 十六茶 23本 ／ 黒豆茶 13本</div>
+      </div>
+      <div>
+        <div class="alert-stock warning" style="font-size:14px">3品目</div>
+        <div class="alert-action warning" style="margin-top:4px">発注推奨</div>
+      </div>
+    </div>
+    <div class="alert-row">
+      <div style="flex:1">
+        <div class="alert-store">東淀川大道南</div>
+        <div class="alert-product">生茶 15本 ／ やさしい麦茶 14本 ／ 黒豆茶 20本</div>
+      </div>
+      <div>
+        <div class="alert-stock warning" style="font-size:14px">3品目</div>
+        <div class="alert-action warning" style="margin-top:4px">発注推奨</div>
+      </div>
+    </div>
+    <div class="alert-row">
+      <div style="flex:1">
+        <div class="alert-store">五月ケ丘東</div>
+        <div class="alert-product">生茶 8本 ／ やさしい麦茶 16本 ／ 爽健美茶 24本</div>
+      </div>
+      <div>
+        <div class="alert-stock warning" style="font-size:14px">3品目</div>
+        <div class="alert-action warning" style="margin-top:4px">発注推奨</div>
+      </div>
+    </div>
+    <div class="alert-row">
+      <div style="flex:1">
+        <div class="alert-store">吹田朝日町</div>
+        <div class="alert-product">生茶 18本 ／ やさしい麦茶 18本</div>
+      </div>
+      <div>
+        <div class="alert-stock warning" style="font-size:14px">2品目</div>
+        <div class="alert-action warning" style="margin-top:4px">発注推奨</div>
+      </div>
+    </div>
+    <div class="alert-row">
+      <div style="flex:1">
+        <div class="alert-store">豊中原田南一丁目</div>
+        <div class="alert-product">生茶 13本 ／ 黒豆茶 18本</div>
+      </div>
+      <div>
+        <div class="alert-stock warning" style="font-size:14px">2品目</div>
+        <div class="alert-action warning" style="margin-top:4px">発注推奨</div>
+      </div>
+    </div>
+    <div class="alert-row">
+      <div style="flex:1">
+        <div class="alert-store">新御堂筋上新田</div>
+        <div class="alert-product">生茶 16本 ／ 黒豆茶 16本</div>
+      </div>
+      <div>
+        <div class="alert-stock warning" style="font-size:14px">2品目</div>
+        <div class="alert-action warning" style="margin-top:4px">発注推奨</div>
+      </div>
+    </div>
+    <div class="alert-row">
+      <div style="flex:1">
+        <div class="alert-store">吹田警察署前</div>
+        <div class="alert-product">生茶 19本 ／ 黒豆茶 14本</div>
+      </div>
+      <div>
+        <div class="alert-stock warning" style="font-size:14px">2品目</div>
+        <div class="alert-action warning" style="margin-top:4px">発注推奨</div>
+      </div>
+    </div>
+    <div class="alert-row">
+      <div style="flex:1">
+        <div class="alert-store">大道南一丁目</div>
+        <div class="alert-product">やさしい麦茶 24本 ／ 黒豆茶 21本</div>
+      </div>
+      <div>
+        <div class="alert-stock warning" style="font-size:14px">2品目</div>
+        <div class="alert-action warning" style="margin-top:4px">発注推奨</div>
+      </div>
+    </div>
+    <div class="alert-row">
+      <div style="flex:1">
+        <div class="alert-store">東淀川豊里五丁目</div>
+        <div class="alert-product">生茶 10本 ／ 黒豆茶 22本</div>
+      </div>
+      <div>
+        <div class="alert-stock warning" style="font-size:14px">2品目</div>
+        <div class="alert-action warning" style="margin-top:4px">発注推奨</div>
+      </div>
+    </div>
+    <div class="alert-row">
+      <div style="flex:1">
+        <div class="alert-store">南金田二丁目</div>
+        <div class="alert-product">十六茶 22本 ／ 黒豆茶 14本</div>
+      </div>
+      <div>
+        <div class="alert-stock warning" style="font-size:14px">2品目</div>
+        <div class="alert-action warning" style="margin-top:4px">発注推奨</div>
+      </div>
+    </div>
+    <div class="alert-row">
+      <div style="flex:1">
+        <div class="alert-store">箕面白島二丁目</div>
+        <div class="alert-product">生茶 13本 ／ 爽健美茶 24本</div>
+      </div>
+      <div>
+        <div class="alert-stock warning" style="font-size:14px">2品目</div>
+        <div class="alert-action warning" style="margin-top:4px">発注推奨</div>
+      </div>
+    </div>
+    <div class="alert-row">
+      <div style="flex:1">
+        <div class="alert-store">池田市役所前</div>
+        <div class="alert-product">生茶 14本 ／ やさしい麦茶 24本</div>
+      </div>
+      <div>
+        <div class="alert-stock warning" style="font-size:14px">2品目</div>
+        <div class="alert-action warning" style="margin-top:4px">発注推奨</div>
+      </div>
+    </div>
+    <div class="alert-row">
+      <div style="flex:1">
+        <div class="alert-store">豊里六丁目</div>
+        <div class="alert-product">十六茶 21本</div>
+      </div>
+      <div>
+        <div class="alert-stock warning">21本</div>
+        <div class="alert-action warning" style="margin-top:4px">発注推奨</div>
+      </div>
+    </div>
+    <div class="alert-row">
+      <div style="flex:1">
+        <div class="alert-store">江坂東</div>
+        <div class="alert-product">黒豆茶 14本</div>
+      </div>
+      <div>
+        <div class="alert-stock warning">14本</div>
+        <div class="alert-action warning" style="margin-top:4px">発注推奨</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div style="font-size:11px;color:#5A6A8A;margin-top:-4px;margin-bottom:12px;padding:0 4px">
+  ※ 在庫は2026/04/13(月)時点。4/21施策開始までに補充を完了してください。
+</div>
+
+<!-- ⑤ 店舗別詳細 -->
+<div class="section-title">⑤ 店舗別販売目標詳細</div>
+<button class="detail-toggle" onclick="toggleDetail(this)">
+  <span>▼</span> 店舗別目標を展開する
+</button>
+<div class="detail-panel" id="detail-panel">
+  <div class="card" style="padding:0;margin-top:8px;overflow-x:auto">
+    <div>
+      <table>
+        <thead>
+          <tr>
+            <th style="min-width:120px">店舗名</th>
+            <th>平均<br>目標</th>
+            <th>火<br>4/21</th>
+            <th>水<br>4/22</th>
+            <th>木<br>4/23</th>
+            <th>金<br>4/24</th>
+            <th style="background:#E65100">土<br>4/25</th>
+            <th style="background:#C62828">日<br>4/26</th>
+            <th>月<br>4/27</th>
+          </tr>
+        </thead>
+        <tbody id="store-tbody"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<div class="footer">
+  データ基準日：2026/04/13 ／ 在庫アラート基準：24本以下＝発注推奨、マイナス＝在庫異常<br>
+  <span style="color:#0054A6;font-weight:600">からあげクン感謝祭 4/21(火)〜4/27(月)</span>
+</div>
+
+</div><!-- /container -->
+
+<script>
+const stores = [
+  { name:'江坂駅南口',      avg:212, days:[213,154,221,232,263,195,207] },
+  { name:'南金田二丁目',    avg:164, days:[115,127,168,171,218,173,173] },
+  { name:'新御堂筋上新田',  avg:133, days:[114,133,115,112,183,168,104] },
+  { name:'吹田青山台三丁目',avg:125, days:[114, 90,107,163,162,135,106] },
+  { name:'吹田朝日町',      avg:117, days:[114, 80,133,163, 99,112,120] },
+  { name:'豊中服部元町一丁目',avg:113,days:[112, 96, 93,120,139,109,123] },
+  { name:'東淀川大道南',    avg:108, days:[ 98, 87, 85,111,130,168, 77] },
+  { name:'東淀川豊里五丁目',avg:108, days:[ 91, 91, 83,123,139,128, 96] },
+  { name:'豊中利倉東一丁目',avg:104, days:[ 83, 67, 93,104,133,138,112] },
+  { name:'江坂東',          avg:101, days:[ 85, 80, 80,154,114,101, 95] },
+  { name:'豊中原田南一丁目',avg: 89, days:[ 69, 85,101, 96, 79, 88,107] },
+  { name:'吹田豊津中学校前',avg: 88, days:[ 74, 75,104, 99, 87, 77, 99] },
+  { name:'吹田警察署前',    avg: 86, days:[ 96, 82, 83, 88, 90, 79, 87] },
+  { name:'豊中服部西町三丁目',avg:86, days:[ 58, 56, 69, 93, 87,155, 83] },
+  { name:'大道南一丁目',    avg: 82, days:[ 72, 72, 74, 87, 91, 93, 87] },
+  { name:'五月ケ丘東',      avg: 70, days:[ 62, 77, 66, 69, 72, 83, 59] },
+  { name:'池田市役所前',    avg: 53, days:[ 40, 38, 53, 69, 54, 67, 46] },
+  { name:'豊里六丁目',      avg: 49, days:[ 51, 61, 53, 51, 34, 35, 54] },
+  { name:'吹田垂水三丁目',  avg: 41, days:[ 48, 38, 40, 43, 38, 38, 38] },
+];
+
+// ── Target Donut (昨年 vs 今年目標) ──────────────────
+const targetCtx = document.getElementById('targetDonut').getContext('2d');
+new Chart(targetCtx, {
+  type: 'doughnut',
+  data: {
+    labels: ['昨年実績 64個','増加分 +38個'],
+    datasets: [{
+      data: [64, 38],
+      backgroundColor: ['#5B9BD5','#0054A6'],
+      borderWidth: 3,
+      borderColor: '#fff',
+      hoverOffset: 6
+    }]
+  },
+  options: {
+    cutout: '68%',
+    plugins: {
+      legend: { display: false },
+      tooltip: {
+        callbacks: {
+          label: ctx => ` ${ctx.label}（${ctx.raw}個/日）`
+        }
+      }
+    },
+    animation: { duration: 900, easing: 'easeInOutQuart' }
+  }
+});
+
+// ── Store Donut ────────────────────────────────────────
+const palette = [
+  '#0054A6','#1E88E5','#42A5F5','#64B5F6','#90CAF9',
+  '#5E35B1','#7B1FA2','#AD1457','#C62828','#E53935',
+  '#F57F17','#F9A825','#558B2F','#2E7D32','#00695C',
+  '#00838F','#006064','#37474F','#546E7A'
+];
+const storeCtx = document.getElementById('storeDonut').getContext('2d');
+new Chart(storeCtx, {
+  type: 'doughnut',
+  data: {
+    labels: stores.map(s => s.name),
+    datasets: [{
+      data: stores.map(s => s.avg),
+      backgroundColor: palette,
+      borderWidth: 2,
+      borderColor: '#fff',
+      hoverOffset: 8
+    }]
+  },
+  options: {
+    cutout: '55%',
+    plugins: {
+      legend: { display: false },
+      tooltip: {
+        callbacks: {
+          label: ctx => ` ${ctx.label}：${ctx.raw}個/日`
+        }
+      }
+    },
+    animation: { duration: 1000, easing: 'easeInOutQuart' }
+  }
+});
+
+const legendEl = document.getElementById('storeLegend');
+stores.forEach((s, i) => {
+  const item = document.createElement('div');
+  item.className = 'legend-item';
+  item.innerHTML = `<div class="legend-dot" style="background:${palette[i]}"></div>${s.name} ${s.avg}個`;
+  legendEl.appendChild(item);
+});
+
+// ── Day Donut ──────────────────────────────────────────
+const dayColors = ['#5B9BD5','#0054A6','#00838F','#F9A825','#FF8C00','#E63946','#5E35B1'];
+const dayData = [90, 84, 96, 113, 116, 113, 99];
+const dayLabels = ['4/21 火','4/22 水','4/23 木','4/24 金','4/25 土','4/26 日','4/27 月'];
+const dayCtx = document.getElementById('dayDonut').getContext('2d');
+new Chart(dayCtx, {
+  type: 'doughnut',
+  data: {
+    labels: dayLabels,
+    datasets: [{
+      data: dayData,
+      backgroundColor: dayColors,
+      borderWidth: 3,
+      borderColor: '#fff',
+      hoverOffset: 8
+    }]
+  },
+  options: {
+    cutout: '60%',
+    plugins: {
+      legend: { display: false },
+      tooltip: {
+        callbacks: {
+          label: ctx => ` ${ctx.label}：${ctx.raw}個/日/店`
+        }
+      }
+    },
+    animation: { duration: 900, easing: 'easeInOutQuart' }
+  }
+});
+
+// ── Store Table ────────────────────────────────────────
+const tbody = document.getElementById('store-tbody');
+stores.forEach(s => {
+  const tr = document.createElement('tr');
+  const maxDay = Math.max(...s.days);
+  tr.innerHTML = `
+    <td>${s.name}</td>
+    <td><strong>${s.avg}</strong></td>
+    ${s.days.map((d,i) => {
+      const hi = d === maxDay ? 'style="background:#FFF3E0;font-weight:800;color:#E65100"' : '';
+      return `<td ${hi}>${d}</td>`;
+    }).join('')}
+  `;
+  tbody.appendChild(tr);
+});
+
+// ── Toggle ─────────────────────────────────────────────
+function toggleDetail(btn) {
+  const panel = document.getElementById('detail-panel');
+  const isOpen = panel.classList.toggle('open');
+  btn.innerHTML = `<span>${isOpen ? '▲' : '▼'}</span> 店舗別目標を${isOpen ? '閉じる' : '展開する'}`;
+}
+</script>
+</body>
+</html>
