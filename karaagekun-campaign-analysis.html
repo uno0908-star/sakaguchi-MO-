@@ -1074,17 +1074,120 @@ body { font-family: "Hiragino Kaku Gothic ProN", "Meiryo", sans-serif; backgroun
     </div>
   </div>
 
-  <!-- 店舗バラつき（ぐんぐんグルト） -->
+  <!-- 店舗別内訳テーブル -->
   <div class="card">
-    <div class="card-title">店舗別バラつき　<span class="badge badge-green">ぐんぐんグルト 日平均</span></div>
-    <div style="font-size:12px; color:#555; line-height:2.0;">
-      <span style="color:#2e7d32; font-weight:700">高め：</span>南金田二丁目（36.3本/日）・吹田青山台（32.7）・新御堂筋上新田（31.1）<br>
-      <span style="color:#e65100; font-weight:700">低め：</span>吹田垂水三丁目（9.9）・吹田豊津中学校前（15.7）・豊里六丁目（21.7）
+    <div class="card-title">店舗別 飲料引換 実績　<span class="badge badge-blue">飲料計 多い順</span></div>
+    <div style="font-size:11px; color:#888; margin-bottom:8px;">
+      引換率：<span style="color:#2e7d32;font-weight:700">■95%以上</span>
+      <span style="color:#558b2f;font-weight:700">　■85〜94%</span>
+      <span style="color:#f57f17;font-weight:700">　■75〜84%</span>
+      <span style="color:#c62828;font-weight:700">　■75%未満</span>
     </div>
+    <div style="overflow-x:auto; -webkit-overflow-scrolling:touch;">
+      <table style="width:100%; border-collapse:collapse; font-size:12px; min-width:560px;">
+        <thead>
+          <tr style="background:#1a1a2e; color:white;">
+            <th style="padding:7px 8px; text-align:left; white-space:nowrap;">店名</th>
+            <th style="padding:7px 6px; text-align:center; white-space:nowrap;">からあげ<br>（個）</th>
+            <th style="padding:7px 6px; text-align:center; white-space:nowrap;">飲料計<br>（本）</th>
+            <th style="padding:7px 6px; text-align:center; white-space:nowrap;">引換率</th>
+            <th style="padding:7px 6px; text-align:center; background:#2196f3; white-space:nowrap;">綾鷹</th>
+            <th style="padding:7px 6px; text-align:center; background:#009688; white-space:nowrap;">お茶<br>濃茶</th>
+            <th style="padding:7px 6px; text-align:center; background:#ff9800; white-space:nowrap;">おいしい<br>無糖</th>
+            <th style="padding:7px 6px; text-align:center; background:#e91e63; white-space:nowrap;">ピンク<br>GF</th>
+            <th style="padding:7px 6px; text-align:center; background:#4caf50; white-space:nowrap;">ぐんぐん<br>グルト</th>
+          </tr>
+        </thead>
+        <tbody id="drink-store-tbody">
+        </tbody>
+      </table>
+    </div>
+    <div class="scroll-hint">← 横にスクロールできます →</div>
     <div class="summary-box orange" style="margin-top:10px; margin-bottom:0">
-      店舗間のバラつきが大きい。声掛け・在庫管理の水準が店舗によって異なる可能性あり。
+      引換率の低い江坂駅南口（66.5%）・吹田朝日町（69.0%）は、からあげクンは売れているが飲料引換の声掛けが弱い可能性あり。特に江坂駅南口は次回の重点改善店。
     </div>
   </div>
+
+  <script>
+  (function() {
+    var data = [
+      ["吹田青山台三丁目", 1003, 996, 99.3, 211, 179, 149, 188, 269],
+      ["豊中原田南一丁目", 1074, 948, 88.3, 234, 193, 117, 194, 210],
+      ["南金田二丁目",     1068, 942, 88.2, 213, 186, 113, 176, 254],
+      ["新御堂筋上新田",   1068, 896, 83.9, 211, 190, 119, 158, 218],
+      ["江坂駅南口",       1338, 890, 66.5, 170, 247, 151, 197, 125],
+      ["東淀川豊里五丁目", 885,  778, 87.9, 186, 133,  96, 140, 223],
+      ["豊中服部元町一丁目",900, 762, 84.7, 154, 129, 113, 166, 200],
+      ["吹田朝日町",       1076, 742, 69.0, 161, 163,  93, 131, 194],
+      ["箕面白島二丁目",   896,  724, 80.8, 140, 114, 112, 171, 187],
+      ["豊中服部西町三丁目",778, 714, 91.8, 166, 124, 112, 148, 164],
+      ["江坂東",           728,  611, 83.9, 135, 124,  87, 121, 144],
+      ["東淀川大道南",     702,  589, 83.9, 129, 129,  71, 104, 156],
+      ["大道南一丁目",     625,  550, 88.0, 132, 106,  58, 101, 153],
+      ["吹田豊津中学校前", 656,  545, 83.1, 129, 133, 107,  66, 110],
+      ["豊中利倉東一丁目", 720,  530, 73.6, 108, 104,  49, 134, 135],
+      ["池田市役所前",     613,  503, 82.1, 129, 103,  64,  77, 130],
+      ["吹田警察署前",     619,  491, 79.3, 111, 103,  79,  74, 124],
+      ["五月ケ丘東",       577,  478, 82.8, 103,  74,  76,  97, 128],
+      ["豊里六丁目",       490,  475, 96.9,  89,  85,  53,  96, 152],
+      ["吹田垂水三丁目",   345,  322, 93.3,  71,  66,  44,  72,  69],
+    ];
+
+    function rateColor(r) {
+      if (r >= 95) return "#2e7d32";
+      if (r >= 85) return "#558b2f";
+      if (r >= 75) return "#f57f17";
+      return "#c62828";
+    }
+    function rateBg(r) {
+      if (r >= 95) return "#e8f5e9";
+      if (r >= 85) return "#f1f8e9";
+      if (r >= 75) return "#fff8e1";
+      return "#ffebee";
+    }
+
+    var tbody = document.getElementById('drink-store-tbody');
+    data.forEach(function(row, idx) {
+      var name=row[0], kara=row[1], drink=row[2], rate=row[3];
+      var vals = row.slice(4);
+      var drinkColors = ["#2196f3","#009688","#ff9800","#e91e63","#4caf50"];
+      var maxVal = Math.max.apply(null, vals);
+
+      var tr = document.createElement('tr');
+      tr.style.borderBottom = "1px solid #f0f0f0";
+      if (idx % 2 === 1) tr.style.background = "#fafafa";
+
+      // 店名
+      var td0 = '<td style="padding:7px 8px; font-weight:600; white-space:nowrap;">' + name + '</td>';
+      // からあげ
+      var td1 = '<td style="padding:7px 6px; text-align:center; color:#555;">' + kara.toLocaleString() + '</td>';
+      // 飲料計
+      var td2 = '<td style="padding:7px 6px; text-align:center; font-weight:800; color:#1a1a2e;">' + drink.toLocaleString() + '</td>';
+      // 引換率
+      var td3 = '<td style="padding:7px 6px; text-align:center; font-weight:800; color:' + rateColor(rate) + '; background:' + rateBg(rate) + ';">' + rate.toFixed(1) + '%</td>';
+      // 各飲料
+      var tdDrinks = vals.map(function(v, i) {
+        var bold = v === maxVal ? 'font-weight:800;' : '';
+        var bg = v === maxVal ? 'background:' + drinkColors[i] + '22;' : '';
+        return '<td style="padding:7px 6px; text-align:center; ' + bold + bg + '">' + v + '</td>';
+      }).join('');
+
+      tr.innerHTML = td0 + td1 + td2 + td3 + tdDrinks;
+      tbody.appendChild(tr);
+    });
+
+    // 合計行
+    var totals = [2982, 2685, 1863, 2611, 3345];
+    var tfoot = '<tr style="background:#1a1a2e; color:white; font-weight:700;">'
+      + '<td style="padding:7px 8px;">合計</td>'
+      + '<td style="padding:7px 6px; text-align:center;">16,161</td>'
+      + '<td style="padding:7px 6px; text-align:center;">13,486</td>'
+      + '<td style="padding:7px 6px; text-align:center;">83.4%</td>'
+      + totals.map(function(v){ return '<td style="padding:7px 6px; text-align:center;">' + v.toLocaleString() + '</td>'; }).join('')
+      + '</tr>';
+    tbody.insertAdjacentHTML('beforeend', tfoot);
+  })();
+  </script>
 
 </div>
 
