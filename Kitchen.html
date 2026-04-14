@@ -366,7 +366,7 @@ function US(){
     document.getElementById("sLoss").textContent="この店舗の時間帯データなし（新規店舗等）";
   }
   // 単品マトリクス
-  var si=SI[st]||[];
+  var si=(SI[st]||[]).filter(function(x){return x.name!="まちかど厨房（販売）";});
   var sv=si.filter(function(x){return x.sales>0;}).map(function(x){return x.sales;}).sort(function(a,b){return a-b;});
   var sm=sv.length?sv[Math.floor(sv.length/2)]:5;
   var aq=function(s,w){return s>=sm&&w<15?1:s<sm&&w<15?2:s>=sm&&w>=15?3:4;};
