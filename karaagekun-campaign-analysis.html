@@ -2,625 +2,1154 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>からあげクン×飲料無料引換キャンペーン 結果検証</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>からあげクン×飲料 結果検証</title>
 <style>
-  * { margin: 0; padding: 0; box-sizing: border-box; }
-  body { font-family: "Meiryo UI", "Yu Gothic UI", sans-serif; background: #f0f2f5; color: #1a1a2e; font-size: 13px; }
+* { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+body { font-family: "Hiragino Kaku Gothic ProN", "Meiryo", sans-serif; background: #f0f2f5; color: #1a1a2e; font-size: 14px; }
 
-  .page { max-width: 1280px; margin: 0 auto; padding: 16px; }
+/* ===== ヘッダー ===== */
+.header {
+  background: linear-gradient(135deg, #1a1a2e, #0d47a1);
+  color: white;
+  padding: 16px;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+}
+.header h1 { font-size: 15px; font-weight: 700; margin-bottom: 3px; }
+.header .sub { font-size: 11px; opacity: 0.75; }
 
-  /* ヘッダー */
-  .header { background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%); color: white; padding: 20px 24px; border-radius: 12px; margin-bottom: 16px; display: flex; justify-content: space-between; align-items: center; }
-  .header h1 { font-size: 20px; font-weight: 700; letter-spacing: 0.5px; }
-  .header .meta { text-align: right; font-size: 12px; opacity: 0.8; line-height: 1.6; }
-  .header .meta strong { font-size: 14px; color: #ffd700; }
+/* ===== タブ ===== */
+.tabs {
+  display: flex;
+  background: #fff;
+  border-bottom: 2px solid #e0e0e0;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+  position: sticky;
+  top: 60px;
+  z-index: 99;
+}
+.tabs::-webkit-scrollbar { display: none; }
+.tab {
+  flex: 1;
+  min-width: 70px;
+  padding: 10px 6px;
+  font-size: 11px;
+  font-weight: 600;
+  text-align: center;
+  cursor: pointer;
+  color: #888;
+  border-bottom: 3px solid transparent;
+  white-space: nowrap;
+  transition: all 0.2s;
+  user-select: none;
+}
+.tab.active { color: #0d47a1; border-bottom-color: #0d47a1; }
+.tab-icon { font-size: 16px; display: block; margin-bottom: 2px; }
 
-  /* 結論バナー */
-  .verdict { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px; }
-  .verdict-card { padding: 14px 18px; border-radius: 10px; border-left: 5px solid; }
-  .verdict-win { background: #e8f5e9; border-color: #2e7d32; }
-  .verdict-win .v-label { color: #2e7d32; font-weight: 700; font-size: 12px; letter-spacing: 1px; }
-  .verdict-win .v-text { color: #1b5e20; font-size: 15px; font-weight: 700; margin-top: 4px; }
-  .verdict-success { background: #fff3e0; border-color: #e65100; }
-  .verdict-success .v-label { color: #e65100; font-weight: 700; font-size: 12px; letter-spacing: 1px; }
-  .verdict-success .v-text { color: #bf360c; font-size: 15px; font-weight: 700; margin-top: 4px; }
+/* ===== コンテンツ ===== */
+.page { display: none; padding: 12px; max-width: 720px; margin: 0 auto; }
+.page.active { display: block; }
 
-  /* KPIカード */
-  .kpi-row { display: grid; grid-template-columns: repeat(6, 1fr); gap: 10px; margin-bottom: 16px; }
-  .kpi { background: white; border-radius: 10px; padding: 12px 14px; text-align: center; box-shadow: 0 2px 6px rgba(0,0,0,0.07); }
-  .kpi .k-label { font-size: 11px; color: #666; margin-bottom: 4px; }
-  .kpi .k-value { font-size: 22px; font-weight: 800; color: #1a1a2e; line-height: 1.1; }
-  .kpi .k-unit { font-size: 11px; color: #888; margin-top: 2px; }
-  .kpi .k-sub { font-size: 11px; color: #4caf50; font-weight: 600; margin-top: 2px; }
-  .kpi .k-sub.red { color: #f44336; }
-  .kpi.highlight { background: linear-gradient(135deg, #1a1a2e, #0d47a1); color: white; }
-  .kpi.highlight .k-label { color: rgba(255,255,255,0.7); }
-  .kpi.highlight .k-value { color: #ffd700; }
-  .kpi.highlight .k-unit { color: rgba(255,255,255,0.6); }
-  .kpi.highlight .k-sub { color: #a5d6a7; }
+/* ===== 結論バナー ===== */
+.verdict {
+  background: #e8f5e9;
+  border-left: 5px solid #2e7d32;
+  border-radius: 8px;
+  padding: 12px 14px;
+  margin-bottom: 12px;
+}
+.verdict .v-tag { font-size: 10px; font-weight: 700; color: #2e7d32; letter-spacing: 1px; margin-bottom: 4px; }
+.verdict .v-text { font-size: 14px; font-weight: 700; color: #1b5e20; line-height: 1.6; }
+.verdict.warn { background: #fff3e0; border-color: #e65100; }
+.verdict.warn .v-tag { color: #e65100; }
+.verdict.warn .v-text { color: #bf360c; }
 
-  /* グリッドレイアウト */
-  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 14px; }
-  .grid-3 { display: grid; grid-template-columns: 2fr 1.2fr 1fr; gap: 14px; margin-bottom: 14px; }
+/* ===== KPIカード ===== */
+.kpi-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px; }
+.kpi-card {
+  background: white;
+  border-radius: 10px;
+  padding: 14px 12px;
+  text-align: center;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+}
+.kpi-card.highlight { background: linear-gradient(135deg, #1a1a2e, #0d47a1); }
+.kpi-card.highlight .kc-label { color: rgba(255,255,255,0.7); }
+.kpi-card.highlight .kc-value { color: #ffd700; }
+.kpi-card.highlight .kc-sub { color: #a5d6a7; }
+.kc-label { font-size: 11px; color: #777; margin-bottom: 4px; }
+.kc-value { font-size: 26px; font-weight: 800; color: #1a1a2e; line-height: 1.1; }
+.kc-unit { font-size: 11px; color: #999; margin-top: 2px; }
+.kc-sub { font-size: 12px; font-weight: 600; color: #2e7d32; margin-top: 4px; }
+.kc-sub.red { color: #e53935; }
 
-  /* カード */
-  .card { background: white; border-radius: 10px; padding: 16px; box-shadow: 0 2px 6px rgba(0,0,0,0.07); }
-  .card h2 { font-size: 13px; font-weight: 700; color: #1a1a2e; margin-bottom: 12px; padding-bottom: 8px; border-bottom: 2px solid #e0e0e0; display: flex; align-items: center; gap: 6px; }
-  .card h2 .badge { font-size: 11px; background: #1a1a2e; color: white; padding: 2px 8px; border-radius: 20px; }
-  .card h2 .badge.green { background: #2e7d32; }
-  .card h2 .badge.orange { background: #e65100; }
+/* ===== セクションカード ===== */
+.card {
+  background: white;
+  border-radius: 10px;
+  padding: 16px;
+  margin-bottom: 12px;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+}
+.card-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: #1a1a2e;
+  margin-bottom: 12px;
+  padding-bottom: 8px;
+  border-bottom: 2px solid #e8eaf0;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.badge { font-size: 10px; padding: 2px 8px; border-radius: 20px; font-weight: 700; }
+.badge-green { background: #e8f5e9; color: #2e7d32; }
+.badge-blue { background: #e3f2fd; color: #1565c0; }
+.badge-orange { background: #fff3e0; color: #e65100; }
+.badge-red { background: #ffebee; color: #c62828; }
 
-  /* 組織 vs 支店比較 */
-  .vs-table { width: 100%; }
-  .vs-table .metric-row { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 0; margin-bottom: 10px; background: #f9f9f9; border-radius: 8px; overflow: hidden; }
-  .vs-table .m-label { grid-column: 1 / 4; background: #1a1a2e; color: white; font-size: 11px; font-weight: 600; padding: 5px 12px; letter-spacing: 0.5px; }
-  .vs-cell { padding: 10px 12px; text-align: center; }
-  .vs-cell.org { background: #e3f2fd; }
-  .vs-cell.suita { background: #f5f5f5; }
-  .vs-cell.diff { background: #e8f5e9; }
-  .vs-cell .c-name { font-size: 10px; color: #888; margin-bottom: 3px; }
-  .vs-cell .c-val { font-size: 20px; font-weight: 800; color: #1a1a2e; }
-  .vs-cell.diff .c-val { color: #2e7d32; }
-  .vs-cell .c-unit { font-size: 10px; color: #999; }
+/* ===== 比較テーブル ===== */
+.compare-box {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+.compare-cell {
+  background: #f5f7fa;
+  border-radius: 8px;
+  padding: 10px 8px;
+  text-align: center;
+}
+.compare-cell.org { background: #e3f2fd; }
+.compare-cell.diff { background: #e8f5e9; }
+.cc-label { font-size: 10px; color: #888; margin-bottom: 4px; }
+.cc-value { font-size: 20px; font-weight: 800; }
+.cc-unit { font-size: 10px; color: #999; margin-top: 2px; }
+.compare-cell.org .cc-value { color: #1565c0; }
+.compare-cell.diff .cc-value { color: #2e7d32; }
 
-  /* バーチャート（横） */
-  .bar-chart { }
-  .bar-row { display: flex; align-items: center; gap: 8px; margin-bottom: 5px; }
-  .bar-row .br-name { width: 130px; font-size: 11px; text-align: right; color: #444; flex-shrink: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .bar-row .br-bar-wrap { flex: 1; position: relative; height: 20px; background: #f0f0f0; border-radius: 4px; overflow: visible; }
-  .bar-row .br-bar { height: 100%; border-radius: 4px; transition: width 0.3s; display: flex; align-items: center; justify-content: flex-end; padding-right: 6px; }
-  .bar-row .br-bar span { font-size: 10px; font-weight: 700; color: white; white-space: nowrap; }
-  .bar-row .br-rate { width: 46px; font-size: 11px; font-weight: 700; text-align: right; flex-shrink: 0; }
-  .bar-row .br-yoy { width: 68px; font-size: 10px; text-align: right; flex-shrink: 0; line-height: 1.5; }
-  .br-yoy .yoy-beat { color: #2e7d32; font-weight: 700; }
-  .br-yoy .yoy-lose { color: #c62828; font-weight: 700; }
-  .br-yoy .yoy-na { color: #999; font-weight: 600; }
-  .rate-over { color: #2e7d32; }
-  .rate-under { color: #c62828; }
-  .bar-row .br-target { position: absolute; top: -2px; height: 24px; width: 2px; background: #333; z-index: 2; }
-  .target-label { font-size: 9px; color: #333; position: absolute; top: -12px; transform: translateX(-50%); white-space: nowrap; }
+/* ===== 日別テーブル ===== */
+.day-table { width: 100%; border-collapse: collapse; font-size: 11px; margin-top: 4px; }
+.day-table th { background: #1a1a2e; color: white; padding: 5px 4px; text-align: center; font-weight: 600; }
+.day-table td { padding: 5px 4px; border-bottom: 1px solid #eee; text-align: center; }
+.day-table .row-org td { background: #e3f2fd; }
+.day-table .row-suita td { background: #fafafa; color: #888; }
+.day-table .row-diff td { background: #e8f5e9; color: #2e7d32; font-weight: 700; }
+.day-table .row-label { font-weight: 700; text-align: left !important; padding-left: 6px !important; font-size: 11px; }
 
-  /* 飲料ドーナツ */
-  .drink-section { display: flex; gap: 16px; align-items: flex-start; }
-  .donut-wrap { flex-shrink: 0; }
-  .drink-list { flex: 1; }
-  .drink-item { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; padding: 6px 10px; border-radius: 6px; background: #f9f9f9; }
-  .drink-dot { width: 12px; height: 12px; border-radius: 50%; flex-shrink: 0; }
-  .drink-name { flex: 1; font-size: 12px; font-weight: 600; }
-  .drink-total { font-size: 14px; font-weight: 800; min-width: 50px; text-align: right; }
-  .drink-pct { font-size: 11px; color: #888; min-width: 36px; text-align: right; }
-  .drink-bar-wrap { flex: 1; background: #e8e8e8; border-radius: 3px; height: 6px; overflow: hidden; }
-  .drink-bar { height: 100%; border-radius: 3px; }
+/* ===== 店舗ランキング ===== */
+.store-list { }
+.store-item {
+  margin-bottom: 14px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid #f0f0f0;
+}
+.store-item:last-child { border-bottom: none; margin-bottom: 0; }
+.store-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 6px;
+}
+.store-rank {
+  font-size: 12px;
+  font-weight: 800;
+  color: #888;
+  width: 22px;
+  flex-shrink: 0;
+}
+.store-rank.top3 { color: #f57f17; }
+.store-name-text { font-size: 13px; font-weight: 700; flex: 1; }
+.store-sc { font-size: 10px; color: #999; }
+.store-badges { display: flex; gap: 4px; flex-wrap: wrap; }
 
-  /* アクションリスト */
-  .action-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
-  .action-card { padding: 12px 14px; border-radius: 8px; }
-  .action-card.good { background: #e8f5e9; border-top: 3px solid #2e7d32; }
-  .action-card.issue { background: #fff8e1; border-top: 3px solid #f9a825; }
-  .action-card.next { background: #e3f2fd; border-top: 3px solid #1565c0; }
-  .action-card h3 { font-size: 11px; font-weight: 700; margin-bottom: 8px; }
-  .action-card.good h3 { color: #2e7d32; }
-  .action-card.issue h3 { color: #f57f17; }
-  .action-card.next h3 { color: #1565c0; }
-  .action-card ul { list-style: none; padding: 0; }
-  .action-card ul li { font-size: 12px; color: #333; padding: 3px 0; padding-left: 14px; position: relative; line-height: 1.5; }
-  .action-card ul li::before { position: absolute; left: 0; font-size: 11px; }
-  .action-card.good ul li::before { content: "✓"; color: #2e7d32; }
-  .action-card.issue ul li::before { content: "△"; color: #f57f17; }
-  .action-card.next ul li::before { content: "→"; color: #1565c0; font-weight: 700; }
+/* 販売個数バー */
+.bar-section { margin-bottom: 6px; }
+.bar-label { font-size: 10px; color: #888; margin-bottom: 3px; }
+.bar-wrap {
+  position: relative;
+  height: 22px;
+  background: #f0f0f0;
+  border-radius: 5px;
+  overflow: hidden;
+}
+.bar-fill {
+  height: 100%;
+  border-radius: 5px;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  padding-right: 6px;
+  transition: width 0.4s;
+}
+.bar-fill span { font-size: 11px; font-weight: 700; color: white; white-space: nowrap; }
+.bar-target-line {
+  position: absolute;
+  top: 0;
+  height: 100%;
+  width: 2px;
+  background: rgba(0,0,0,0.5);
+}
 
-  /* 底上げ分析 */
-  .spread-analysis { margin-top: 12px; background: #f5f5f5; border-radius: 8px; padding: 10px 14px; }
-  .spread-row { display: flex; gap: 16px; }
-  .spread-item { text-align: center; flex: 1; }
-  .spread-item .s-val { font-size: 20px; font-weight: 800; }
-  .spread-item .s-label { font-size: 11px; color: #666; margin-top: 2px; }
-  .spread-item.warn .s-val { color: #e65100; }
-  .spread-item.ok .s-val { color: #2e7d32; }
+/* 指標グリッド（達成率・前年比） */
+.store-metrics {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+  margin-top: 6px;
+}
+.metric-pill {
+  border-radius: 6px;
+  padding: 6px 10px;
+  text-align: center;
+}
+.mp-label { font-size: 10px; color: #888; margin-bottom: 2px; }
+.mp-value { font-size: 15px; font-weight: 800; }
+.metric-over { background: #e8f5e9; }
+.metric-over .mp-value { color: #2e7d32; }
+.metric-under { background: #fff8e1; }
+.metric-under .mp-value { color: #e65100; }
+.metric-bad { background: #ffebee; }
+.metric-bad .mp-value { color: #c62828; }
+.metric-na { background: #f5f5f5; }
+.metric-na .mp-value { color: #999; font-size: 13px; }
 
-  /* テーブル */
-  .compact-table { width: 100%; border-collapse: collapse; font-size: 11px; }
-  .compact-table th { background: #1a1a2e; color: white; padding: 6px 8px; text-align: center; font-weight: 600; }
-  .compact-table td { padding: 5px 8px; border-bottom: 1px solid #eee; text-align: center; }
-  .compact-table tr:nth-child(even) td { background: #fafafa; }
-  .compact-table .store-name { text-align: left; font-weight: 600; }
-  .over { color: #2e7d32; font-weight: 700; }
-  .under { color: #c62828; font-weight: 700; }
-  .rank-top { background: #fff9c4 !important; }
-  .rank-mid { background: #f3f9ff !important; }
+/* ===== 飲料チャート ===== */
+.drink-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+.drink-color-dot { width: 14px; height: 14px; border-radius: 50%; flex-shrink: 0; }
+.drink-info { flex: 1; }
+.drink-name-text { font-size: 13px; font-weight: 700; margin-bottom: 4px; }
+.drink-bar-bg { height: 14px; background: #f0f0f0; border-radius: 4px; overflow: hidden; }
+.drink-bar-fill { height: 100%; border-radius: 4px; }
+.drink-nums { text-align: right; flex-shrink: 0; }
+.drink-total-num { font-size: 16px; font-weight: 800; }
+.drink-pct-num { font-size: 11px; color: #888; }
 
-  .section-title { font-size: 12px; color: #666; margin-bottom: 6px; font-weight: 600; }
-  .conclusion-box { background: #e8f5e9; border: 1px solid #a5d6a7; border-radius: 8px; padding: 10px 14px; margin-top: 10px; font-size: 12px; color: #1b5e20; font-weight: 600; }
-  .warning-box { background: #fff3e0; border: 1px solid #ffcc80; border-radius: 8px; padding: 10px 14px; margin-top: 10px; font-size: 12px; color: #bf360c; font-weight: 600; }
+/* ===== アクションカード ===== */
+.action-section { margin-bottom: 12px; }
+.action-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  border-radius: 8px 8px 0 0;
+  font-size: 13px;
+  font-weight: 700;
+}
+.action-header.good { background: #2e7d32; color: white; }
+.action-header.issue { background: #f57f17; color: white; }
+.action-header.next { background: #1565c0; color: white; }
+.action-body { border-radius: 0 0 8px 8px; padding: 12px 14px; }
+.action-body.good { background: #f1f8f1; }
+.action-body.issue { background: #fffaf0; }
+.action-body.next { background: #f0f5ff; }
+.action-body ul { list-style: none; }
+.action-body ul li {
+  padding: 6px 0 6px 20px;
+  position: relative;
+  font-size: 13px;
+  line-height: 1.6;
+  border-bottom: 1px solid rgba(0,0,0,0.05);
+}
+.action-body ul li:last-child { border-bottom: none; }
+.action-body.good ul li::before { content: "✓"; position: absolute; left: 0; color: #2e7d32; font-weight: 700; }
+.action-body.issue ul li::before { content: "△"; position: absolute; left: 0; color: #f57f17; font-weight: 700; }
+.action-body.next ul li::before { content: "→"; position: absolute; left: 0; color: #1565c0; font-weight: 700; }
+.action-body li strong { color: #1a1a2e; }
 
-  .footnote { font-size: 10px; color: #aaa; margin-top: 16px; text-align: center; }
+/* ===== まとめボックス ===== */
+.summary-box {
+  border-radius: 8px;
+  padding: 12px 14px;
+  margin-bottom: 12px;
+  font-size: 13px;
+  line-height: 1.7;
+}
+.summary-box.green { background: #e8f5e9; border-left: 4px solid #2e7d32; color: #1b5e20; font-weight: 600; }
+.summary-box.orange { background: #fff3e0; border-left: 4px solid #e65100; color: #bf360c; font-weight: 600; }
+
+/* ===== デスクトップ対応 ===== */
+@media (min-width: 600px) {
+  .header h1 { font-size: 18px; }
+  .kpi-grid { grid-template-columns: repeat(3, 1fr); }
+  .store-item { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; align-items: start; }
+  .store-header { grid-column: 1 / 3; }
+  .tab { font-size: 12px; min-width: 90px; padding: 10px 10px; }
+}
+
+/* スクロールサポート */
+.scroll-hint { text-align: center; font-size: 11px; color: #bbb; padding: 4px 0 0; }
 </style>
 </head>
 <body>
-<div class="page">
 
-  <!-- ヘッダー -->
-  <div class="header">
-    <div>
-      <h1>🍗 からあげクン × 飲料無料引換キャンペーン　結果検証</h1>
-      <div style="font-size:12px; opacity:0.7; margin-top:4px;">集計期間：2026年4月7日（火）〜 4月13日（月）　7日間　／　対象20店舗</div>
-    </div>
-    <div class="meta">
-      作成日：<strong>2026年4月14日</strong><br>
-      阪口清治 MO 担当エリア
-    </div>
+<!-- ヘッダー -->
+<div class="header">
+  <h1>🍗 からあげクン × 飲料無料引換　結果検証</h1>
+  <div class="sub">2026年4月7日（火）〜 4月13日（月）　7日間　／　20店舗</div>
+</div>
+
+<!-- タブ -->
+<div class="tabs">
+  <div class="tab active" onclick="showTab(0)">
+    <span class="tab-icon">📊</span>サマリー
   </div>
+  <div class="tab" onclick="showTab(1)">
+    <span class="tab-icon">🏪</span>店舗別
+  </div>
+  <div class="tab" onclick="showTab(2)">
+    <span class="tab-icon">🥤</span>飲料引換
+  </div>
+  <div class="tab" onclick="showTab(3)">
+    <span class="tab-icon">📌</span>次施策
+  </div>
+</div>
 
-  <!-- 結論 -->
-  <div class="verdict">
-    <div class="verdict-card verdict-win">
-      <div class="v-label">① 組織 vs 吹田支店</div>
-      <div class="v-text">✅ 全7日間にわたり吹田支店平均を+11.1%上回った。組織として牽引できた。</div>
-    </div>
-    <div class="verdict-card verdict-success">
-      <div class="v-label">③ 飲料引換施策</div>
-      <div class="v-text">✅ 引換率83.4%。飲料5商品で13,486本を7日間で捌いた。施策は成功。</div>
-    </div>
+<!-- ===== タブ0：サマリー ===== -->
+<div class="page active" id="page-0">
+
+  <div class="verdict" style="margin-top:12px">
+    <div class="v-tag">① 組織 vs 吹田支店</div>
+    <div class="v-text">✅ 全7日間、組織平均が吹田支店を+11.1%上回り続けた。牽引できた。</div>
+  </div>
+  <div class="verdict warn">
+    <div class="v-tag">③ 飲料引換施策</div>
+    <div class="v-text">✅ 引換率83.4%・廃棄ゼロ。13,486本を7日間で捌いた。施策は成功。</div>
   </div>
 
   <!-- KPI -->
-  <div class="kpi-row">
-    <div class="kpi highlight">
-      <div class="k-label">組織 からあげクン販売</div>
-      <div class="k-value">115.4</div>
-      <div class="k-unit">個/日（平均）</div>
-      <div class="k-sub">吹田支店比 +11.1%</div>
+  <div class="kpi-grid">
+    <div class="kpi-card highlight">
+      <div class="kc-label">組織 販売個数</div>
+      <div class="kc-value">115.4</div>
+      <div class="kc-unit">個/日（平均）</div>
+      <div class="kc-sub">吹田支店比 +11.1%</div>
     </div>
-    <div class="kpi">
-      <div class="k-label">吹田支店平均</div>
-      <div class="k-value">103.9</div>
-      <div class="k-unit">個/日（平均）</div>
-      <div class="k-sub red">ベンチマーク</div>
+    <div class="kpi-card">
+      <div class="kc-label">吹田支店平均</div>
+      <div class="kc-value">103.9</div>
+      <div class="kc-unit">個/日（平均）</div>
+      <div class="kc-sub red">ベンチマーク</div>
     </div>
-    <div class="kpi">
-      <div class="k-label">前年比（組織）</div>
-      <div class="k-value">176.6<span style="font-size:14px">%</span></div>
-      <div class="k-unit">7日間平均</div>
-      <div class="k-sub">支店比 +4.5pt</div>
+    <div class="kpi-card">
+      <div class="kc-label">前年比（組織）</div>
+      <div class="kc-value">176.6<span style="font-size:14px">%</span></div>
+      <div class="kc-unit">7日間平均</div>
+      <div class="kc-sub">支店比 +4.5pt</div>
     </div>
-    <div class="kpi">
-      <div class="k-label">7日間 販売総個数</div>
-      <div class="k-value">16,161</div>
-      <div class="k-unit">個（全20店合計）</div>
-      <div class="k-sub">目標達成店 10/20店</div>
+    <div class="kpi-card">
+      <div class="kc-label">7日間 販売総個数</div>
+      <div class="kc-value">16,161</div>
+      <div class="kc-unit">個（全20店）</div>
+      <div class="kc-sub">目標達成店 10/20店</div>
     </div>
-    <div class="kpi">
-      <div class="k-label">飲料引換 総本数</div>
-      <div class="k-value">13,486</div>
-      <div class="k-unit">本（5商品合計）</div>
-      <div class="k-sub">引換率 83.4%</div>
+    <div class="kpi-card">
+      <div class="kc-label">飲料引換 総本数</div>
+      <div class="kc-value">13,486</div>
+      <div class="kc-unit">本（5商品合計）</div>
+      <div class="kc-sub">引換率 83.4%</div>
     </div>
-    <div class="kpi">
-      <div class="k-label">最多売れ飲料</div>
-      <div class="k-value" style="font-size:16px">ぐんぐん</div>
-      <div class="k-unit">グルト</div>
-      <div class="k-sub">3,345本 / 24.8%</div>
-    </div>
-  </div>
-
-  <!-- 組織 vs 支店 ＋ 店舗ランキング -->
-  <div class="grid-3">
-
-    <!-- 左：組織 vs 吹田支店 -->
-    <div class="card">
-      <h2>① 組織 vs 吹田支店<span class="badge green">牽引確認</span></h2>
-
-      <div class="vs-table">
-        <div class="metric-row">
-          <div class="m-label" style="grid-column:1/4">からあげクン 平均販売数（個/日）</div>
-          <div class="vs-cell org">
-            <div class="c-name">阪口MO（組織）</div>
-            <div class="c-val">115.4</div>
-            <div class="c-unit">個/日</div>
-          </div>
-          <div class="vs-cell suita">
-            <div class="c-name">吹田支店平均</div>
-            <div class="c-val" style="color:#888">103.9</div>
-            <div class="c-unit">個/日</div>
-          </div>
-          <div class="vs-cell diff">
-            <div class="c-name">差分</div>
-            <div class="c-val">+11.1%</div>
-            <div class="c-unit">+11.6個/日</div>
-          </div>
-        </div>
-        <div class="metric-row" style="margin-top:8px">
-          <div class="m-label" style="grid-column:1/4">前年比（7日平均）</div>
-          <div class="vs-cell org">
-            <div class="c-name">阪口MO（組織）</div>
-            <div class="c-val">176.6<span style="font-size:12px">%</span></div>
-            <div class="c-unit">前年比</div>
-          </div>
-          <div class="vs-cell suita">
-            <div class="c-name">吹田支店平均</div>
-            <div class="c-val" style="color:#888">172.1<span style="font-size:12px">%</span></div>
-            <div class="c-unit">前年比</div>
-          </div>
-          <div class="vs-cell diff">
-            <div class="c-name">差分</div>
-            <div class="c-val">+4.5pt</div>
-            <div class="c-unit">上回り</div>
-          </div>
-        </div>
-      </div>
-
-      <!-- 日別推移 -->
-      <div style="margin-top:14px;">
-        <div class="section-title">日別 販売数推移（個/日）</div>
-        <div style="overflow-x:auto;">
-          <table class="compact-table">
-            <tr>
-              <th>　</th><th>4/7火</th><th>4/8水</th><th>4/9木</th><th>4/10金</th><th>4/11土</th><th>4/12日</th><th>4/13月</th>
-            </tr>
-            <tr>
-              <td class="store-name" style="color:#0d47a1">組織MO</td>
-              <td>119.7</td><td>127.5</td><td>115.2</td><td>114.0</td><td>120.4</td><td>106.9</td><td>104.6</td>
-            </tr>
-            <tr>
-              <td class="store-name" style="color:#888">吹田支店</td>
-              <td>103.0</td><td>106.0</td><td>102.7</td><td>99.2</td><td>114.4</td><td>104.8</td><td>97.0</td>
-            </tr>
-            <tr style="background:#e8f5e9">
-              <td class="store-name" style="color:#2e7d32">差分</td>
-              <td class="over">+16.7</td><td class="over">+21.5</td><td class="over">+12.5</td><td class="over">+14.8</td><td class="over">+6.0</td><td class="over">+2.1</td><td class="over">+7.6</td>
-            </tr>
-          </table>
-        </div>
-      </div>
-
-      <div class="conclusion-box">
-        判定：組織は7日間すべてで吹田支店を上回った。最大差は4/8の+21.5本。エリアとして確実に吹田支店を牽引している。
-      </div>
-    </div>
-
-    <!-- 中：店舗ランキング（棒グラフ） -->
-    <div class="card">
-      <h2>② 店舗別ランキング <span class="badge">7日間合計個数</span></h2>
-      <div style="font-size:10px; color:#888; margin-bottom:4px;">棒グラフ内＝販売個数　黒線＝目標　<span style="color:#555; font-weight:600;">達成率</span> ／ <span style="color:#2e7d32; font-weight:600;">前年比 ○</span>＝支店(172.1%)超え　<span style="color:#c62828; font-weight:600;">✗</span>＝下回り</div>
-
-      <div class="bar-chart">
-        <!-- Max = 1338 → 100% = 1400 -->
-        <div class="bar-row">
-          <div class="br-name">江坂駅南口</div>
-          <div class="br-bar-wrap">
-            <div class="br-bar" style="width:95.6%; background:#1565c0;"><span>1,338</span></div>
-            <div class="br-target" style="left:108%"><span class="target-label">目標1512</span></div>
-          </div>
-          <div class="br-rate under">88.5%</div>
-          <div class="br-yoy"><span class="yoy-lose">150.4%<br>✗ −21.7pt</span></div>
-        </div>
-        <div class="bar-row">
-          <div class="br-name">吹田朝日町</div>
-          <div class="br-bar-wrap">
-            <div class="br-bar" style="width:76.9%; background:#2e7d32;"><span>1,076</span></div>
-            <div class="br-target" style="left:67.9%"></div>
-          </div>
-          <div class="br-rate over">113.0%</div>
-          <div class="br-yoy"><span class="yoy-beat">208.9%<br>○ +36.8pt</span></div>
-        </div>
-        <div class="bar-row">
-          <div class="br-name">豊中原田南</div>
-          <div class="br-bar-wrap">
-            <div class="br-bar" style="width:76.7%; background:#2e7d32;"><span>1,074</span></div>
-            <div class="br-target" style="left:52.5%"></div>
-          </div>
-          <div class="br-rate over">146.1%</div>
-          <div class="br-yoy"><span class="yoy-beat">308.0%<br>○ +135.9pt</span></div>
-        </div>
-        <div class="bar-row">
-          <div class="br-name">南金田二丁目</div>
-          <div class="br-bar-wrap">
-            <div class="br-bar" style="width:76.3%; background:#f57f17;"><span>1,068</span></div>
-            <div class="br-target" style="left:82.5%"></div>
-          </div>
-          <div class="br-rate under">92.5%</div>
-          <div class="br-yoy"><span class="yoy-lose">150.0%<br>✗ −22.1pt</span></div>
-        </div>
-        <div class="bar-row">
-          <div class="br-name">新御堂筋上新田</div>
-          <div class="br-bar-wrap">
-            <div class="br-bar" style="width:76.3%; background:#2e7d32;"><span>1,068</span></div>
-            <div class="br-target" style="left:71.0%"></div>
-          </div>
-          <div class="br-rate over">107.4%</div>
-          <div class="br-yoy"><span class="yoy-beat">172.5%<br>○ +0.4pt</span></div>
-        </div>
-        <div class="bar-row">
-          <div class="br-name">吹田青山台三丁目</div>
-          <div class="br-bar-wrap">
-            <div class="br-bar" style="width:71.6%; background:#f57f17;"><span>1,003</span></div>
-            <div class="br-target" style="left:73.0%"></div>
-          </div>
-          <div class="br-rate under">98.1%</div>
-          <div class="br-yoy"><span class="yoy-lose">166.0%<br>✗ −6.1pt</span></div>
-        </div>
-        <div class="bar-row">
-          <div class="br-name">豊中服部元町</div>
-          <div class="br-bar-wrap">
-            <div class="br-bar" style="width:64.3%; background:#2e7d32;"><span>900</span></div>
-            <div class="br-target" style="left:59.0%"></div>
-          </div>
-          <div class="br-rate over">109.0%</div>
-          <div class="br-yoy"><span class="yoy-beat">207.8%<br>○ +35.7pt</span></div>
-        </div>
-        <div class="bar-row">
-          <div class="br-name">箕面白島二丁目</div>
-          <div class="br-bar-wrap">
-            <div class="br-bar" style="width:64.0%; background:#f57f17;"><span>896</span></div>
-            <div class="br-target" style="left:67.5%"></div>
-          </div>
-          <div class="br-rate under">94.8%</div>
-          <div class="br-yoy"><span class="yoy-na">N/A<br>（新店）</span></div>
-        </div>
-        <div class="bar-row">
-          <div class="br-name">東淀川豊里五</div>
-          <div class="br-bar-wrap">
-            <div class="br-bar" style="width:63.2%; background:#2e7d32;"><span>885</span></div>
-            <div class="br-target" style="left:61.0%"></div>
-          </div>
-          <div class="br-rate over">103.6%</div>
-          <div class="br-yoy"><span class="yoy-beat">174.7%<br>○ +2.6pt</span></div>
-        </div>
-        <div class="bar-row">
-          <div class="br-name">豊中服部西町</div>
-          <div class="br-bar-wrap">
-            <div class="br-bar" style="width:55.6%; background:#2e7d32;"><span>778</span></div>
-            <div class="br-target" style="left:45.5%"></div>
-          </div>
-          <div class="br-rate over">122.1%</div>
-          <div class="br-yoy"><span class="yoy-beat">184.7%<br>○ +12.6pt</span></div>
-        </div>
-        <div class="bar-row">
-          <div class="br-name">江坂東</div>
-          <div class="br-bar-wrap">
-            <div class="br-bar" style="width:52.0%; background:#f57f17;"><span>728</span></div>
-            <div class="br-target" style="left:56.0%"></div>
-          </div>
-          <div class="br-rate under">92.9%</div>
-          <div class="br-yoy"><span class="yoy-lose">171.2%<br>✗ −0.9pt</span></div>
-        </div>
-        <div class="bar-row">
-          <div class="br-name">豊中利倉東</div>
-          <div class="br-bar-wrap">
-            <div class="br-bar" style="width:51.4%; background:#f57f17;"><span>720</span></div>
-            <div class="br-target" style="left:53.5%"></div>
-          </div>
-          <div class="br-rate under">96.1%</div>
-          <div class="br-yoy"><span class="yoy-lose">163.2%<br>✗ −8.9pt</span></div>
-        </div>
-        <div class="bar-row">
-          <div class="br-name">東淀川大道南</div>
-          <div class="br-bar-wrap">
-            <div class="br-bar" style="width:50.1%; background:#2e7d32;"><span>702</span></div>
-            <div class="br-target" style="left:52.0%"></div>
-          </div>
-          <div class="br-rate over">100.3%</div>
-          <div class="br-yoy"><span class="yoy-lose">152.1%<br>✗ −20.0pt</span></div>
-        </div>
-        <div class="bar-row">
-          <div class="br-name">吹田豊津中学校</div>
-          <div class="br-bar-wrap">
-            <div class="br-bar" style="width:46.9%; background:#c62828;"><span>656</span></div>
-            <div class="br-target" style="left:65.0%"></div>
-          </div>
-          <div class="br-rate under">72.1%</div>
-          <div class="br-yoy"><span class="yoy-beat">173.6%<br>○ +1.5pt</span></div>
-        </div>
-        <div class="bar-row">
-          <div class="br-name">大道南一丁目</div>
-          <div class="br-bar-wrap">
-            <div class="br-bar" style="width:44.6%; background:#c62828;"><span>625</span></div>
-            <div class="br-target" style="left:53.5%"></div>
-          </div>
-          <div class="br-rate under">83.4%</div>
-          <div class="br-yoy"><span class="yoy-beat">173.9%<br>○ +1.8pt</span></div>
-        </div>
-        <div class="bar-row">
-          <div class="br-name">吹田警察署前</div>
-          <div class="br-bar-wrap">
-            <div class="br-bar" style="width:44.2%; background:#c62828;"><span>619</span></div>
-            <div class="br-target" style="left:50.0%"></div>
-          </div>
-          <div class="br-rate under">88.4%</div>
-          <div class="br-yoy"><span class="yoy-beat">173.8%<br>○ +1.7pt</span></div>
-        </div>
-        <div class="bar-row">
-          <div class="br-name">池田市役所前</div>
-          <div class="br-bar-wrap">
-            <div class="br-bar" style="width:43.8%; background:#2e7d32;"><span>613</span></div>
-            <div class="br-target" style="left:30.5%"></div>
-          </div>
-          <div class="br-rate over">143.6%</div>
-          <div class="br-yoy"><span class="yoy-beat">202.6%<br>○ +30.5pt</span></div>
-        </div>
-        <div class="bar-row">
-          <div class="br-name">五月ケ丘東</div>
-          <div class="br-bar-wrap">
-            <div class="br-bar" style="width:41.2%; background:#2e7d32;"><span>577</span></div>
-            <div class="br-target" style="left:37.5%"></div>
-          </div>
-          <div class="br-rate over">109.9%</div>
-          <div class="br-yoy"><span class="yoy-beat">217.6%<br>○ +45.5pt</span></div>
-        </div>
-        <div class="bar-row">
-          <div class="br-name">豊里六丁目</div>
-          <div class="br-bar-wrap">
-            <div class="br-bar" style="width:35.0%; background:#2e7d32;"><span>490</span></div>
-            <div class="br-target" style="left:32.0%"></div>
-          </div>
-          <div class="br-rate over">109.4%</div>
-          <div class="br-yoy"><span class="yoy-beat">220.3%<br>○ +48.2pt</span></div>
-        </div>
-        <div class="bar-row">
-          <div class="br-name">吹田垂水三丁目</div>
-          <div class="br-bar-wrap">
-            <div class="br-bar" style="width:24.6%; background:#2e7d32;"><span>345</span></div>
-            <div class="br-target" style="left:22.5%"></div>
-          </div>
-          <div class="br-rate over">109.5%</div>
-          <div class="br-yoy"><span class="yoy-beat">192.0%<br>○ +19.9pt</span></div>
-        </div>
-      </div>
-
-      <!-- 底上げ分析 -->
-      <div class="spread-analysis" style="margin-top:10px">
-        <div style="font-size:11px; font-weight:700; color:#444; margin-bottom:6px;">② 牽引分析</div>
-        <div class="spread-row">
-          <div class="spread-item ok">
-            <div class="s-val">10<span style="font-size:12px">/20店</span></div>
-            <div class="s-label">販売個数 目標達成</div>
-          </div>
-          <div class="spread-item ok">
-            <div class="s-val">13<span style="font-size:12px">/19店</span></div>
-            <div class="s-label">前年比 支店超え</div>
-          </div>
-          <div class="spread-item warn">
-            <div class="s-val">21.6<span style="font-size:12px">%</span></div>
-            <div class="s-label">上位3店の構成比</div>
-          </div>
-        </div>
-        <div class="warning-box" style="margin-top:8px; font-size:11px;">
-          判定：絶対数の目標達成は50%（10/20店）にとどまり一部店舗依存が残る。一方、前年比では19有効店中13店が吹田支店（172.1%）を上回り、組織として前年比成長を牽引できた。底上げは次の課題。
-        </div>
-      </div>
-    </div>
-
-    <!-- 右：飲料比較 -->
-    <div class="card">
-      <h2>③ 飲料引換の効果 <span class="badge orange">成功</span></h2>
-
-      <!-- ドーナツ -->
-      <div style="display:flex; justify-content:center; margin-bottom:14px;">
-        <svg width="160" height="160" viewBox="0 0 160 160">
-          <!-- ぐんぐん 24.8% -->
-          <circle cx="80" cy="80" r="60" fill="none" stroke="#4caf50" stroke-width="28"
-            stroke-dasharray="93.5 283.9" stroke-dashoffset="0" transform="rotate(-90 80 80)"/>
-          <!-- 綾鷹 22.1% -->
-          <circle cx="80" cy="80" r="60" fill="none" stroke="#2196f3" stroke-width="28"
-            stroke-dasharray="83.3 283.9" stroke-dashoffset="-93.5" transform="rotate(-90 80 80)"/>
-          <!-- お茶 19.9% -->
-          <circle cx="80" cy="80" r="60" fill="none" stroke="#009688" stroke-width="28"
-            stroke-dasharray="75.0 283.9" stroke-dashoffset="-176.8" transform="rotate(-90 80 80)"/>
-          <!-- ピンクGF 19.4% -->
-          <circle cx="80" cy="80" r="60" fill="none" stroke="#e91e63" stroke-width="28"
-            stroke-dasharray="73.1 283.9" stroke-dashoffset="-251.8" transform="rotate(-90 80 80)"/>
-          <!-- 無糖 13.8% -->
-          <circle cx="80" cy="80" r="60" fill="none" stroke="#ff9800" stroke-width="28"
-            stroke-dasharray="52.0 283.9" stroke-dashoffset="-324.9" transform="rotate(-90 80 80)"/>
-          <text x="80" y="76" text-anchor="middle" font-size="13" font-weight="800" fill="#1a1a2e">13,486</text>
-          <text x="80" y="90" text-anchor="middle" font-size="10" fill="#666">本（7日間）</text>
-        </svg>
-      </div>
-
-      <!-- 飲料リスト -->
-      <div class="drink-list">
-        <div class="drink-item">
-          <div class="drink-dot" style="background:#4caf50"></div>
-          <div class="drink-name">ぐんぐんグルト</div>
-          <div class="drink-bar-wrap"><div class="drink-bar" style="width:100%; background:#4caf50"></div></div>
-          <div class="drink-total" style="color:#4caf50">3,345</div>
-          <div class="drink-pct">24.8%</div>
-        </div>
-        <div class="drink-item">
-          <div class="drink-dot" style="background:#2196f3"></div>
-          <div class="drink-name">綾鷹</div>
-          <div class="drink-bar-wrap"><div class="drink-bar" style="width:89.2%; background:#2196f3"></div></div>
-          <div class="drink-total" style="color:#2196f3">2,982</div>
-          <div class="drink-pct">22.1%</div>
-        </div>
-        <div class="drink-item">
-          <div class="drink-dot" style="background:#009688"></div>
-          <div class="drink-name">お～いお茶 濃茶</div>
-          <div class="drink-bar-wrap"><div class="drink-bar" style="width:80.3%; background:#009688"></div></div>
-          <div class="drink-total" style="color:#009688">2,685</div>
-          <div class="drink-pct">19.9%</div>
-        </div>
-        <div class="drink-item">
-          <div class="drink-dot" style="background:#e91e63"></div>
-          <div class="drink-name">ピンクGF</div>
-          <div class="drink-bar-wrap"><div class="drink-bar" style="width:78.1%; background:#e91e63"></div></div>
-          <div class="drink-total" style="color:#e91e63">2,611</div>
-          <div class="drink-pct">19.4%</div>
-        </div>
-        <div class="drink-item">
-          <div class="drink-dot" style="background:#ff9800"></div>
-          <div class="drink-name">おいしい無糖</div>
-          <div class="drink-bar-wrap"><div class="drink-bar" style="width:55.7%; background:#ff9800"></div></div>
-          <div class="drink-total" style="color:#ff9800">1,863</div>
-          <div class="drink-pct">13.8%</div>
-        </div>
-      </div>
-
-      <!-- KPI -->
-      <div style="background:#f5f5f5; border-radius:8px; padding:10px 12px; margin-top:10px;">
-        <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; text-align:center;">
-          <div>
-            <div style="font-size:22px; font-weight:800; color:#2e7d32">83.4<span style="font-size:13px">%</span></div>
-            <div style="font-size:10px; color:#666">飲料引換率</div>
-          </div>
-          <div>
-            <div style="font-size:22px; font-weight:800; color:#1565c0">0<span style="font-size:13px">本</span></div>
-            <div style="font-size:10px; color:#666">廃棄（全商品）</div>
-          </div>
-        </div>
-      </div>
-
-      <!-- 店舗バラつき確認 -->
-      <div style="margin-top:10px">
-        <div class="section-title">店舗別バラつき（ぐんぐんグルト 日平均/日）</div>
-        <div style="font-size:11px; color:#555; line-height:1.8;">
-          <span style="color:#2e7d32; font-weight:700">高: </span>南金田(36.3) / 吹田朝日(27.4) / 新御堂(31.1) / 吹田青山台(32.7)<br>
-          <span style="color:#c62828; font-weight:700">低: </span>吹田垂水(9.9) / 吹田豊津(15.7) / 豊里六丁目(21.7)
-        </div>
-      </div>
-
-      <div class="conclusion-box" style="margin-top:8px; font-size:11px;">
-        判定：引換率83%・廃棄ゼロ。施策は成功。ぐんぐんグルトへの集中傾向あり、無糖の訴求強化が次の伸びしろ。
-      </div>
+    <div class="kpi-card">
+      <div class="kc-label">前年比 支店超え</div>
+      <div class="kc-value">13<span style="font-size:14px">/19</span></div>
+      <div class="kc-unit">店舗（新店除く）</div>
+      <div class="kc-sub">68.4%の店が牽引</div>
     </div>
   </div>
 
-  <!-- 次施策アクション -->
+  <!-- 組織 vs 支店 -->
   <div class="card">
-    <h2>④ 次施策への示唆　<span style="font-size:11px; background:#1565c0; color:white; padding:2px 8px; border-radius:4px;">4/21〜5/4　おにぎり・からあげクン 400円ごとに飲料無料</span></h2>
-    <div class="action-grid">
-      <div class="action-card good">
-        <h3>✅ 今回の良かった点</h3>
-        <ul>
-          <li>組織全体で前年比176%超えを達成。キャンペーン訴求が機能した</li>
-          <li>飲料引換率83%と高水準。接客時の声掛けが実践できていた</li>
-          <li>廃棄ゼロ。在庫管理・発注コントロールが適切だった</li>
-          <li>目標達成10店。特に豊中原田南(+46%)・池田市役所(+44%)が突出</li>
-          <li>吹田支店を全7日間上回り続けた</li>
-        </ul>
+    <div class="card-title">組織 vs 吹田支店　比較</div>
+
+    <div style="font-size:11px; color:#888; margin-bottom:8px; text-align:center;">からあげクン 平均販売個数（個/日）</div>
+    <div class="compare-box">
+      <div class="compare-cell org">
+        <div class="cc-label">阪口MO（組織）</div>
+        <div class="cc-value">115.4</div>
+        <div class="cc-unit">個/日</div>
       </div>
-      <div class="action-card issue">
-        <h3>△ 今回の課題</h3>
-        <ul>
-          <li>江坂駅南口が目標未達（88.5%）。絶対数は多いが伸びしろ残存</li>
-          <li>吹田豊津中学校前が大きく未達（72.1%）。作成数多いが販売につながらず</li>
-          <li>後半（4/12〜4/13）に販売数低下傾向。中だるみ対策が必要</li>
-        </ul>
+      <div class="compare-cell">
+        <div class="cc-label">吹田支店</div>
+        <div class="cc-value" style="color:#888">103.9</div>
+        <div class="cc-unit">個/日</div>
       </div>
-      <div class="action-card next">
-        <h3>→ 次回 具体アクション（400円閾値対応）</h3>
-        <ul>
-          <li><strong>400円到達の組み合わせ提案を標準化</strong>：「からあげクン1個＋おにぎり1個＝400円→引換OK」を全店ポップ掲示</li>
-          <li><strong>セット陳列の強化</strong>：おにぎりとからあげクンを隣接させ、客導線で400円訴求する</li>
-          <li><strong>吹田豊津・大道南・吹田警察の作成数見直し</strong>：過剰作成ではなく確実に売れる数に落とし、完売→追加作成のサイクルへ</li>
-          <li><strong>週中（木〜金）の中だるみ対策</strong>：水〜木にミニキャンペーン声掛けを強化し、週後半の落ち込みを防ぐ</li>
-        </ul>
+      <div class="compare-cell diff">
+        <div class="cc-label">差分</div>
+        <div class="cc-value">+11.1%</div>
+        <div class="cc-unit">+11.6個/日</div>
       </div>
+    </div>
+
+    <div style="font-size:11px; color:#888; margin-bottom:8px; text-align:center;">前年比（7日平均）</div>
+    <div class="compare-box">
+      <div class="compare-cell org">
+        <div class="cc-label">阪口MO（組織）</div>
+        <div class="cc-value">176.6<span style="font-size:12px">%</span></div>
+        <div class="cc-unit">前年比</div>
+      </div>
+      <div class="compare-cell">
+        <div class="cc-label">吹田支店</div>
+        <div class="cc-value" style="color:#888">172.1<span style="font-size:12px">%</span></div>
+        <div class="cc-unit">前年比</div>
+      </div>
+      <div class="compare-cell diff">
+        <div class="cc-label">差分</div>
+        <div class="cc-value">+4.5pt</div>
+        <div class="cc-unit">上回り</div>
+      </div>
+    </div>
+
+    <!-- 日別推移 -->
+    <div style="font-size:12px; font-weight:700; color:#444; margin-bottom:6px;">日別 販売個数推移（個/日）</div>
+    <div style="overflow-x:auto; -webkit-overflow-scrolling:touch;">
+      <table class="day-table" style="min-width:360px;">
+        <tr>
+          <th style="text-align:left; padding-left:6px; min-width:56px"></th>
+          <th>4/7火</th><th>4/8水</th><th>4/9木</th><th>4/10金</th><th>4/11土</th><th>4/12日</th><th>4/13月</th>
+        </tr>
+        <tr class="row-org">
+          <td class="row-label">組織MO</td>
+          <td>119.7</td><td>127.5</td><td>115.2</td><td>114.0</td><td>120.4</td><td>106.9</td><td>104.6</td>
+        </tr>
+        <tr class="row-suita">
+          <td class="row-label" style="color:#888">吹田支店</td>
+          <td>103.0</td><td>106.0</td><td>102.7</td><td>99.2</td><td>114.4</td><td>104.8</td><td>97.0</td>
+        </tr>
+        <tr class="row-diff">
+          <td class="row-label" style="color:#2e7d32">差分</td>
+          <td>+16.7</td><td>+21.5</td><td>+12.5</td><td>+14.8</td><td>+6.0</td><td>+2.1</td><td>+7.6</td>
+        </tr>
+      </table>
+    </div>
+    <div class="scroll-hint">← 横にスクロールできます →</div>
+
+    <div class="summary-box green" style="margin-top:12px; margin-bottom:0">
+      判定：全7日間で吹田支店を上回り続けた。最大差は4/8の+21.5個。組織としてエリアを牽引した。
     </div>
   </div>
 
-  <div class="footnote">集計：阪口商店グループ（20店舗）　データソース：からあげクン販売数進捗シート.xlsx（4/7〜4/13）</div>
 </div>
+
+<!-- ===== タブ1：店舗別 ===== -->
+<div class="page" id="page-1">
+
+  <div class="card" style="margin-top:12px">
+    <div class="card-title">
+      店舗別ランキング
+      <span class="badge badge-blue">7日間合計個数</span>
+    </div>
+
+    <div style="display:flex; gap:16px; font-size:11px; color:#666; margin-bottom:12px; flex-wrap:wrap;">
+      <span>達成率：<span style="color:#2e7d32; font-weight:700">緑</span>＝目標超え　<span style="color:#c62828; font-weight:700">赤</span>＝未達</span>
+      <span>前年比：<span style="color:#2e7d32; font-weight:700">○</span>＝支店(172.1%)超え　<span style="color:#c62828; font-weight:700">✗</span>＝下回り</span>
+    </div>
+
+    <div class="store-list">
+
+      <!-- 1 江坂駅南口 -->
+      <div class="store-item">
+        <div class="store-header">
+          <div class="store-rank top3">1</div>
+          <div class="store-name-text">江坂駅南口</div>
+          <div class="store-sc">高橋ＳＣ</div>
+        </div>
+        <div class="bar-section">
+          <div class="bar-label">販売個数（7日間）　※黒線＝目標1,512個</div>
+          <div class="bar-wrap">
+            <div class="bar-fill" style="width:95.6%; background:#1565c0;"><span>1,338個</span></div>
+            <div class="bar-target-line" style="left:100%"></div>
+          </div>
+        </div>
+        <div class="store-metrics">
+          <div class="metric-pill metric-under">
+            <div class="mp-label">目標達成率</div>
+            <div class="mp-value">88.5%</div>
+          </div>
+          <div class="metric-pill metric-bad">
+            <div class="mp-label">前年比 vs 支店</div>
+            <div class="mp-value">150.4% ✗</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 2 吹田朝日町 -->
+      <div class="store-item">
+        <div class="store-header">
+          <div class="store-rank top3">2</div>
+          <div class="store-name-text">吹田朝日町</div>
+          <div class="store-sc">プラカスSC</div>
+        </div>
+        <div class="bar-section">
+          <div class="bar-label">販売個数（7日間）　目標952個</div>
+          <div class="bar-wrap">
+            <div class="bar-fill" style="width:76.9%; background:#2e7d32;"><span>1,076個</span></div>
+            <div class="bar-target-line" style="left:67.9%"></div>
+          </div>
+        </div>
+        <div class="store-metrics">
+          <div class="metric-pill metric-over">
+            <div class="mp-label">目標達成率</div>
+            <div class="mp-value">113.0%</div>
+          </div>
+          <div class="metric-pill metric-over">
+            <div class="mp-label">前年比 vs 支店</div>
+            <div class="mp-value">208.9% ○</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 3 豊中原田南 -->
+      <div class="store-item">
+        <div class="store-header">
+          <div class="store-rank top3">3</div>
+          <div class="store-name-text">豊中原田南一丁目</div>
+          <div class="store-sc">スラズASC</div>
+        </div>
+        <div class="bar-section">
+          <div class="bar-label">販売個数（7日間）　目標735個</div>
+          <div class="bar-wrap">
+            <div class="bar-fill" style="width:76.7%; background:#2e7d32;"><span>1,074個</span></div>
+            <div class="bar-target-line" style="left:52.5%"></div>
+          </div>
+        </div>
+        <div class="store-metrics">
+          <div class="metric-pill metric-over">
+            <div class="mp-label">目標達成率</div>
+            <div class="mp-value">146.1%</div>
+          </div>
+          <div class="metric-pill metric-over">
+            <div class="mp-label">前年比 vs 支店</div>
+            <div class="mp-value">308.0% ○</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 4 南金田 -->
+      <div class="store-item">
+        <div class="store-header">
+          <div class="store-rank">4</div>
+          <div class="store-name-text">南金田二丁目</div>
+          <div class="store-sc">五島ＳＣ</div>
+        </div>
+        <div class="bar-section">
+          <div class="bar-label">販売個数（7日間）　目標1,155個</div>
+          <div class="bar-wrap">
+            <div class="bar-fill" style="width:76.3%; background:#f57f17;"><span>1,068個</span></div>
+            <div class="bar-target-line" style="left:82.5%"></div>
+          </div>
+        </div>
+        <div class="store-metrics">
+          <div class="metric-pill metric-under">
+            <div class="mp-label">目標達成率</div>
+            <div class="mp-value">92.5%</div>
+          </div>
+          <div class="metric-pill metric-bad">
+            <div class="mp-label">前年比 vs 支店</div>
+            <div class="mp-value">150.0% ✗</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 5 新御堂 -->
+      <div class="store-item">
+        <div class="store-header">
+          <div class="store-rank">5</div>
+          <div class="store-name-text">新御堂筋上新田</div>
+          <div class="store-sc">高橋ＳＣ</div>
+        </div>
+        <div class="bar-section">
+          <div class="bar-label">販売個数（7日間）　目標994個</div>
+          <div class="bar-wrap">
+            <div class="bar-fill" style="width:76.3%; background:#2e7d32;"><span>1,068個</span></div>
+            <div class="bar-target-line" style="left:71.0%"></div>
+          </div>
+        </div>
+        <div class="store-metrics">
+          <div class="metric-pill metric-over">
+            <div class="mp-label">目標達成率</div>
+            <div class="mp-value">107.4%</div>
+          </div>
+          <div class="metric-pill metric-over">
+            <div class="mp-label">前年比 vs 支店</div>
+            <div class="mp-value">172.5% ○</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 6 吹田青山台 -->
+      <div class="store-item">
+        <div class="store-header">
+          <div class="store-rank">6</div>
+          <div class="store-name-text">吹田青山台三丁目</div>
+          <div class="store-sc">高橋ＳＣ</div>
+        </div>
+        <div class="bar-section">
+          <div class="bar-label">販売個数（7日間）　目標1,022個</div>
+          <div class="bar-wrap">
+            <div class="bar-fill" style="width:71.6%; background:#f57f17;"><span>1,003個</span></div>
+            <div class="bar-target-line" style="left:73.0%"></div>
+          </div>
+        </div>
+        <div class="store-metrics">
+          <div class="metric-pill metric-under">
+            <div class="mp-label">目標達成率</div>
+            <div class="mp-value">98.1%</div>
+          </div>
+          <div class="metric-pill metric-bad">
+            <div class="mp-label">前年比 vs 支店</div>
+            <div class="mp-value">166.0% ✗</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 7 豊中服部元町 -->
+      <div class="store-item">
+        <div class="store-header">
+          <div class="store-rank">7</div>
+          <div class="store-name-text">豊中服部元町一丁目</div>
+          <div class="store-sc">ビスワスSC</div>
+        </div>
+        <div class="bar-section">
+          <div class="bar-label">販売個数（7日間）　目標826個</div>
+          <div class="bar-wrap">
+            <div class="bar-fill" style="width:64.3%; background:#2e7d32;"><span>900個</span></div>
+            <div class="bar-target-line" style="left:59.0%"></div>
+          </div>
+        </div>
+        <div class="store-metrics">
+          <div class="metric-pill metric-over">
+            <div class="mp-label">目標達成率</div>
+            <div class="mp-value">109.0%</div>
+          </div>
+          <div class="metric-pill metric-over">
+            <div class="mp-label">前年比 vs 支店</div>
+            <div class="mp-value">207.8% ○</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 8 箕面白島 -->
+      <div class="store-item">
+        <div class="store-header">
+          <div class="store-rank">8</div>
+          <div class="store-name-text">箕面白島二丁目</div>
+          <div class="store-sc">スラズASC</div>
+        </div>
+        <div class="bar-section">
+          <div class="bar-label">販売個数（7日間）　目標945個</div>
+          <div class="bar-wrap">
+            <div class="bar-fill" style="width:64.0%; background:#f57f17;"><span>896個</span></div>
+            <div class="bar-target-line" style="left:67.5%"></div>
+          </div>
+        </div>
+        <div class="store-metrics">
+          <div class="metric-pill metric-under">
+            <div class="mp-label">目標達成率</div>
+            <div class="mp-value">94.8%</div>
+          </div>
+          <div class="metric-pill metric-na">
+            <div class="mp-label">前年比 vs 支店</div>
+            <div class="mp-value">N/A（新店）</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 9 東淀川豊里五 -->
+      <div class="store-item">
+        <div class="store-header">
+          <div class="store-rank">9</div>
+          <div class="store-name-text">東淀川豊里五丁目</div>
+          <div class="store-sc">サントスASC</div>
+        </div>
+        <div class="bar-section">
+          <div class="bar-label">販売個数（7日間）　目標854個</div>
+          <div class="bar-wrap">
+            <div class="bar-fill" style="width:63.2%; background:#2e7d32;"><span>885個</span></div>
+            <div class="bar-target-line" style="left:61.0%"></div>
+          </div>
+        </div>
+        <div class="store-metrics">
+          <div class="metric-pill metric-over">
+            <div class="mp-label">目標達成率</div>
+            <div class="mp-value">103.6%</div>
+          </div>
+          <div class="metric-pill metric-over">
+            <div class="mp-label">前年比 vs 支店</div>
+            <div class="mp-value">174.7% ○</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 10 豊中服部西町 -->
+      <div class="store-item">
+        <div class="store-header">
+          <div class="store-rank">10</div>
+          <div class="store-name-text">豊中服部西町三丁目</div>
+          <div class="store-sc">ビスワスSC</div>
+        </div>
+        <div class="bar-section">
+          <div class="bar-label">販売個数（7日間）　目標637個</div>
+          <div class="bar-wrap">
+            <div class="bar-fill" style="width:55.6%; background:#2e7d32;"><span>778個</span></div>
+            <div class="bar-target-line" style="left:45.5%"></div>
+          </div>
+        </div>
+        <div class="store-metrics">
+          <div class="metric-pill metric-over">
+            <div class="mp-label">目標達成率</div>
+            <div class="mp-value">122.1%</div>
+          </div>
+          <div class="metric-pill metric-over">
+            <div class="mp-label">前年比 vs 支店</div>
+            <div class="mp-value">184.7% ○</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 11 江坂東 -->
+      <div class="store-item">
+        <div class="store-header">
+          <div class="store-rank">11</div>
+          <div class="store-name-text">江坂東</div>
+          <div class="store-sc">ダハルSC</div>
+        </div>
+        <div class="bar-section">
+          <div class="bar-label">販売個数（7日間）　目標784個</div>
+          <div class="bar-wrap">
+            <div class="bar-fill" style="width:52.0%; background:#f57f17;"><span>728個</span></div>
+            <div class="bar-target-line" style="left:56.0%"></div>
+          </div>
+        </div>
+        <div class="store-metrics">
+          <div class="metric-pill metric-under">
+            <div class="mp-label">目標達成率</div>
+            <div class="mp-value">92.9%</div>
+          </div>
+          <div class="metric-pill metric-bad">
+            <div class="mp-label">前年比 vs 支店</div>
+            <div class="mp-value">171.2% ✗</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 12 豊中利倉東 -->
+      <div class="store-item">
+        <div class="store-header">
+          <div class="store-rank">12</div>
+          <div class="store-name-text">豊中利倉東一丁目</div>
+          <div class="store-sc">ダハルSC</div>
+        </div>
+        <div class="bar-section">
+          <div class="bar-label">販売個数（7日間）　目標749個</div>
+          <div class="bar-wrap">
+            <div class="bar-fill" style="width:51.4%; background:#f57f17;"><span>720個</span></div>
+            <div class="bar-target-line" style="left:53.5%"></div>
+          </div>
+        </div>
+        <div class="store-metrics">
+          <div class="metric-pill metric-under">
+            <div class="mp-label">目標達成率</div>
+            <div class="mp-value">96.1%</div>
+          </div>
+          <div class="metric-pill metric-bad">
+            <div class="mp-label">前年比 vs 支店</div>
+            <div class="mp-value">163.2% ✗</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 13 東淀川大道南 -->
+      <div class="store-item">
+        <div class="store-header">
+          <div class="store-rank">13</div>
+          <div class="store-name-text">東淀川大道南</div>
+          <div class="store-sc">プラカスSC</div>
+        </div>
+        <div class="bar-section">
+          <div class="bar-label">販売個数（7日間）　目標728個</div>
+          <div class="bar-wrap">
+            <div class="bar-fill" style="width:50.1%; background:#2e7d32;"><span>702個</span></div>
+            <div class="bar-target-line" style="left:52.0%"></div>
+          </div>
+        </div>
+        <div class="store-metrics">
+          <div class="metric-pill metric-over">
+            <div class="mp-label">目標達成率</div>
+            <div class="mp-value">100.3%</div>
+          </div>
+          <div class="metric-pill metric-bad">
+            <div class="mp-label">前年比 vs 支店</div>
+            <div class="mp-value">152.1% ✗</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 14 吹田豊津中学校 -->
+      <div class="store-item">
+        <div class="store-header">
+          <div class="store-rank">14</div>
+          <div class="store-name-text">吹田豊津中学校前</div>
+          <div class="store-sc">フィSC</div>
+        </div>
+        <div class="bar-section">
+          <div class="bar-label">販売個数（7日間）　目標910個</div>
+          <div class="bar-wrap">
+            <div class="bar-fill" style="width:46.9%; background:#c62828;"><span>656個</span></div>
+            <div class="bar-target-line" style="left:65.0%"></div>
+          </div>
+        </div>
+        <div class="store-metrics">
+          <div class="metric-pill metric-bad">
+            <div class="mp-label">目標達成率</div>
+            <div class="mp-value">72.1%</div>
+          </div>
+          <div class="metric-pill metric-over">
+            <div class="mp-label">前年比 vs 支店</div>
+            <div class="mp-value">173.6% ○</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 15 大道南 -->
+      <div class="store-item">
+        <div class="store-header">
+          <div class="store-rank">15</div>
+          <div class="store-name-text">大道南一丁目</div>
+          <div class="store-sc">サントスASC</div>
+        </div>
+        <div class="bar-section">
+          <div class="bar-label">販売個数（7日間）　目標749個</div>
+          <div class="bar-wrap">
+            <div class="bar-fill" style="width:44.6%; background:#c62828;"><span>625個</span></div>
+            <div class="bar-target-line" style="left:53.5%"></div>
+          </div>
+        </div>
+        <div class="store-metrics">
+          <div class="metric-pill metric-bad">
+            <div class="mp-label">目標達成率</div>
+            <div class="mp-value">83.4%</div>
+          </div>
+          <div class="metric-pill metric-over">
+            <div class="mp-label">前年比 vs 支店</div>
+            <div class="mp-value">173.9% ○</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 16 吹田警察署前 -->
+      <div class="store-item">
+        <div class="store-header">
+          <div class="store-rank">16</div>
+          <div class="store-name-text">吹田警察署前</div>
+          <div class="store-sc">五島ＳＣ</div>
+        </div>
+        <div class="bar-section">
+          <div class="bar-label">販売個数（7日間）　目標700個</div>
+          <div class="bar-wrap">
+            <div class="bar-fill" style="width:44.2%; background:#c62828;"><span>619個</span></div>
+            <div class="bar-target-line" style="left:50.0%"></div>
+          </div>
+        </div>
+        <div class="store-metrics">
+          <div class="metric-pill metric-bad">
+            <div class="mp-label">目標達成率</div>
+            <div class="mp-value">88.4%</div>
+          </div>
+          <div class="metric-pill metric-over">
+            <div class="mp-label">前年比 vs 支店</div>
+            <div class="mp-value">173.8% ○</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 17 池田市役所前 -->
+      <div class="store-item">
+        <div class="store-header">
+          <div class="store-rank">17</div>
+          <div class="store-name-text">池田市役所前</div>
+          <div class="store-sc">五島ＳＣ</div>
+        </div>
+        <div class="bar-section">
+          <div class="bar-label">販売個数（7日間）　目標427個</div>
+          <div class="bar-wrap">
+            <div class="bar-fill" style="width:43.8%; background:#2e7d32;"><span>613個</span></div>
+            <div class="bar-target-line" style="left:30.5%"></div>
+          </div>
+        </div>
+        <div class="store-metrics">
+          <div class="metric-pill metric-over">
+            <div class="mp-label">目標達成率</div>
+            <div class="mp-value">143.6%</div>
+          </div>
+          <div class="metric-pill metric-over">
+            <div class="mp-label">前年比 vs 支店</div>
+            <div class="mp-value">202.6% ○</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 18 五月ケ丘東 -->
+      <div class="store-item">
+        <div class="store-header">
+          <div class="store-rank">18</div>
+          <div class="store-name-text">五月ケ丘東</div>
+          <div class="store-sc">高橋ＳＣ</div>
+        </div>
+        <div class="bar-section">
+          <div class="bar-label">販売個数（7日間）　目標525個</div>
+          <div class="bar-wrap">
+            <div class="bar-fill" style="width:41.2%; background:#2e7d32;"><span>577個</span></div>
+            <div class="bar-target-line" style="left:37.5%"></div>
+          </div>
+        </div>
+        <div class="store-metrics">
+          <div class="metric-pill metric-over">
+            <div class="mp-label">目標達成率</div>
+            <div class="mp-value">109.9%</div>
+          </div>
+          <div class="metric-pill metric-over">
+            <div class="mp-label">前年比 vs 支店</div>
+            <div class="mp-value">217.6% ○</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 19 豊里六丁目 -->
+      <div class="store-item">
+        <div class="store-header">
+          <div class="store-rank">19</div>
+          <div class="store-name-text">豊里六丁目</div>
+          <div class="store-sc">プラカスSC</div>
+        </div>
+        <div class="bar-section">
+          <div class="bar-label">販売個数（7日間）　目標448個</div>
+          <div class="bar-wrap">
+            <div class="bar-fill" style="width:35.0%; background:#2e7d32;"><span>490個</span></div>
+            <div class="bar-target-line" style="left:32.0%"></div>
+          </div>
+        </div>
+        <div class="store-metrics">
+          <div class="metric-pill metric-over">
+            <div class="mp-label">目標達成率</div>
+            <div class="mp-value">109.4%</div>
+          </div>
+          <div class="metric-pill metric-over">
+            <div class="mp-label">前年比 vs 支店</div>
+            <div class="mp-value">220.3% ○</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 20 吹田垂水 -->
+      <div class="store-item">
+        <div class="store-header">
+          <div class="store-rank">20</div>
+          <div class="store-name-text">吹田垂水三丁目</div>
+          <div class="store-sc">フィSC</div>
+        </div>
+        <div class="bar-section">
+          <div class="bar-label">販売個数（7日間）　目標315個</div>
+          <div class="bar-wrap">
+            <div class="bar-fill" style="width:24.6%; background:#2e7d32;"><span>345個</span></div>
+            <div class="bar-target-line" style="left:22.5%"></div>
+          </div>
+        </div>
+        <div class="store-metrics">
+          <div class="metric-pill metric-over">
+            <div class="mp-label">目標達成率</div>
+            <div class="mp-value">109.5%</div>
+          </div>
+          <div class="metric-pill metric-over">
+            <div class="mp-label">前年比 vs 支店</div>
+            <div class="mp-value">192.0% ○</div>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /store-list -->
+
+    <div class="summary-box orange" style="margin-top:4px">
+      判定：販売個数の目標達成は50%（10/20店）にとどまる。前年比では19有効店中13店が吹田支店を上回り、組織として牽引した。江坂駅南口・南金田・吹田青山台の前年比強化が次の課題。
+    </div>
+  </div>
+
+</div>
+
+<!-- ===== タブ2：飲料引換 ===== -->
+<div class="page" id="page-2">
+
+  <!-- KPI -->
+  <div class="kpi-grid" style="margin-top:12px">
+    <div class="kpi-card highlight">
+      <div class="kc-label">飲料引換率</div>
+      <div class="kc-value">83.4<span style="font-size:14px">%</span></div>
+      <div class="kc-unit">（13,486 ÷ 16,161個）</div>
+      <div class="kc-sub">廃棄ゼロ</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kc-label">飲料引換 総本数</div>
+      <div class="kc-value">13,486</div>
+      <div class="kc-unit">本（7日間・5商品計）</div>
+      <div class="kc-sub">最多：ぐんぐんグルト</div>
+    </div>
+  </div>
+
+  <!-- 商品別 -->
+  <div class="card">
+    <div class="card-title">商品別 販売本数・構成比</div>
+
+    <div class="drink-row">
+      <div class="drink-color-dot" style="background:#4caf50"></div>
+      <div class="drink-info">
+        <div class="drink-name-text">ぐんぐんグルト</div>
+        <div class="drink-bar-bg"><div class="drink-bar-fill" style="width:100%; background:#4caf50"></div></div>
+      </div>
+      <div class="drink-nums">
+        <div class="drink-total-num" style="color:#4caf50">3,345本</div>
+        <div class="drink-pct-num">24.8%</div>
+      </div>
+    </div>
+
+    <div class="drink-row">
+      <div class="drink-color-dot" style="background:#2196f3"></div>
+      <div class="drink-info">
+        <div class="drink-name-text">綾鷹</div>
+        <div class="drink-bar-bg"><div class="drink-bar-fill" style="width:89.2%; background:#2196f3"></div></div>
+      </div>
+      <div class="drink-nums">
+        <div class="drink-total-num" style="color:#2196f3">2,982本</div>
+        <div class="drink-pct-num">22.1%</div>
+      </div>
+    </div>
+
+    <div class="drink-row">
+      <div class="drink-color-dot" style="background:#009688"></div>
+      <div class="drink-info">
+        <div class="drink-name-text">お～いお茶 濃茶</div>
+        <div class="drink-bar-bg"><div class="drink-bar-fill" style="width:80.3%; background:#009688"></div></div>
+      </div>
+      <div class="drink-nums">
+        <div class="drink-total-num" style="color:#009688">2,685本</div>
+        <div class="drink-pct-num">19.9%</div>
+      </div>
+    </div>
+
+    <div class="drink-row">
+      <div class="drink-color-dot" style="background:#e91e63"></div>
+      <div class="drink-info">
+        <div class="drink-name-text">ピンクGF</div>
+        <div class="drink-bar-bg"><div class="drink-bar-fill" style="width:78.1%; background:#e91e63"></div></div>
+      </div>
+      <div class="drink-nums">
+        <div class="drink-total-num" style="color:#e91e63">2,611本</div>
+        <div class="drink-pct-num">19.4%</div>
+      </div>
+    </div>
+
+    <div class="drink-row">
+      <div class="drink-color-dot" style="background:#ff9800"></div>
+      <div class="drink-info">
+        <div class="drink-name-text">おいしい無糖</div>
+        <div class="drink-bar-bg"><div class="drink-bar-fill" style="width:55.7%; background:#ff9800"></div></div>
+      </div>
+      <div class="drink-nums">
+        <div class="drink-total-num" style="color:#ff9800">1,863本</div>
+        <div class="drink-pct-num">13.8%</div>
+      </div>
+    </div>
+
+    <div class="summary-box green" style="margin-top:4px; margin-bottom:0">
+      判定：引換率83%・廃棄ゼロ。施策は成功。ぐんぐんグルトが最も人気で、上位4商品は20%前後と均衡している。おいしい無糖のみ明確に低い。
+    </div>
+  </div>
+
+  <!-- 店舗バラつき（ぐんぐんグルト） -->
+  <div class="card">
+    <div class="card-title">店舗別バラつき　<span class="badge badge-green">ぐんぐんグルト 日平均</span></div>
+    <div style="font-size:12px; color:#555; line-height:2.0;">
+      <span style="color:#2e7d32; font-weight:700">高め：</span>南金田二丁目（36.3本/日）・吹田青山台（32.7）・新御堂筋上新田（31.1）<br>
+      <span style="color:#e65100; font-weight:700">低め：</span>吹田垂水三丁目（9.9）・吹田豊津中学校前（15.7）・豊里六丁目（21.7）
+    </div>
+    <div class="summary-box orange" style="margin-top:10px; margin-bottom:0">
+      店舗間のバラつきが大きい。声掛け・在庫管理の水準が店舗によって異なる可能性あり。
+    </div>
+  </div>
+
+</div>
+
+<!-- ===== タブ3：次施策 ===== -->
+<div class="page" id="page-3">
+
+  <div style="margin-top:12px; background:#e3f2fd; border-radius:10px; padding:14px; margin-bottom:14px;">
+    <div style="font-size:11px; color:#1565c0; font-weight:700; margin-bottom:4px;">次週施策</div>
+    <div style="font-size:14px; font-weight:800; color:#0d47a1;">4/21〜5/4　おにぎり・からあげクン 400円ごとに飲料無料</div>
+  </div>
+
+  <div class="action-section">
+    <div class="action-header good">✅ 今回の良かった点</div>
+    <div class="action-body good">
+      <ul>
+        <li>組織全体で前年比176%超えを達成。キャンペーン訴求が機能した</li>
+        <li>飲料引換率83%と高水準。接客時の声掛けが実践できていた</li>
+        <li>廃棄ゼロ。在庫管理・発注コントロールが適切だった</li>
+        <li>目標達成10店。特に豊中原田南（+46%）・池田市役所前（+44%）が突出</li>
+        <li>吹田支店を全7日間上回り続けた</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="action-section">
+    <div class="action-header issue">△ 今回の課題</div>
+    <div class="action-body issue">
+      <ul>
+        <li>江坂駅南口が目標未達（88.5%）。絶対数は多いが伸びしろ残存</li>
+        <li>吹田豊津中学校前が大きく未達（72.1%）。作成数多いが販売につながらず</li>
+        <li>江坂駅南口・南金田・吹田青山台の3店は前年比で吹田支店を下回った</li>
+        <li>後半（4/12〜4/13）に販売数低下傾向。中だるみ対策が必要</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="action-section">
+    <div class="action-header next">→ 次回 具体アクション（5点）</div>
+    <div class="action-body next">
+      <ul>
+        <li><strong>400円到達の組み合わせ提案を標準化</strong>：「からあげクン1個＋おにぎり1個＝400円→引換OK」を全店ポップ掲示</li>
+        <li><strong>セット陳列の強化</strong>：おにぎりとからあげクンを隣接させ、客導線で400円訴求する</li>
+        <li><strong>吹田豊津・大道南・吹田警察の作成数見直し</strong>：過剰作成ではなく確実に売れる数に落とし、完売→追加作成のサイクルへ</li>
+        <li><strong>週中（木〜金）の中だるみ対策</strong>：水〜木に声掛けを強化し、週後半の落ち込みを防ぐ</li>
+        <li><strong>前年比の低い3店（江坂駅南口・南金田・吹田青山台）への個別フォロー</strong>：売場訴求・レジ声掛けの具体的改善点を次回面談で確認</li>
+      </ul>
+    </div>
+  </div>
+
+  <div style="font-size:11px; color:#aaa; text-align:center; padding:8px 0 16px;">
+    集計：阪口商店グループ（20店舗）　データ：からあげクン販売数進捗シート.xlsx（4/7〜4/13）
+  </div>
+
+</div>
+
+<script>
+function showTab(index) {
+  document.querySelectorAll('.tab').forEach((t, i) => {
+    t.classList.toggle('active', i === index);
+  });
+  document.querySelectorAll('.page').forEach((p, i) => {
+    p.classList.toggle('active', i === index);
+  });
+  window.scrollTo(0, 0);
+}
+</script>
 </body>
 </html>
