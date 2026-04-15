@@ -371,7 +371,7 @@ const STORES_WITH_CT = {
 const MGR_Q = ['相談しやすい', '公平に接する', '仕事を教える', '感謝の言葉', 'ルールを伝える'];
 const CT_Q  = ['仕事サポート', '困時に助ける', '明るく接する', '仕事を教える', 'ルールを守る'];
 
-// ローカルストレージからクルー人数を読み込み（初期値15名）
+// クルー人数（GASから読み込み、fallbackはlocalStorage→デフォルト15名）
 let crewCounts = JSON.parse(localStorage.getItem('crewCounts') || 'null')
   || Object.fromEntries(STORE_LIST.map(s => [s, 15]));
 
@@ -440,6 +440,9 @@ function saveCrewCounts() {
   localStorage.setItem('crewCounts', JSON.stringify(crewCounts));
   closeCrewModal();
   renderDashboard();
+  // GASに共有保存（非同期・バックグラウンド）
+  fetch(GAS_URL + '?action=setCrewCounts&counts=' + encodeURIComponent(JSON.stringify(crewCounts)))
+    .catch(e => console.warn('クルー人数のGAS保存失敗:', e));
 }
 
 // ============================================================
@@ -449,9 +452,18 @@ async function loadData() {
   document.getElementById('loadingMsg').style.display = 'block';
   document.getElementById('dashContent').style.display = 'none';
   try {
-    const res = await fetch(GAS_URL + '?action=get');
-    const json = await res.json();
-    allData = json.data || [];
+    const [surveyRes, crewRes] = await Promise.all([
+      fetch(GAS_URL + '?action=get'),
+      fetch(GAS_URL + '?action=getCrewCounts')
+    ]);
+    const surveyJson = await surveyRes.json();
+    allData = surveyJson.data || [];
+    const crewJson = await crewRes.json();
+    if (crewJson.counts && Object.keys(crewJson.counts).length > 0) {
+      crewCounts = crewJson.counts;
+      Object.keys(crewCounts).forEach(k => { crewCounts[k] = parseInt(crewCounts[k]) || 15; });
+      localStorage.setItem('crewCounts', JSON.stringify(crewCounts));
+    }
   } catch(e) {
     allData = generateSampleData();
   }
