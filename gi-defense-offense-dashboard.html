@@ -1,0 +1,617 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>店舗別 攻守判定ダッシュボード｜25年10月〜26年3月</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Helvetica Neue', Arial, 'Hiragino Kaku Gothic ProN', sans-serif; background: #f0f4f8; }
+
+.header {
+  background: linear-gradient(135deg, #003087 0%, #0057b8 100%);
+  color: white; padding: 20px 24px;
+}
+.header h1 { font-size: 20px; font-weight: 800; }
+.header p  { font-size: 12px; opacity: 0.8; margin-top: 4px; }
+
+.container { max-width: 1100px; margin: 0 auto; padding: 16px; }
+
+/* ---- KPI Summary ---- */
+.summary-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 12px; margin-bottom: 16px; }
+.kpi-card {
+  border-radius: 14px; padding: 18px 16px; text-align: center;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.08); border: 2px solid transparent;
+}
+.kpi-card.mamori { background:#fff5f5; border-color:#e53e3e; }
+.kpi-card.cond   { background:#fffbeb; border-color:#d97706; }
+.kpi-card.semeru { background:#f0fdf4; border-color:#059669; }
+.kpi-icon  { font-size: 28px; margin-bottom: 4px; }
+.kpi-label { font-size: 13px; font-weight: 700; color: #4a5568; }
+.kpi-num   { font-size: 52px; font-weight: 900; line-height: 1; margin: 4px 0; }
+.mamori .kpi-num { color: #c53030; }
+.cond   .kpi-num { color: #92400e; }
+.semeru .kpi-num { color: #065f46; }
+.kpi-sub { font-size: 11px; color: #718096; }
+
+/* ---- contract rule box ---- */
+.rule-box {
+  background: white; border-radius: 12px; padding: 14px 18px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.07); margin-bottom: 16px;
+  display: flex; gap: 16px; flex-wrap: wrap; align-items: center;
+}
+.rule-box .rule-title { font-size: 13px; font-weight: 800; color: #003087; min-width: 80px; }
+.rule-chip {
+  display: flex; align-items: center; gap: 8px;
+  padding: 6px 14px; border-radius: 20px; font-size: 12px; font-weight: 700;
+}
+.rule-chip.cn { background:#dbeafe; color:#1e40af; }
+.rule-chip.ts { background:#fce7f3; color:#9d174d; }
+.rule-chip span { font-size: 11px; font-weight: 400; opacity:.9; }
+
+/* ---- comment box ---- */
+.comment-box {
+  background: white; border-radius: 12px; padding: 16px 20px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.07); margin-bottom: 16px;
+  border-left: 5px solid #003087;
+}
+.comment-box h3 { font-size: 14px; color: #003087; font-weight: 700; margin-bottom: 8px; }
+.comment-box p  { font-size: 13px; color: #4a5568; line-height: 1.7; }
+
+/* ---- Charts ---- */
+.charts-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px; }
+@media (max-width: 700px) { .charts-grid { grid-template-columns: 1fr; } }
+.chart-card {
+  background: white; border-radius: 12px; padding: 16px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.07);
+}
+.chart-title { font-size: 13px; font-weight: 700; color: #003087; margin-bottom: 12px; }
+.chart-full { grid-column: 1 / -1; }
+
+/* ---- Section heading ---- */
+.section-heading { font-size: 11px; font-weight: 700; letter-spacing: 1px; color: #718096; margin: 20px 0 10px; }
+.divider { border: none; border-top: 2px dashed #cbd5e0; margin: 20px 0; }
+
+/* ---- Store cards ---- */
+.judgment-group { margin-bottom: 24px; }
+.group-header {
+  display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+  padding: 10px 16px; border-radius: 10px 10px 0 0;
+  font-size: 15px; font-weight: 800;
+}
+.group-header.mamori { background:#e53e3e; color:white; }
+.group-header.cond   { background:#d97706; color:white; }
+.group-header.semeru { background:#059669; color:white; }
+.group-header .store-count { font-size: 12px; opacity:.85; margin-left:auto; }
+
+.store-card {
+  background: white; border: 1px solid #e2e8f0; border-top: none; padding: 14px 16px;
+}
+.store-card:last-child { border-radius: 0 0 10px 10px; }
+.store-card + .store-card { border-top: 1px dashed #e2e8f0; }
+
+.store-header { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; margin-bottom: 10px; }
+.store-name { font-size: 15px; font-weight: 800; color: #1a202c; }
+
+.tag { display:inline-block; padding:2px 10px; border-radius:12px; font-size:11px; font-weight:700; }
+.tag.mamori { background:#fed7d7; color:#c53030; }
+.tag.cond   { background:#fef3c7; color:#92400e; }
+.tag.semeru { background:#d1fae5; color:#065f46; }
+.tag.cn     { background:#dbeafe; color:#1e40af; }
+.tag.ts     { background:#fce7f3; color:#9d174d; }
+
+.store-metrics { display: grid; grid-template-columns: repeat(4,1fr); gap: 8px; margin-bottom: 10px; }
+@media (max-width: 600px) { .store-metrics { grid-template-columns: repeat(2,1fr); } }
+
+.metric-box {
+  background: #f7fafc; border-radius: 8px; padding: 8px 10px; text-align: center;
+}
+.metric-label { font-size: 10px; color: #718096; font-weight: 600; }
+.metric-value { font-size: 19px; font-weight: 800; color: #2d3748; line-height: 1.2; margin-top: 2px; }
+.metric-unit  { font-size: 11px; color: #4a5568; }
+.metric-sub   { font-size: 10px; color: #718096; margin-top: 2px; }
+.metric-box.alert-red   .metric-value { color:#c53030; }
+.metric-box.alert-amber .metric-value { color:#92400e; }
+.metric-box.alert-green .metric-value { color:#065f46; }
+
+.store-comment { font-size: 12px; color: #4a5568; line-height: 1.7; padding: 8px 10px; background:#f7fafc; border-radius:8px; }
+
+.mini-bar-row { display:flex; gap:3px; align-items:flex-end; height:36px; margin-top:4px; }
+.mini-bar { flex:1; border-radius:3px 3px 0 0; min-height:3px; }
+
+/* ---- Considerations ---- */
+.consid-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:12px; }
+@media (max-width: 700px) { .consid-grid { grid-template-columns:1fr; } }
+.consid-card { background:white; border-radius:12px; padding:16px; box-shadow:0 2px 8px rgba(0,0,0,0.07); }
+.consid-card h4 { font-size:14px; font-weight:800; margin-bottom:10px; }
+.consid-card.mamori h4 { color:#c53030; }
+.consid-card.cond   h4 { color:#92400e; }
+.consid-card.semeru h4 { color:#065f46; }
+.consid-card ul { padding-left:16px; }
+.consid-card li { font-size:12px; color:#4a5568; line-height:1.9; }
+
+@media (max-width: 600px) {
+  .summary-grid { grid-template-columns:1fr; }
+}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>店舗別 攻守判定ダッシュボード</h1>
+  <p>集計期間：2025年10月〜2026年3月（6ヶ月）｜判定軸：GI（フランチャイジー収入）× 実質見切ダメージ（契約区分考慮）</p>
+</div>
+
+<div class="container">
+
+  <!-- 契約区分ルール説明 -->
+  <div style="margin-top:16px; margin-bottom:8px; font-size:11px; font-weight:700; color:#718096; letter-spacing:1px;">契約区分と実質ダメージ計算ルール</div>
+  <div class="rule-box">
+    <div class="rule-title">📋 判定ルール</div>
+    <div class="rule-chip cn">
+      CN店舗（16店）
+      <span>実質ダメージ ＝ 見切超過 × <strong>0.5</strong>（超過分の50%は雑益で戻る）</span>
+    </div>
+    <div class="rule-chip ts">
+      TS店舗（4店）
+      <span>実質ダメージ ＝ 見切超過 × <strong>1.0</strong>（超過分がそのまま損失）</span>
+    </div>
+    <div style="font-size:11px;color:#718096;">TS4店舗：池田市役所前 / 大道南一丁目 / 豊里六丁目 / 豊中服部西町三丁目</div>
+  </div>
+
+  <!-- KPI Summary -->
+  <div class="section-heading">全体サマリー（契約区分反映後）</div>
+  <div class="summary-grid">
+    <div class="kpi-card mamori">
+      <div class="kpi-icon">🛡️</div>
+      <div class="kpi-label">守り</div>
+      <div class="kpi-num">2</div>
+      <div class="kpi-sub">店舗</div>
+    </div>
+    <div class="kpi-card cond">
+      <div class="kpi-icon">⚠️</div>
+      <div class="kpi-label">攻め 条件付き</div>
+      <div class="kpi-num">7</div>
+      <div class="kpi-sub">店舗</div>
+    </div>
+    <div class="kpi-card semeru">
+      <div class="kpi-icon">🚀</div>
+      <div class="kpi-label">攻め</div>
+      <div class="kpi-num">11</div>
+      <div class="kpi-sub">店舗</div>
+    </div>
+  </div>
+
+  <!-- Comment -->
+  <div class="comment-box">
+    <h3>📋 全体傾向（契約区分考慮後）</h3>
+    <p>
+      契約区分を反映した結果、CN店舗3店（吹田朝日町・吹田青山台三丁目・東淀川豊里五丁目）が
+      「攻め条件付き」から<strong>「攻め」に昇格</strong>。
+      GI余裕が1000千円超のCN店舗は、見切超過の表面上の数字が大きくても
+      <strong>実質ダメージは半減</strong>するため、攻め展開に十分な体力がある。
+      一方、<strong>TS4店舗は見切超過がそのまま損失</strong>となるため重く評価。
+      特に大道南一丁目（実質+195千円）・豊里六丁目（実質+156千円）・豊中服部西町三丁目（実質+110千円）は
+      TS特有のリスクが高く、ロス管理の改善が急務。
+    </p>
+  </div>
+
+  <!-- Charts -->
+  <div class="section-heading">可視化</div>
+  <div class="charts-grid">
+    <div class="chart-card chart-full">
+      <div class="chart-title">① 店舗別 GI平均（千円）｜1900千円ラインとの比較</div>
+      <canvas id="chartGI" height="340"></canvas>
+    </div>
+    <div class="chart-card chart-full">
+      <div class="chart-title">② 店舗別 実質見切ダメージ平均（千円）｜契約区分反映済み（CN×0.5 / TS×1.0）</div>
+      <canvas id="chartMK" height="340"></canvas>
+    </div>
+    <div class="chart-card">
+      <div class="chart-title">③ 判定区分の分布（契約区分反映後）</div>
+      <canvas id="chartDonut" height="220"></canvas>
+    </div>
+    <div class="chart-card">
+      <div class="chart-title">④ GI余裕 vs 実質見切ダメージ ポジション</div>
+      <canvas id="chartScatter" height="220"></canvas>
+    </div>
+  </div>
+
+  <hr class="divider">
+
+  <!-- Store List -->
+  <div class="section-heading">店舗別一覧（契約区分・実質ダメージ付き）</div>
+  <div id="storeList"></div>
+
+  <hr class="divider">
+
+  <!-- Considerations -->
+  <div class="section-heading">考察と優先施策</div>
+  <div class="consid-grid">
+    <div class="consid-card mamori">
+      <h4>🛡️ 守り店舗が優先すべきこと</h4>
+      <ul>
+        <li>GI1900千円ラインの安定突破が唯一の最優先課題</li>
+        <li>発注精度向上でロス率を抑制し、廃棄最小化を徹底</li>
+        <li>値下げタイミングの早期化・金額適正化で見切費用を圧縮</li>
+        <li>売上拡大施策は<strong>GI安定後</strong>に実施。現時点では守備固め</li>
+        <li>目標：6ヶ月連続でGI1900千円超えを達成すること</li>
+      </ul>
+    </div>
+    <div class="consid-card cond">
+      <h4>⚠️ 攻め条件付き店舗が改善すべきこと</h4>
+      <ul>
+        <li><strong>TS店舗</strong>は実質ダメージが全額のため、特に見切削減を優先</li>
+        <li>実質ダメージ月+130千円以内を当面の目標に設定</li>
+        <li>GI余裕が薄い店（+300千円未満）は利益率改善が先決</li>
+        <li>大道南・原田南は発注・作成の抜本改革を即時実施</li>
+        <li>3ヶ月以内に実質ダメージの減少トレンドを作る</li>
+      </ul>
+    </div>
+    <div class="consid-card semeru">
+      <h4>🚀 攻め店舗で強化すべきこと</h4>
+      <ul>
+        <li>GI余裕を活かし売場強化・品揃え拡充・販促施策を積極展開</li>
+        <li>吹田朝日町・青山台・豊里五丁目はCN昇格組：見切管理を継続しつつ攻め展開</li>
+        <li>江坂駅南口・南金田はエリアリーダーとして<strong>モデルケース化</strong>を推進</li>
+        <li>箕面白島二丁目の見切管理ノウハウを他店へ水平展開</li>
+        <li>フェア・新商品推進など本部施策への最優先対応店として位置づけ</li>
+      </ul>
+    </div>
+  </div>
+
+  <div style="padding:20px 0;text-align:center;font-size:11px;color:#a0aec0;">
+    集計：2025年10月〜2026年3月実績｜単位：千円｜契約区分反映済み｜データソース：店舗別精算書
+  </div>
+</div>
+
+<script>
+// ============================================================
+// 店舗データ（契約区分付き）
+// ============================================================
+const MONTHS = ['10月','11月','12月','1月','2月','3月'];
+
+const STORES = [
+  // ---- 守り ----
+  {name:'五月ケ丘東', contract:'CN',
+   gi:[1958,1896,2032,1976,1827,1947], mkd:[175,269,101,144,152,257],
+   judgment:'mamori',
+   comment:'GI平均1939千円でMO込みラインぎりぎり。11月・2月は1900千円割れ。CN店舗のため見切の実質ダメージは+91.5千円だが、そもそもGIが不安定なため発注精度・値下げ運用の抜本的改善が最優先。売上拡大施策はGI安定後に持ち越し。'},
+  {name:'吹田垂水三丁目', contract:'CN',
+   gi:[1875,1829,1855,1752,1797,1856], mkd:[156,142,113,111,72,149],
+   judgment:'mamori',
+   comment:'GI全6ヶ月が1900千円未満（平均1827千円）で最低保証ゾーンでの運営が続いている。1900千円ラインの安定突破が唯一の最優先課題。発注精度・作成精度・値下げ運用の抜本的な改善が必要。売上施策は一切後回し。'},
+
+  // ---- 攻め条件付き ----
+  {name:'吹田警察署前', contract:'CN',
+   gi:[2187,2040,2212,2167,2034,2204], mkd:[0,175,75,128,96,288],
+   judgment:'cond',
+   comment:'GIは1900千円超を維持しているが余裕が薄い（平均+241千円）。CN店舗のため実質見切ダメージは+63.5千円と低いが、GI余裕の薄さ自体が問題。余裕を300千円以上に安定させることが攻め転換の条件。'},
+  {name:'池田市役所前', contract:'TS',
+   gi:[2202,2168,2225,2144,2127,2267], mkd:[203,174,26,190,30,158],
+   judgment:'cond',
+   comment:'TS店舗のため見切超過はそのまま損失（実質ダメージ+130千円）。さらにGI余裕も+289千円と薄い。TS×低余裕の組み合わせで最もリスクが高い攻め条件付き店。見切削減とGI底上げを並行して改善することが条件。'},
+  {name:'東淀川大道南', contract:'CN',
+   gi:[2263,2193,2400,2466,2187,2475], mkd:[210,233,148,234,184,332],
+   judgment:'cond',
+   comment:'GI余裕は+431千円と中程度。CN店舗のため実質見切ダメージは+111.8千円。超過が毎月続いており（3月+332千円）、CNの恩恵を差し引いても重い。ロス管理の改善なしに売上拡大は危険。まず月+100千円以内を目標に。'},
+  {name:'大道南一丁目', contract:'TS',
+   gi:[2375,2329,2448,2297,2273,2443], mkd:[257,200,127,124,131,329],
+   judgment:'cond',
+   comment:'TS店舗のため見切超過が全額損失（実質ダメージ+195千円）。GI余裕+461千円をこの損失が大きく侵食している。3月の+329千円は特に深刻。TS特有のリスクの高さを認識した上で、発注・値下げ運用の即時改革が必要。'},
+  {name:'豊里六丁目', contract:'TS',
+   gi:[2144,2095,2146,2151,2038,2142], mkd:[202,230,48,202,94,161],
+   judgment:'cond',
+   comment:'TS店舗のため見切超過が全額損失（実質ダメージ+156千円）。さらにGI余裕も+219千円と全店中最も薄い水準のひとつ。余裕の薄さにTS全損が重なる最悪の組み合わせ。ロス削減が最優先で攻め転換は改善後。'},
+  {name:'豊中原田南一丁目', contract:'CN',
+   gi:[2411,2335,2599,2397,2148,2673], mkd:[147,269,113,224,187,637],
+   judgment:'cond',
+   comment:'CN店舗のため実質見切ダメージは+131千円だが、3月の超過+637千円（実質+318千円）が突出しており緊急対応が必要。平均GI余裕は+527千円あり条件が整えば攻め転換できるが、まず3月のような異常超過の再発防止が先決。'},
+  {name:'豊中服部西町三丁目', contract:'TS',
+   gi:[2192,2146,2185,2180,2078,2163], mkd:[180,162,30,84,68,134],
+   judgment:'cond',
+   comment:'TS店舗のため見切超過が全額損失（実質ダメージ+110千円）。GI余裕も+257千円と薄い。TS×低余裕の組み合わせで、見切削減がそのままGI余裕の拡大に直結する。10月・11月の超過が特に大きく、季節対応の改善が鍵。'},
+
+  // ---- 攻め ----
+  {name:'吹田朝日町', contract:'CN',
+   gi:[3151,3080,3303,3020,2987,3315], mkd:[114,187,109,151,69,348],
+   judgment:'semeru',
+   comment:'GI余裕は+1243千円と大きく安定。CN店舗のため見切超過の実質ダメージは+81.5千円と十分許容範囲。契約区分考慮後に攻め条件付きから昇格。3月の見切+348千円（実質+174千円）は注意しながら積極展開が可能。'},
+  {name:'吹田青山台三丁目', contract:'CN',
+   gi:[2977,2846,3012,2938,2608,3033], mkd:[103,222,109,157,99,207],
+   judgment:'semeru',
+   comment:'GI余裕は+1002千円と大きい。CN店舗のため見切超過の実質ダメージは+74.8千円と低水準。契約区分考慮後に攻め条件付きから昇格。6ヶ月全て予算未達（差異-31〜-149千円）の改善と並行して売上施策を展開できる状態。'},
+  {name:'江坂東', contract:'CN',
+   gi:[2990,2857,3065,2876,2777,3053], mkd:[7,100,59,43,-25,210],
+   judgment:'semeru',
+   comment:'GI余裕は+1036千円と大きく安定。CN店舗のため実質見切ダメージは+32.8千円と優秀。3月のみ+210千円（実質+105千円）だが一時的。全体として積極的な施策展開に最も適した状態のひとつ。'},
+  {name:'吹田豊津中学校前', contract:'CN',
+   gi:[3025,2801,2943,2633,2569,2766], mkd:[19,114,-23,85,35,161],
+   judgment:'semeru',
+   comment:'GI余裕は+889千円で安定。CN店舗のため実質見切ダメージは+32.6千円と非常に低い。12月はわずかに予算より節約。全体として見切管理と売上のバランスが取れており、積極的な施策展開が可能。'},
+  {name:'豊中利倉東一丁目', contract:'CN',
+   gi:[2843,2735,2879,2786,2468,3061], mkd:[-20,160,16,116,50,131],
+   judgment:'semeru',
+   comment:'GI余裕は+895千円で安定。CN店舗のため実質見切ダメージは+37.8千円と良好。10月は節約（-20千円）。3月の伸び（3061千円）も好材料。全体として積極施策が可能な状態にある。'},
+  {name:'豊中服部元町一丁目', contract:'CN',
+   gi:[2757,2648,2947,2862,2639,2854], mkd:[58,116,8,37,-4,259],
+   judgment:'semeru',
+   comment:'GI余裕は+884千円で安定。CN店舗のため実質見切ダメージは+39.5千円と良好。3月の見切超過+259千円（実質+130千円）はやや注意が必要だが、全体として攻め展開に支障はない。'},
+  {name:'東淀川豊里五丁目', contract:'CN',
+   gi:[3019,2794,3057,2950,2709,3048], mkd:[118,194,0,94,65,309],
+   judgment:'semeru',
+   comment:'GI余裕は+1030千円と大きい。CN店舗のため見切超過の実質ダメージは+65千円と低水準。契約区分考慮後に攻め条件付きから昇格。3月の超過+309千円（実質+154千円）は継続モニタリングしながら積極展開が可能。'},
+  {name:'南金田二丁目', contract:'CN',
+   gi:[3452,3390,3560,3407,3084,3468], mkd:[31,165,-30,51,-21,70],
+   judgment:'semeru',
+   comment:'GI余裕は+1494千円と全店最高水準。CN店舗のため実質見切ダメージは+22.2千円と全店中最優秀。12月・2月は節約。フルスロットルで施策展開できる最良の状態。エリアのモデル店として活用を推奨。'},
+  {name:'箕面白島二丁目', contract:'CN',
+   gi:[2267,2293,2516,2453,2277,2627], mkd:[80,-292,-276,-397,-361,148],
+   judgment:'semeru',
+   comment:'GI余裕は+506千円で安定。CN店舗のため実質見切ダメージは-91.5千円（予算より節約）。11月〜2月は大幅節約と特筆すべき見切管理の優秀さ。このノウハウを他店へ水平展開するモデル店として機能できる。'},
+  {name:'江坂駅南口', contract:'CN',
+   gi:[5889,5135,5756,4938,4565,5153], mkd:[-28,-171,-342,-119,-26,-53],
+   judgment:'semeru',
+   comment:'GI余裕は+3339千円と群を抜く最高水準。CN店舗のため実質見切ダメージは-61.6千円（全月ほぼ節約）。GI・ロス管理の両面で全店最優秀。次のステージへ向けた高付加価値施策を積極的に推進すべき。'},
+  {name:'新御堂筋上新田', contract:'CN',
+   gi:[3250,3146,3233,3361,3006,3275], mkd:[-13,66,-53,74,1,294],
+   judgment:'semeru',
+   comment:'GI余裕は+1312千円で安定。CN店舗のため実質見切ダメージは+30.8千円と良好。3月の超過+294千円（実質+147千円）は注意点だが、全体として安定した攻め展開が可能。春以降の見切動向を意識しながら積極展開。'},
+];
+
+// ============================================================
+// ユーティリティ
+// ============================================================
+function avg(arr){ return arr.reduce((a,b)=>a+b,0)/arr.length; }
+function round1(v){ return Math.round(v*10)/10; }
+
+const J_COLOR = { mamori:'#e53e3e', cond:'#d97706', semeru:'#059669' };
+const J_LABEL = { mamori:'守り', cond:'攻め条件付き', semeru:'攻め' };
+
+// 実質ダメージ計算
+function realDmg(store){
+  const mult = store.contract === 'TS' ? 1.0 : 0.5;
+  return store.mkd.map(v => round1(v * mult));
+}
+
+// ============================================================
+// チャート①: GI平均（横棒）
+// ============================================================
+(function(){
+  const sorted = [...STORES].sort((a,b)=>avg(b.gi)-avg(a.gi));
+  const ctx = document.getElementById('chartGI').getContext('2d');
+  new Chart(ctx, {
+    type:'bar',
+    data:{
+      labels: sorted.map(s=>s.name),
+      datasets:[{
+        label:'GI平均（千円）',
+        data: sorted.map(s=>round1(avg(s.gi))),
+        backgroundColor: sorted.map(s=>J_COLOR[s.judgment]),
+        borderRadius:4,
+      }]
+    },
+    options:{
+      indexAxis:'y', responsive:true,
+      plugins:{legend:{display:false},
+        tooltip:{callbacks:{label:d=>`  ${d.raw.toLocaleString()}千円`}}},
+      scales:{
+        x:{min:0, title:{display:true,text:'千円'}, ticks:{font:{size:11}}, grid:{color:'#f0f0f0'}},
+        y:{ticks:{font:{size:11}}}
+      }
+    },
+    plugins:[{
+      id:'vline1900',
+      afterDraw(chart){
+        const {ctx:c,chartArea:{top,bottom},scales:{x}} = chart;
+        const xp = x.getPixelForValue(1900);
+        c.save(); c.beginPath(); c.setLineDash([6,3]);
+        c.strokeStyle='#e53e3e'; c.lineWidth=2;
+        c.moveTo(xp,top); c.lineTo(xp,bottom); c.stroke();
+        c.fillStyle='#e53e3e'; c.font='bold 10px sans-serif';
+        c.fillText('1900千円',xp+4,top+14); c.restore();
+      }
+    }]
+  });
+})();
+
+// ============================================================
+// チャート②: 実質見切ダメージ（横棒）
+// ============================================================
+(function(){
+  const withDmg = STORES.map(s=>({...s, dmgAvg: round1(avg(realDmg(s)))}));
+  const sorted = [...withDmg].sort((a,b)=>b.dmgAvg-a.dmgAvg);
+  const ctx = document.getElementById('chartMK').getContext('2d');
+  new Chart(ctx, {
+    type:'bar',
+    data:{
+      labels: sorted.map(s=>`${s.name}[${s.contract}]`),
+      datasets:[{
+        label:'実質見切ダメージ平均（千円）',
+        data: sorted.map(s=>s.dmgAvg),
+        backgroundColor: sorted.map(s=>s.dmgAvg>130?'#e53e3e':s.dmgAvg>0?'#d97706':'#059669'),
+        borderRadius:4,
+      }]
+    },
+    options:{
+      indexAxis:'y', responsive:true,
+      plugins:{legend:{display:false},
+        tooltip:{callbacks:{label:d=>`  ${d.raw>0?'+':''}${d.raw}千円（契約区分考慮済）`}}},
+      scales:{
+        x:{title:{display:true,text:'千円（CN×0.5 / TS×1.0）'}, ticks:{font:{size:11}}, grid:{color:'#f0f0f0'}},
+        y:{ticks:{font:{size:10}}}
+      }
+    }
+  });
+})();
+
+// ============================================================
+// チャート③: ドーナツ
+// ============================================================
+(function(){
+  const ctx = document.getElementById('chartDonut').getContext('2d');
+  new Chart(ctx, {
+    type:'doughnut',
+    data:{
+      labels:['守り（2店）','攻め条件付き（7店）','攻め（11店）'],
+      datasets:[{data:[2,7,11],
+        backgroundColor:['#e53e3e','#d97706','#059669'],
+        borderWidth:3, borderColor:'#fff'}]
+    },
+    options:{
+      responsive:true, cutout:'60%',
+      plugins:{
+        legend:{position:'bottom', labels:{font:{size:11},padding:12}},
+        tooltip:{callbacks:{label:d=>`${d.label}: ${d.raw}店舗`}}
+      }
+    }
+  });
+})();
+
+// ============================================================
+// チャート④: 散布図（GI余裕 vs 実質ダメージ）
+// ============================================================
+(function(){
+  const ctx = document.getElementById('chartScatter').getContext('2d');
+  const datasets = ['mamori','cond','semeru'].map(j=>{
+    const stores = STORES.filter(s=>s.judgment===j);
+    return {
+      label: J_LABEL[j],
+      data: stores.map(s=>({
+        x: Math.round(avg(s.gi)-1900),
+        y: round1(avg(realDmg(s))),
+        name: s.name,
+        contract: s.contract
+      })),
+      backgroundColor: J_COLOR[j]+'cc',
+      borderColor: J_COLOR[j],
+      pointRadius:6, pointHoverRadius:9,
+    };
+  });
+  new Chart(ctx, {
+    type:'scatter', data:{datasets},
+    options:{
+      responsive:true,
+      plugins:{
+        legend:{position:'bottom', labels:{font:{size:11},padding:8}},
+        tooltip:{callbacks:{label:d=>`${d.raw.name}[${d.raw.contract}]：余裕+${d.raw.x}千円 / 実質ダメージ${d.raw.y>=0?'+':''}${d.raw.y}千円`}}
+      },
+      scales:{
+        x:{title:{display:true,text:'GI余裕（実績-1900千円）'}, ticks:{font:{size:10}}},
+        y:{title:{display:true,text:'実質見切ダメージ（千円）'}, ticks:{font:{size:10}}}
+      }
+    },
+    plugins:[{
+      id:'quadLines',
+      afterDraw(chart){
+        const {ctx:c,chartArea:{top,bottom,left,right},scales:{x,y}} = chart;
+        const x0 = x.getPixelForValue(0);
+        const y0 = y.getPixelForValue(100);
+        c.save(); c.setLineDash([4,3]); c.strokeStyle='#cbd5e0'; c.lineWidth=1;
+        c.beginPath(); c.moveTo(x0,top); c.lineTo(x0,bottom); c.stroke();
+        c.beginPath(); c.moveTo(left,y0); c.lineTo(right,y0); c.stroke();
+        c.restore();
+      }
+    }]
+  });
+})();
+
+// ============================================================
+// 店舗カード生成
+// ============================================================
+function renderStores(){
+  const groups = [
+    {key:'mamori', label:'🛡️ 守り', desc:'GI1900千円ライン未達・不安定 → 立て直し最優先'},
+    {key:'cond',   label:'⚠️ 攻め 条件付き', desc:'実質ダメージが重い or GI余裕薄 → ロス改善が前提条件'},
+    {key:'semeru', label:'🚀 攻め', desc:'GI安定・実質ダメージ良好 → 積極施策展開が可能'},
+  ];
+  const container = document.getElementById('storeList');
+  groups.forEach(g=>{
+    const stores = STORES.filter(s=>s.judgment===g.key);
+    const div = document.createElement('div');
+    div.className = 'judgment-group';
+    let html = `<div class="group-header ${g.key}">
+      <span>${g.label}</span>
+      <span style="font-size:11px;opacity:.85;margin-left:8px;">${g.desc}</span>
+      <span class="store-count">${stores.length}店舗</span>
+    </div>`;
+    stores.forEach(s=>{
+      const giAvg    = round1(avg(s.gi));
+      const dmgArr   = realDmg(s);
+      const dmgAvg   = round1(avg(dmgArr));
+      const mkdAvg   = round1(avg(s.mkd));
+      const below    = s.gi.filter(v=>v<1900).length;
+      const giMargin = Math.round(giAvg - 1900);
+      const mult     = s.contract === 'TS' ? 1.0 : 0.5;
+
+      // alert classes
+      const giClass  = giAvg < 1900 ? 'alert-red' : giAvg < 2100 ? 'alert-amber' : 'alert-green';
+      const dmgClass = dmgAvg > 130 ? 'alert-red' : dmgAvg > 50 ? 'alert-amber' : 'alert-green';
+      const blClass  = below >= 3 ? 'alert-red' : below >= 1 ? 'alert-amber' : 'alert-green';
+      const ctClass  = s.contract === 'TS' ? 'ts' : 'cn';
+
+      // mini GI bars
+      const giMax  = Math.max(...s.gi, 2200);
+      const giBars = s.gi.map((v,i)=>{
+        const pct = Math.round(v/giMax*100);
+        const col = v<1900?'#e53e3e': g.key==='semeru'?'#059669':'#d97706';
+        return `<div class="mini-bar" style="height:${pct}%;background:${col};"></div>`;
+      }).join('');
+
+      html += `<div class="store-card">
+        <div class="store-header">
+          <span class="store-name">${s.name}</span>
+          <span class="tag ${g.key}">${J_LABEL[g.key]}</span>
+          <span class="tag ${ctClass}">${s.contract}店舗</span>
+          ${s.contract==='TS'?'<span style="font-size:10px;color:#9d174d;font-weight:700;">⚠ 見切超過=全額損失</span>':
+            '<span style="font-size:10px;color:#1e40af;">✓ 見切超過50%が雑益で戻る</span>'}
+        </div>
+        <div class="store-metrics">
+          <div class="metric-box ${giClass}">
+            <div class="metric-label">GI 6ヶ月平均</div>
+            <div><span class="metric-value">${giAvg.toLocaleString()}</span><span class="metric-unit"> 千円</span></div>
+            <div class="metric-sub">1900千円比 ${giMargin>=0?'+':''}${giMargin.toLocaleString()}千円</div>
+          </div>
+          <div class="metric-box ${blClass}">
+            <div class="metric-label">1900千円未満の月</div>
+            <div><span class="metric-value">${below}</span><span class="metric-unit"> / 6ヶ月</span></div>
+            <div class="metric-sub">${below===0?'全月クリア':'要注意'}</div>
+          </div>
+          <div class="metric-box ${dmgClass}">
+            <div class="metric-label">実質ダメージ 平均</div>
+            <div><span class="metric-value">${dmgAvg>0?'+':''}${dmgAvg}</span><span class="metric-unit"> 千円</span></div>
+            <div class="metric-sub">×${mult}（${s.contract}）</div>
+          </div>
+          <div class="metric-box">
+            <div class="metric-label">見切超過 平均（原値）</div>
+            <div><span class="metric-value" style="font-size:15px;">${mkdAvg>0?'+':''}${mkdAvg}</span><span class="metric-unit"> 千円</span></div>
+            <div class="metric-sub">契約区分補正前</div>
+          </div>
+        </div>
+        <div style="display:flex;gap:12px;align-items:flex-end;margin-bottom:8px;flex-wrap:wrap;">
+          <div style="flex:1;min-width:120px;">
+            <div style="font-size:10px;color:#718096;margin-bottom:2px;">月別GI推移</div>
+            <div class="mini-bar-row">${giBars}</div>
+            <div style="display:flex;font-size:9px;color:#a0aec0;margin-top:2px;">
+              ${MONTHS.map(m=>`<div style="flex:1;text-align:center;">${m}</div>`).join('')}
+            </div>
+          </div>
+          <div style="flex:2;min-width:200px;">
+            <div style="font-size:10px;color:#718096;margin-bottom:3px;">月別 実質ダメージ（千円）</div>
+            <div style="display:flex;gap:3px;flex-wrap:wrap;">
+              ${dmgArr.map((v,i)=>`<span style="font-size:10px;padding:1px 5px;border-radius:4px;background:${v>130?'#fed7d7':v>0?'#fef3c7':'#d1fae5'};color:${v>130?'#c53030':v>0?'#92400e':'#065f46'}">${MONTHS[i]}:${v>0?'+':''}${v}</span>`).join('')}
+            </div>
+          </div>
+        </div>
+        <div class="store-comment">💬 ${s.comment}</div>
+      </div>`;
+    });
+    div.innerHTML = html;
+    container.appendChild(div);
+  });
+}
+renderStores();
+</script>
+</body>
+</html>
