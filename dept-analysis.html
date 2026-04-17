@@ -1,0 +1,719 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DEPT別 荒利益改善ダッシュボード</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#f0f2f7;color:#1a1a2e;font-family:'Hiragino Sans','Meiryo',sans-serif;font-size:14px}
+.top-bar{background:#003087;color:#fff;padding:10px 16px;position:sticky;top:0;z-index:100;box-shadow:0 2px 8px rgba(0,0,0,.3)}
+.top-bar h1{font-size:15px;font-weight:700;margin-bottom:8px}
+.header-row{display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-bottom:6px}
+.tab-btn{padding:5px 13px;border-radius:20px;border:1.5px solid rgba(255,255,255,.5);background:transparent;color:#fff;font-size:12px;font-weight:600;cursor:pointer;transition:all .2s;white-space:nowrap}
+.tab-btn.active{background:#fff;color:#003087}
+.tab-btn:hover:not(.active){background:rgba(255,255,255,.15)}
+.scope-row{display:flex;gap:6px;align-items:center;margin-bottom:6px;flex-wrap:wrap}
+.scope-label{font-size:11px;color:rgba(255,255,255,.7);margin-right:2px}
+.scope-btn{padding:4px 12px;border-radius:16px;border:1.5px solid rgba(255,255,255,.5);background:transparent;color:#fff;font-size:11px;font-weight:600;cursor:pointer;transition:all .2s}
+.scope-btn.active{background:rgba(255,255,255,.25);border-color:#fff}
+.scope-btn:hover:not(.active){background:rgba(255,255,255,.1)}
+.filter-row{display:flex;gap:5px;flex-wrap:wrap;min-height:28px;align-items:center}
+.filter-btn{padding:3px 10px;border-radius:14px;border:1.5px solid rgba(255,255,255,.45);background:transparent;color:rgba(255,255,255,.9);font-size:11px;cursor:pointer;transition:all .2s}
+.filter-btn.active{background:#fff;color:#003087;font-weight:700}
+.filter-btn:hover:not(.active){background:rgba(255,255,255,.15)}
+.filter-sub{font-size:10px;color:rgba(255,255,255,.6);margin-right:4px;white-space:nowrap}
+.content{padding:16px;max-width:1400px;margin:0 auto}
+.tab-panel{display:none}.tab-panel.active{display:block}
+.card-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin-bottom:18px}
+.card{background:#fff;border-radius:10px;padding:12px 14px;border-left:4px solid #003087;box-shadow:0 1px 4px rgba(0,0,0,.08)}
+.card.green{border-left-color:#2e7d32}.card.red{border-left-color:#e53935}.card.amber{border-left-color:#f57c00}.card.blue{border-left-color:#1565c0}.card.teal{border-left-color:#00796b}.card.gray{border-left-color:#757575}
+.card-label{font-size:10px;color:#666;margin-bottom:4px;line-height:1.3}
+.card-value{font-size:19px;font-weight:700;line-height:1.1}
+.card-unit{font-size:10px;color:#888;margin-left:2px}
+.card-sub{font-size:10px;color:#888;margin-top:3px}
+.section{background:#fff;border-radius:12px;padding:16px;margin-bottom:18px;box-shadow:0 1px 4px rgba(0,0,0,.08)}
+.section-title{font-size:14px;font-weight:700;color:#003087;margin-bottom:12px;padding-bottom:8px;border-bottom:2px solid #e8ecf3}
+.note{background:#fff8e1;border-left:4px solid #f9a825;border-radius:6px;padding:8px 12px;margin-bottom:14px;font-size:11px;color:#5d4037;line-height:1.8}
+.note strong{color:#e65100}
+.table-wrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:12px;min-width:780px}
+th{background:#003087;color:#fff;padding:7px 8px;text-align:center;font-size:11px;font-weight:600;position:sticky;top:0;white-space:nowrap}
+td{padding:6px 8px;border-bottom:1px solid #eee;text-align:center;vertical-align:middle}
+tr:hover td{background:#f5f7ff}
+.up{color:#2e7d32;font-weight:700}.down{color:#e53935;font-weight:700}.warn{color:#e65100;font-weight:700}
+.badge{display:inline-block;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:700}
+.badge-A{background:#ffebee;color:#c62828}.badge-B{background:#fff3e0;color:#e65100}.badge-C{background:#e8f5e9;color:#2e7d32}.badge-D{background:#f3e5f5;color:#6a1b9a}
+.cat-tag{display:inline-block;padding:1px 7px;border-radius:8px;font-size:10px;font-weight:600;background:#e8ecf3;color:#003087}
+.abcd-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px;margin-bottom:14px}
+.abcd-card{border-radius:10px;padding:12px;box-shadow:0 1px 4px rgba(0,0,0,.1)}
+.abcd-card.A{background:#ffebee;border-top:3px solid #c62828}.abcd-card.B{background:#fff3e0;border-top:3px solid #e65100}.abcd-card.C{background:#e8f5e9;border-top:3px solid #2e7d32}.abcd-card.D{background:#f3e5f5;border-top:3px solid #6a1b9a}
+.abcd-title{font-size:13px;font-weight:700;margin-bottom:6px}
+.abcd-card.A .abcd-title{color:#c62828}.abcd-card.B .abcd-title{color:#e65100}.abcd-card.C .abcd-title{color:#2e7d32}.abcd-card.D .abcd-title{color:#6a1b9a}
+.abcd-dept{font-size:12px;padding:2px 0;border-bottom:1px solid rgba(0,0,0,.07)}
+.abcd-dept:last-child{border-bottom:none}
+.impact-bar-wrap{margin-bottom:8px}
+.impact-bar-label{display:flex;justify-content:space-between;font-size:11px;margin-bottom:2px}
+.impact-bar{height:14px;background:#e8ecf3;border-radius:7px;overflow:hidden}
+.impact-bar-fill{height:100%;border-radius:7px;transition:width .5s}
+.action-card{background:#f8f9ff;border-radius:10px;padding:12px;margin-bottom:10px;border-left:4px solid #003087}
+.action-dept{font-size:13px;font-weight:700;color:#003087;margin-bottom:4px}
+.action-issue{font-size:11px;color:#555;margin-bottom:6px}
+.action-list{list-style:none;padding:0}
+.action-list li{font-size:11px;padding:2px 0 2px 14px;position:relative;color:#1a1a2e}
+.action-list li::before{content:"→";position:absolute;left:0;color:#003087;font-weight:700}
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+@media(max-width:700px){.two-col{grid-template-columns:1fr}}
+.whole-note{background:#fff;border-radius:12px;padding:20px;text-align:center;color:#666;margin-top:12px;box-shadow:0 1px 4px rgba(0,0,0,.08);font-size:13px}
+.whole-note strong{color:#003087;display:block;font-size:16px;margin-bottom:8px}
+.empty-msg{color:#999;font-size:13px;padding:20px;text-align:center}
+.pattern-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px;margin-top:12px}
+.pattern-card{border-radius:8px;padding:10px 12px;font-size:12px}
+.pattern-card.up-sales{background:#e8f5e9;border-left:3px solid #2e7d32}
+.pattern-card.down-sales{background:#ffebee;border-left:3px solid #c62828}
+.pattern-card.waste-up{background:#fff3e0;border-left:3px solid #f57c00}
+.pattern-card.complex{background:#fce4ec;border-left:3px solid #880e4f}
+.pattern-card-title{font-weight:700;font-size:12px;margin-bottom:6px}
+.pattern-dept-list{line-height:1.7;color:#333}
+</style>
+</head>
+<body>
+<div class="top-bar">
+  <h1>DEPT別 荒利益改善ダッシュボード（4/16時点）</h1>
+  <div class="header-row" id="tabRow"></div>
+  <div class="scope-row" id="scopeRow"></div>
+  <div class="filter-row" id="filterRow"></div>
+</div>
+<div class="content" id="mainContent"></div>
+
+<script>
+const DEPT_MR = {"米飯":33.77,"ベーカリー":34.40,"デザート":34.88,"調理麺":34.54,"デリカ":34.31,"調理パン":35.82,"生鮮品":33.25,"チルド飲料":35.67,"日配食品":35.93,"常温和洋菓子":32.56,"ファストフーズ":null,"店内厨房":null,"たばこ":11.00,"ソフトドリンク":44.90,"ポケット菓子":30.54,"洋酒・酎ハイ":27.46,"アイスクリーム":43.62,"即席麺":36.47,"ビール・発泡酒":20.87,"ドリンク剤＆ヘルスケア":39.23,"米菓・焼菓子":39.45,"スナック":33.59,"冷凍食品":33.79,"即席食品":34.73};
+
+const ACTION_DICT = {
+  "米飯":["製造量の見直し（時間帯別精度向上）","発注量縮小・品種絞り込み","値引きタイミングの最適化"],
+  "ベーカリー":["仕入量の縮小見直し","早期値引き開始時間の適正化","売場展開強化（陳列・POP）"],
+  "デリカ":["発注精度改善（需要予測）","SKU数の精査（死に筋排除）","見切タイミング見直し"],
+  "調理パン":["発注頻度・量の細かな調整","時間帯別売変タイミングの最適化","売れ筋アイテムへの集中"],
+  "調理麺":["品種構成の見直し","製造タイミングの精緻化","温度管理の確認"],
+  "ファストフーズ":["廃棄サイクルの見直し","製造量の時間帯別管理","売れ筋強化・品種集中"],
+  "店内厨房":["調理ロスの削減","製造計画の精緻化","売場陳列・訴求強化"],
+  "チルド飲料":["品種入れ替えサイクルの見直し","期限管理の徹底","定温管理の確認"],
+  "デザート":["品種構成の精査","発注量の適正化","売場陳列見直し"],
+  "日配食品":["需要予測精度の向上","品種入れ替えサイクル最適化"],
+  "生鮮品":["陳列量の適正化","品種絞り込み","廃棄ロス削減"],
+  "ポケット菓子":["棚割り・陳列の見直し","売れ筋品種の強化"],
+  "ビール・発泡酒":["期限管理・在庫回転率向上","品種構成の見直し"],
+  "米菓・焼菓子":["売場縮小・品種絞り込み","棚割り見直し"]
+};
+
+const DEPT_CATEGORY = {
+  "米飯":"FF系","ベーカリー":"FF系","デザート":"FF系","調理麺":"FF系","デリカ":"FF系","調理パン":"FF系",
+  "生鮮品":"日配・生鮮","チルド飲料":"日配・生鮮","日配食品":"日配・生鮮",
+  "常温和洋菓子":"グロサリー","ファストフーズ":"FF系","店内厨房":"FF系",
+  "たばこ":"たばこ","ソフトドリンク":"グロサリー","ポケット菓子":"グロサリー",
+  "洋酒・酎ハイ":"グロサリー","アイスクリーム":"グロサリー","即席麺":"グロサリー",
+  "ビール・発泡酒":"グロサリー","ドリンク剤＆ヘルスケア":"グロサリー","米菓・焼菓子":"グロサリー",
+  "スナック":"グロサリー","冷凍食品":"グロサリー","即席食品":"グロサリー"
+};
+
+const STORES_RAW = {"五月ケ丘東":{"sc":"髙橋SC","depts":{"米飯":{"sales":372023,"prevSales":407404,"waste":99598,"prevWaste":35614},"調理パン":{"sales":75955,"prevSales":73608,"waste":21834,"prevWaste":10781},"調理麺":{"sales":108065,"prevSales":140244,"waste":45165,"prevWaste":-13062},"デリカ":{"sales":68213,"prevSales":79154,"waste":34642,"prevWaste":1215},"ファストフーズ":{"sales":413508,"prevSales":324336,"waste":96538,"prevWaste":69002},"店内厨房":{"sales":35378,"prevSales":25537,"waste":8822,"prevWaste":10002},"チルド飲料":{"sales":185060,"prevSales":169847,"waste":11142,"prevWaste":13951},"デザート":{"sales":194821,"prevSales":178786,"waste":33190,"prevWaste":6663},"ベーカリー":{"sales":274165,"prevSales":306368,"waste":27336,"prevWaste":10620},"常温和洋菓子":{"sales":23327,"prevSales":24544,"waste":5309,"prevWaste":4644},"生鮮品":{"sales":23349,"prevSales":21953,"waste":4271,"prevWaste":5573},"日配食品":{"sales":102067,"prevSales":121592,"waste":18658,"prevWaste":10101},"ソフトドリンク":{"sales":404012,"prevSales":313712,"waste":0,"prevWaste":0},"冷凍食品":{"sales":49375,"prevSales":46992,"waste":158,"prevWaste":368},"アイスクリーム":{"sales":146029,"prevSales":137748,"waste":0,"prevWaste":170},"即席麺":{"sales":64285,"prevSales":74409,"waste":156,"prevWaste":1250},"即席食品":{"sales":32075,"prevSales":33880,"waste":0,"prevWaste":1008},"ポケット菓子":{"sales":149408,"prevSales":167522,"waste":0,"prevWaste":128},"スナック":{"sales":56239,"prevSales":59105,"waste":0,"prevWaste":0},"米菓・焼菓子":{"sales":69383,"prevSales":72904,"waste":449,"prevWaste":176},"ドリンク剤＆ヘルスケア":{"sales":82719,"prevSales":69972,"waste":0,"prevWaste":0},"ビール・発泡酒":{"sales":110904,"prevSales":134088,"waste":1435,"prevWaste":283},"洋酒・酎ハイ":{"sales":119431,"prevSales":142314,"waste":0,"prevWaste":244},"たばこ":{"sales":2541082,"prevSales":2676855,"waste":0,"prevWaste":0}}},"江坂駅南口":{"sc":"髙橋SC","depts":{"米飯":{"sales":1559424,"prevSales":1716046,"waste":161629,"prevWaste":36539},"調理パン":{"sales":262475,"prevSales":260296,"waste":26592,"prevWaste":23606},"調理麺":{"sales":300331,"prevSales":330433,"waste":52173,"prevWaste":-20230},"デリカ":{"sales":337605,"prevSales":321371,"waste":20664,"prevWaste":28447},"ファストフーズ":{"sales":1198898,"prevSales":1061492,"waste":155165,"prevWaste":86130},"店内厨房":{"sales":497057,"prevSales":441002,"waste":128421,"prevWaste":69178},"チルド飲料":{"sales":651231,"prevSales":673359,"waste":4290,"prevWaste":343},"デザート":{"sales":439089,"prevSales":514988,"waste":15238,"prevWaste":-6664},"ベーカリー":{"sales":759654,"prevSales":863077,"waste":20513,"prevWaste":20017},"常温和洋菓子":{"sales":34059,"prevSales":46663,"waste":565,"prevWaste":893},"生鮮品":{"sales":54092,"prevSales":92371,"waste":6531,"prevWaste":9782},"日配食品":{"sales":248923,"prevSales":257287,"waste":16977,"prevWaste":4618},"ソフトドリンク":{"sales":1714726,"prevSales":1667086,"waste":0,"prevWaste":0},"冷凍食品":{"sales":41670,"prevSales":78757,"waste":0,"prevWaste":0},"アイスクリーム":{"sales":163517,"prevSales":159327,"waste":3588,"prevWaste":3700},"即席麺":{"sales":207022,"prevSales":226980,"waste":0,"prevWaste":0},"即席食品":{"sales":126072,"prevSales":123107,"waste":0,"prevWaste":460},"ポケット菓子":{"sales":647315,"prevSales":764604,"waste":643,"prevWaste":0},"スナック":{"sales":153759,"prevSales":142498,"waste":278,"prevWaste":357},"米菓・焼菓子":{"sales":131713,"prevSales":151799,"waste":0,"prevWaste":0},"ドリンク剤＆ヘルスケア":{"sales":559251,"prevSales":505424,"waste":0,"prevWaste":0},"ビール・発泡酒":{"sales":225781,"prevSales":218747,"waste":0,"prevWaste":251},"洋酒・酎ハイ":{"sales":401760,"prevSales":400406,"waste":364,"prevWaste":0},"たばこ":{"sales":4616102,"prevSales":5084453,"waste":0,"prevWaste":0}}},"江坂東":{"sc":"ダハルSC","depts":{"米飯":{"sales":781673,"prevSales":820150,"waste":87582,"prevWaste":-13116},"調理パン":{"sales":152209,"prevSales":151469,"waste":11582,"prevWaste":17677},"調理麺":{"sales":329011,"prevSales":344563,"waste":9962,"prevWaste":-11627},"デリカ":{"sales":250016,"prevSales":219517,"waste":16448,"prevWaste":7438},"ファストフーズ":{"sales":758716,"prevSales":601186,"waste":79517,"prevWaste":66655},"店内厨房":{"sales":356733,"prevSales":331044,"waste":22734,"prevWaste":32415},"チルド飲料":{"sales":304497,"prevSales":272759,"waste":9864,"prevWaste":7581},"デザート":{"sales":299650,"prevSales":308177,"waste":20794,"prevWaste":2751},"ベーカリー":{"sales":382727,"prevSales":415394,"waste":36051,"prevWaste":3649},"常温和洋菓子":{"sales":47585,"prevSales":50138,"waste":4094,"prevWaste":4329},"生鮮品":{"sales":49188,"prevSales":46746,"waste":7532,"prevWaste":4268},"日配食品":{"sales":226442,"prevSales":226575,"waste":21914,"prevWaste":14388},"ソフトドリンク":{"sales":750651,"prevSales":605132,"waste":200,"prevWaste":100},"冷凍食品":{"sales":138388,"prevSales":143804,"waste":0,"prevWaste":0},"アイスクリーム":{"sales":242994,"prevSales":175714,"waste":230,"prevWaste":0},"即席麺":{"sales":169844,"prevSales":165152,"waste":235,"prevWaste":1753},"即席食品":{"sales":66737,"prevSales":81754,"waste":0,"prevWaste":230},"ポケット菓子":{"sales":284130,"prevSales":315227,"waste":3045,"prevWaste":0},"スナック":{"sales":99376,"prevSales":92949,"waste":0,"prevWaste":0},"米菓・焼菓子":{"sales":106502,"prevSales":125892,"waste":1464,"prevWaste":278},"ドリンク剤＆ヘルスケア":{"sales":167926,"prevSales":160599,"waste":0,"prevWaste":0},"ビール・発泡酒":{"sales":105563,"prevSales":109527,"waste":0,"prevWaste":0},"洋酒・酎ハイ":{"sales":209149,"prevSales":210341,"waste":0,"prevWaste":0},"たばこ":{"sales":2880558,"prevSales":2710529,"waste":0,"prevWaste":0}}},"新御堂筋上新田":{"sc":"髙橋SC","depts":{"米飯":{"sales":826561,"prevSales":897530,"waste":154266,"prevWaste":24589},"調理パン":{"sales":188116,"prevSales":195049,"waste":23236,"prevWaste":21124},"調理麺":{"sales":249495,"prevSales":279939,"waste":38729,"prevWaste":-10826},"デリカ":{"sales":164161,"prevSales":154511,"waste":24146,"prevWaste":5098},"ファストフーズ":{"sales":888039,"prevSales":744769,"waste":21938,"prevWaste":46978},"店内厨房":{"sales":388298,"prevSales":313650,"waste":43158,"prevWaste":35975},"チルド飲料":{"sales":377960,"prevSales":377424,"waste":3781,"prevWaste":4345},"デザート":{"sales":355265,"prevSales":380845,"waste":19887,"prevWaste":-352},"ベーカリー":{"sales":570291,"prevSales":620257,"waste":23371,"prevWaste":22095},"常温和洋菓子":{"sales":38478,"prevSales":43361,"waste":2669,"prevWaste":4883},"生鮮品":{"sales":394247,"prevSales":296923,"waste":3375,"prevWaste":4234},"日配食品":{"sales":231187,"prevSales":227054,"waste":16158,"prevWaste":19864},"ソフトドリンク":{"sales":992190,"prevSales":857284,"waste":175,"prevWaste":824},"冷凍食品":{"sales":104896,"prevSales":119863,"waste":0,"prevWaste":0},"アイスクリーム":{"sales":290830,"prevSales":263305,"waste":0,"prevWaste":0},"即席麺":{"sales":182090,"prevSales":177081,"waste":0,"prevWaste":307},"即席食品":{"sales":65608,"prevSales":77268,"waste":0,"prevWaste":386},"ポケット菓子":{"sales":352076,"prevSales":351260,"waste":0,"prevWaste":0},"スナック":{"sales":84222,"prevSales":111267,"waste":0,"prevWaste":0},"米菓・焼菓子":{"sales":156108,"prevSales":187941,"waste":668,"prevWaste":137},"ドリンク剤＆ヘルスケア":{"sales":183266,"prevSales":194446,"waste":0,"prevWaste":0},"ビール・発泡酒":{"sales":247992,"prevSales":250526,"waste":1600,"prevWaste":330},"洋酒・酎ハイ":{"sales":290891,"prevSales":300439,"waste":136,"prevWaste":147},"たばこ":{"sales":2713817,"prevSales":2773519,"waste":0,"prevWaste":0}}},"吹田警察署前":{"sc":"五島SC","depts":{"米飯":{"sales":719120,"prevSales":765935,"waste":123910,"prevWaste":14643},"調理パン":{"sales":127174,"prevSales":122465,"waste":18793,"prevWaste":11526},"調理麺":{"sales":191717,"prevSales":205504,"waste":43372,"prevWaste":-16132},"デリカ":{"sales":105894,"prevSales":116005,"waste":25744,"prevWaste":-3301},"ファストフーズ":{"sales":551951,"prevSales":489470,"waste":102771,"prevWaste":50166},"店内厨房":{"sales":215309,"prevSales":123605,"waste":48024,"prevWaste":14897},"チルド飲料":{"sales":234518,"prevSales":256517,"waste":17154,"prevWaste":6767},"デザート":{"sales":160515,"prevSales":136408,"waste":18310,"prevWaste":94},"ベーカリー":{"sales":358041,"prevSales":442440,"waste":42010,"prevWaste":4946},"常温和洋菓子":{"sales":27331,"prevSales":19254,"waste":9594,"prevWaste":3627},"生鮮品":{"sales":20824,"prevSales":15073,"waste":2705,"prevWaste":2829},"日配食品":{"sales":149181,"prevSales":137281,"waste":28317,"prevWaste":17553},"ソフトドリンク":{"sales":722091,"prevSales":576042,"waste":1668,"prevWaste":148},"冷凍食品":{"sales":62638,"prevSales":56464,"waste":0,"prevWaste":0},"アイスクリーム":{"sales":112716,"prevSales":89294,"waste":0,"prevWaste":0},"即席麺":{"sales":174228,"prevSales":161863,"waste":0,"prevWaste":0},"即席食品":{"sales":57141,"prevSales":62015,"waste":0,"prevWaste":2036},"ポケット菓子":{"sales":183178,"prevSales":199565,"waste":900,"prevWaste":1502},"スナック":{"sales":48106,"prevSales":50607,"waste":0,"prevWaste":0},"米菓・焼菓子":{"sales":75998,"prevSales":75655,"waste":0,"prevWaste":1464},"ドリンク剤＆ヘルスケア":{"sales":103664,"prevSales":108214,"waste":888,"prevWaste":0},"ビール・発泡酒":{"sales":99755,"prevSales":74474,"waste":0,"prevWaste":0},"洋酒・酎ハイ":{"sales":118193,"prevSales":102617,"waste":0,"prevWaste":0},"たばこ":{"sales":2369476,"prevSales":2271046,"waste":0,"prevWaste":0}}},"吹田垂水三丁目":{"sc":"フィSC","depts":{"米飯":{"sales":502132,"prevSales":461045,"waste":45023,"prevWaste":551},"調理パン":{"sales":87422,"prevSales":74150,"waste":8493,"prevWaste":7606},"調理麺":{"sales":183080,"prevSales":218961,"waste":18158,"prevWaste":-24339},"デリカ":{"sales":136547,"prevSales":125162,"waste":15940,"prevWaste":5777},"ファストフーズ":{"sales":353494,"prevSales":297017,"waste":50691,"prevWaste":26173},"店内厨房":{"sales":0,"prevSales":0,"waste":0,"prevWaste":0},"チルド飲料":{"sales":196722,"prevSales":171157,"waste":1857,"prevWaste":1159},"デザート":{"sales":203065,"prevSales":190602,"waste":13048,"prevWaste":-6996},"ベーカリー":{"sales":216493,"prevSales":205485,"waste":20538,"prevWaste":-8},"常温和洋菓子":{"sales":19697,"prevSales":18529,"waste":2211,"prevWaste":3593},"生鮮品":{"sales":10268,"prevSales":7260,"waste":0,"prevWaste":0},"日配食品":{"sales":128040,"prevSales":93605,"waste":7677,"prevWaste":4266},"ソフトドリンク":{"sales":438844,"prevSales":319049,"waste":2607,"prevWaste":1364},"冷凍食品":{"sales":39202,"prevSales":30076,"waste":0,"prevWaste":0},"アイスクリーム":{"sales":85821,"prevSales":72983,"waste":0,"prevWaste":210},"即席麺":{"sales":111847,"prevSales":101787,"waste":0,"prevWaste":0},"即席食品":{"sales":67842,"prevSales":62371,"waste":0,"prevWaste":0},"ポケット菓子":{"sales":161173,"prevSales":143816,"waste":14800,"prevWaste":0},"スナック":{"sales":47732,"prevSales":48932,"waste":0,"prevWaste":365},"米菓・焼菓子":{"sales":78706,"prevSales":86926,"waste":0,"prevWaste":0},"ドリンク剤＆ヘルスケア":{"sales":120565,"prevSales":86398,"waste":0,"prevWaste":0},"ビール・発泡酒":{"sales":137522,"prevSales":107875,"waste":0,"prevWaste":204},"洋酒・酎ハイ":{"sales":150703,"prevSales":164906,"waste":0,"prevWaste":0},"たばこ":{"sales":1320206,"prevSales":1288515,"waste":0,"prevWaste":0}}},"吹田青山台三丁目":{"sc":"髙橋SC","depts":{"米飯":{"sales":754703,"prevSales":857390,"waste":61838,"prevWaste":25216},"調理パン":{"sales":173005,"prevSales":184475,"waste":14752,"prevWaste":16014},"調理麺":{"sales":258341,"prevSales":263259,"waste":23731,"prevWaste":11711},"デリカ":{"sales":163409,"prevSales":140982,"waste":23693,"prevWaste":16704},"ファストフーズ":{"sales":861793,"prevSales":705658,"waste":135145,"prevWaste":43270},"店内厨房":{"sales":391758,"prevSales":349061,"waste":54039,"prevWaste":25219},"チルド飲料":{"sales":320783,"prevSales":329589,"waste":6560,"prevWaste":6353},"デザート":{"sales":341229,"prevSales":378924,"waste":19778,"prevWaste":-13629},"ベーカリー":{"sales":439668,"prevSales":586797,"waste":33451,"prevWaste":4003},"常温和洋菓子":{"sales":37187,"prevSales":37700,"waste":6166,"prevWaste":5789},"生鮮品":{"sales":228351,"prevSales":131372,"waste":1985,"prevWaste":3998},"日配食品":{"sales":210885,"prevSales":185997,"waste":25442,"prevWaste":31647},"ソフトドリンク":{"sales":893989,"prevSales":745585,"waste":352,"prevWaste":3658},"冷凍食品":{"sales":109225,"prevSales":99850,"waste":0,"prevWaste":0},"アイスクリーム":{"sales":279895,"prevSales":258305,"waste":0,"prevWaste":0},"即席麺":{"sales":208771,"prevSales":207872,"waste":927,"prevWaste":235},"即席食品":{"sales":60120,"prevSales":57801,"waste":430,"prevWaste":780},"ポケット菓子":{"sales":306988,"prevSales":335301,"waste":900,"prevWaste":3446},"スナック":{"sales":110829,"prevSales":121141,"waste":297,"prevWaste":164},"米菓・焼菓子":{"sales":128849,"prevSales":152771,"waste":421,"prevWaste":843},"ドリンク剤＆ヘルスケア":{"sales":161084,"prevSales":165859,"waste":0,"prevWaste":0},"ビール・発泡酒":{"sales":130078,"prevSales":182400,"waste":0,"prevWaste":0},"洋酒・酎ハイ":{"sales":231652,"prevSales":295021,"waste":0,"prevWaste":735},"たばこ":{"sales":2459087,"prevSales":2363269,"waste":0,"prevWaste":0}}},"吹田朝日町":{"sc":"プラカスSC","depts":{"米飯":{"sales":793700,"prevSales":771862,"waste":91668,"prevWaste":-703},"調理パン":{"sales":162065,"prevSales":143123,"waste":22172,"prevWaste":16552},"調理麺":{"sales":269672,"prevSales":279229,"waste":46866,"prevWaste":873},"デリカ":{"sales":178932,"prevSales":159890,"waste":26145,"prevWaste":12711},"ファストフーズ":{"sales":854073,"prevSales":658522,"waste":34885,"prevWaste":36109},"店内厨房":{"sales":404858,"prevSales":214046,"waste":26934,"prevWaste":28430},"チルド飲料":{"sales":280767,"prevSales":295112,"waste":6015,"prevWaste":10447},"デザート":{"sales":398740,"prevSales":361456,"waste":35462,"prevWaste":-14998},"ベーカリー":{"sales":437255,"prevSales":442731,"waste":29557,"prevWaste":4283},"常温和洋菓子":{"sales":38931,"prevSales":59883,"waste":1278,"prevWaste":2412},"生鮮品":{"sales":37317,"prevSales":39842,"waste":4948,"prevWaste":2857},"日配食品":{"sales":280084,"prevSales":233956,"waste":11375,"prevWaste":15799},"ソフトドリンク":{"sales":826861,"prevSales":613057,"waste":0,"prevWaste":0},"冷凍食品":{"sales":111570,"prevSales":99343,"waste":616,"prevWaste":0},"アイスクリーム":{"sales":225593,"prevSales":167537,"waste":0,"prevWaste":0},"即席麺":{"sales":213070,"prevSales":180682,"waste":0,"prevWaste":0},"即席食品":{"sales":87473,"prevSales":96111,"waste":0,"prevWaste":570},"ポケット菓子":{"sales":336154,"prevSales":320822,"waste":295,"prevWaste":0},"スナック":{"sales":114870,"prevSales":119189,"waste":219,"prevWaste":0},"米菓・焼菓子":{"sales":186371,"prevSales":207872,"waste":167,"prevWaste":0},"ドリンク剤＆ヘルスケア":{"sales":208877,"prevSales":173643,"waste":0,"prevWaste":0},"ビール・発泡酒":{"sales":162873,"prevSales":129554,"waste":0,"prevWaste":0},"洋酒・酎ハイ":{"sales":384007,"prevSales":280252,"waste":1675,"prevWaste":0},"たばこ":{"sales":1829299,"prevSales":1693907,"waste":0,"prevWaste":0}}},"吹田豊津中学校前":{"sc":"フィSC","depts":{"米飯":{"sales":812889,"prevSales":871254,"waste":107168,"prevWaste":27617},"調理パン":{"sales":149073,"prevSales":152804,"waste":24438,"prevWaste":20275},"調理麺":{"sales":301745,"prevSales":339914,"waste":25803,"prevWaste":-5323},"デリカ":{"sales":244781,"prevSales":198027,"waste":24179,"prevWaste":10459},"ファストフーズ":{"sales":697138,"prevSales":589303,"waste":81258,"prevWaste":47120},"店内厨房":{"sales":315617,"prevSales":244583,"waste":15100,"prevWaste":8185},"チルド飲料":{"sales":326490,"prevSales":346021,"waste":7852,"prevWaste":2609},"デザート":{"sales":304750,"prevSales":285567,"waste":21583,"prevWaste":-1229},"ベーカリー":{"sales":407277,"prevSales":446076,"waste":16767,"prevWaste":6508},"常温和洋菓子":{"sales":51405,"prevSales":51717,"waste":4900,"prevWaste":3030},"生鮮品":{"sales":41049,"prevSales":42184,"waste":5644,"prevWaste":2904},"日配食品":{"sales":240337,"prevSales":206089,"waste":14124,"prevWaste":12716},"ソフトドリンク":{"sales":751681,"prevSales":671215,"waste":1768,"prevWaste":158},"冷凍食品":{"sales":104958,"prevSales":120051,"waste":0,"prevWaste":328},"アイスクリーム":{"sales":184229,"prevSales":182207,"waste":0,"prevWaste":0},"即席麺":{"sales":153360,"prevSales":154991,"waste":0,"prevWaste":0},"即席食品":{"sales":98452,"prevSales":86948,"waste":859,"prevWaste":313},"ポケット菓子":{"sales":265751,"prevSales":357335,"waste":0,"prevWaste":2153},"スナック":{"sales":79292,"prevSales":95208,"waste":0,"prevWaste":0},"米菓・焼菓子":{"sales":114471,"prevSales":108563,"waste":693,"prevWaste":139},"ドリンク剤＆ヘルスケア":{"sales":146182,"prevSales":146848,"waste":0,"prevWaste":0},"ビール・発泡酒":{"sales":112781,"prevSales":137015,"waste":0,"prevWaste":0},"洋酒・酎ハイ":{"sales":178517,"prevSales":196396,"waste":0,"prevWaste":0},"たばこ":{"sales":1939366,"prevSales":1959989,"waste":0,"prevWaste":0}}},"大道南一丁目":{"sc":"プラカスSC（サントスASC）","depts":{"米飯":{"sales":517314,"prevSales":505216,"waste":76718,"prevWaste":-24595},"調理パン":{"sales":96168,"prevSales":90970,"waste":17912,"prevWaste":5076},"調理麺":{"sales":168734,"prevSales":159989,"waste":23941,"prevWaste":-46925},"デリカ":{"sales":76670,"prevSales":65241,"waste":15950,"prevWaste":-13926},"ファストフーズ":{"sales":570435,"prevSales":468136,"waste":37016,"prevWaste":49550},"店内厨房":{"sales":194054,"prevSales":120794,"waste":17693,"prevWaste":38930},"チルド飲料":{"sales":212575,"prevSales":179964,"waste":3073,"prevWaste":929},"デザート":{"sales":210096,"prevSales":180839,"waste":11611,"prevWaste":-15743},"ベーカリー":{"sales":341342,"prevSales":356347,"waste":28348,"prevWaste":4455},"常温和洋菓子":{"sales":14405,"prevSales":14580,"waste":2040,"prevWaste":2623},"生鮮品":{"sales":27122,"prevSales":17994,"waste":2892,"prevWaste":4829},"日配食品":{"sales":167393,"prevSales":137551,"waste":9743,"prevWaste":16062},"ソフトドリンク":{"sales":664264,"prevSales":532294,"waste":159,"prevWaste":0},"冷凍食品":{"sales":45982,"prevSales":61638,"waste":0,"prevWaste":954},"アイスクリーム":{"sales":173166,"prevSales":162604,"waste":0,"prevWaste":0},"即席麺":{"sales":135512,"prevSales":113527,"waste":235,"prevWaste":568},"即席食品":{"sales":39354,"prevSales":39656,"waste":943,"prevWaste":0},"ポケット菓子":{"sales":196720,"prevSales":196552,"waste":510,"prevWaste":858},"スナック":{"sales":92176,"prevSales":91371,"waste":0,"prevWaste":0},"米菓・焼菓子":{"sales":100075,"prevSales":101084,"waste":4376,"prevWaste":1390},"ドリンク剤＆ヘルスケア":{"sales":92424,"prevSales":108736,"waste":0,"prevWaste":0},"ビール・発泡酒":{"sales":237267,"prevSales":214876,"waste":0,"prevWaste":0},"洋酒・酎ハイ":{"sales":260988,"prevSales":244272,"waste":0,"prevWaste":0},"たばこ":{"sales":2588912,"prevSales":2589596,"waste":0,"prevWaste":0}}},"池田市役所前":{"sc":"五島SC","depts":{"米飯":{"sales":745793,"prevSales":727618,"waste":104647,"prevWaste":-7684},"調理パン":{"sales":118392,"prevSales":123079,"waste":23292,"prevWaste":15587},"調理麺":{"sales":188638,"prevSales":238847,"waste":29008,"prevWaste":-31463},"デリカ":{"sales":168130,"prevSales":152056,"waste":31508,"prevWaste":19137},"ファストフーズ":{"sales":477473,"prevSales":417530,"waste":78916,"prevWaste":72033},"店内厨房":{"sales":0,"prevSales":0,"waste":0,"prevWaste":0},"チルド飲料":{"sales":253173,"prevSales":256524,"waste":7592,"prevWaste":5788},"デザート":{"sales":274621,"prevSales":287746,"waste":27532,"prevWaste":9706},"ベーカリー":{"sales":410591,"prevSales":415728,"waste":34729,"prevWaste":9204},"常温和洋菓子":{"sales":25164,"prevSales":27102,"waste":3299,"prevWaste":7160},"生鮮品":{"sales":35312,"prevSales":29954,"waste":6734,"prevWaste":3516},"日配食品":{"sales":185320,"prevSales":179048,"waste":17490,"prevWaste":17722},"ソフトドリンク":{"sales":600133,"prevSales":477043,"waste":0,"prevWaste":251},"冷凍食品":{"sales":58425,"prevSales":42413,"waste":0,"prevWaste":0},"アイスクリーム":{"sales":127464,"prevSales":121646,"waste":190,"prevWaste":0},"即席麺":{"sales":153995,"prevSales":130977,"waste":0,"prevWaste":0},"即席食品":{"sales":74788,"prevSales":60424,"waste":0,"prevWaste":0},"ポケット菓子":{"sales":221640,"prevSales":243014,"waste":3088,"prevWaste":1798},"スナック":{"sales":83231,"prevSales":71814,"waste":184,"prevWaste":0},"米菓・焼菓子":{"sales":106185,"prevSales":127510,"waste":4458,"prevWaste":907},"ドリンク剤＆ヘルスケア":{"sales":127216,"prevSales":100252,"waste":0,"prevWaste":0},"ビール・発泡酒":{"sales":124385,"prevSales":118154,"waste":0,"prevWaste":0},"洋酒・酎ハイ":{"sales":158834,"prevSales":127890,"waste":0,"prevWaste":0},"たばこ":{"sales":1114745,"prevSales":1121029,"waste":0,"prevWaste":0}}},"東淀川大道南":{"sc":"プラカスSC","depts":{"米飯":{"sales":558579,"prevSales":509419,"waste":36631,"prevWaste":-46055},"調理パン":{"sales":109396,"prevSales":101698,"waste":14555,"prevWaste":5925},"調理麺":{"sales":223617,"prevSales":201007,"waste":13328,"prevWaste":-54078},"デリカ":{"sales":116083,"prevSales":93451,"waste":9020,"prevWaste":-13045},"ファストフーズ":{"sales":646073,"prevSales":548714,"waste":44996,"prevWaste":40306},"店内厨房":{"sales":224890,"prevSales":181295,"waste":18006,"prevWaste":23524},"チルド飲料":{"sales":208138,"prevSales":200254,"waste":1708,"prevWaste":2296},"デザート":{"sales":254102,"prevSales":241569,"waste":16942,"prevWaste":-37406},"ベーカリー":{"sales":329381,"prevSales":364182,"waste":39233,"prevWaste":4555},"常温和洋菓子":{"sales":25124,"prevSales":22483,"waste":3029,"prevWaste":4756},"生鮮品":{"sales":40962,"prevSales":19667,"waste":6343,"prevWaste":4232},"日配食品":{"sales":174597,"prevSales":139189,"waste":8947,"prevWaste":24692},"ソフトドリンク":{"sales":588045,"prevSales":466402,"waste":672,"prevWaste":119},"冷凍食品":{"sales":79403,"prevSales":62935,"waste":0,"prevWaste":0},"アイスクリーム":{"sales":165962,"prevSales":178172,"waste":0,"prevWaste":0},"即席麺":{"sales":123769,"prevSales":131628,"waste":220,"prevWaste":0},"即席食品":{"sales":42172,"prevSales":45191,"waste":372,"prevWaste":1689},"ポケット菓子":{"sales":209242,"prevSales":230760,"waste":5451,"prevWaste":284},"スナック":{"sales":92838,"prevSales":84109,"waste":0,"prevWaste":0},"米菓・焼菓子":{"sales":97358,"prevSales":115791,"waste":407,"prevWaste":176},"ドリンク剤＆ヘルスケア":{"sales":107342,"prevSales":97665,"waste":0,"prevWaste":1045},"ビール・発泡酒":{"sales":169111,"prevSales":154912,"waste":0,"prevWaste":0},"洋酒・酎ハイ":{"sales":218461,"prevSales":258807,"waste":0,"prevWaste":0},"たばこ":{"sales":2568663,"prevSales":2747063,"waste":0,"prevWaste":0}}},"東淀川豊里五丁目":{"sc":"プラカスSC（サントスASC）","depts":{"米飯":{"sales":765533,"prevSales":772723,"waste":85291,"prevWaste":-5831},"調理パン":{"sales":138556,"prevSales":127196,"waste":25882,"prevWaste":10519},"調理麺":{"sales":296653,"prevSales":268401,"waste":31646,"prevWaste":-25049},"デリカ":{"sales":161970,"prevSales":108573,"waste":28363,"prevWaste":-11697},"ファストフーズ":{"sales":791923,"prevSales":636381,"waste":50288,"prevWaste":30097},"店内厨房":{"sales":340718,"prevSales":266961,"waste":33644,"prevWaste":17508},"チルド飲料":{"sales":316181,"prevSales":324922,"waste":2166,"prevWaste":1184},"デザート":{"sales":277786,"prevSales":230773,"waste":21712,"prevWaste":-38128},"ベーカリー":{"sales":455648,"prevSales":489549,"waste":37492,"prevWaste":13935},"常温和洋菓子":{"sales":21502,"prevSales":17763,"waste":3258,"prevWaste":1330},"生鮮品":{"sales":49417,"prevSales":58758,"waste":8723,"prevWaste":5079},"日配食品":{"sales":192727,"prevSales":177403,"waste":9281,"prevWaste":7751},"ソフトドリンク":{"sales":902842,"prevSales":763065,"waste":0,"prevWaste":150},"冷凍食品":{"sales":76319,"prevSales":73776,"waste":268,"prevWaste":0},"アイスクリーム":{"sales":210903,"prevSales":197919,"waste":0,"prevWaste":0},"即席麺":{"sales":181411,"prevSales":198534,"waste":940,"prevWaste":0},"即席食品":{"sales":62624,"prevSales":64563,"waste":0,"prevWaste":0},"ポケット菓子":{"sales":288617,"prevSales":306160,"waste":221,"prevWaste":0},"スナック":{"sales":110657,"prevSales":91369,"waste":0,"prevWaste":0},"米菓・焼菓子":{"sales":131261,"prevSales":127593,"waste":202,"prevWaste":0},"ドリンク剤＆ヘルスケア":{"sales":110152,"prevSales":116635,"waste":0,"prevWaste":0},"ビール・発泡酒":{"sales":213244,"prevSales":199921,"waste":0,"prevWaste":0},"洋酒・酎ハイ":{"sales":215983,"prevSales":207729,"waste":0,"prevWaste":200},"たばこ":{"sales":3563293,"prevSales":3216402,"waste":0,"prevWaste":0}}},"南金田二丁目":{"sc":"五島SC","depts":{"米飯":{"sales":1017051,"prevSales":1090126,"waste":183293,"prevWaste":8137},"調理パン":{"sales":208355,"prevSales":205032,"waste":20769,"prevWaste":9618},"調理麺":{"sales":360544,"prevSales":374396,"waste":27686,"prevWaste":-1356},"デリカ":{"sales":243229,"prevSales":221975,"waste":31598,"prevWaste":13583},"ファストフーズ":{"sales":951957,"prevSales":823405,"waste":81479,"prevWaste":97819},"店内厨房":{"sales":342547,"prevSales":279324,"waste":72660,"prevWaste":61431},"チルド飲料":{"sales":376227,"prevSales":393135,"waste":6337,"prevWaste":4588},"デザート":{"sales":376405,"prevSales":354558,"waste":26014,"prevWaste":4626},"ベーカリー":{"sales":520937,"prevSales":569713,"waste":51689,"prevWaste":12336},"常温和洋菓子":{"sales":40002,"prevSales":34902,"waste":9475,"prevWaste":7231},"生鮮品":{"sales":46625,"prevSales":35031,"waste":3356,"prevWaste":346},"日配食品":{"sales":261897,"prevSales":239256,"waste":12391,"prevWaste":25239},"ソフトドリンク":{"sales":1062405,"prevSales":869698,"waste":0,"prevWaste":0},"冷凍食品":{"sales":106673,"prevSales":133244,"waste":0,"prevWaste":1434},"アイスクリーム":{"sales":234502,"prevSales":233574,"waste":158,"prevWaste":0},"即席麺":{"sales":193444,"prevSales":203256,"waste":0,"prevWaste":0},"即席食品":{"sales":84754,"prevSales":77012,"waste":372,"prevWaste":0},"ポケット菓子":{"sales":314901,"prevSales":398114,"waste":1303,"prevWaste":0},"スナック":{"sales":105479,"prevSales":122902,"waste":0,"prevWaste":0},"米菓・焼菓子":{"sales":144667,"prevSales":159361,"waste":0,"prevWaste":330},"ドリンク剤＆ヘルスケア":{"sales":190997,"prevSales":165151,"waste":276,"prevWaste":0},"ビール・発泡酒":{"sales":222033,"prevSales":206015,"waste":0,"prevWaste":0},"洋酒・酎ハイ":{"sales":284979,"prevSales":269320,"waste":0,"prevWaste":302},"たばこ":{"sales":3176975,"prevSales":3159262,"waste":0,"prevWaste":0}}},"豊中原田南一丁目":{"sc":"ビスワスSC（スラズASC）","depts":{"米飯":{"sales":632170,"prevSales":624529,"waste":124741,"prevWaste":-34298},"調理パン":{"sales":117441,"prevSales":137822,"waste":32694,"prevWaste":13067},"調理麺":{"sales":174716,"prevSales":180672,"waste":41796,"prevWaste":-40315},"デリカ":{"sales":100395,"prevSales":98146,"waste":27193,"prevWaste":3494},"ファストフーズ":{"sales":746507,"prevSales":505551,"waste":60256,"prevWaste":35217},"店内厨房":{"sales":286314,"prevSales":198261,"waste":58797,"prevWaste":7824},"チルド飲料":{"sales":238546,"prevSales":217130,"waste":8313,"prevWaste":10852},"デザート":{"sales":160019,"prevSales":145858,"waste":29857,"prevWaste":-2798},"ベーカリー":{"sales":416157,"prevSales":396540,"waste":26170,"prevWaste":20735},"常温和洋菓子":{"sales":15809,"prevSales":22686,"waste":2205,"prevWaste":2855},"生鮮品":{"sales":16370,"prevSales":21982,"waste":2508,"prevWaste":3493},"日配食品":{"sales":96757,"prevSales":108385,"waste":26065,"prevWaste":17599},"ソフトドリンク":{"sales":815109,"prevSales":652956,"waste":168,"prevWaste":0},"冷凍食品":{"sales":52973,"prevSales":33515,"waste":0,"prevWaste":0},"アイスクリーム":{"sales":106626,"prevSales":94643,"waste":0,"prevWaste":0},"即席麺":{"sales":153994,"prevSales":140510,"waste":0,"prevWaste":0},"即席食品":{"sales":31996,"prevSales":40452,"waste":0,"prevWaste":0},"ポケット菓子":{"sales":211463,"prevSales":214668,"waste":1197,"prevWaste":2040},"スナック":{"sales":68081,"prevSales":58175,"waste":0,"prevWaste":0},"米菓・焼菓子":{"sales":76081,"prevSales":93032,"waste":0,"prevWaste":673},"ドリンク剤＆ヘルスケア":{"sales":104887,"prevSales":99104,"waste":0,"prevWaste":0},"ビール・発泡酒":{"sales":98660,"prevSales":119243,"waste":0,"prevWaste":0},"洋酒・酎ハイ":{"sales":150829,"prevSales":156928,"waste":0,"prevWaste":0},"たばこ":{"sales":2525729,"prevSales":2372329,"waste":0,"prevWaste":0}}},"豊中服部元町一丁目":{"sc":"ビスワスSC","depts":{"米飯":{"sales":758506,"prevSales":714458,"waste":97362,"prevWaste":13107},"調理パン":{"sales":135000,"prevSales":133154,"waste":29337,"prevWaste":13356},"調理麺":{"sales":269289,"prevSales":274863,"waste":24349,"prevWaste":-13784},"デリカ":{"sales":204280,"prevSales":169923,"waste":23926,"prevWaste":13728},"ファストフーズ":{"sales":757868,"prevSales":557039,"waste":63192,"prevWaste":47822},"店内厨房":{"sales":333229,"prevSales":204881,"waste":18120,"prevWaste":33205},"チルド飲料":{"sales":289414,"prevSales":292901,"waste":14411,"prevWaste":4827},"デザート":{"sales":347784,"prevSales":366128,"waste":32652,"prevWaste":3462},"ベーカリー":{"sales":469628,"prevSales":525148,"waste":44974,"prevWaste":14430},"常温和洋菓子":{"sales":30770,"prevSales":43873,"waste":5360,"prevWaste":6098},"生鮮品":{"sales":54818,"prevSales":56166,"waste":5186,"prevWaste":4231},"日配食品":{"sales":219750,"prevSales":227640,"waste":17240,"prevWaste":21008},"ソフトドリンク":{"sales":670859,"prevSales":529127,"waste":642,"prevWaste":0},"冷凍食品":{"sales":119937,"prevSales":105431,"waste":0,"prevWaste":0},"アイスクリーム":{"sales":269146,"prevSales":239707,"waste":0,"prevWaste":0},"即席麺":{"sales":186181,"prevSales":175510,"waste":0,"prevWaste":0},"即席食品":{"sales":80799,"prevSales":97805,"waste":100,"prevWaste":0},"ポケット菓子":{"sales":215534,"prevSales":263099,"waste":644,"prevWaste":480},"スナック":{"sales":98607,"prevSales":88526,"waste":0,"prevWaste":0},"米菓・焼菓子":{"sales":133320,"prevSales":161953,"waste":0,"prevWaste":109},"ドリンク剤＆ヘルスケア":{"sales":162571,"prevSales":145191,"waste":0,"prevWaste":0},"ビール・発泡酒":{"sales":236845,"prevSales":234690,"waste":0,"prevWaste":0},"洋酒・酎ハイ":{"sales":291662,"prevSales":289344,"waste":0,"prevWaste":0},"たばこ":{"sales":2214916,"prevSales":2303781,"waste":0,"prevWaste":0}}},"豊中服部西町三丁目":{"sc":"ビスワスSC","depts":{"米飯":{"sales":546499,"prevSales":584676,"waste":43386,"prevWaste":-57152},"調理パン":{"sales":118911,"prevSales":116780,"waste":12072,"prevWaste":3381},"調理麺":{"sales":175877,"prevSales":183144,"waste":12432,"prevWaste":-16705},"デリカ":{"sales":108281,"prevSales":94890,"waste":14518,"prevWaste":-186},"ファストフーズ":{"sales":544422,"prevSales":447332,"waste":54376,"prevWaste":50898},"店内厨房":{"sales":0,"prevSales":0,"waste":0,"prevWaste":0},"チルド飲料":{"sales":193348,"prevSales":196937,"waste":7668,"prevWaste":9469},"デザート":{"sales":180813,"prevSales":200152,"waste":27171,"prevWaste":3016},"ベーカリー":{"sales":297426,"prevSales":350142,"waste":26443,"prevWaste":2247},"常温和洋菓子":{"sales":14587,"prevSales":16892,"waste":1198,"prevWaste":3438},"生鮮品":{"sales":10025,"prevSales":7521,"waste":2018,"prevWaste":735},"日配食品":{"sales":145930,"prevSales":125296,"waste":11009,"prevWaste":25736},"ソフトドリンク":{"sales":471817,"prevSales":349333,"waste":651,"prevWaste":168},"冷凍食品":{"sales":38576,"prevSales":33109,"waste":0,"prevWaste":0},"アイスクリーム":{"sales":83467,"prevSales":96540,"waste":0,"prevWaste":0},"即席麺":{"sales":131181,"prevSales":118799,"waste":1235,"prevWaste":0},"即席食品":{"sales":34008,"prevSales":50471,"waste":0,"prevWaste":0},"ポケット菓子":{"sales":188453,"prevSales":229174,"waste":0,"prevWaste":22580},"スナック":{"sales":54483,"prevSales":54922,"waste":315,"prevWaste":0},"米菓・焼菓子":{"sales":75523,"prevSales":87609,"waste":0,"prevWaste":167},"ドリンク剤＆ヘルスケア":{"sales":75771,"prevSales":86984,"waste":0,"prevWaste":0},"ビール・発泡酒":{"sales":153170,"prevSales":126199,"waste":0,"prevWaste":240},"洋酒・酎ハイ":{"sales":144747,"prevSales":135925,"waste":0,"prevWaste":0},"たばこ":{"sales":2239740,"prevSales":2297114,"waste":0,"prevWaste":0}}},"豊中利倉東一丁目":{"sc":"ダハルSC","depts":{"米飯":{"sales":723580,"prevSales":798952,"waste":130609,"prevWaste":18548},"調理パン":{"sales":134355,"prevSales":153792,"waste":22789,"prevWaste":24590},"調理麺":{"sales":173047,"prevSales":209215,"waste":31342,"prevWaste":-32616},"デリカ":{"sales":125388,"prevSales":120742,"waste":17046,"prevWaste":-4294},"ファストフーズ":{"sales":838954,"prevSales":696675,"waste":55810,"prevWaste":66861},"店内厨房":{"sales":258090,"prevSales":216653,"waste":30165,"prevWaste":23144},"チルド飲料":{"sales":316787,"prevSales":306554,"waste":10291,"prevWaste":8050},"デザート":{"sales":242243,"prevSales":267272,"waste":34967,"prevWaste":-4150},"ベーカリー":{"sales":529149,"prevSales":601536,"waste":29923,"prevWaste":16272},"常温和洋菓子":{"sales":38845,"prevSales":44671,"waste":6398,"prevWaste":4384},"生鮮品":{"sales":40125,"prevSales":30613,"waste":9486,"prevWaste":6259},"日配食品":{"sales":174634,"prevSales":132316,"waste":30997,"prevWaste":32647},"ソフトドリンク":{"sales":968714,"prevSales":844081,"waste":477,"prevWaste":122},"冷凍食品":{"sales":58252,"prevSales":56924,"waste":0,"prevWaste":418},"アイスクリーム":{"sales":172430,"prevSales":153764,"waste":0,"prevWaste":0},"即席麺":{"sales":178405,"prevSales":154796,"waste":0,"prevWaste":0},"即席食品":{"sales":48210,"prevSales":51716,"waste":0,"prevWaste":178},"ポケット菓子":{"sales":321830,"prevSales":311193,"waste":904,"prevWaste":0},"スナック":{"sales":85289,"prevSales":85488,"waste":0,"prevWaste":0},"米菓・焼菓子":{"sales":138753,"prevSales":142366,"waste":709,"prevWaste":0},"ドリンク剤＆ヘルスケア":{"sales":145345,"prevSales":151594,"waste":0,"prevWaste":0},"ビール・発泡酒":{"sales":149864,"prevSales":122537,"waste":861,"prevWaste":0},"洋酒・酎ハイ":{"sales":195433,"prevSales":157790,"waste":158,"prevWaste":0},"たばこ":{"sales":3052043,"prevSales":2946977,"waste":0,"prevWaste":0}}},"豊里六丁目":{"sc":"プラカスSC","depts":{"米飯":{"sales":435211,"prevSales":424041,"waste":55249,"prevWaste":-76010},"調理パン":{"sales":94375,"prevSales":84416,"waste":11817,"prevWaste":-11526},"調理麺":{"sales":188542,"prevSales":194126,"waste":19608,"prevWaste":-80267},"デリカ":{"sales":89514,"prevSales":90984,"waste":9197,"prevWaste":-18828},"ファストフーズ":{"sales":359729,"prevSales":256175,"waste":21097,"prevWaste":34064},"店内厨房":{"sales":0,"prevSales":0,"waste":0,"prevWaste":0},"チルド飲料":{"sales":175168,"prevSales":192260,"waste":2324,"prevWaste":1008},"デザート":{"sales":155169,"prevSales":121395,"waste":13438,"prevWaste":-31500},"ベーカリー":{"sales":239653,"prevSales":241169,"waste":30309,"prevWaste":-17622},"常温和洋菓子":{"sales":19234,"prevSales":16462,"waste":6932,"prevWaste":2510},"生鮮品":{"sales":29973,"prevSales":24345,"waste":4602,"prevWaste":2382},"日配食品":{"sales":163409,"prevSales":113446,"waste":13820,"prevWaste":13055},"ソフトドリンク":{"sales":459386,"prevSales":336434,"waste":0,"prevWaste":5469},"冷凍食品":{"sales":39849,"prevSales":43872,"waste":0,"prevWaste":0},"アイスクリーム":{"sales":121532,"prevSales":114178,"waste":180,"prevWaste":0},"即席麺":{"sales":119647,"prevSales":108557,"waste":156,"prevWaste":1417},"即席食品":{"sales":41610,"prevSales":42316,"waste":0,"prevWaste":800},"ポケット菓子":{"sales":131502,"prevSales":141354,"waste":219,"prevWaste":1118},"スナック":{"sales":70876,"prevSales":77777,"waste":0,"prevWaste":672},"米菓・焼菓子":{"sales":85046,"prevSales":80643,"waste":167,"prevWaste":2407},"ドリンク剤＆ヘルスケア":{"sales":116124,"prevSales":111899,"waste":0,"prevWaste":0},"ビール・発泡酒":{"sales":155529,"prevSales":135331,"waste":0,"prevWaste":2009},"洋酒・酎ハイ":{"sales":194923,"prevSales":192148,"waste":0,"prevWaste":0},"たばこ":{"sales":2533005,"prevSales":2415425,"waste":0,"prevWaste":0}}},"箕面白島二丁目":{"sc":"ビスワスSC（スラズASC）","depts":{"米飯":{"sales":750008,"prevSales":0,"waste":129645,"prevWaste":0},"調理パン":{"sales":154292,"prevSales":0,"waste":23592,"prevWaste":0},"調理麺":{"sales":208357,"prevSales":0,"waste":51344,"prevWaste":0},"デリカ":{"sales":144486,"prevSales":0,"waste":29262,"prevWaste":0},"ファストフーズ":{"sales":829518,"prevSales":0,"waste":113240,"prevWaste":0},"店内厨房":{"sales":312445,"prevSales":0,"waste":44583,"prevWaste":0},"チルド飲料":{"sales":295350,"prevSales":0,"waste":10075,"prevWaste":0},"デザート":{"sales":214940,"prevSales":0,"waste":32092,"prevWaste":0},"ベーカリー":{"sales":398531,"prevSales":0,"waste":33159,"prevWaste":0},"常温和洋菓子":{"sales":29850,"prevSales":0,"waste":1177,"prevWaste":0},"生鮮品":{"sales":20567,"prevSales":0,"waste":1381,"prevWaste":0},"日配食品":{"sales":131192,"prevSales":0,"waste":18833,"prevWaste":0},"ソフトドリンク":{"sales":784986,"prevSales":0,"waste":1368,"prevWaste":0},"冷凍食品":{"sales":75733,"prevSales":0,"waste":0,"prevWaste":0},"アイスクリーム":{"sales":148774,"prevSales":0,"waste":198,"prevWaste":0},"即席麺":{"sales":170501,"prevSales":0,"waste":0,"prevWaste":0},"即席食品":{"sales":47189,"prevSales":0,"waste":1149,"prevWaste":0},"ポケット菓子":{"sales":246801,"prevSales":0,"waste":0,"prevWaste":0},"スナック":{"sales":72864,"prevSales":0,"waste":0,"prevWaste":0},"米菓・焼菓子":{"sales":99789,"prevSales":0,"waste":776,"prevWaste":0},"ドリンク剤＆ヘルスケア":{"sales":127212,"prevSales":0,"waste":0,"prevWaste":0},"ビール・発泡酒":{"sales":100439,"prevSales":0,"waste":177,"prevWaste":0},"洋酒・酎ハイ":{"sales":140862,"prevSales":0,"waste":0,"prevWaste":0},"たばこ":{"sales":2263755,"prevSales":0,"waste":0,"prevWaste":0}}}};
+
+// === State ===
+let currentScope = 'whole'; // 'whole' | 'sc' | 'store'
+let currentSC = null;
+let currentStore = null;
+let currentTab = 0;
+
+// === Derived data ===
+const SC_LIST = [...new Set(Object.values(STORES_RAW).map(s => s.sc))].sort();
+const SC_STORES = {};
+SC_LIST.forEach(sc => {
+  SC_STORES[sc] = Object.keys(STORES_RAW).filter(k => STORES_RAW[k].sc === sc);
+});
+
+// 新店（前年データなし）を特定 — 前年比算出から除外する
+const NEW_STORES = new Set(
+  Object.keys(STORES_RAW).filter(name =>
+    Object.values(STORES_RAW[name].depts).every(d => d.prevSales === 0)
+  )
+);
+
+// === Utility ===
+function fmt(n, unit='') {
+  if (n == null) return '—';
+  if (Math.abs(n) >= 1e6) return (n/1e6).toFixed(2) + 'M' + unit;
+  if (Math.abs(n) >= 1e4) return Math.round(n/1e3) + 'K' + unit;
+  return Math.round(n).toLocaleString() + unit;
+}
+function fmtPct(n) {
+  if (n == null) return '—';
+  return (n >= 0 ? '+' : '') + n.toFixed(1) + '%';
+}
+function pctClass(v, goodDir='up') {
+  if (v == null) return '';
+  if (goodDir === 'up') return v >= 100 ? 'up' : 'down';
+  return v <= 100 ? 'up' : 'warn';
+}
+
+// Aggregate dept data from array of store names
+// salesComp/prevSalesComp/wasteComp/prevWasteComp は新店を除外した比較可能分
+function aggregateDepts(storeNames) {
+  const result = {};
+  storeNames.forEach(name => {
+    const store = STORES_RAW[name];
+    if (!store) return;
+    const isNew = NEW_STORES.has(name);
+    Object.entries(store.depts).forEach(([dept, d]) => {
+      if (!result[dept]) result[dept] = {
+        sales:0, prevSales:0, waste:0, prevWaste:0,
+        salesComp:0, prevSalesComp:0, wasteComp:0, prevWasteComp:0,
+        _isNew:false
+      };
+      result[dept].sales += d.sales;
+      result[dept].prevSales += d.prevSales;
+      result[dept].waste += d.waste;
+      result[dept].prevWaste += d.prevWaste;
+      // 新店は前年比算出用のcomp集計から除外
+      if (!isNew) {
+        result[dept].salesComp += d.sales;
+        result[dept].prevSalesComp += d.prevSales;
+        result[dept].wasteComp += d.waste;
+        result[dept].prevWasteComp += d.prevWaste;
+      }
+    });
+  });
+  // 比較可能店舗がない（単独新店表示）場合のみ_isNew=true
+  Object.entries(result).forEach(([dept,d]) => {
+    if (d.prevSalesComp === 0 && d.salesComp === 0) d._isNew = true;
+  });
+  return result;
+}
+
+// Compute per-dept metrics
+function computeDeptMetrics(deptData) {
+  const rows = [];
+  Object.entries(deptData).forEach(([dept, d]) => {
+    const mr = DEPT_MR[dept];
+    const isNew = d._isNew;
+
+    // Sales YoY — comp（新店除外）ベースで算出
+    let salesYoy = null;
+    if (!isNew && d.prevSalesComp > 0) salesYoy = d.salesComp / d.prevSalesComp * 100;
+
+    // Gross profit — 絶対値はsales全体、前年比はcomp（新店除外）ベース
+    let gp = null, prevGp = null;
+    if (mr != null) {
+      gp = d.sales * mr / 100;
+      if (!isNew && d.prevSalesComp > 0) prevGp = d.prevSalesComp * mr / 100;
+    }
+    let gpYoy = null;
+    if (mr != null && !isNew && d.prevSalesComp > 0) {
+      gpYoy = (d.salesComp / d.prevSalesComp) * 100;
+    }
+
+    // Waste YoY — comp（新店除外）ベース、前年売変が1000円未満は除外
+    let wasteYoy = null;
+    if (!isNew && d.prevWasteComp >= 1000) {
+      wasteYoy = d.wasteComp / d.prevWasteComp * 100;
+    }
+
+    // Classification
+    let cls = 'D';
+    if (dept === 'たばこ') {
+      cls = 'D';
+    } else if (!isNew && salesYoy != null) {
+      const salesDown = salesYoy < 100;
+      const wasteWorse = wasteYoy != null && wasteYoy > 115;
+      const gpWorse = gpYoy != null && gpYoy < 97;
+      const problem = wasteWorse || gpWorse;
+      if (salesDown && problem) cls = 'A';
+      else if (!salesDown && problem) cls = 'B';
+      else if (!salesDown && !problem) cls = 'C';
+      else cls = 'D';
+    } else {
+      cls = 'D';
+    }
+
+    rows.push({dept, d, mr, isNew, salesYoy, gp, prevGp, gpYoy, wasteYoy, cls});
+  });
+  return rows;
+}
+
+// Summary totals
+// sales/waste は新店込み絶対値、salesComp/wasteComp 系は新店除外の前年比用
+function computeSummary(deptData) {
+  let sales=0, prevSales=0, waste=0, prevWaste=0, gp=0, prevGp=0;
+  let salesComp=0, prevSalesComp=0, wasteComp=0, prevWasteComp=0, gpComp=0;
+  let salesUpCount=0;
+  Object.entries(deptData).forEach(([dept, d]) => {
+    const mr = DEPT_MR[dept];
+    sales += d.sales;
+    prevSales += d.prevSales;
+    waste += d.waste;
+    if (d.prevWaste > 0) prevWaste += d.prevWaste;
+    salesComp += d.salesComp;
+    prevSalesComp += d.prevSalesComp;
+    wasteComp += d.wasteComp;
+    if (d.prevWasteComp > 0) prevWasteComp += d.prevWasteComp;
+    if (mr != null) {
+      gp += d.sales * mr / 100;
+      gpComp += d.salesComp * mr / 100;
+      if (!d._isNew && d.prevSalesComp > 0) prevGp += d.prevSalesComp * mr / 100;
+    }
+    if (!d._isNew && d.prevSalesComp > 0 && d.salesComp >= d.prevSalesComp) salesUpCount++;
+  });
+  return {sales,prevSales,waste,prevWaste,gp,prevGp,
+          salesComp,prevSalesComp,wasteComp,prevWasteComp,gpComp,
+          salesUpCount};
+}
+
+// === Render ===
+function render() {
+  renderHeader();
+  renderContent();
+}
+
+function renderHeader() {
+  // Tab row
+  const tabs = ['① 中間検証','② 優先分類','③ 荒利インパクト','④ アクション提案'];
+  const tabRow = document.getElementById('tabRow');
+  tabRow.innerHTML = tabs.map((t,i) =>
+    `<button class="tab-btn ${i===currentTab?'active':''}" onclick="setTab(${i})">${t}</button>`
+  ).join('');
+
+  // Scope row
+  const scopeRow = document.getElementById('scopeRow');
+  const scopes = [['whole','全体'],['sc','SC別'],['store','個店別']];
+  scopeRow.innerHTML = '<span class="scope-label">スコープ：</span>' +
+    scopes.map(([v,l]) =>
+      `<button class="scope-btn ${currentScope===v?'active':''}" onclick="setScope('${v}')">${l}</button>`
+    ).join('');
+
+  // Filter row
+  renderFilterRow();
+}
+
+function renderFilterRow() {
+  const filterRow = document.getElementById('filterRow');
+  if (currentScope === 'whole') {
+    filterRow.innerHTML = '';
+    return;
+  }
+  if (currentScope === 'sc') {
+    filterRow.innerHTML = SC_LIST.map(sc =>
+      `<button class="filter-btn ${currentSC===sc?'active':''}" onclick="setSC('${sc}')">${sc}</button>`
+    ).join('');
+    return;
+  }
+  // store scope
+  let html = '<span class="filter-sub">SC：</span>' + SC_LIST.map(sc =>
+    `<button class="filter-btn ${currentSC===sc?'active':''}" onclick="setScForStore('${sc}')">${sc}</button>`
+  ).join('') + '&nbsp;&nbsp;';
+  if (currentSC) {
+    html += '<span class="filter-sub" style="margin-left:8px">店舗：</span>' +
+      (SC_STORES[currentSC]||[]).map(s =>
+        `<button class="filter-btn ${currentStore===s?'active':''}" onclick="setStore('${s}')">${s}</button>`
+      ).join('');
+  }
+  filterRow.innerHTML = html;
+}
+
+function renderContent() {
+  const content = document.getElementById('mainContent');
+
+  if (currentScope === 'whole') {
+    renderWhole(content);
+    return;
+  }
+
+  let storeNames = [];
+  let label = '';
+  if (currentScope === 'sc') {
+    if (!currentSC) {
+      content.innerHTML = '<div class="empty-msg">SCを選択してください</div>';
+      return;
+    }
+    storeNames = SC_STORES[currentSC] || [];
+    label = currentSC;
+  } else {
+    if (!currentSC || !currentStore) {
+      content.innerHTML = '<div class="empty-msg">SC・店舗を選択してください</div>';
+      return;
+    }
+    storeNames = [currentStore];
+    label = currentStore;
+  }
+
+  const deptData = aggregateDepts(storeNames);
+  const rows = computeDeptMetrics(deptData);
+  const summary = computeSummary(deptData);
+
+  const panels = [
+    renderTab0(rows, summary, label, storeNames),
+    renderTab1(rows, label),
+    renderTab2(rows, summary, label),
+    renderTab3(rows, label)
+  ];
+
+  content.innerHTML = panels.map((html,i) =>
+    `<div class="tab-panel ${i===currentTab?'active':''}">${html}</div>`
+  ).join('');
+}
+
+function renderWhole(content) {
+  // Aggregate all stores
+  const allStores = Object.keys(STORES_RAW);
+  const deptData = aggregateDepts(allStores);
+  const s = computeSummary(deptData);
+  // 前年比は新店除外のcomp値で算出
+  const salesYoy = s.prevSalesComp > 0 ? (s.salesComp/s.prevSalesComp*100) : null;
+  const gpYoy = s.prevGp > 0 ? (s.gpComp/s.prevGp*100) : null;
+  const wasteYoy = s.prevWasteComp > 0 ? (s.wasteComp/s.prevWasteComp*100) : null;
+  const newStoreNames = [...NEW_STORES].join('、');
+
+  content.innerHTML = `
+    <div class="note">組織合算サマリーです。DEPT詳細分析は <strong>SC別</strong> または <strong>個店別</strong> でご確認ください。<br>※ <strong>前年比は新店（${newStoreNames}）を除いた比較可能店舗ベース</strong>で算出しています。</div>
+    <div class="card-grid">
+      <div class="card blue">
+        <div class="card-label">売上合計</div>
+        <div class="card-value">${fmt(s.sales)}<span class="card-unit">円</span></div>
+        <div class="card-sub">前年比 ${salesYoy != null ? salesYoy.toFixed(1)+'%' : '—'}</div>
+      </div>
+      <div class="card green">
+        <div class="card-label">荒利合計（MR算出分）</div>
+        <div class="card-value">${fmt(s.gp)}<span class="card-unit">円</span></div>
+        <div class="card-sub">前年比 ${gpYoy != null ? gpYoy.toFixed(1)+'%' : '—'}</div>
+      </div>
+      <div class="card ${wasteYoy != null && wasteYoy > 110 ? 'red' : 'amber'}">
+        <div class="card-label">売変合計</div>
+        <div class="card-value">${fmt(s.waste)}<span class="card-unit">円</span></div>
+        <div class="card-sub">前年比 ${wasteYoy != null ? wasteYoy.toFixed(1)+'%' : '—'}</div>
+      </div>
+      <div class="card teal">
+        <div class="card-label">売上UP DEPT数</div>
+        <div class="card-value">${s.salesUpCount}<span class="card-unit">DEPT</span></div>
+        <div class="card-sub">全${Object.keys(deptData).length}DEPTのうち</div>
+      </div>
+    </div>
+    <div class="whole-note">
+      <strong>詳細はSC別・個店別で確認してください</strong>
+      各SCや個店のDEPT別荒利・売変・分類・アクション提案を確認するには、ヘッダーのスコープ切替をご利用ください。
+    </div>
+  `;
+}
+
+function renderTab0(rows, summary, label, storeNames) {
+  const s = summary;
+  // 前年比は新店除外のcomp値で算出
+  const salesYoy = s.prevSalesComp > 0 ? (s.salesComp/s.prevSalesComp*100) : null;
+  const gpYoy = s.prevGp > 0 ? (s.gpComp/s.prevGp*100) : null;
+  const wasteYoy = s.prevWasteComp > 0 ? (s.wasteComp/s.prevWasteComp*100) : null;
+  const newInScope = storeNames.filter(n => NEW_STORES.has(n));
+  const newStoreNote = newInScope.length > 0
+    ? `<br>※ <strong>前年比は新店（${newInScope.join('、')}）を除いた比較可能店舗ベース</strong>で算出しています。`
+    : '';
+
+  // Pattern analysis
+  const pattUpSales = rows.filter(r => r.salesYoy != null && r.salesYoy >= 100 && r.dept !== 'たばこ');
+  const pattDownSales = rows.filter(r => r.salesYoy != null && r.salesYoy < 100 && r.dept !== 'たばこ');
+  const pattWasteUp = rows.filter(r => r.wasteYoy != null && r.wasteYoy > 115);
+  const pattComplex = rows.filter(r => r.cls === 'A');
+
+  const tableRows = rows.map(r => {
+    const {dept, d, mr, isNew, salesYoy, gp, prevGp, gpYoy, wasteYoy, cls} = r;
+    const isFF = (dept === 'ファストフーズ' || dept === '店内厨房');
+
+    const salesYoyTxt = isNew ? '<span style="color:#888">—（新店）</span>' :
+      (salesYoy != null ? `<span class="${pctClass(salesYoy,'up')}">${salesYoy.toFixed(1)}%</span>` : '—');
+
+    const gpTxt = mr == null ? '<span style="color:#aaa">算出不可</span>' :
+      (gp != null ? fmt(Math.round(gp)) : '—');
+    const prevGpTxt = mr == null ? '—' :
+      (isNew ? '—' : (prevGp != null ? fmt(Math.round(prevGp)) : '—'));
+    const gpYoyTxt = mr == null ? '—' :
+      (isNew ? '<span style="color:#888">—（新店）</span>' :
+        (gpYoy != null ? `<span class="${pctClass(gpYoy,'up')}">${gpYoy.toFixed(1)}%</span>` : '—'));
+
+    const mrTxt = mr != null ? mr.toFixed(2)+'%' : '<span style="color:#aaa">—</span>';
+
+    let wastePrevTxt, wasteYoyTxt;
+    if (isNew) {
+      wastePrevTxt = '—';
+      wasteYoyTxt = '<span style="color:#888">—（新店）</span>';
+    } else if (d.prevWaste < 0) {
+      wastePrevTxt = '<span style="color:#aaa">' + d.prevWaste.toLocaleString() + '</span>';
+      wasteYoyTxt = '<span style="color:#aaa">—</span>';
+    } else if (d.prevWaste === 0 || d.prevWaste < 1000) {
+      wastePrevTxt = d.prevWaste === 0 ? '0' : d.prevWaste.toLocaleString();
+      wasteYoyTxt = '<span style="color:#aaa">—</span>';
+    } else {
+      wastePrevTxt = d.prevWaste.toLocaleString();
+      wasteYoyTxt = wasteYoy != null ? `<span class="${pctClass(wasteYoy,'down')}">${wasteYoy.toFixed(1)}%</span>` : '—';
+    }
+
+    return `<tr>
+      <td style="text-align:left;font-weight:600">${dept}</td>
+      <td><span class="cat-tag">${DEPT_CATEGORY[dept]||'—'}</span></td>
+      <td>${d.sales.toLocaleString()}</td>
+      <td>${isNew?'—':d.prevSales.toLocaleString()}</td>
+      <td>${salesYoyTxt}</td>
+      <td>${gpTxt}</td>
+      <td>${prevGpTxt}</td>
+      <td>${gpYoyTxt}</td>
+      <td>${mrTxt}</td>
+      <td>${d.waste.toLocaleString()}</td>
+      <td>${wastePrevTxt}</td>
+      <td>${wasteYoyTxt}</td>
+      <td><span class="badge badge-${cls}">${cls}</span></td>
+    </tr>`;
+  }).join('');
+
+  return `
+    <div class="card-grid">
+      <div class="card blue">
+        <div class="card-label">売上合計</div>
+        <div class="card-value">${fmt(s.sales)}</div>
+        <div class="card-sub">前年 ${fmt(s.prevSales)} ／ 比 ${salesYoy!=null?salesYoy.toFixed(1)+'%':'—'}</div>
+      </div>
+      <div class="card green">
+        <div class="card-label">荒利合計（MR推計）</div>
+        <div class="card-value">${fmt(s.gp)}</div>
+        <div class="card-sub">前年 ${fmt(s.prevGp)} ／ 比 ${gpYoy!=null?gpYoy.toFixed(1)+'%':'—'}</div>
+      </div>
+      <div class="card ${wasteYoy!=null&&wasteYoy>110?'red':'amber'}">
+        <div class="card-label">売変合計</div>
+        <div class="card-value">${fmt(s.waste)}</div>
+        <div class="card-sub">前年 ${fmt(s.prevWaste)} ／ 比 ${wasteYoy!=null?wasteYoy.toFixed(1)+'%':'—'}</div>
+      </div>
+      <div class="card teal">
+        <div class="card-label">売上UP DEPT数</div>
+        <div class="card-value">${s.salesUpCount}</div>
+        <div class="card-sub">全${rows.length}DEPTのうち</div>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-title">DEPT別一覧（${label}）</div>
+      <div class="note">
+        荒利=売上×MR÷100で推計。FF・厨房はMR非設定のため算出不可。<br>
+        売上前年比：<span class="up">緑=100%以上</span> / <span class="down">赤=100%未満</span>
+        売変前年比：<span class="warn">橙=115%超（悪化）</span> / <span class="up">緑=100%以下（改善）</span>
+        ※前年売変が負値・1000円未満の場合は比率「—」${newStoreNote}
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr>
+            <th style="text-align:left">DEPT</th><th>カテゴリ</th>
+            <th>売上</th><th>前年売上</th><th>売上前年比</th>
+            <th>荒利</th><th>前年荒利</th><th>荒利前年比</th><th>荒利率</th>
+            <th>売変</th><th>前年売変</th><th>売変前年比</th>
+            <th>分類</th>
+          </tr></thead>
+          <tbody>${tableRows}</tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-title">パターン別まとめ</div>
+      <div class="pattern-grid">
+        <div class="pattern-card up-sales">
+          <div class="pattern-card-title">売上UP（${pattUpSales.length}DEPT）</div>
+          <div class="pattern-dept-list">${pattUpSales.map(r=>r.dept).join('、') || '—'}</div>
+        </div>
+        <div class="pattern-card down-sales">
+          <div class="pattern-card-title">売上DOWN（${pattDownSales.length}DEPT）</div>
+          <div class="pattern-dept-list">${pattDownSales.map(r=>r.dept).join('、') || '—'}</div>
+        </div>
+        <div class="pattern-card waste-up">
+          <div class="pattern-card-title">売変悪化（${pattWasteUp.length}DEPT）</div>
+          <div class="pattern-dept-list">${pattWasteUp.map(r=>r.dept).join('、') || '—'}</div>
+        </div>
+        <div class="pattern-card complex">
+          <div class="pattern-card-title">複合課題A（${pattComplex.length}DEPT）</div>
+          <div class="pattern-dept-list">${pattComplex.map(r=>r.dept).join('、') || '—'}</div>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+function renderTab1(rows, label) {
+  const groups = {A:[],B:[],C:[],D:[]};
+  rows.forEach(r => groups[r.cls].push(r));
+
+  const descA = '売上ダウン＋売変悪化または荒利低下：最優先改善';
+  const descB = '売上UPだが売変悪化または荒利低下：効率改善';
+  const descC = '売上UP・売変・荒利とも良好：維持強化';
+  const descD = '前年比不明・凸凹あり（新店・たばこ含む）';
+
+  function abcdCard(cls, depts, desc) {
+    return `<div class="abcd-card ${cls}">
+      <div class="abcd-title">${cls}：${desc}</div>
+      ${depts.length === 0
+        ? '<div style="color:#aaa;font-size:12px">該当なし</div>'
+        : depts.map(r => {
+          const parts = [];
+          if (r.salesYoy != null && r.salesYoy < 100) parts.push(`売上${r.salesYoy.toFixed(0)}%`);
+          if (r.wasteYoy != null && r.wasteYoy > 115) parts.push(`売変${r.wasteYoy.toFixed(0)}%`);
+          if (r.gpYoy != null && r.gpYoy < 97) parts.push(`荒利${r.gpYoy.toFixed(0)}%`);
+          return `<div class="abcd-dept">${r.dept}${parts.length>0?' <span style="font-size:10px;color:#888">('+parts.join('/')+')</span>':''}</div>`;
+        }).join('')}
+    </div>`;
+  }
+
+  return `
+    <div class="section">
+      <div class="section-title">優先分類（${label}）</div>
+      <div class="note">
+        <strong>A</strong>：売上前年比＜100% かつ 売変前年比＞115% または 荒利前年比＜97%　→ 最優先<br>
+        <strong>B</strong>：売上前年比≥100% かつ 売変前年比＞115% または 荒利前年比＜97%　→ 効率改善<br>
+        <strong>C</strong>：売上前年比≥100% かつ 売変・荒利とも良好　→ 維持・強化<br>
+        <strong>D</strong>：前年比不明・新店・たばこ等　→ 参考値
+      </div>
+      <div class="abcd-grid">
+        ${abcdCard('A', groups.A, descA)}
+        ${abcdCard('B', groups.B, descB)}
+        ${abcdCard('C', groups.C, descC)}
+        ${abcdCard('D', groups.D, descD)}
+      </div>
+    </div>
+  `;
+}
+
+function renderTab2(rows, summary, label) {
+  // Gross profit composition (top 10 excl FF/厨房)
+  const gpRows = rows.filter(r => r.gp != null && r.mr != null)
+    .sort((a,b) => b.gp - a.gp).slice(0, 10);
+  const maxGp = gpRows[0] ? gpRows[0].gp : 1;
+
+  // Waste ranking (top 10, all depts)
+  const wasteRows = rows.filter(r => r.d.waste > 0).sort((a,b) => b.d.waste - a.d.waste).slice(0,10);
+  const maxWaste = wasteRows[0] ? wasteRows[0].d.waste : 1;
+
+  // Waste/GP ratio (depts with both)
+  const ratioRows = rows.filter(r => r.gp != null && r.gp > 0 && r.mr != null)
+    .map(r => ({...r, ratio: r.d.waste / r.gp * 100}))
+    .sort((a,b) => b.ratio - a.ratio).slice(0, 10);
+
+  function barColor(pct) {
+    if (pct >= 80) return '#e53935';
+    if (pct >= 50) return '#f57c00';
+    return '#1565c0';
+  }
+
+  return `
+    <div class="two-col">
+      <div class="section">
+        <div class="section-title">荒利構成比 上位DEPT（${label}）</div>
+        ${gpRows.map(r => {
+          const pct = r.gp / maxGp * 100;
+          const totalGp = summary.gp || 1;
+          const share = r.gp / totalGp * 100;
+          return `<div class="impact-bar-wrap">
+            <div class="impact-bar-label">
+              <span>${r.dept}</span>
+              <span style="color:#555">${fmt(Math.round(r.gp))}円 (${share.toFixed(1)}%)</span>
+            </div>
+            <div class="impact-bar"><div class="impact-bar-fill" style="width:${pct.toFixed(1)}%;background:#1565c0"></div></div>
+          </div>`;
+        }).join('')}
+      </div>
+
+      <div class="section">
+        <div class="section-title">売変額ランキング（${label}）</div>
+        ${wasteRows.map(r => {
+          const pct = r.d.waste / maxWaste * 100;
+          const yoyTxt = r.wasteYoy != null ? ` 前年比${r.wasteYoy.toFixed(0)}%` : '';
+          return `<div class="impact-bar-wrap">
+            <div class="impact-bar-label">
+              <span>${r.dept}</span>
+              <span style="color:#555">${fmt(r.d.waste)}円${yoyTxt}</span>
+            </div>
+            <div class="impact-bar"><div class="impact-bar-fill" style="width:${pct.toFixed(1)}%;background:${r.wasteYoy!=null&&r.wasteYoy>115?'#e53935':'#f57c00'}"></div></div>
+          </div>`;
+        }).join('')}
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-title">売変／荒利 比率 上位DEPT（${label}）</div>
+      <div class="note">荒利に対する売変の割合。高いほど荒利を食いつぶしている。</div>
+      ${ratioRows.map(r => {
+        const pct = Math.min(r.ratio, 100);
+        return `<div class="impact-bar-wrap">
+          <div class="impact-bar-label">
+            <span>${r.dept}</span>
+            <span style="color:#555">売変/荒利 ${r.ratio.toFixed(1)}%（売変${fmt(r.d.waste)}円 / 荒利${fmt(Math.round(r.gp))}円）</span>
+          </div>
+          <div class="impact-bar"><div class="impact-bar-fill" style="width:${pct.toFixed(1)}%;background:${barColor(r.ratio)}"></div></div>
+        </div>`;
+      }).join('')}
+    </div>
+  `;
+}
+
+function renderTab3(rows, label) {
+  const priority = rows.filter(r => r.cls === 'A' || r.cls === 'B')
+    .sort((a,b) => {
+      if (a.cls !== b.cls) return a.cls < b.cls ? -1 : 1;
+      // Sort by impact: waste amount desc
+      return b.d.waste - a.d.waste;
+    });
+
+  if (priority.length === 0) {
+    return `<div class="section"><div class="section-title">アクション提案（${label}）</div>
+      <div class="empty-msg">分類A・Bに該当するDEPTがありません。良好な状態です。</div></div>`;
+  }
+
+  const cards = priority.map(r => {
+    const issues = [];
+    if (r.salesYoy != null && r.salesYoy < 100) issues.push(`売上前年比${r.salesYoy.toFixed(1)}%（ダウン）`);
+    if (r.wasteYoy != null && r.wasteYoy > 115) issues.push(`売変前年比${r.wasteYoy.toFixed(1)}%（悪化）`);
+    if (r.gpYoy != null && r.gpYoy < 97) issues.push(`荒利前年比${r.gpYoy.toFixed(1)}%（低下）`);
+    const actions = ACTION_DICT[r.dept] || ['発注量・品種構成の見直し','売場陳列の改善'];
+    return `<div class="action-card">
+      <div class="action-dept"><span class="badge badge-${r.cls}">${r.cls}</span>&nbsp;${r.dept}</div>
+      <div class="action-issue">課題：${issues.join(' / ') || '詳細確認要'}</div>
+      <ul class="action-list">${actions.map(a=>`<li>${a}</li>`).join('')}</ul>
+    </div>`;
+  }).join('');
+
+  return `<div class="section">
+    <div class="section-title">アクション提案（${label}）</div>
+    <div class="note">分類A（最優先）・B（効率改善）のDEPTを対象に、DEPT特性に基づくアクションを表示しています。</div>
+    ${cards}
+  </div>`;
+}
+
+// === State setters ===
+function setTab(i) {
+  currentTab = i;
+  render();
+}
+function setScope(s) {
+  currentScope = s;
+  if (s === 'whole') { currentSC = null; currentStore = null; }
+  if (s === 'sc') { currentStore = null; if (!SC_LIST.includes(currentSC)) currentSC = null; }
+  render();
+}
+function setSC(sc) {
+  currentSC = sc;
+  currentStore = null;
+  render();
+}
+function setScForStore(sc) {
+  currentSC = sc;
+  currentStore = null;
+  render();
+}
+function setStore(s) {
+  currentStore = s;
+  render();
+}
+
+// Initial render
+render();
+</script>
+</body>
+</html>
