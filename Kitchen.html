@@ -3,193 +3,301 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0">
-<title>厨房ダッシュボード</title>
+<title>厨房 検証＆計画ツール</title>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
-body{font-family:"Meiryo","Hiragino Kaku Gothic ProN",sans-serif;background:#f0f2f5;color:#1a1a2e;font-size:14px}
-.hdr{background:linear-gradient(135deg,#1a1a2e,#16213e);color:#fff;padding:14px 16px 10px;text-align:center}
-.hdr h1{font-size:15px;font-weight:700}.hdr p{font-size:11px;color:#aac4ff;margin-top:3px}
-.nav{display:flex;background:#16213e}
-.ntab{flex:1;padding:10px 4px;text-align:center;font-size:12px;font-weight:700;color:#aac4ff;cursor:pointer;border:none;background:none;border-bottom:3px solid transparent}
-.ntab.on{color:#fff;border-bottom-color:#4361ee}
-.pg{display:none}.pg.on{display:block}
-.sec{margin:10px}
-.stitle{font-size:12px;font-weight:700;margin-bottom:8px;padding:6px 10px;background:#fff;border-radius:8px;border-left:4px solid #4361ee}
-.cards{display:flex;gap:8px;overflow-x:auto;padding-bottom:2px}
-.card{background:#fff;border-radius:10px;padding:10px 12px;min-width:120px;flex:1;box-shadow:0 1px 4px rgba(0,0,0,.08)}
-.card.r{border-top:3px solid #e63946}.card.g{border-top:3px solid #2dc653}
-.card.o{border-top:3px solid #f4a261}.card.b{border-top:3px solid #4361ee}
-.cl{font-size:10px;color:#666;font-weight:600}
-.cv{font-size:20px;font-weight:800;margin:3px 0 2px;line-height:1}
-.cs{font-size:11px;color:#888}
-.cw{background:#fff;border-radius:10px;padding:10px;box-shadow:0 1px 4px rgba(0,0,0,.08);margin-bottom:10px;overflow-x:auto}
-.clbl{font-size:11px;color:#555;font-weight:600;margin-bottom:6px}
-.loss{margin-top:8px;padding:6px 10px;background:#fff8f8;border-radius:8px;font-size:11px;color:#555;line-height:1.5}
-.loss b{color:#c1121f}
-.lb{display:inline-block;background:#fff0f0;color:#e63946;border:1px solid #e63946;border-radius:20px;font-size:10px;font-weight:700;padding:1px 7px;margin:2px}
-.stbl{width:100%;border-collapse:collapse;font-size:12px;min-width:480px}
-.stbl th{background:#eef0f8;padding:6px 5px;text-align:center;font-size:10px;font-weight:700}
-.stbl td{padding:6px 5px;border-bottom:1px solid #f0f0f0;text-align:center}
-.sname{text-align:left!important;font-weight:700;font-size:11px;white-space:nowrap}
-.up{color:#2dc653;font-weight:700}.dn{color:#e63946;font-weight:700}.nt{color:#888}
-.tw{overflow-x:auto;border-radius:8px}
-.lgrid{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:8px}
-.li{padding:7px 9px;border-radius:8px;font-size:11px;font-weight:600}
-.q1{background:#e8f4ff;border-left:3px solid #4361ee}
-.q2{background:#e8f8ed;border-left:3px solid #2dc653}
-.q3{background:#fff8e8;border-left:3px solid #f4a261}
-.q4{background:#fff0f0;border-left:3px solid #e63946}
-.li b{display:block;font-size:10px;opacity:.7;margin-bottom:1px}
-.abox{background:#fff;border-radius:10px;padding:12px;box-shadow:0 1px 4px rgba(0,0,0,.08)}
-.ai{padding:8px 10px;margin-bottom:7px;border-radius:8px;font-size:12px;line-height:1.5}
-.ai:last-child{margin-bottom:0}
-.ai.r{background:#fff0f0;border-left:3px solid #e63946}
-.ai.b{background:#e8f4ff;border-left:3px solid #4361ee}
-.ai.g{background:#e8f8ed;border-left:3px solid #2dc653}
-.ai.o{background:#fff8e8;border-left:3px solid #f4a261}
-.ai strong{display:block;font-weight:700;margin-bottom:2px}
-.ssel{width:100%;padding:10px;font-size:14px;font-weight:700;border:2px solid #4361ee;border-radius:10px;background:#fff;color:#1a1a2e}
-.skpi{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:10px}
-.kc{background:#fff;border-radius:10px;padding:9px 7px;text-align:center;box-shadow:0 1px 4px rgba(0,0,0,.08)}
-.kl{font-size:9px;color:#888;font-weight:600}.kv{font-size:17px;font-weight:800;line-height:1.1;margin:2px 0}.ks{font-size:10px;color:#aaa}
-.itbl{width:100%;border-collapse:collapse;font-size:12px;min-width:380px}
-.itbl th{background:#eef0f8;padding:6px 5px;text-align:center;font-size:10px;font-weight:700}
-.itbl td{padding:5px;border-bottom:1px solid #f0f0f0;text-align:center}
-.itbl td:first-child{text-align:left;font-size:11px}
-.wrbar{height:7px;background:#eee;border-radius:4px;overflow:hidden;margin-top:2px;min-width:40px}
-.wrfill{height:100%;border-radius:4px}
-.tb{display:inline-block;font-size:10px;font-weight:700;padding:2px 6px;border-radius:10px}
-.ftr{text-align:center;font-size:10px;color:#aaa;padding:14px 10px 26px}
+body{font-family:"Hiragino Sans","Meiryo",sans-serif;background:#f0f4f8;color:#1e2a3a;font-size:14px;-webkit-text-size-adjust:100%}
+/* ヘッダー */
+.hdr{background:linear-gradient(135deg,#1e2a3a 0%,#2d4a8e 100%);color:#fff;padding:12px 16px 10px;position:sticky;top:0;z-index:200;box-shadow:0 2px 8px rgba(0,0,0,.3)}
+.hdr-t{font-size:15px;font-weight:800;letter-spacing:.3px}
+.hdr-s{font-size:10px;color:#93b4ff;margin-top:2px}
+/* ナビ */
+.nav{display:flex;background:#16213e;position:sticky;top:50px;z-index:199;border-bottom:2px solid #0d1b3e}
+.ntab{flex:1;padding:10px 3px;text-align:center;font-size:11px;font-weight:700;color:#5a7db0;cursor:pointer;border:none;background:none;border-bottom:3px solid transparent;line-height:1.2}
+.ntab.on{color:#fff;border-bottom-color:#4895ef}
+/* ページ */
+.pg{display:none}.pg.on{display:block;padding-bottom:60px}
+/* セクション */
+.sec{padding:10px 12px 0}
+.sec-ttl{font-size:11px;font-weight:700;color:#666;text-transform:uppercase;letter-spacing:.5px;padding:12px 0 6px;display:flex;align-items:center;gap:6px}
+/* カード */
+.card{background:#fff;border-radius:12px;padding:14px;box-shadow:0 2px 8px rgba(0,0,0,.06)}
+/* KPIカード */
+.kpi-row{display:grid;gap:8px;margin-bottom:0}
+.kpi-row.c2{grid-template-columns:1fr 1fr}
+.kpi-row.c3{grid-template-columns:repeat(3,1fr)}
+.kpi-row.c4{grid-template-columns:repeat(4,1fr)}
+.kc{background:#fff;border-radius:12px;padding:11px 8px;text-align:center;box-shadow:0 2px 6px rgba(0,0,0,.06)}
+.kl{font-size:9px;color:#888;font-weight:700;line-height:1.3}
+.kv{font-size:22px;font-weight:900;line-height:1.1;margin:4px 0}
+.ks{font-size:10px;color:#aaa;line-height:1.3}
+/* 色 */
+.c-b{color:#2563eb}.c-g{color:#22c55e}.c-r{color:#ef4444}.c-o{color:#f59e0b}.c-gy{color:#9ca3af}
+/* 牽引バナー */
+.pull-banner{border-radius:12px;padding:12px 14px;margin:8px 12px 0;display:flex;align-items:center;gap:10px}
+.pb-lead{background:#dcfce7;border:1px solid #86efac}.pb-ok{background:#fef3c7;border:1px solid #fcd34d}.pb-lag{background:#fee2e2;border:1px solid #fca5a5}
+.pb-icon{font-size:22px;flex-shrink:0}.pb-main{flex:1}
+.pb-title{font-size:13px;font-weight:800}.pb-sub{font-size:11px;color:#666;margin-top:2px}
+/* テーブル */
+.tbl-wrap{background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,.06)}
+.tbl-scroll{overflow-x:auto}
+.dtbl{width:100%;border-collapse:collapse;font-size:12px}
+.dtbl th{background:#f1f5f9;padding:8px 7px;text-align:center;font-size:10px;font-weight:700;color:#64748b;white-space:nowrap;position:sticky;top:0}
+.dtbl th.l{text-align:left}
+.dtbl td{padding:8px 7px;border-bottom:1px solid #f1f5f9;text-align:center;vertical-align:middle}
+.dtbl td.l{text-align:left;font-weight:700;font-size:11px;white-space:nowrap}
+.dtbl tr:last-child td{border-bottom:none}
+.dtbl tr:hover td{background:#f8fafc}
+.up{color:#22c55e;font-weight:700}.dn{color:#ef4444;font-weight:700}.nt{color:#94a3b8}
+/* バッジ */
+.badge{display:inline-block;padding:2px 8px;border-radius:8px;font-size:10px;font-weight:700;white-space:nowrap}
+.bg-lead{background:#dcfce7;color:#16a34a}.bg-ok{background:#fef3c7;color:#d97706}.bg-lag{background:#fee2e2;color:#dc2626}
+.bg-good{background:#dbeafe;color:#1d4ed8}.bg-warn{background:#fff7ed;color:#c2410c}.bg-bad{background:#fee2e2;color:#dc2626}
+/* ストアグループ */
+.store-group{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.sg-box{background:#fff;border-radius:12px;padding:10px 12px;box-shadow:0 2px 6px rgba(0,0,0,.06)}
+.sg-ttl{font-size:11px;font-weight:700;margin-bottom:6px}
+.sg-item{font-size:11px;padding:3px 0;border-bottom:1px solid #f1f5f9;display:flex;justify-content:space-between;align-items:center}
+.sg-item:last-child{border-bottom:none}
+/* 支援金ティア */
+.tier-section{margin-bottom:10px;border-radius:10px;overflow:hidden;box-shadow:0 1px 4px rgba(0,0,0,.06)}
+.tier-hdr{display:flex;align-items:center;gap:6px;font-size:11px;font-weight:800;padding:7px 12px}
+.tier-item{padding:7px 12px;border-bottom:1px solid rgba(0,0,0,.05);display:flex;align-items:center;justify-content:space-between;background:#fff;font-size:11px}
+.tier-item:last-child{border-bottom:none}
+.tier-close{font-size:10px;font-weight:700;padding:2px 6px;border-radius:6px;background:#fef3c7;color:#92400e;white-space:nowrap}
+.t10h{background:#dcfce7;color:#15803d}.t8h{background:#dbeafe;color:#1d4ed8}
+.t7h{background:#fef3c7;color:#92400e}.t0h{background:#fee2e2;color:#dc2626}
+/* アラートボックス */
+.alert{border-radius:10px;padding:10px 12px;font-size:12px;line-height:1.65}
+.alert b{display:block;font-weight:800;margin-bottom:3px}
+.alert.r{background:#fee2e2;border-left:4px solid #ef4444}
+.alert.g{background:#dcfce7;border-left:4px solid #22c55e}
+.alert.o{background:#fff7ed;border-left:4px solid #f59e0b}
+.alert.b{background:#dbeafe;border-left:4px solid #2563eb}
+.alert.y{background:#fefce8;border-left:4px solid #eab308}
+/* グラフ */
+.cw{background:#fff;border-radius:12px;padding:12px;box-shadow:0 2px 8px rgba(0,0,0,.06);overflow-x:auto}
+.clbl{font-size:11px;font-weight:700;color:#475569;margin-bottom:4px}
+.chint{font-size:10px;color:#94a3b8;margin-bottom:8px}
 canvas{display:block}
+/* 店舗セレクト */
+.store-sel{width:100%;padding:12px 14px;font-size:15px;font-weight:700;border:2px solid #2563eb;border-radius:12px;background:#fff;color:#1e2a3a;display:block}
+/* 時間帯ロスピル */
+.loss-row{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px}
+.lp{padding:4px 10px;border-radius:10px;font-size:12px;font-weight:700}
+.lp-r{background:#fee2e2;color:#dc2626}.lp-g{background:#dcfce7;color:#16a34a}
+/* マトリクス象限 */
+.quad-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.qc{border-radius:10px;padding:10px 12px}
+.q1{background:#dbeafe;border:1px solid #93c5fd}.q2{background:#dcfce7;border:1px solid #86efac}
+.q3{background:#fff7ed;border:1px solid #fcd34d}.q4{background:#fee2e2;border:1px solid #fca5a5}
+.qt{font-size:11px;font-weight:800;margin-bottom:4px}
+.q1 .qt{color:#1d4ed8}.q2 .qt{color:#15803d}.q3 .qt{color:#b45309}.q4 .qt{color:#dc2626}
+.qi{font-size:10px;color:#64748b;line-height:1.5}
+/* 翌週計画 */
+.plan-notice{background:#fefce8;border:1px solid #fde68a;border-radius:10px;padding:10px 12px;font-size:11px;line-height:1.7;color:#92400e}
+.plan-notice b{font-size:12px;display:block;margin-bottom:4px;color:#78350f}
+.day-tabs{display:flex;gap:5px;margin:8px 0}
+.dtab{flex:1;padding:8px 2px;text-align:center;border-radius:10px;border:2px solid #e2e8f0;background:#fff;cursor:pointer;font-size:12px;font-weight:700;color:#64748b;transition:all .15s}
+.dtab.on{color:#fff;border-color:transparent}
+.plan-body{background:#fff;border-radius:10px;padding:12px 14px;box-shadow:0 2px 6px rgba(0,0,0,.06)}
+.plan-sec{margin-bottom:10px}
+.plan-sec:last-child{margin-bottom:0}
+.plan-sec-ttl{font-size:10px;font-weight:700;color:#64748b;margin-bottom:6px;display:flex;align-items:center;gap:4px}
+.plan-item{display:flex;align-items:center;padding:5px 0;border-bottom:1px solid #f1f5f9;font-size:12px;gap:6px}
+.plan-item:last-child{border-bottom:none}
+.pin{flex:1;font-weight:600}
+.pqty{font-size:18px;font-weight:900;min-width:28px;text-align:right}
+.ptrend{font-size:12px;width:16px;text-align:center}
+.punit{font-size:10px;color:#94a3b8}
+.pwr{font-size:10px;color:#ef4444;background:#fee2e2;padding:1px 5px;border-radius:6px}
+/* 単品リスト */
+.qlist-wrap{border-radius:12px;padding:10px 12px}
+.qli{display:flex;justify-content:space-between;align-items:center;padding:5px 0;border-bottom:1px solid rgba(0,0,0,.06);font-size:11px}
+.qli:last-child{border-bottom:none}
+.qli-r{color:#94a3b8;font-size:10px;white-space:nowrap;margin-left:8px}
+/* フッター */
+.ftr{text-align:center;font-size:10px;color:#94a3b8;padding:20px 10px 40px}
+/* レスポンシブ補助 */
+@media(max-width:400px){.kpi-row.c4{grid-template-columns:1fr 1fr}.kv{font-size:18px}}
 </style>
 </head>
 <body>
-<div class="hdr"><h1>厨房弁当・調理パン 分析ダッシュボード</h1><p>厨房取扱16店舗｜直近2週間＋月別対比</p></div>
+<div class="hdr">
+  <div class="hdr-t">🍱 厨房 検証＆計画ツール</div>
+  <div class="hdr-s" id="hSub">数値検証 ／ 個店別 翌週作成計画参考｜16店舗</div>
+</div>
 <div class="nav">
-  <button class="ntab on" onclick="SP('overall',this)">📊 全体</button>
-  <button class="ntab" onclick="SP('store',this)">🏪 個店別</button>
-  <button class="ntab" onclick="SP('matrix',this)">🎯 単品</button>
+  <button class="ntab on" onclick="SP('verify',this)">📊<br>数値検証</button>
+  <button class="ntab" onclick="SP('store',this)">🏪<br>個店別</button>
+  <button class="ntab" onclick="SP('items',this)">🎯<br>単品</button>
 </div>
 
-<div id="pg-overall" class="pg on">
+<!-- ======================================================
+     TAB 1: 数値検証
+     ====================================================== -->
+<div id="pg-verify" class="pg on">
   <div class="sec">
-    <div class="stitle">⚡ 重要ポイント</div>
-    <div class="cards">
-      <div class="card r"><div class="cl">弁当ロス時間帯</div><div class="cv" style="font-size:16px">6〜8時</div><div class="cs">厨房弁当ほぼゼロ</div></div>
-      <div class="card o"><div class="cl">調理パンロス</div><div class="cv" style="font-size:16px">19〜21時</div><div class="cs">厨房調理パン急減</div></div>
-      <div class="card g"><div class="cl">伸長トップ</div><div class="cv" style="font-size:13px">新御堂筋<br>上新田</div><div class="cs">2月比＋35%</div></div>
-    </div>
-  </div>
-  <div class="sec">
-    <div class="stitle">📊 時間帯別 作成機会ロス（16店合計）</div>
-    <div class="cw">
-      <div class="clbl">▼ 弁当需要 vs 厨房弁当（2週合計）</div>
-      <canvas id="cB" width="700" height="260"></canvas>
-      <div class="loss"><b>⚠️ 弁当ロス：</b><span class="lb">6時</span><span class="lb">7時</span><span class="lb">8時</span><span class="lb">9時</span><br>朝ピーク（7〜8時）に弁当合計2万超の需要があるが厨房弁当はほぼゼロ。先行仕込みが急務。</div>
-    </div>
-    <div class="cw">
-      <div class="clbl">▼ 調理パン需要 vs 厨房調理パン（2週合計）</div>
-      <canvas id="cP" width="700" height="260"></canvas>
-      <div class="loss"><b>⚠️ 調理パンロス：</b><span class="lb">7時</span><span class="lb">8時</span><span class="lb">19時</span><span class="lb">20時</span><span class="lb">21時</span><br>朝（7〜8時）需要3万超、夜（19〜21時）1万超あるが厨房調理パンが急減。</div>
-    </div>
-    <div class="cw">
-      <div class="clbl">▼ 厨房弁当 作成比率（赤=20%以下・要強化）</div>
-      <canvas id="cR" width="700" height="200"></canvas>
-    </div>
-  </div>
-  <div class="sec">
-    <div class="stitle">🏪 店舗別 2月対比・前年比</div>
-    <div class="cw" style="padding:0"><div class="tw"><table class="stbl">
+    <!-- サマリーKPI（販売数） -->
+    <div class="kpi-row c2" id="vSummary" style="margin-top:10px"></div>
+    <!-- サマリーKPI（売上高） -->
+    <div class="kpi-row c2" id="vSummaryH" style="margin-top:8px"></div>
+    <!-- 牽引判定バナー -->
+    <div id="vPullBanner" style="margin-top:0"></div>
+    <!-- 説明 -->
+    <div style="margin-top:8px" id="vBranchNote"></div>
+
+    <!-- 店舗別比較テーブル -->
+    <div class="sec-ttl">🏪 店舗別 数値比較</div>
+    <div class="tbl-wrap"><div class="tbl-scroll"><table class="dtbl">
       <thead><tr>
-        <th class="sname" style="min-width:90px">店舗</th>
-        <th>2月<br>販売数</th><th>3月<br>販売数</th><th>4月<br>販売数</th>
-        <th>3月<br>伸長</th><th>4月<br>伸長</th><th>前年比<br>4月</th>
+        <th class="l" style="min-width:88px;padding-left:10px">店舗</th>
+        <th>4月<br>販売/日</th>
+        <th>vs<br>支店</th>
+        <th>売上高/日<br>（4月）</th>
+        <th>2→4月<br>売上伸長</th>
+        <th>前年比<br>（売高）</th>
+        <th>支援金</th>
+        <th>判定</th>
       </tr></thead>
-      <tbody id="sBody"></tbody>
+      <tbody id="vBody"></tbody>
     </table></div></div>
-    <div style="font-size:10px;color:#888;padding:4px">※PSA/D（日平均）。伸長率は2月対比。前年比は販売高ベース。</div>
-  </div>
-  <div class="sec">
-    <div class="stitle">📈 前年比 4月（販売高）</div>
-    <div class="cw"><canvas id="cY" width="700" height="300"></canvas></div>
-    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:6px">
-      <div style="flex:1;min-width:130px;background:#e8f8ed;border-radius:8px;padding:9px">
-        <div style="font-size:11px;font-weight:700;color:#2dc653;margin-bottom:4px">▲ 改善中（110%以上）</div>
-        <div id="yUp" style="font-size:11px;line-height:1.9"></div>
+    <div style="font-size:10px;color:#94a3b8;padding:4px 2px 0">※ 売上高＝厨房弁当・調理パン販売高（日平均）。支店平均は設定値（要確認）。</div>
+
+    <!-- 支援金ポジション -->
+    <div class="sec-ttl">💰 厨房支援金 ポジション</div>
+    <div class="alert b" style="margin-bottom:8px;font-size:11px">
+      <b>支援金の基準（厨房売上高/日）</b>
+      3万円以上：<b>10%</b>支援　／　2万円以上：<b>8%</b>支援　／　1万円以上：<b>7%</b>支援　／　1万円未満：<b>0%</b>
+    </div>
+    <div id="vTierSection"></div>
+
+    <!-- 好調 / 要強化 -->
+    <div class="sec-ttl">📈 好調店 ／ 📉 要強化店</div>
+    <div class="store-group">
+      <div class="sg-box">
+        <div class="sg-ttl" style="color:#16a34a">✅ 好調店（支店平均超）</div>
+        <div id="vGood"></div>
       </div>
-      <div style="flex:1;min-width:130px;background:#fff0f0;border-radius:8px;padding:9px">
-        <div style="font-size:11px;font-weight:700;color:#e63946;margin-bottom:4px">▼ 要注意（100%未満）</div>
-        <div id="yDn" style="font-size:11px;line-height:1.9"></div>
+      <div class="sg-box">
+        <div class="sg-ttl" style="color:#dc2626">⚠️ 要強化店（組織平均以下）</div>
+        <div id="vWeak"></div>
       </div>
     </div>
-  </div>
-  <div class="sec">
-    <div class="stitle">✅ 実務アクション</div>
-    <div class="abox">
-      <div class="ai r"><strong>【緊急】6〜9時 厨房弁当の先行仕込み</strong>朝ピークに弁当需要2万超あるが厨房弁当がほぼゼロ。朝の仕込みルーティンを確立する。</div>
-      <div class="ai r"><strong>【緊急】19〜21時 厨房調理パンの継続作成</strong>夜間調理パン需要1万超に対し厨房調理パンが急減。夜間作成を維持し機会ロスを削減。</div>
-      <div class="ai b"><strong>【作成強化】チキン南蛮丼・カツカレー・照焼きバーガー</strong>廃棄率5%以下・販売トップ級。全店で作成数を上積みする。</div>
-      <div class="ai o"><strong>【計画見直し】ロースカツサンド（3個入り）</strong>販売多いが廃棄率21%超。作成タイミング・数量を見直す。</div>
-      <div class="ai r"><strong>【削減検討】ごろっとタマゴサンド4個・焼きさば弁当・海老カツバーガー</strong>廃棄率30〜44%かつ販売少。廃棄ロス過大。作成カット・廃番を検討。</div>
-      <div class="ai g"><strong>【横展開】新御堂筋上新田・豊中服部元町・吹田豊津中学校前</strong>2月比15〜35%伸長中。仕込み体制・陳列方法を他店に横展開。</div>
+
+    <!-- 前年比グラフ -->
+    <div class="sec-ttl">📅 前年比（4月 販売高）</div>
+    <div class="cw">
+      <div class="clbl">各店前年比（赤 ＝ 前年割れ）</div>
+      <canvas id="cY" width="700" height="260"></canvas>
     </div>
   </div>
 </div>
 
+<!-- ======================================================
+     TAB 2: 個店別
+     ====================================================== -->
 <div id="pg-store" class="pg">
-  <div class="sec" style="margin-top:12px">
-    <select class="ssel" id="storeSel" onchange="US()"><option value="">-- 店舗を選択 --</option></select>
+  <div class="sec" style="padding-top:10px">
+    <select class="store-sel" id="storeSel" onchange="US()">
+      <option value="">▼ 店舗を選ぶ</option>
+    </select>
   </div>
   <div id="sDetail" style="display:none">
+    <!-- ① 基本数値 -->
     <div class="sec">
-      <div class="stitle" id="sTitle">店舗名</div>
-      <div class="skpi" id="sKpi"></div>
+      <div class="sec-ttl">① 基本数値</div>
+      <div class="kpi-row c2" id="sKpi" style="margin-bottom:8px"></div>
+      <div id="sPullBanner"></div>
     </div>
+
+    <!-- ② 時間帯チャンス -->
     <div class="sec">
-      <div class="stitle">📊 時間帯別（この店舗・2週合計）</div>
-      <div class="cw"><div class="clbl">▼ 弁当需要 vs 厨房弁当</div><canvas id="sCB" width="700" height="240"></canvas></div>
-      <div class="cw"><div class="clbl">▼ 調理パン需要 vs 厨房調理パン</div><canvas id="sCP" width="700" height="240"></canvas></div>
-      <div class="cw" id="sLoss" style="font-size:12px;line-height:1.8"></div>
+      <div class="sec-ttl">② 時間帯チャンス</div>
+      <div class="alert b" style="margin-bottom:8px">
+        <b>見方</b>「需要」は弁当・調理パン全体の売上。赤ハイライトの時間帯は需要があるのに厨房商品が少ない時間帯 ＝ <b>作るチャンス</b>です。
+      </div>
+      <div class="sec-ttl" style="padding-top:0;font-size:10px;color:#64748b">作れていない時間帯</div>
+      <div class="loss-row" id="sLoss"></div>
+      <div class="cw" style="margin-top:8px">
+        <div class="clbl">弁当：需要 vs 作った数（赤 ＝ 作れていない）</div>
+        <canvas id="sCB" width="700" height="210"></canvas>
+      </div>
+      <div class="cw" style="margin-top:8px">
+        <div class="clbl">調理パン：需要 vs 作った数（赤 ＝ 作れていない）</div>
+        <canvas id="sCP" width="700" height="210"></canvas>
+      </div>
     </div>
+
+    <!-- ③ 単品マトリクス -->
     <div class="sec">
-      <div class="stitle">🎯 単品マトリクス（この店舗）</div>
+      <div class="sec-ttl">③ 単品マトリクス</div>
       <div class="cw">
-        <div style="font-size:10px;color:#888;margin-bottom:6px">横軸：販売数（PSA/D 2週合計）/ 縦軸：廃棄率 / 15%が基準線</div>
-        <canvas id="sCM" width="700" height="320"></canvas>
-        <div class="lgrid"><div class="li q1"><b>① 作成増チャンス</b>販売多×廃棄低</div><div class="li q2"><b>② 販売を伸ばしたい</b>販売少×廃棄低</div><div class="li q3"><b>③ 計画精度改善</b>販売多×廃棄高</div><div class="li q4"><b>④ カット対象</b>販売少×廃棄高</div></div>
+        <div class="clbl">この店舗の単品マトリクス</div>
+        <div class="chint">横：販売数（週平均/日）｜縦：廃棄率｜縦線15% ＝ 廃棄目標</div>
+        <canvas id="sCM" width="700" height="300"></canvas>
+        <div class="quad-grid" style="margin-top:10px">
+          <div class="qc q1"><div class="qt">① 作成増のチャンス</div><div class="qi">売れてる × 廃棄低い<br>→ 積極的に作成数UP</div></div>
+          <div class="qc q2"><div class="qt">② 廃棄優秀・販売伸ばしたい</div><div class="qi">まだ少ない × 廃棄低い<br>→ 認知・陳列を強化</div></div>
+          <div class="qc q3"><div class="qt">③ 計画精度改善で伸ばせる</div><div class="qi">売れてる × 廃棄多い<br>→ 作成タイミング見直し</div></div>
+          <div class="qc q4"><div class="qt">④ カット対象</div><div class="qi">少ない × 廃棄多い<br>→ 削減・廃番を検討</div></div>
+        </div>
       </div>
+      <div id="sMatrixLists" style="margin-top:8px"></div>
     </div>
+
+    <!-- ④ 翌週作成計画参考 -->
     <div class="sec">
-      <div class="stitle">📋 単品ランキング</div>
-      <div class="cw" style="padding:0"><div class="tw"><table class="itbl">
-        <thead><tr><th style="text-align:left;min-width:130px;padding:6px">商品名</th><th>前週</th><th>今週</th><th>廃棄率</th><th>判定</th></tr></thead>
-        <tbody id="iBody"></tbody>
-      </table></div></div>
+      <div class="sec-ttl">④ 翌週作成計画 参考値</div>
+      <!-- 免責注意書き -->
+      <div class="plan-notice">
+        <b>⚠️ この数値は参考値です</b>
+        ・既存商品の過去実績をもとに算出しています<br>
+        ・新商品・季節商品は別途ご検討ください<br>
+        ・最終的な作成数はSC・店長・厨房責任者で決定してください
+      </div>
+      <div style="margin-top:8px;font-size:11px;color:#64748b;padding:0 2px">
+        木曜24時までに翌週（火〜月）のALIOT入力にご活用ください。
+      </div>
+      <!-- 曜日タブ -->
+      <div class="day-tabs" id="dayTabs"></div>
+      <!-- 計画本体 -->
+      <div class="plan-body" id="planBody"></div>
     </div>
   </div>
-  <div id="sEmpty" style="text-align:center;padding:40px 20px;color:#aaa;font-size:13px">上から店舗を選択してください</div>
+  <div id="sEmpty" style="text-align:center;padding:60px 20px;color:#94a3b8;font-size:13px">
+    上から店舗を選んでください
+  </div>
 </div>
 
-<div id="pg-matrix" class="pg">
-  <div class="sec" style="margin-top:12px">
-    <div class="stitle">🎯 単品マトリクス（16店合計・直近2週）</div>
+<!-- ======================================================
+     TAB 3: 単品（全体）
+     ====================================================== -->
+<div id="pg-items" class="pg">
+  <div class="sec" style="padding-top:10px">
     <div class="cw">
-      <div style="font-size:11px;color:#888;margin-bottom:6px">横軸：販売数 / 縦軸：廃棄率（15%が基準線）/ 中央値≈43個で分割</div>
-      <canvas id="cMX" width="700" height="380"></canvas>
-      <div class="lgrid">
-        <div class="li q1"><b>① 作成増のチャンス</b>販売多い×廃棄率低い→積極作成増</div>
-        <div class="li q2"><b>② 販売を伸ばしたい</b>販売少ない×廃棄率低い→認知・陳列強化</div>
-        <div class="li q3"><b>③ 計画精度改善</b>販売多い×廃棄率高い→作成計画見直し</div>
-        <div class="li q4"><b>④ カット対象</b>販売少ない×廃棄率高い→削減・廃番検討</div>
+      <div class="clbl">全16店合計 単品マトリクス（直近データ）</div>
+      <div class="chint">横：販売数（PSA/D 16店合計）｜縦：廃棄率｜赤線15% ＝ 廃棄目標</div>
+      <canvas id="cMX" width="700" height="340"></canvas>
+      <div class="quad-grid" style="margin-top:10px">
+        <div class="qc q1"><div class="qt">① 作成増のチャンス</div><div class="qi">売れてる × 廃棄低い</div></div>
+        <div class="qc q2"><div class="qt">② 廃棄優秀・販売伸ばしたい</div><div class="qi">まだ少ない × 廃棄低い</div></div>
+        <div class="qc q3"><div class="qt">③ 計画精度改善で伸ばせる</div><div class="qi">売れてる × 廃棄多い</div></div>
+        <div class="qc q4"><div class="qt">④ カット対象</div><div class="qi">少ない × 廃棄多い</div></div>
       </div>
     </div>
+    <div class="sec-ttl" style="color:#1d4ed8">① 作成増のチャンス（積極的に作成数UP）</div>
+    <div id="q1l" class="qlist-wrap q1"></div>
+    <div class="sec-ttl" style="color:#15803d">② 廃棄優秀・販売伸ばしたい（認知・陳列強化）</div>
+    <div id="q2l" class="qlist-wrap q2"></div>
+    <div class="sec-ttl" style="color:#b45309">③ 計画精度改善（作成タイミングを見直す）</div>
+    <div id="q3l" class="qlist-wrap q3"></div>
+    <div class="sec-ttl" style="color:#dc2626">④ カット対象（廃棄多・販売少 → 削減・廃番を検討）</div>
+    <div id="q4l" class="qlist-wrap q4"></div>
   </div>
-  <div class="sec"><div class="stitle">① 最重点 作成強化商品（Top10）</div><div id="q1l" style="display:flex;flex-wrap:wrap;gap:6px"></div></div>
-  <div class="sec"><div class="stitle">③ 計画精度改善で伸ばせる商品</div><div id="q3l" style="display:flex;flex-wrap:wrap;gap:6px"></div></div>
-  <div class="sec"><div class="stitle">④ カット対象商品</div><div id="q4l" style="display:flex;flex-wrap:wrap;gap:6px"></div></div>
 </div>
 
-<div class="ftr">更新対象：直近2週（4/6週＋3/30週）＋月別対比（2〜4月）｜阪口商店エリア 厨房取扱16店舗</div>
+<div class="ftr">厨房弁当・調理パン分析｜直近データ｜16店舗<br>このツールは既存商品の参考資料です。最終決定はSC・店長・厨房責任者で。</div>
 
 <script>
 
@@ -216,6 +324,7 @@ canvas{display:block}
 
 
 </script>
+
 <script>
 var SH={"吹田青山台三丁目": {"弁当合計": [432, 115, 421, 184, 69, 434, 763, 1322, 910, 878, 1367, 3285, 4732, 1677, 2804, 960, 927, 709, 1461, 2275, 2100, 1074, 1685, 1108], "調理パン": [209, 0, 48, 37, 38, 693, 1049, 2678, 2449, 1061, 976, 1764, 1710, 952, 294, 242, 856, 636, 890, 922, 899, 526, 334, 435], "厨房弁当": [0, 0, 0, 0, 0, 0, 0, 0, 0, 7590, 2077, 5923, 17303, 3161, 703, 911, 1483, 2066, 813, 414, 234, 0, 0, 0], "厨房調理パン": [0, 0, 0, 0, 0, 0, 0, 1069, 66, 653, 217, 1144, 778, 605, 538, 364, 219, 33, 0, 0, 0, 0, 0, 0]}, "江坂駅南口": {"弁当合計": [983, 765, 511, 1202, 134, 548, 867, 2345, 2471, 1786, 1556, 1231, 2157, 1229, 359, 634, 700, 905, 2082, 2125, 2217, 1117, 1854, 2208], "調理パン": [672, 152, 327, 89, 79, 508, 1004, 3560, 4907, 2662, 1106, 984, 1829, 1001, 822, 765, 928, 1163, 1271, 1391, 1930, 2161, 1587, 1210], "厨房弁当": [669, 128, 292, 0, 0, 0, 0, 784, 2861, 1635, 1152, 1638, 3438, 4244, 952, 932, 1154, 1949, 3867, 5355, 1990, 3139, 816, 1562], "厨房調理パン": [0, 0, 0, 0, 0, 1374, 1398, 1149, 1233, 828, 1477, 782, 926, 865, 1295, 1607, 1457, 1164, 1147, 446, 734, 274, 0, 0]}, "新御堂筋上新田": {"弁当合計": [410, 278, 319, 78, 695, 656, 683, 3044, 1843, 881, 987, 1364, 3982, 1565, 297, 935, 775, 824, 946, 1372, 2357, 1552, 1228, 451], "調理パン": [344, 141, 199, 79, 46, 486, 981, 2418, 2163, 1442, 2158, 1885, 1864, 1285, 934, 509, 1020, 1047, 796, 606, 1132, 875, 632, 582], "厨房弁当": [357, 0, 0, 0, 0, 0, 0, 85, 256, 0, 1821, 1228, 5446, 1738, 418, 1952, 2321, 2716, 4038, 1908, 3513, 1735, 406, 54], "厨房調理パン": [33, 0, 0, 0, 468, 468, 534, 66, 1702, 1221, 1130, 1010, 1223, 1301, 575, 359, 739, 1017, 1033, 768, 167, 167, 167, 0]}, "吹田警察署前": {"弁当合計": [479, 67, 243, 670, 67, 92, 319, 1203, 1311, 633, 847, 1500, 8029, 932, 744, 799, 600, 1191, 2037, 1566, 1115, 1126, 494, 1193], "調理パン": [89, 125, 0, 286, 203, 320, 1615, 1578, 2643, 1193, 536, 736, 1636, 541, 725, 199, 686, 430, 565, 450, 253, 248, 304, 121], "厨房弁当": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2264, 9785, 2397, 1443, 901, 805, 1395, 3173, 1600, 1714, 258, 229, 0], "厨房調理パン": [0, 0, 0, 0, 0, 0, 0, 0, 0, 933, 999, 305, 447, 362, 155, 135, 179, 228, 64, 0, 0, 0, 0, 0]}, "南金田二丁目": {"弁当合計": [672, 452, 159, 67, 435, 514, 985, 2365, 2372, 1236, 709, 3118, 5946, 1962, 901, 675, 685, 2008, 2855, 3422, 2321, 1824, 1055, 1597], "調理パン": [460, 382, 105, 132, 260, 950, 2031, 2857, 2407, 1387, 1408, 1689, 2680, 1399, 874, 464, 816, 933, 1540, 1267, 573, 754, 477, 480], "厨房弁当": [0, 0, 46, 0, 0, 0, 0, 0, 0, 0, 164, 1969, 11312, 2556, 3672, 813, 852, 1618, 6023, 3768, 3961, 2105, 524, 0], "厨房調理パン": [0, 0, 468, 0, 0, 0, 0, 170, 177, 170, 1979, 563, 683, 775, 565, 93, 77, 216, 117, 47, 0, 0, 0, 0]}, "江坂東": {"弁当合計": [1393, 276, 282, 79, 98, 0, 740, 1212, 2007, 398, 434, 1819, 2646, 938, 568, 502, 236, 494, 2764, 2667, 2189, 2603, 2798, 1633], "調理パン": [358, 91, 50, 0, 203, 174, 493, 1723, 2024, 756, 624, 1339, 2055, 850, 628, 442, 155, 455, 1327, 672, 786, 896, 980, 425], "厨房弁当": [112, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1996, 2354, 6940, 1844, 726, 1029, 1420, 2290, 4234, 5812, 3650, 4225, 2793, 421], "厨房調理パン": [0, 0, 0, 0, 0, 0, 525, 1266, 1671, 160, 1787, 694, 1298, 72, 204, 154, 184, 18, 0, 0, 0, 0, 0, 0]}, "豊中利倉東一丁目": {"弁当合計": [92, 329, 396, 536, 770, 563, 1207, 730, 1491, 396, 1173, 1457, 2664, 1377, 1159, 579, 348, 1143, 1220, 2135, 1629, 822, 717, 144], "調理パン": [169, 48, 201, 521, 142, 329, 1119, 1982, 1530, 683, 1327, 1018, 1698, 634, 440, 478, 202, 853, 999, 793, 629, 347, 194, 189], "厨房弁当": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 156, 5030, 5029, 1218, 338, 1220, 2136, 4406, 3010, 1095, 685, 125, 42, 0], "厨房調理パン": [0, 0, 0, 0, 0, 1034, 1205, 496, 554, 797, 1019, 89, 333, 262, 137, 66, 0, 0, 0, 0, 0, 0, 0, 0]}, "豊中服部元町一丁目": {"弁当合計": [1494, 618, 79, 125, 332, 92, 1148, 1183, 837, 1790, 1370, 1343, 2005, 1752, 668, 180, 565, 895, 1372, 1882, 2074, 2885, 1934, 1510], "調理パン": [426, 200, 180, 50, 135, 288, 234, 1670, 2095, 1426, 683, 923, 1444, 631, 325, 889, 492, 1081, 334, 940, 705, 699, 354, 374], "厨房弁当": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 72, 724, 1778, 1692, 219, 288, 2477, 3770, 3565, 1654, 3081, 2537, 82, 0], "厨房調理パン": [0, 0, 0, 0, 0, 0, 37, 947, 294, 669, 447, 1337, 646, 155, 170, 244, 348, 403, 486, 514, 191, 715, 244, 0]}, "豊中原田南一丁目": {"弁当合計": [554, 400, 938, 247, 134, 426, 800, 1895, 1396, 936, 595, 1308, 2338, 1341, 418, 613, 370, 1543, 1396, 1401, 924, 777, 1261, 305], "調理パン": [580, 0, 124, 199, 281, 546, 1199, 1125, 1266, 861, 417, 639, 1198, 587, 156, 596, 426, 726, 490, 565, 423, 707, 297, 90], "厨房弁当": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1324, 5174, 5774, 711, 977, 735, 2925, 2166, 2150, 4973, 629, 425, 321, 42], "厨房調理パン": [0, 0, 0, 0, 0, 0, 2390, 341, 711, 636, 1450, 291, 794, 1425, 402, 220, 585, 517, 252, 33, 0, 0, 0, 0]}, "箕面白島二丁目": {"弁当合計": [166, 0, 263, 131, 158, 733, 1113, 2075, 935, 947, 1538, 2413, 4013, 2058, 820, 829, 1142, 1165, 911, 1730, 1206, 1353, 427, 874], "調理パン": [92, 94, 0, 105, 90, 390, 1336, 3324, 1584, 1433, 987, 1440, 2531, 1559, 774, 316, 567, 862, 890, 350, 302, 644, 41, 153], "厨房弁当": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 4556, 5901, 4040, 944, 462, 1633, 961, 2435, 448, 457, 417, 128, 0], "厨房調理パン": [33, 0, 0, 518, 468, 986, 254, 1588, 368, 533, 1399, 629, 1059, 916, 254, 353, 618, 528, 640, 841, 662, 814, 227, 100]}, "吹田豊津中学校前": {"弁当合計": [751, 410, 146, 184, 0, 184, 170, 655, 2393, 909, 754, 2694, 9161, 1542, 688, 464, 653, 340, 2243, 2330, 3298, 1824, 1814, 836], "調理パン": [364, 130, 235, 0, 324, 246, 645, 2001, 1865, 1378, 438, 1653, 2448, 959, 499, 326, 615, 326, 452, 655, 694, 497, 376, 140], "厨房弁当": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 316, 3930, 14526, 3422, 434, 256, 709, 526, 4519, 1480, 1812, 504, 183, 0], "厨房調理パン": [0, 0, 0, 0, 259, 399, 547, 533, 427, 530, 1484, 577, 951, 0, 36, 469, 0, 170, 0, 0, 0, 0, 0, 0]}, "大道南一丁目": {"弁当合計": [134, 519, 350, 547, 340, 538, 711, 899, 873, 305, 693, 2253, 2215, 1394, 620, 549, 673, 872, 1334, 1419, 1135, 939, 1175, 664], "調理パン": [48, 109, 46, 87, 37, 266, 709, 1220, 1316, 919, 466, 686, 1346, 436, 378, 433, 478, 192, 520, 693, 645, 375, 169, 105], "厨房弁当": [39, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 4800, 2011, 2491, 85, 385, 376, 1261, 1471, 766, 430, 1076, 309, 245], "厨房調理パン": [33, 234, 0, 0, 66, 259, 226, 180, 563, 721, 556, 458, 723, 137, 184, 116, 664, 755, 150, 623, 184, 117, 200, 167]}, "東淀川大道南": {"弁当合計": [462, 92, 307, 312, 211, 1178, 1524, 857, 820, 788, 827, 1442, 2636, 700, 482, 586, 664, 1176, 1438, 1655, 2707, 2210, 1275, 1267], "調理パン": [218, 93, 104, 39, 310, 542, 697, 1283, 668, 1102, 656, 883, 830, 485, 398, 398, 213, 810, 600, 922, 1174, 393, 205, 103], "厨房弁当": [42, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 966, 3635, 301, 79, 274, 257, 2228, 2692, 1906, 1058, 1476, 1334, 491], "厨房調理パン": [51, 0, 0, 0, 0, 259, 848, 245, 420, 514, 566, 244, 1181, 286, 88, 270, 274, 845, 1199, 356, 763, 110, 349, 331]}, "東淀川豊里五丁目": {"弁当合計": [360, 434, 85, 174, 98, 171, 655, 1008, 1487, 1094, 1504, 3424, 5134, 1810, 1459, 423, 1222, 1112, 2156, 2110, 2135, 1948, 1615, 955], "調理パン": [73, 92, 144, 270, 48, 295, 2552, 1697, 1275, 1150, 899, 902, 1311, 542, 538, 374, 284, 410, 637, 757, 599, 1572, 497, 171], "厨房弁当": [180, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1409, 7524, 2358, 1025, 470, 1465, 629, 3040, 1575, 758, 1928, 3189, 703], "厨房調理パン": [133, 0, 0, 0, 0, 362, 1069, 734, 171, 207, 979, 679, 596, 361, 281, 328, 492, 2060, 480, 751, 463, 282, 368, 254]}, "吹田朝日町": {"弁当合計": [1729, 646, 271, 302, 315, 304, 963, 914, 1165, 863, 1392, 1857, 3127, 904, 605, 67, 503, 1045, 1039, 1153, 1820, 2430, 1995, 1686], "調理パン": [443, 235, 159, 144, 319, 401, 587, 933, 1186, 1452, 964, 1247, 2603, 1654, 676, 300, 609, 951, 1155, 666, 1224, 1092, 222, 450], "厨房弁当": [148, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1061, 5126, 2101, 2531, 2304, 593, 1293, 3260, 3440, 3892, 1415, 1743, 1311], "厨房調理パン": [0, 0, 0, 867, 653, 151, 1123, 1509, 369, 1721, 241, 732, 795, 1424, 453, 573, 476, 1344, 926, 579, 782, 588, 419, 211]}};
 var SI={"江坂駅南口": [{"name": "三元豚の厚切りロースカツサンド（１個", "s1": 5.5, "s2": 8.57, "w1": 0.33, "w2": 0.86, "sales": 14.07, "wr": 7.8}, {"name": "鹿児島県産桜島どりのチキン南蛮丼６", "s1": 7.86, "s2": 8.14, "w1": 1.71, "w2": 0.71, "sales": 16.0, "wr": 13.1}, {"name": "三元豚の厚切りロースカツサンド５", "s1": 6.83, "s2": 7.86, "w1": 1, "w2": 2.43, "sales": 14.69, "wr": 18.9}, {"name": "ごろっとタマゴサンド（１個入り）６", "s1": 6.17, "s2": 6.71, "w1": 0.33, "w2": 1.43, "sales": 12.88, "wr": 12.0}, {"name": "三元豚の厚切りロースソースカツ丼５", "s1": 5.71, "s2": 6.71, "w1": 2.57, "w2": 1.86, "sales": 12.42, "wr": 26.3}, {"name": "三元豚の厚切りカツ＆タマゴサンド８", "s1": 4.17, "s2": 6.14, "w1": 0.83, "w2": 1.57, "sales": 10.31, "wr": 18.9}, {"name": "海鮮かき揚げ丼５", "s1": 5.29, "s2": 4.43, "w1": 0.71, "w2": 0.29, "sales": 9.72, "wr": 9.3}, {"name": "てりたまご鶏竜田揚げバーガー", "s1": 4.43, "s2": 4, "w1": 0.29, "w2": 2, "sales": 8.43, "wr": 21.4}, {"name": "ガーリックトマトチキン丼", "s1": 4.29, "s2": 3.86, "w1": 0.29, "w2": 0.14, "sales": 8.15, "wr": 5.0}, {"name": "惣菜　鶏の炭火焼き３種盛り１", "s1": 4.29, "s2": 3.71, "w1": 1, "w2": 1.14, "sales": 8.0, "wr": 21.1}, {"name": "備長炭焼き親子丼５", "s1": 3.71, "s2": 3.71, "w1": 0.29, "w2": 0.14, "sales": 7.42, "wr": 5.5}, {"name": "鶏のから揚げ弁当４", "s1": 2.71, "s2": 3.5, "w1": 0.71, "w2": 0.67, "sales": 6.21, "wr": 18.2}, {"name": "惣菜　チーズ大葉チキンカツ", "s1": 5.43, "s2": 3.14, "w1": 1, "w2": 1.57, "sales": 8.57, "wr": 23.1}, {"name": "とろーりたまご三元豚厚切りロースカツ", "s1": 3.29, "s2": 3.14, "w1": 0.14, "w2": 0.14, "sales": 6.43, "wr": 4.2}, {"name": "まんまる鶏＆ハンバーグ弁当１", "s1": 4, "s2": 2.83, "w1": 0.33, "w2": 0.67, "sales": 6.83, "wr": 12.8}, {"name": "惣菜　若鶏の砂肝にんにく", "s1": 5.14, "s2": 2.71, "w1": 1.43, "w2": 1.71, "sales": 7.85, "wr": 28.6}, {"name": "香ばし炒めチャーハン＆鶏から１", "s1": 2.43, "s2": 2.57, "w1": 0.43, "w2": 0.29, "sales": 5.0, "wr": 12.6}, {"name": "新宿中村屋監修　カツカレー（中辛）１", "s1": 1.67, "s2": 2, "w1": 0.67, "w2": 0, "sales": 3.67, "wr": 15.4}, {"name": "惣菜　三元豚の厚切りロースカツ", "s1": 1.83, "s2": 1.5, "w1": 0.83, "w2": 0.25, "sales": 3.33, "wr": 24.5}, {"name": "ごはん大盛！まんまる鶏＆ハンバーグ弁", "s1": 1, "s2": 1.5, "w1": 0, "w2": 0.5, "sales": 2.5, "wr": 16.7}, {"name": "炭火焼牛カルビ弁当１", "s1": 0, "s2": 1, "w1": 0, "w2": 0, "sales": 1, "wr": 0.0}, {"name": "ごはん大盛！鶏のから揚げ弁当４", "s1": 0, "s2": 1, "w1": 0, "w2": 0, "sales": 1, "wr": 0.0}, {"name": "焼きさば＆鶏から弁当", "s1": 1, "s2": 0, "w1": 2, "w2": 0, "sales": 1, "wr": 66.7}, {"name": "彩り野菜と鶏から揚げの甘酢たれ丼３", "s1": 3.67, "s2": 0, "w1": 0.67, "w2": 0, "sales": 3.67, "wr": 15.4}, {"name": "三元豚の厚切りカツ＆タマゴサンド６", "s1": 4, "s2": 0, "w1": 0, "w2": 0, "sales": 4, "wr": 0.0}, {"name": "三元豚の厚切りロースカツサンド３", "s1": 7, "s2": 0, "w1": 3, "w2": 0, "sales": 7, "wr": 30.0}, {"name": "三元豚の厚切りロースカツサンド（１個", "s1": 9, "s2": 0, "w1": 3, "w2": 0, "sales": 9, "wr": 25.0}, {"name": "ごろっとタマゴサンド（１個入り）４", "s1": 2.5, "s2": 0, "w1": 3.5, "w2": 0, "sales": 2.5, "wr": 58.3}, {"name": "まちかど厨房（販売）", "s1": 86.14, "s2": 82.14, "w1": 17, "w2": 16.29, "sales": 168.28, "wr": 16.5}], "江坂東": [{"name": "三元豚の厚切りロースカツサンド（１個", "s1": 2.4, "s2": 4, "w1": 0, "w2": 0, "sales": 6.4, "wr": 0.0}, {"name": "三元豚の厚切りカツ＆タマゴサンド８", "s1": 3.4, "s2": 4, "w1": 0.2, "w2": 0, "sales": 7.4, "wr": 2.6}, {"name": "海鮮かき揚げ丼５", "s1": 2.71, "s2": 3.86, "w1": 0.14, "w2": 0, "sales": 6.57, "wr": 2.1}, {"name": "まんまる鶏＆ハンバーグ弁当１", "s1": 2.71, "s2": 3.43, "w1": 0, "w2": 0.29, "sales": 6.14, "wr": 4.5}, {"name": "三元豚の厚切りロースカツサンド５", "s1": 2.67, "s2": 3, "w1": 0.33, "w2": 0, "sales": 5.67, "wr": 5.5}, {"name": "ごはん大盛！鶏のから揚げ弁当４", "s1": 2.14, "s2": 2.67, "w1": 0, "w2": 0.17, "sales": 4.81, "wr": 3.4}, {"name": "ごはん大盛！まんまる鶏＆ハンバーグ弁", "s1": 2.86, "s2": 2.57, "w1": 0, "w2": 0, "sales": 5.43, "wr": 0.0}, {"name": "厚切りロースとんかつ＆から揚げ弁当１", "s1": 2, "s2": 2.5, "w1": 0.17, "w2": 0.5, "sales": 4.5, "wr": 13.0}, {"name": "鶏のから揚げ弁当４", "s1": 2, "s2": 2.43, "w1": 0, "w2": 0.29, "sales": 4.43, "wr": 6.1}, {"name": "惣菜　若鶏の砂肝にんにく", "s1": 2, "s2": 2.4, "w1": 0, "w2": 0, "sales": 4.4, "wr": 0.0}, {"name": "鹿児島県産桜島どりのチキン南蛮丼６", "s1": 2, "s2": 2.29, "w1": 0, "w2": 0, "sales": 4.29, "wr": 0.0}, {"name": "新宿中村屋監修　カツカレー（中辛）１", "s1": 2.29, "s2": 2.29, "w1": 0, "w2": 0, "sales": 4.58, "wr": 0.0}, {"name": "惣菜　鶏の炭火焼き３種盛り１", "s1": 2, "s2": 2, "w1": 0, "w2": 0, "sales": 4, "wr": 0.0}, {"name": "ごろっとタマゴサンド（１個入り）６", "s1": 3.17, "s2": 2, "w1": 0.17, "w2": 0.4, "sales": 5.17, "wr": 9.9}, {"name": "とろーりたまご三元豚厚切りロースカツ", "s1": 2, "s2": 1.86, "w1": 0, "w2": 0, "sales": 3.86, "wr": 0.0}, {"name": "ごはん大盛！とんかつ＆から揚げ弁当１", "s1": 1.4, "s2": 1.86, "w1": 0, "w2": 0, "sales": 3.26, "wr": 0.0}, {"name": "三元豚の厚切りロースソースカツ丼５", "s1": 2, "s2": 1.86, "w1": 0, "w2": 0.29, "sales": 3.86, "wr": 7.0}, {"name": "炭火焼牛カルビ弁当１", "s1": 1.57, "s2": 1.83, "w1": 0, "w2": 0.33, "sales": 3.4, "wr": 8.8}, {"name": "香ばし炒めチャーハン＆鶏から１", "s1": 2.14, "s2": 1.71, "w1": 0, "w2": 0.14, "sales": 3.85, "wr": 3.5}, {"name": "ごはん大盛！炭火焼牛カルビ弁当１", "s1": 1.83, "s2": 1.71, "w1": 0, "w2": 0, "sales": 3.54, "wr": 0.0}, {"name": "直火で炙った焼豚丼１", "s1": 1.86, "s2": 1.67, "w1": 0.14, "w2": 0, "sales": 3.53, "wr": 3.8}, {"name": "備長炭焼き親子丼５", "s1": 2, "s2": 1.57, "w1": 0, "w2": 0, "sales": 3.57, "wr": 0.0}, {"name": "照焼きタルタル鶏竜田揚げバーガー", "s1": 1.75, "s2": 1.25, "w1": 0.25, "w2": 0.25, "sales": 3.0, "wr": 14.3}, {"name": "から揚げ照りマヨ丼１", "s1": 2.67, "s2": 1, "w1": 0, "w2": 0, "sales": 3.67, "wr": 0.0}, {"name": "惣菜　三元豚の厚切りロースカツ", "s1": 0, "s2": 0, "w1": 0, "w2": 1, "sales": 0, "wr": 100.0}, {"name": "ごろっとタマゴサンド（１個入り）４", "s1": 2, "s2": 0, "w1": 0, "w2": 2, "sales": 2, "wr": 50.0}, {"name": "三元豚の厚切りロースカツサンド３", "s1": 1, "s2": 0, "w1": 0, "w2": 1, "sales": 1, "wr": 50.0}, {"name": "彩り野菜と鶏から揚げの甘酢たれ丼３", "s1": 4, "s2": 0, "w1": 0, "w2": 0, "sales": 4, "wr": 0.0}, {"name": "三元豚の厚切りカツ＆タマゴサンド６", "s1": 2, "s2": 0, "w1": 0, "w2": 0, "sales": 2, "wr": 0.0}, {"name": "まちかど厨房（販売）", "s1": 50.29, "s2": 45.43, "w1": 1.14, "w2": 2.86, "sales": 95.72, "wr": 4.0}], "五月ケ丘東": [{"name": "三元豚の厚切りカツ＆タマゴサンド８", "s1": 1.4, "s2": 1.71, "w1": 0.8, "w2": 0.14, "sales": 3.11, "wr": 23.2}, {"name": "三元豚の厚切りロースカツサンド５", "s1": 1.2, "s2": 1.57, "w1": 1, "w2": 0.29, "sales": 2.77, "wr": 31.8}, {"name": "三元豚の厚切りロースカツサンド３", "s1": 0, "s2": 0, "w1": 0, "w2": 1, "sales": 0, "wr": 100.0}, {"name": "三元豚の厚切りカツ＆タマゴサンド６", "s1": 0, "s2": 0, "w1": 1, "w2": 1.67, "sales": 0, "wr": 100.0}, {"name": "まちかど厨房（販売）", "s1": 1.86, "s2": 3.29, "w1": 1.43, "w2": 1.29, "sales": 5.15, "wr": 34.6}], "新御堂筋上新田": [{"name": "三元豚の厚切りロースカツサンド５", "s1": 8.83, "s2": 8, "w1": 0.33, "w2": 0.29, "sales": 16.83, "wr": 3.6}, {"name": "三元豚の厚切りカツ＆タマゴサンド８", "s1": 9.5, "s2": 7.43, "w1": 0.83, "w2": 1, "sales": 16.93, "wr": 9.8}, {"name": "香ばし炒めチャーハン＆鶏から１", "s1": 3.29, "s2": 3.29, "w1": 1, "w2": 0.43, "sales": 6.58, "wr": 17.9}, {"name": "惣菜　若鶏の砂肝にんにく", "s1": 3.71, "s2": 3, "w1": 0, "w2": 0, "sales": 6.71, "wr": 0.0}, {"name": "まんまる鶏＆ハンバーグ弁当１", "s1": 3.86, "s2": 3, "w1": 0.29, "w2": 0, "sales": 6.86, "wr": 4.1}, {"name": "海鮮かき揚げ丼５", "s1": 4, "s2": 3, "w1": 0, "w2": 0.29, "sales": 7, "wr": 4.0}, {"name": "鹿児島県産桜島どりのチキン南蛮丼６", "s1": 3.17, "s2": 2.83, "w1": 0, "w2": 0, "sales": 6.0, "wr": 0.0}, {"name": "ごはん大盛！まんまる鶏＆ハンバーグ弁", "s1": 3.67, "s2": 2.43, "w1": 1, "w2": 0.14, "sales": 6.1, "wr": 15.7}, {"name": "から揚げ照りマヨ丼１", "s1": 1.75, "s2": 2.2, "w1": 0.25, "w2": 0.4, "sales": 3.95, "wr": 14.1}, {"name": "備長炭焼き親子丼５", "s1": 2.4, "s2": 2.17, "w1": 0, "w2": 0, "sales": 4.57, "wr": 0.0}, {"name": "惣菜　チーズ大葉チキンカツ", "s1": 3.14, "s2": 2.14, "w1": 0, "w2": 0.43, "sales": 5.28, "wr": 7.5}, {"name": "三元豚の厚切りロースソースカツ丼５", "s1": 2.29, "s2": 2.14, "w1": 0.43, "w2": 0, "sales": 4.43, "wr": 8.8}, {"name": "惣菜　鶏の炭火焼き３種盛り１", "s1": 2.86, "s2": 2, "w1": 0.14, "w2": 0, "sales": 4.86, "wr": 2.8}, {"name": "照焼きタルタル鶏竜田揚げバーガー", "s1": 2.14, "s2": 2, "w1": 0, "w2": 0, "sales": 4.14, "wr": 0.0}, {"name": "炭火焼牛カルビ弁当１", "s1": 1.57, "s2": 2, "w1": 0.43, "w2": 0, "sales": 3.57, "wr": 10.8}, {"name": "直火で炙った焼豚丼１", "s1": 2, "s2": 2, "w1": 0, "w2": 0, "sales": 4, "wr": 0.0}, {"name": "ごはん大盛！炭火焼牛カルビ弁当１", "s1": 1.71, "s2": 1.83, "w1": 0.29, "w2": 0.17, "sales": 3.54, "wr": 11.5}, {"name": "ごはん大盛！鶏のから揚げ弁当４", "s1": 1.43, "s2": 1.67, "w1": 0.14, "w2": 0, "sales": 3.1, "wr": 4.3}, {"name": "新宿中村屋監修　カツカレー（中辛）１", "s1": 1.57, "s2": 1.5, "w1": 0, "w2": 0, "sales": 3.07, "wr": 0.0}, {"name": "鶏のから揚げ弁当４", "s1": 1.71, "s2": 1.33, "w1": 0.29, "w2": 0.17, "sales": 3.04, "wr": 13.1}, {"name": "とろーりたまご三元豚厚切りロースカツ", "s1": 2.14, "s2": 1.29, "w1": 0, "w2": 0.29, "sales": 3.43, "wr": 7.8}, {"name": "ごはん大盛！とんかつ＆から揚げ弁当１", "s1": 0.71, "s2": 1.17, "w1": 0.29, "w2": 0, "sales": 1.88, "wr": 13.4}, {"name": "厚切りロースとんかつ＆から揚げ弁当１", "s1": 1.43, "s2": 1.17, "w1": 0, "w2": 0.17, "sales": 2.6, "wr": 6.1}, {"name": "惣菜　三元豚の厚切りロースカツ", "s1": 2, "s2": 0.67, "w1": 0, "w2": 0.33, "sales": 2.67, "wr": 11.0}, {"name": "店炊きごはん（小盛）", "s1": 0, "s2": 0.33, "w1": 1, "w2": 1, "sales": 0.33, "wr": 85.8}, {"name": "三元豚の厚切りカツ＆タマゴサンド６", "s1": 8, "s2": 0, "w1": 0, "w2": 0, "sales": 8, "wr": 0.0}, {"name": "三元豚の厚切りロースカツサンド３", "s1": 10, "s2": 0, "w1": 0, "w2": 0, "sales": 10, "wr": 0.0}, {"name": "まちかど厨房（販売）", "s1": 66.14, "s2": 54, "w1": 5.71, "w2": 4.14, "sales": 120.14, "wr": 7.6}], "吹田青山台三丁目": [{"name": "ごはん大盛！まんまる鶏＆ハンバーグ弁", "s1": 4.33, "s2": 6.33, "w1": 1, "w2": 1.33, "sales": 10.66, "wr": 17.9}, {"name": "鹿児島県産桜島どりのチキン南蛮丼６", "s1": 4.14, "s2": 4.86, "w1": 0.14, "w2": 0.14, "sales": 9.0, "wr": 3.0}, {"name": "まんまる鶏＆ハンバーグ弁当１", "s1": 4, "s2": 4.75, "w1": 1, "w2": 1.25, "sales": 8.75, "wr": 20.5}, {"name": "鶏のから揚げ弁当４", "s1": 3, "s2": 4, "w1": 0, "w2": 0, "sales": 7, "wr": 0.0}, {"name": "海鮮かき揚げ丼５", "s1": 3.57, "s2": 3.71, "w1": 0, "w2": 0.57, "sales": 7.28, "wr": 7.3}, {"name": "三元豚の厚切りロースカツサンド５", "s1": 3.83, "s2": 3.57, "w1": 0.33, "w2": 0, "sales": 7.4, "wr": 4.3}, {"name": "三元豚の厚切りカツ＆タマゴサンド８", "s1": 3.17, "s2": 3.43, "w1": 0.5, "w2": 0.14, "sales": 6.6, "wr": 8.8}, {"name": "ごはん大盛！鶏のから揚げ弁当４", "s1": 4, "s2": 3.43, "w1": 0.25, "w2": 0.57, "sales": 7.43, "wr": 9.9}, {"name": "炭火焼牛カルビ弁当１", "s1": 2, "s2": 3, "w1": 0, "w2": 0, "sales": 5, "wr": 0.0}, {"name": "三元豚の厚切りロースカツサンド（１個", "s1": 2.5, "s2": 2.57, "w1": 0.17, "w2": 0, "sales": 5.07, "wr": 3.2}, {"name": "ごはん大盛！炭火焼牛カルビ弁当１", "s1": 4.29, "s2": 2.5, "w1": 0.57, "w2": 0.83, "sales": 6.79, "wr": 17.1}, {"name": "直火で炙った焼豚丼１", "s1": 2.33, "s2": 2.25, "w1": 0, "w2": 0.25, "sales": 4.58, "wr": 5.2}, {"name": "三元豚の厚切りロースソースカツ丼５", "s1": 2.14, "s2": 2.14, "w1": 0, "w2": 0.14, "sales": 4.28, "wr": 3.2}, {"name": "照焼きタルタル鶏竜田揚げバーガー", "s1": 0, "s2": 2, "w1": 0, "w2": 0, "sales": 2, "wr": 0.0}, {"name": "備長炭焼き親子丼５", "s1": 2.71, "s2": 2, "w1": 0.14, "w2": 0.43, "sales": 4.71, "wr": 10.8}, {"name": "惣菜　チーズ大葉チキンカツ", "s1": 1.57, "s2": 1.86, "w1": 0, "w2": 0.14, "sales": 3.43, "wr": 3.9}, {"name": "惣菜　若鶏の砂肝にんにく", "s1": 1.57, "s2": 1.83, "w1": 0.43, "w2": 0.17, "sales": 3.4, "wr": 15.0}, {"name": "惣菜　鶏の炭火焼き３種盛り１", "s1": 1.57, "s2": 1.71, "w1": 0, "w2": 0.29, "sales": 3.28, "wr": 8.1}, {"name": "新宿中村屋監修　カツカレー（中辛）１", "s1": 1.71, "s2": 1.71, "w1": 0.43, "w2": 0.14, "sales": 3.42, "wr": 14.3}, {"name": "香ばし炒めチャーハン＆鶏から１", "s1": 1, "s2": 1.14, "w1": 0.14, "w2": 0.29, "sales": 2.14, "wr": 16.7}, {"name": "ごろっとタマゴサンド（１個入り）６", "s1": 1, "s2": 0, "w1": 1, "w2": 0, "sales": 1, "wr": 50.0}, {"name": "まちかど厨房（販売）", "s1": 44.71, "s2": 46.86, "w1": 4.71, "w2": 5.71, "sales": 91.57, "wr": 10.2}], "吹田朝日町": [{"name": "三元豚の厚切りカツ＆タマゴサンド８", "s1": 6.67, "s2": 6.86, "w1": 0.33, "w2": 0.29, "sales": 13.53, "wr": 4.4}, {"name": "三元豚の厚切りロースカツサンド５", "s1": 5.67, "s2": 6.14, "w1": 0.67, "w2": 0.29, "sales": 11.81, "wr": 7.5}, {"name": "てりたまご鶏竜田揚げバーガー", "s1": 3, "s2": 3.71, "w1": 0, "w2": 0, "sales": 6.71, "wr": 0.0}, {"name": "新宿中村屋監修　カツカレー（中辛）１", "s1": 3.57, "s2": 3.71, "w1": 0.14, "w2": 0, "sales": 7.28, "wr": 1.9}, {"name": "照焼きタルタル鶏竜田揚げバーガー", "s1": 4, "s2": 3.57, "w1": 0, "w2": 0, "sales": 7.57, "wr": 0.0}, {"name": "まんまる鶏＆ハンバーグ弁当１", "s1": 2.14, "s2": 3, "w1": 0.14, "w2": 0.14, "sales": 5.14, "wr": 5.2}, {"name": "備長炭焼き親子丼５", "s1": 2.43, "s2": 2.86, "w1": 0, "w2": 0, "sales": 5.29, "wr": 0.0}, {"name": "三元豚の厚切りロースカツサンド（１個", "s1": 2.83, "s2": 2.57, "w1": 0.17, "w2": 0.43, "sales": 5.4, "wr": 10.0}, {"name": "香ばし炒めチャーハン＆鶏から１", "s1": 2.71, "s2": 2.57, "w1": 0, "w2": 0.29, "sales": 5.28, "wr": 5.2}, {"name": "直火で炙った焼豚丼１", "s1": 3.14, "s2": 2.57, "w1": 0, "w2": 0, "sales": 5.71, "wr": 0.0}, {"name": "惣菜　チーズ大葉チキンカツ", "s1": 2.43, "s2": 2.43, "w1": 0.43, "w2": 0.71, "sales": 4.86, "wr": 19.0}, {"name": "惣菜　鶏の炭火焼き３種盛り１", "s1": 2, "s2": 2, "w1": 0, "w2": 0, "sales": 4, "wr": 0.0}, {"name": "鹿児島県産桜島どりのチキン南蛮丼６", "s1": 1.71, "s2": 2, "w1": 0, "w2": 0, "sales": 3.71, "wr": 0.0}, {"name": "ごはん大盛！まんまる鶏＆ハンバーグ弁", "s1": 1.33, "s2": 2, "w1": 0, "w2": 0, "sales": 3.33, "wr": 0.0}, {"name": "から揚げ照りマヨ丼１", "s1": 1.71, "s2": 2, "w1": 0, "w2": 0, "sales": 3.71, "wr": 0.0}, {"name": "厚切りロースとんかつ＆から揚げ弁当１", "s1": 2, "s2": 2, "w1": 0, "w2": 0, "sales": 4, "wr": 0.0}, {"name": "海鮮かき揚げ丼５", "s1": 2, "s2": 1.86, "w1": 0.2, "w2": 0.14, "sales": 3.86, "wr": 8.1}, {"name": "三元豚の厚切りロースソースカツ丼５", "s1": 2, "s2": 1.86, "w1": 0, "w2": 0, "sales": 3.86, "wr": 0.0}, {"name": "ごろっとタマゴサンド（１個入り）６", "s1": 2.67, "s2": 1.57, "w1": 0.33, "w2": 0, "sales": 4.24, "wr": 7.2}, {"name": "炭火焼牛カルビ弁当１", "s1": 2, "s2": 1.57, "w1": 0, "w2": 0.14, "sales": 3.57, "wr": 3.8}, {"name": "ごはん大盛！とんかつ＆から揚げ弁当１", "s1": 1.57, "s2": 1.57, "w1": 0.29, "w2": 0.14, "sales": 3.14, "wr": 12.0}, {"name": "鶏のから揚げ弁当４", "s1": 2.86, "s2": 1.29, "w1": 0.43, "w2": 0.57, "sales": 4.15, "wr": 19.4}, {"name": "ごはん大盛！鶏のから揚げ弁当４", "s1": 1.29, "s2": 0.67, "w1": 0.29, "w2": 0.67, "sales": 1.96, "wr": 32.9}, {"name": "三元豚の厚切りカツ＆タマゴサンド６", "s1": 9, "s2": 0, "w1": 0, "w2": 0, "sales": 9, "wr": 0.0}, {"name": "三元豚の厚切りロースカツサンド３", "s1": 9, "s2": 0, "w1": 0, "w2": 0, "sales": 9, "wr": 0.0}, {"name": "三元豚の厚切りロースカツサンド（１個", "s1": 4, "s2": 0, "w1": 1, "w2": 0, "sales": 4, "wr": 20.0}, {"name": "ごろっとタマゴサンド（１個入り）４", "s1": 3, "s2": 0, "w1": 2, "w2": 0, "sales": 3, "wr": 40.0}, {"name": "まちかど厨房（販売）", "s1": 62, "s2": 58.29, "w1": 3.57, "w2": 3.43, "sales": 120.29, "wr": 5.5}], "吹田警察署前": [{"name": "鹿児島県産桜島どりのチキン南蛮丼６", "s1": 2.8, "s2": 2.8, "w1": 0, "w2": 0.2, "sales": 5.6, "wr": 3.4}, {"name": "新宿中村屋監修　カツカレー（中辛）１", "s1": 2.2, "s2": 2.33, "w1": 0.2, "w2": 0.67, "sales": 4.53, "wr": 16.1}, {"name": "鶏のから揚げ弁当４", "s1": 1.6, "s2": 2.2, "w1": 0.2, "w2": 0, "sales": 3.8, "wr": 5.0}, {"name": "厚切りロースとんかつ＆から揚げ弁当１", "s1": 2, "s2": 2.2, "w1": 0.75, "w2": 0.2, "sales": 4.2, "wr": 18.4}, {"name": "海鮮かき揚げ丼５", "s1": 3, "s2": 2.17, "w1": 0.2, "w2": 0.83, "sales": 5.17, "wr": 16.6}, {"name": "海老カツタマゴサンド（１個入り）３", "s1": 1.2, "s2": 2, "w1": 0.2, "w2": 0, "sales": 3.2, "wr": 5.9}, {"name": "三元豚の厚切りロースカツサンド（１個", "s1": 0, "s2": 2, "w1": 0, "w2": 0, "sales": 2, "wr": 0.0}, {"name": "三元豚の厚切りロースカツサンド５", "s1": 2.25, "s2": 2, "w1": 0.25, "w2": 0.2, "sales": 4.25, "wr": 9.6}, {"name": "香ばし炒めチャーハン＆鶏から１", "s1": 0, "s2": 2, "w1": 0, "w2": 0, "sales": 2, "wr": 0.0}, {"name": "直火で炙った焼豚丼１", "s1": 2.4, "s2": 2, "w1": 0.2, "w2": 1.25, "sales": 4.4, "wr": 24.8}, {"name": "まんまる鶏＆ハンバーグ弁当１", "s1": 2.4, "s2": 1.83, "w1": 0.4, "w2": 0.5, "sales": 4.23, "wr": 17.5}, {"name": "てりたまご鶏竜田揚げバーガー", "s1": 2, "s2": 1.8, "w1": 0, "w2": 0.2, "sales": 3.8, "wr": 5.0}, {"name": "三元豚の厚切りカツ＆タマゴサンド８", "s1": 2, "s2": 1.8, "w1": 0.25, "w2": 0.2, "sales": 3.8, "wr": 10.6}, {"name": "備長炭焼き親子丼５", "s1": 2.2, "s2": 1.8, "w1": 0, "w2": 0.6, "sales": 4.0, "wr": 13.0}, {"name": "ごはん大盛！まんまる鶏＆ハンバーグ弁", "s1": 1.83, "s2": 1.8, "w1": 0.17, "w2": 0.6, "sales": 3.63, "wr": 17.5}, {"name": "三元豚の厚切りロースソースカツ丼５", "s1": 2.4, "s2": 1.6, "w1": 0, "w2": 0.2, "sales": 4.0, "wr": 4.8}, {"name": "ごはん大盛！とんかつ＆から揚げ弁当１", "s1": 1.75, "s2": 1.5, "w1": 0, "w2": 0.5, "sales": 3.25, "wr": 13.3}, {"name": "ごはん大盛！炭火焼牛カルビ弁当１", "s1": 1.33, "s2": 1.5, "w1": 0, "w2": 0, "sales": 2.83, "wr": 0.0}, {"name": "炭火焼牛カルビ弁当１", "s1": 2.5, "s2": 1.25, "w1": 0, "w2": 0.25, "sales": 3.75, "wr": 6.2}, {"name": "焼きさば＆鶏から弁当", "s1": 1.75, "s2": 1.2, "w1": 0.25, "w2": 0.4, "sales": 2.95, "wr": 18.1}, {"name": "ごはん大盛！鶏のから揚げ弁当４", "s1": 2, "s2": 1.17, "w1": 0.2, "w2": 0.5, "sales": 3.17, "wr": 18.1}, {"name": "とろーりたまご三元豚厚切りロースカツ", "s1": 1, "s2": 1, "w1": 0.5, "w2": 0.83, "sales": 2, "wr": 39.9}, {"name": "から揚げ照りマヨ丼１", "s1": 2, "s2": 0, "w1": 0, "w2": 0, "sales": 2, "wr": 0.0}, {"name": "彩り野菜と鶏から揚げの甘酢たれ丼３", "s1": 2, "s2": 0, "w1": 0, "w2": 0, "sales": 2, "wr": 0.0}, {"name": "三元豚の厚切りカツ＆タマゴサンド６", "s1": 2, "s2": 0, "w1": 0, "w2": 0, "sales": 2, "wr": 0.0}, {"name": "三元豚の厚切りロースカツサンド３", "s1": 1, "s2": 0, "w1": 0, "w2": 0, "sales": 1, "wr": 0.0}, {"name": "海老カツタマゴサンド３", "s1": 1, "s2": 0, "w1": 0, "w2": 0, "sales": 1, "wr": 0.0}, {"name": "海老カツタマゴサンド（１個入り）１", "s1": 2, "s2": 0, "w1": 0, "w2": 0, "sales": 2, "wr": 0.0}, {"name": "まちかど厨房（販売）", "s1": 28.86, "s2": 27.71, "w1": 2.57, "w2": 6, "sales": 56.57, "wr": 13.2}], "吹田豊津中学校前": [{"name": "三元豚の厚切りロースカツサンド（１個", "s1": 1.67, "s2": 2.29, "w1": 0, "w2": 0, "sales": 3.96, "wr": 0.0}, {"name": "海鮮かき揚げ丼５", "s1": 2, "s2": 2.29, "w1": 0.14, "w2": 0, "sales": 4.29, "wr": 3.2}, {"name": "から揚げ照りマヨ丼１", "s1": 1.71, "s2": 2.14, "w1": 0.43, "w2": 0, "sales": 3.85, "wr": 10.0}, {"name": "惣菜　チーズ大葉チキンカツ", "s1": 2, "s2": 2, "w1": 0, "w2": 0, "sales": 4, "wr": 0.0}, {"name": "てりたまご鶏竜田揚げバーガー", "s1": 1.25, "s2": 2, "w1": 0.25, "w2": 0, "sales": 3.25, "wr": 7.1}, {"name": "三元豚の厚切りロースカツサンド５", "s1": 1.83, "s2": 2, "w1": 0.33, "w2": 0, "sales": 3.83, "wr": 7.9}, {"name": "焼きさば＆鶏から弁当", "s1": 1.57, "s2": 2, "w1": 0.14, "w2": 0, "sales": 3.57, "wr": 3.8}, {"name": "まんまる鶏＆ハンバーグ弁当１", "s1": 2, "s2": 2, "w1": 0.14, "w2": 0, "sales": 4, "wr": 3.4}, {"name": "香ばし炒めチャーハン＆鶏から１", "s1": 2, "s2": 2, "w1": 0, "w2": 0, "sales": 4, "wr": 0.0}, {"name": "直火で炙った焼豚丼１", "s1": 2, "s2": 2, "w1": 0.33, "w2": 0, "sales": 4, "wr": 7.6}, {"name": "鹿児島県産桜島どりのチキン南蛮丼６", "s1": 1.43, "s2": 2, "w1": 0, "w2": 0, "sales": 3.43, "wr": 0.0}, {"name": "ガーリックトマトチキン丼", "s1": 1.86, "s2": 2, "w1": 0.29, "w2": 0, "sales": 3.86, "wr": 7.0}, {"name": "新宿中村屋監修　カツカレー（中辛）１", "s1": 2, "s2": 2, "w1": 0.14, "w2": 0, "sales": 4, "wr": 3.4}, {"name": "三元豚の厚切りロースソースカツ丼５", "s1": 1.86, "s2": 2, "w1": 0, "w2": 0, "sales": 3.86, "wr": 0.0}, {"name": "照焼きタルタル鶏竜田揚げバーガー", "s1": 1, "s2": 1.86, "w1": 0, "w2": 0.14, "sales": 2.86, "wr": 4.7}, {"name": "三元豚の厚切りカツ＆タマゴサンド８", "s1": 1.4, "s2": 1.86, "w1": 0.6, "w2": 0, "sales": 3.26, "wr": 15.5}, {"name": "炭火焼牛カルビ弁当１", "s1": 1.29, "s2": 1.86, "w1": 0.14, "w2": 0.14, "sales": 3.15, "wr": 8.2}, {"name": "ごはん大盛！炭火焼牛カルビ弁当１", "s1": 2, "s2": 1.8, "w1": 0, "w2": 0, "sales": 3.8, "wr": 0.0}, {"name": "ごはん大盛！鶏のから揚げ弁当４", "s1": 1.8, "s2": 1.8, "w1": 0.2, "w2": 0, "sales": 3.6, "wr": 5.3}, {"name": "鶏のから揚げ弁当４", "s1": 1.17, "s2": 1.71, "w1": 0, "w2": 0.14, "sales": 2.88, "wr": 4.6}, {"name": "ごはん大盛！まんまる鶏＆ハンバーグ弁", "s1": 2.8, "s2": 1.6, "w1": 0, "w2": 0.2, "sales": 4.4, "wr": 4.3}, {"name": "ごろっとタマゴサンド（１個入り）６", "s1": 1.5, "s2": 1.57, "w1": 0.17, "w2": 0, "sales": 3.07, "wr": 5.2}, {"name": "惣菜　若鶏の砂肝にんにく", "s1": 1.5, "s2": 1.4, "w1": 0.17, "w2": 0.6, "sales": 2.9, "wr": 21.0}, {"name": "惣菜　鶏の炭火焼き３種盛り１", "s1": 1, "s2": 1, "w1": 0.25, "w2": 0, "sales": 2, "wr": 11.1}, {"name": "備長炭焼き親子丼５", "s1": 1, "s2": 1, "w1": 0, "w2": 0, "sales": 2, "wr": 0.0}, {"name": "とろーりたまご三元豚厚切りロースカツ", "s1": 1, "s2": 1, "w1": 0, "w2": 0, "sales": 2, "wr": 0.0}, {"name": "彩り野菜と鶏から揚げの甘酢たれ丼３", "s1": 2, "s2": 0, "w1": 0, "w2": 0, "sales": 2, "wr": 0.0}, {"name": "三元豚の厚切りカツ＆タマゴサンド６", "s1": 1, "s2": 0, "w1": 0, "w2": 0, "sales": 1, "wr": 0.0}, {"name": "三元豚の厚切りロースカツサンド３", "s1": 2, "s2": 0, "w1": 0, "w2": 0, "sales": 2, "wr": 0.0}, {"name": "三元豚の厚切りロースカツサンド（１個", "s1": 1, "s2": 0, "w1": 1, "w2": 0, "sales": 1, "wr": 50.0}, {"name": "海老カツバーガー２", "s1": 1.14, "s2": 0, "w1": 0, "w2": 0, "sales": 1.14, "wr": 0.0}, {"name": "ごろっとタマゴサンド（１個入り）４", "s1": 1, "s2": 0, "w1": 0, "w2": 0, "sales": 1, "wr": 0.0}, {"name": "まちかど厨房（販売）", "s1": 39.71, "s2": 41.29, "w1": 3.29, "w2": 1, "sales": 81.0, "wr": 5.0}], "大道南一丁目": [{"name": "三元豚の厚切りカツ＆タマゴサンド８", "s1": 4.5, "s2": 4.57, "w1": 0.17, "w2": 0.14, "sales": 9.07, "wr": 3.3}, {"name": "三元豚の厚切りロースカツサンド５", "s1": 2.5, "s2": 2, "w1": 0.33, "w2": 0.43, "sales": 4.5, "wr": 14.4}, {"name": "まんまる鶏＆ハンバーグ弁当１", "s1": 1.71, "s2": 2, "w1": 0, "w2": 0, "sales": 3.71, "wr": 0.0}, {"name": "鹿児島県産桜島どりのチキン南蛮丼６", "s1": 1.57, "s2": 2, "w1": 0, "w2": 0, "sales": 3.57, "wr": 0.0}, {"name": "照焼きタルタル鶏竜田揚げバーガー", "s1": 1.71, "s2": 1.86, "w1": 0, "w2": 0, "sales": 3.57, "wr": 0.0}, {"name": "直火で炙った焼豚丼１", "s1": 1.86, "s2": 1.86, "w1": 0, "w2": 0, "sales": 3.72, "wr": 0.0}, {"name": "新宿中村屋監修　カツカレー（中辛）１", "s1": 1.57, "s2": 1.83, "w1": 0.14, "w2": 0.17, "sales": 3.4, "wr": 8.4}, {"name": "三元豚の厚切りロースカツサンド（１個", "s1": 1.6, "s2": 1.71, "w1": 0.2, "w2": 0, "sales": 3.31, "wr": 5.7}, {"name": "ごはん大盛！まんまる鶏＆ハンバーグ弁", "s1": 1.57, "s2": 1.67, "w1": 0.14, "w2": 0.17, "sales": 3.24, "wr": 8.7}, {"name": "てりたまご鶏竜田揚げバーガー", "s1": 2, "s2": 1.43, "w1": 0.14, "w2": 0.43, "sales": 3.43, "wr": 14.3}, {"name": "ごはん大盛！鶏のから揚げ弁当４", "s1": 1.14, "s2": 1.29, "w1": 0, "w2": 0.14, "sales": 2.43, "wr": 5.4}, {"name": "惣菜　チーズ大葉チキンカツ", "s1": 1, "s2": 1.25, "w1": 0, "w2": 0.25, "sales": 2.25, "wr": 10.0}, {"name": "海鮮かき揚げ丼５", "s1": 1.17, "s2": 1.17, "w1": 0.33, "w2": 0.17, "sales": 2.34, "wr": 17.6}, {"name": "惣菜　鶏の炭火焼き３種盛り１", "s1": 1.2, "s2": 1, "w1": 0, "w2": 0.25, "sales": 2.2, "wr": 10.2}, {"name": "備長炭焼き親子丼５", "s1": 0.86, "s2": 1, "w1": 0.14, "w2": 0, "sales": 1.86, "wr": 7.0}, {"name": "とろーりたまご三元豚厚切りロースカツ", "s1": 0, "s2": 1, "w1": 0, "w2": 0, "sales": 1, "wr": 0.0}, {"name": "鶏のから揚げ弁当４", "s1": 1, "s2": 1, "w1": 0, "w2": 0, "sales": 2, "wr": 0.0}, {"name": "香ばし炒めチャーハン＆鶏から１", "s1": 1, "s2": 1, "w1": 0, "w2": 0, "sales": 2, "wr": 0.0}, {"name": "炭火焼牛カルビ弁当１", "s1": 1, "s2": 1, "w1": 0, "w2": 0, "sales": 2, "wr": 0.0}, {"name": "ごはん大盛！とんかつ＆から揚げ弁当１", "s1": 1, "s2": 1, "w1": 0, "w2": 0, "sales": 2, "wr": 0.0}, {"name": "から揚げ照りマヨ丼１", "s1": 1.2, "s2": 1, "w1": 0, "w2": 0, "sales": 2.2, "wr": 0.0}, {"name": "ごろっとタマゴサンド（１個入り）６", "s1": 1, "s2": 0.86, "w1": 0.33, "w2": 0.14, "sales": 1.86, "wr": 20.2}, {"name": "三元豚の厚切りカツ＆タマゴサンド６", "s1": 8, "s2": 0, "w1": 0, "w2": 0, "sales": 8, "wr": 0.0}, {"name": "三元豚の厚切りロースカツサンド３", "s1": 0.67, "s2": 0, "w1": 0.33, "w2": 0, "sales": 0.67, "wr": 33.0}, {"name": "三元豚の厚切りロースカツサンド（１個", "s1": 1, "s2": 0, "w1": 0, "w2": 0, "sales": 1, "wr": 0.0}, {"name": "ごろっとタマゴサンド（１個入り）４", "s1": 1, "s2": 0, "w1": 0, "w2": 0, "sales": 1, "wr": 0.0}, {"name": "まちかど厨房（販売）", "s1": 31, "s2": 28.14, "w1": 1.86, "w2": 2, "sales": 59.14, "wr": 6.1}], "豊中利倉東一丁目": [{"name": "海鮮かき揚げ丼５", "s1": 3.29, "s2": 3.43, "w1": 0, "w2": 0.14, "sales": 6.72, "wr": 2.0}, {"name": "三元豚の厚切りカツ＆タマゴサンド８", "s1": 3.17, "s2": 2.8, "w1": 0.5, "w2": 1.6, "sales": 5.97, "wr": 26.0}, {"name": "鶏のから揚げ弁当４", "s1": 2.33, "s2": 2.71, "w1": 0.67, "w2": 0.43, "sales": 5.04, "wr": 17.9}, {"name": "三元豚の厚切りロースカツサンド５", "s1": 2.5, "s2": 2.5, "w1": 0.33, "w2": 0.33, "sales": 5.0, "wr": 11.7}, {"name": "鹿児島県産桜島どりのチキン南蛮丼６", "s1": 2, "s2": 2.14, "w1": 0, "w2": 0, "sales": 4.14, "wr": 0.0}, {"name": "惣菜　若鶏の砂肝にんにく", "s1": 2, "s2": 2, "w1": 0, "w2": 0, "sales": 4, "wr": 0.0}, {"name": "てりたまご鶏竜田揚げバーガー", "s1": 2, "s2": 2, "w1": 0.29, "w2": 0, "sales": 4, "wr": 6.8}, {"name": "ごろっとタマゴサンド（１個入り）６", "s1": 1.33, "s2": 2, "w1": 0.33, "w2": 0, "sales": 3.33, "wr": 9.0}, {"name": "炭火焼牛カルビ弁当１", "s1": 2, "s2": 1.86, "w1": 0.14, "w2": 0.29, "sales": 3.86, "wr": 10.0}, {"name": "三元豚の厚切りロースカツサンド（１個", "s1": 1.83, "s2": 1.8, "w1": 0.17, "w2": 0.6, "sales": 3.63, "wr": 17.5}, {"name": "彩り野菜と鶏から揚げの甘酢たれ丼３", "s1": 2, "s2": 1.8, "w1": 0.14, "w2": 0.2, "sales": 3.8, "wr": 8.2}, {"name": "新宿中村屋監修　カツカレー（中辛）１", "s1": 1.71, "s2": 1.71, "w1": 0, "w2": 0, "sales": 3.42, "wr": 0.0}, {"name": "備長炭焼き親子丼５", "s1": 1.86, "s2": 1.57, "w1": 0.29, "w2": 0.43, "sales": 3.43, "wr": 17.3}, {"name": "まんまる鶏＆ハンバーグ弁当１", "s1": 1.29, "s2": 1.14, "w1": 0, "w2": 0, "sales": 2.43, "wr": 0.0}, {"name": "とろーりたまご三元豚厚切りロースカツ", "s1": 1, "s2": 1.14, "w1": 0, "w2": 0.14, "sales": 2.14, "wr": 6.1}, {"name": "香ばし炒めチャーハン＆鶏から１", "s1": 1, "s2": 1.14, "w1": 0, "w2": 0, "sales": 2.14, "wr": 0.0}, {"name": "ごはん大盛！とんかつ＆から揚げ弁当１", "s1": 1, "s2": 1.14, "w1": 0, "w2": 0, "sales": 2.14, "wr": 0.0}, {"name": "三元豚の厚切りロースソースカツ丼５", "s1": 1, "s2": 1.14, "w1": 0.17, "w2": 0, "sales": 2.14, "wr": 7.4}, {"name": "惣菜　鶏の炭火焼き３種盛り１", "s1": 1, "s2": 1, "w1": 0, "w2": 0, "sales": 2, "wr": 0.0}, {"name": "惣菜　チーズ大葉チキンカツ", "s1": 1, "s2": 1, "w1": 0, "w2": 0, "sales": 2, "wr": 0.0}, {"name": "惣菜　三元豚の厚切りロースカツ", "s1": 1, "s2": 1, "w1": 0, "w2": 0, "sales": 2, "wr": 0.0}, {"name": "直火で炙った焼豚丼１", "s1": 1, "s2": 1, "w1": 0, "w2": 0, "sales": 2, "wr": 0.0}, {"name": "ごはん大盛！まんまる鶏＆ハンバーグ弁", "s1": 1, "s2": 1, "w1": 0, "w2": 0, "sales": 2, "wr": 0.0}, {"name": "ごはん大盛！炭火焼牛カルビ弁当１", "s1": 1, "s2": 1, "w1": 0, "w2": 0.14, "sales": 2, "wr": 6.5}, {"name": "ごはん大盛！鶏のから揚げ弁当４", "s1": 1.17, "s2": 1, "w1": 0, "w2": 0, "sales": 2.17, "wr": 0.0}, {"name": "厚切りロースとんかつ＆から揚げ弁当１", "s1": 1, "s2": 1, "w1": 0, "w2": 0, "sales": 2, "wr": 0.0}, {"name": "から揚げ照りマヨ丼１", "s1": 1.4, "s2": 0, "w1": 0.2, "w2": 0, "sales": 1.4, "wr": 12.5}, {"name": "三元豚の厚切りカツ＆タマゴサンド６", "s1": 2, "s2": 0, "w1": 0, "w2": 0, "sales": 2, "wr": 0.0}, {"name": "三元豚の厚切りロースカツサンド３", "s1": 0.5, "s2": 0, "w1": 0.5, "w2": 0, "sales": 0.5, "wr": 50.0}, {"name": "三元豚の厚切りロースカツサンド（１個", "s1": 2, "s2": 0, "w1": 0, "w2": 0, "sales": 2, "wr": 0.0}, {"name": "海老カツタマゴサンド３", "s1": 2, "s2": 0, "w1": 0, "w2": 0, "sales": 2, "wr": 0.0}, {"name": "まちかど厨房（販売）", "s1": 39.86, "s2": 37.29, "w1": 3, "w2": 3.57, "sales": 77.15, "wr": 7.8}], "豊中服部元町一丁目": [{"name": "照焼きタルタル鶏竜田揚げバーガー", "s1": 3.29, "s2": 5.86, "w1": 0.57, "w2": 0.29, "sales": 9.15, "wr": 8.6}, {"name": "三元豚の厚切りロースカツサンド５", "s1": 3.83, "s2": 5.29, "w1": 0.17, "w2": 0, "sales": 9.12, "wr": 1.8}, {"name": "三元豚の厚切りカツ＆タマゴサンド８", "s1": 2.8, "s2": 4.86, "w1": 0, "w2": 0, "sales": 7.66, "wr": 0.0}, {"name": "三元豚の厚切りロースカツサンド（１個", "s1": 3, "s2": 4.43, "w1": 0.4, "w2": 0, "sales": 7.43, "wr": 5.1}, {"name": "彩り野菜と鶏から揚げの甘酢たれ丼３", "s1": 2, "s2": 2.33, "w1": 0, "w2": 0, "sales": 4.33, "wr": 0.0}, {"name": "香ばし炒めチャーハン＆鶏から１", "s1": 1.75, "s2": 2.29, "w1": 1, "w2": 0.14, "sales": 4.04, "wr": 22.0}, {"name": "惣菜　若鶏の砂肝にんにく", "s1": 2, "s2": 2, "w1": 0, "w2": 0, "sales": 4, "wr": 0.0}, {"name": "惣菜　鶏の炭火焼き３種盛り１", "s1": 2, "s2": 2, "w1": 0, "w2": 0, "sales": 4, "wr": 0.0}, {"name": "から揚げ照りマヨ丼１", "s1": 1, "s2": 2, "w1": 0, "w2": 0, "sales": 3, "wr": 0.0}, {"name": "まんまる鶏＆ハンバーグ弁当１", "s1": 2, "s2": 1.86, "w1": 0, "w2": 0.14, "sales": 3.86, "wr": 3.5}, {"name": "新宿中村屋監修　カツカレー（中辛）１", "s1": 1.71, "s2": 1.83, "w1": 0, "w2": 0, "sales": 3.54, "wr": 0.0}, {"name": "ごろっとタマゴサンド（１個入り）６", "s1": 2, "s2": 1.8, "w1": 0, "w2": 0, "sales": 3.8, "wr": 0.0}, {"name": "鹿児島県産桜島どりのチキン南蛮丼６", "s1": 1.71, "s2": 1.71, "w1": 0, "w2": 0, "sales": 3.42, "wr": 0.0}, {"name": "ごはん大盛！まんまる鶏＆ハンバーグ弁", "s1": 1.57, "s2": 1.71, "w1": 0.14, "w2": 0.14, "sales": 3.28, "wr": 7.9}, {"name": "三元豚の厚切りロースソースカツ丼５", "s1": 1.43, "s2": 1.71, "w1": 0.14, "w2": 0.14, "sales": 3.14, "wr": 8.2}, {"name": "直火で炙った焼豚丼１", "s1": 1.43, "s2": 1.67, "w1": 0.14, "w2": 0, "sales": 3.1, "wr": 4.3}, {"name": "備長炭焼き親子丼５", "s1": 1.86, "s2": 1.57, "w1": 0, "w2": 0, "sales": 3.43, "wr": 0.0}, {"name": "海鮮かき揚げ丼５", "s1": 1.86, "s2": 1.57, "w1": 0, "w2": 0, "sales": 3.43, "wr": 0.0}, {"name": "惣菜　三元豚の厚切りロースカツ", "s1": 1.75, "s2": 1.43, "w1": 0, "w2": 0.29, "sales": 3.18, "wr": 8.4}, {"name": "惣菜　チーズ大葉チキンカツ", "s1": 1, "s2": 1.33, "w1": 0.5, "w2": 0, "sales": 2.33, "wr": 17.7}, {"name": "鶏のから揚げ弁当４", "s1": 1.43, "s2": 1.33, "w1": 0.14, "w2": 0, "sales": 2.76, "wr": 4.8}, {"name": "炭火焼牛カルビ弁当１", "s1": 1.17, "s2": 1.33, "w1": 0, "w2": 0, "sales": 2.5, "wr": 0.0}, {"name": "ごはん大盛！鶏のから揚げ弁当４", "s1": 1.14, "s2": 1.14, "w1": 0, "w2": 0, "sales": 2.28, "wr": 0.0}, {"name": "とろーりたまご三元豚厚切りロースカツ", "s1": 1, "s2": 1, "w1": 0, "w2": 0, "sales": 2, "wr": 0.0}, {"name": "ごはん大盛！炭火焼牛カルビ弁当１", "s1": 1, "s2": 1, "w1": 0, "w2": 0.17, "sales": 2, "wr": 7.8}, {"name": "厚切りロースとんかつ＆から揚げ弁当１", "s1": 1.17, "s2": 1, "w1": 0.17, "w2": 0, "sales": 2.17, "wr": 7.3}, {"name": "ごはん大盛！とんかつ＆から揚げ弁当１", "s1": 1, "s2": 0.83, "w1": 0, "w2": 0.17, "sales": 1.83, "wr": 8.5}, {"name": "店炊きごはん（小盛）", "s1": 0, "s2": 0, "w1": 0, "w2": 1, "sales": 0, "wr": 100.0}, {"name": "ごろっとタマゴサンド（１個入り）４", "s1": 0, "s2": 0, "w1": 2, "w2": 1.5, "sales": 0, "wr": 100.0}, {"name": "三元豚の厚切りロースカツサンド（１個", "s1": 0, "s2": 0, "w1": 1.25, "w2": 1, "sales": 0, "wr": 100.0}, {"name": "三元豚の厚切りカツ＆タマゴサンド６", "s1": 0, "s2": 0, "w1": 1.33, "w2": 0, "sales": 0, "wr": 100.0}, {"name": "三元豚の厚切りロースカツサンド３", "s1": 0, "s2": 0, "w1": 3, "w2": 0, "sales": 0, "wr": 100.0}, {"name": "まちかど厨房（販売）", "s1": 36.43, "s2": 50.14, "w1": 4.57, "w2": 2.14, "sales": 86.57, "wr": 7.2}], "豊中原田南一丁目": [{"name": "三元豚の厚切りカツ＆タマゴサンド８", "s1": 3.67, "s2": 4, "w1": 0.83, "w2": 0.71, "sales": 7.67, "wr": 16.7}, {"name": "三元豚の厚切りロースカツサンド５", "s1": 3.17, "s2": 3.86, "w1": 0.83, "w2": 0.29, "sales": 7.03, "wr": 13.7}, {"name": "まんまる鶏＆ハンバーグ弁当１", "s1": 4.5, "s2": 3.29, "w1": 0.33, "w2": 0.29, "sales": 7.79, "wr": 7.4}, {"name": "ごはん大盛！まんまる鶏＆ハンバーグ弁", "s1": 3.71, "s2": 3.14, "w1": 0.14, "w2": 0.57, "sales": 6.85, "wr": 9.4}, {"name": "焼きさば＆鶏から弁当", "s1": 2.5, "s2": 3, "w1": 1.5, "w2": 1, "sales": 5.5, "wr": 31.2}, {"name": "三元豚の厚切りロースカツサンド（１個", "s1": 3.33, "s2": 2.57, "w1": 0.83, "w2": 0.86, "sales": 5.9, "wr": 22.3}, {"name": "パリッとフランクドッグ４", "s1": 2, "s2": 2.5, "w1": 0.57, "w2": 0.5, "sales": 4.5, "wr": 19.2}, {"name": "ごはん大盛！炭火焼牛カルビ弁当１", "s1": 2.33, "s2": 2.17, "w1": 0.17, "w2": 0, "sales": 4.5, "wr": 3.6}, {"name": "照焼きタルタル鶏竜田揚げバーガー", "s1": 1.8, "s2": 1.86, "w1": 0, "w2": 0.14, "sales": 3.66, "wr": 3.7}, {"name": "新宿中村屋監修　カツカレー（中辛）１", "s1": 1.43, "s2": 1.86, "w1": 0, "w2": 0.14, "sales": 3.29, "wr": 4.1}, {"name": "ごろっとタマゴサンド（１個入り）６", "s1": 2.5, "s2": 1.8, "w1": 1, "w2": 0.6, "sales": 4.3, "wr": 27.1}, {"name": "海鮮かき揚げ丼５", "s1": 1.83, "s2": 1.71, "w1": 0, "w2": 0.29, "sales": 3.54, "wr": 7.6}, {"name": "香ばし炒めチャーハン＆鶏から１", "s1": 1.29, "s2": 1.67, "w1": 0.29, "w2": 0.17, "sales": 2.96, "wr": 13.5}, {"name": "ごはん大盛！鶏のから揚げ弁当４", "s1": 1.5, "s2": 1.5, "w1": 0.67, "w2": 0.17, "sales": 3.0, "wr": 21.9}, {"name": "三元豚の厚切りロースソースカツ丼５", "s1": 0.83, "s2": 1.4, "w1": 0.17, "w2": 0.2, "sales": 2.23, "wr": 14.2}, {"name": "炭火焼牛カルビ弁当１", "s1": 2, "s2": 1.33, "w1": 0.2, "w2": 0.5, "sales": 3.33, "wr": 17.4}, {"name": "直火で炙った焼豚丼１", "s1": 1.67, "s2": 1.33, "w1": 0.17, "w2": 0.5, "sales": 3.0, "wr": 18.3}, {"name": "惣菜　チーズ大葉チキンカツ", "s1": 1, "s2": 1.17, "w1": 0, "w2": 0, "sales": 2.17, "wr": 0.0}, {"name": "備長炭焼き親子丼５", "s1": 1.5, "s2": 1.17, "w1": 0, "w2": 0.17, "sales": 2.67, "wr": 6.0}, {"name": "鶏のから揚げ弁当４", "s1": 1.5, "s2": 1.14, "w1": 0.33, "w2": 0.57, "sales": 2.64, "wr": 25.4}, {"name": "鹿児島県産桜島どりのチキン南蛮丼６", "s1": 1, "s2": 1, "w1": 0, "w2": 0, "sales": 2, "wr": 0.0}, {"name": "厚切りロースとんかつ＆から揚げ弁当１", "s1": 1.33, "s2": 1, "w1": 0.17, "w2": 0.33, "sales": 2.33, "wr": 17.7}, {"name": "惣菜　三元豚の厚切りロースカツ", "s1": 1.5, "s2": 0.8, "w1": 0.25, "w2": 0.2, "sales": 2.3, "wr": 16.4}, {"name": "ごはん大盛！とんかつ＆から揚げ弁当１", "s1": 1.33, "s2": 0.75, "w1": 0.17, "w2": 0.25, "sales": 2.08, "wr": 16.8}, {"name": "彩り野菜と鶏から揚げの甘酢たれ丼３", "s1": 1, "s2": 0, "w1": 0.33, "w2": 0, "sales": 1, "wr": 24.8}, {"name": "三元豚の厚切りカツ＆タマゴサンド６", "s1": 5, "s2": 0, "w1": 0, "w2": 0, "sales": 5, "wr": 0.0}, {"name": "三元豚の厚切りロースカツサンド３", "s1": 6, "s2": 0, "w1": 1, "w2": 0, "sales": 6, "wr": 14.3}, {"name": "三元豚の厚切りロースカツサンド（１個", "s1": 4, "s2": 0, "w1": 0, "w2": 0, "sales": 4, "wr": 0.0}, {"name": "ごろっとタマゴサンド（１個入り）４", "s1": 6, "s2": 0, "w1": 1, "w2": 0, "sales": 6, "wr": 14.3}, {"name": "てりたまご鶏竜田揚げバーガー", "s1": 1, "s2": 0, "w1": 0, "w2": 0, "sales": 1, "wr": 0.0}, {"name": "まちかど厨房（販売）", "s1": 44.43, "s2": 39.86, "w1": 7, "w2": 6.86, "sales": 84.29, "wr": 14.1}], "東淀川大道南": [{"name": "照焼きタルタル鶏竜田揚げバーガー", "s1": 4.29, "s2": 4.43, "w1": 0.29, "w2": 0.57, "sales": 8.72, "wr": 9.0}, {"name": "三元豚の厚切りカツ＆タマゴサンド８", "s1": 2.5, "s2": 4, "w1": 0.33, "w2": 0.14, "sales": 6.5, "wr": 6.7}, {"name": "三元豚の厚切りロースカツサンド５", "s1": 3.17, "s2": 3.71, "w1": 0.17, "w2": 0.57, "sales": 6.88, "wr": 9.7}, {"name": "てりたまご鶏竜田揚げバーガー", "s1": 3, "s2": 2.4, "w1": 0, "w2": 0.4, "sales": 5.4, "wr": 6.9}, {"name": "ごはん大盛！まんまる鶏＆ハンバーグ弁", "s1": 2.43, "s2": 2.14, "w1": 0, "w2": 0, "sales": 4.57, "wr": 0.0}, {"name": "惣菜　若鶏の砂肝にんにく", "s1": 1.86, "s2": 2, "w1": 0, "w2": 0.33, "sales": 3.86, "wr": 7.9}, {"name": "惣菜　チーズ大葉チキンカツ", "s1": 1.6, "s2": 1.71, "w1": 0, "w2": 0.29, "sales": 3.31, "wr": 8.1}, {"name": "直火で炙った焼豚丼１", "s1": 2, "s2": 1.71, "w1": 0.14, "w2": 0, "sales": 3.71, "wr": 3.6}, {"name": "三元豚の厚切りロースソースカツ丼５", "s1": 1.14, "s2": 1.71, "w1": 0.14, "w2": 0, "sales": 2.85, "wr": 4.7}, {"name": "三元豚の厚切りロースカツサンド（１個", "s1": 1.2, "s2": 1.67, "w1": 0, "w2": 0.17, "sales": 2.87, "wr": 5.6}, {"name": "まんまる鶏＆ハンバーグ弁当１", "s1": 1, "s2": 1.5, "w1": 0, "w2": 0, "sales": 2.5, "wr": 0.0}, {"name": "新宿中村屋監修　カツカレー（中辛）１", "s1": 1.43, "s2": 1.43, "w1": 0.14, "w2": 0, "sales": 2.86, "wr": 4.7}, {"name": "ごはん大盛！鶏のから揚げ弁当４", "s1": 1.5, "s2": 1.43, "w1": 0.17, "w2": 0, "sales": 2.93, "wr": 5.5}, {"name": "海鮮かき揚げ丼５", "s1": 1.57, "s2": 1.33, "w1": 0.14, "w2": 0, "sales": 2.9, "wr": 4.6}, {"name": "鹿児島県産桜島どりのチキン南蛮丼６", "s1": 1, "s2": 1.29, "w1": 0, "w2": 0, "sales": 2.29, "wr": 0.0}, {"name": "炭火焼牛カルビ弁当１", "s1": 0.83, "s2": 1.2, "w1": 0.17, "w2": 0, "sales": 2.03, "wr": 7.7}, {"name": "備長炭焼き親子丼５", "s1": 1, "s2": 1.14, "w1": 0.14, "w2": 0, "sales": 2.14, "wr": 6.1}, {"name": "香ばし炒めチャーハン＆鶏から１", "s1": 1.29, "s2": 1.14, "w1": 0, "w2": 0, "sales": 2.43, "wr": 0.0}, {"name": "惣菜　鶏の炭火焼き３種盛り１", "s1": 1.2, "s2": 1, "w1": 0.2, "w2": 0.17, "sales": 2.2, "wr": 14.4}, {"name": "ごろっとタマゴサンド（１個入り）６", "s1": 1, "s2": 1, "w1": 0.4, "w2": 0.43, "sales": 2, "wr": 29.3}, {"name": "とろーりたまご三元豚厚切りロースカツ", "s1": 1, "s2": 1, "w1": 0, "w2": 0, "sales": 2, "wr": 0.0}, {"name": "鶏のから揚げ弁当４", "s1": 1, "s2": 1, "w1": 0, "w2": 0, "sales": 2, "wr": 0.0}, {"name": "ごはん大盛！とんかつ＆から揚げ弁当１", "s1": 1, "s2": 1, "w1": 0, "w2": 0, "sales": 2, "wr": 0.0}, {"name": "ごはん大盛！炭火焼牛カルビ弁当１", "s1": 1, "s2": 1, "w1": 0, "w2": 0, "sales": 2, "wr": 0.0}, {"name": "厚切りロースとんかつ＆から揚げ弁当１", "s1": 1, "s2": 1, "w1": 0, "w2": 0, "sales": 2, "wr": 0.0}, {"name": "から揚げ照りマヨ丼１", "s1": 1.6, "s2": 0, "w1": 0, "w2": 0, "sales": 1.6, "wr": 0.0}, {"name": "ごはん大盛！盛合せ弁当（ハンバーグ鶏", "s1": 1, "s2": 0, "w1": 0, "w2": 0, "sales": 1, "wr": 0.0}, {"name": "三元豚の厚切りカツ＆タマゴサンド６", "s1": 3.33, "s2": 0, "w1": 0, "w2": 0, "sales": 3.33, "wr": 0.0}, {"name": "三元豚の厚切りロースカツサンド３", "s1": 2.33, "s2": 0, "w1": 0, "w2": 0, "sales": 2.33, "wr": 0.0}, {"name": "三元豚の厚切りロースカツサンド（１個", "s1": 1.75, "s2": 0, "w1": 0, "w2": 0, "sales": 1.75, "wr": 0.0}, {"name": "海老カツタマゴサンド（１個入り）３", "s1": 1, "s2": 0, "w1": 0, "w2": 0, "sales": 1, "wr": 0.0}, {"name": "ごろっとタマゴサンド（１個入り）４", "s1": 1.75, "s2": 0, "w1": 0, "w2": 0, "sales": 1.75, "wr": 0.0}, {"name": "まちかど厨房（販売）", "s1": 39.57, "s2": 37.57, "w1": 2.14, "w2": 2.86, "sales": 77.14, "wr": 6.1}], "東淀川豊里五丁目": [{"name": "照焼きタルタル鶏竜田揚げバーガー", "s1": 2.83, "s2": 5.71, "w1": 0, "w2": 0, "sales": 8.54, "wr": 0.0}, {"name": "三元豚の厚切りカツ＆タマゴサンド８", "s1": 4.83, "s2": 5.43, "w1": 1.17, "w2": 0.43, "sales": 10.26, "wr": 13.5}, {"name": "三元豚の厚切りロースカツサンド５", "s1": 4.5, "s2": 4.14, "w1": 0.17, "w2": 0.14, "sales": 8.64, "wr": 3.5}, {"name": "てりたまご鶏竜田揚げバーガー", "s1": 4, "s2": 3.25, "w1": 0, "w2": 0, "sales": 7.25, "wr": 0.0}, {"name": "ごはん大盛！まんまる鶏＆ハンバーグ弁", "s1": 3, "s2": 3, "w1": 0, "w2": 0, "sales": 6, "wr": 0.0}, {"name": "海鮮かき揚げ丼５", "s1": 2.14, "s2": 2.86, "w1": 0, "w2": 0.14, "sales": 5.0, "wr": 2.7}, {"name": "惣菜　チーズ大葉チキンカツ", "s1": 2, "s2": 2.2, "w1": 0.5, "w2": 0.2, "sales": 4.2, "wr": 14.3}, {"name": "惣菜　若鶏の砂肝にんにく", "s1": 1.57, "s2": 2.17, "w1": 0.14, "w2": 0.5, "sales": 3.74, "wr": 14.6}, {"name": "とろーりたまご三元豚厚切りロースカツ", "s1": 1.86, "s2": 2, "w1": 0.14, "w2": 0.14, "sales": 3.86, "wr": 6.8}, {"name": "直火で炙った焼豚丼１", "s1": 1.71, "s2": 2, "w1": 0, "w2": 0.14, "sales": 3.71, "wr": 3.6}, {"name": "備長炭焼き親子丼５", "s1": 1, "s2": 1.86, "w1": 0.14, "w2": 0.29, "sales": 2.86, "wr": 13.1}, {"name": "ごはん大盛！とんかつ＆から揚げ弁当１", "s1": 2.14, "s2": 1.86, "w1": 0.14, "w2": 0.29, "sales": 4.0, "wr": 9.7}, {"name": "新宿中村屋監修　カツカレー（中辛）１", "s1": 2, "s2": 1.86, "w1": 0.14, "w2": 0.14, "sales": 3.86, "wr": 6.8}, {"name": "三元豚の厚切りロースソースカツ丼５", "s1": 1, "s2": 1.86, "w1": 0, "w2": 0, "sales": 2.86, "wr": 0.0}, {"name": "香ばし炒めチャーハン＆鶏から１", "s1": 1.71, "s2": 1.71, "w1": 0.29, "w2": 0.43, "sales": 3.42, "wr": 17.4}, {"name": "鶏のから揚げ弁当４", "s1": 1.25, "s2": 1.5, "w1": 0.25, "w2": 0.5, "sales": 2.75, "wr": 21.4}, {"name": "惣菜　鶏の炭火焼き３種盛り１", "s1": 2.17, "s2": 1.43, "w1": 0, "w2": 0.43, "sales": 3.6, "wr": 10.7}, {"name": "三元豚の厚切りロースカツサンド（１個", "s1": 2.67, "s2": 1.43, "w1": 0.33, "w2": 0.86, "sales": 4.1, "wr": 22.5}, {"name": "ごろっとタマゴサンド（１個入り）６", "s1": 1.83, "s2": 1.33, "w1": 0.5, "w2": 0.67, "sales": 3.16, "wr": 27.0}, {"name": "鹿児島県産桜島どりのチキン南蛮丼６", "s1": 1.14, "s2": 1.14, "w1": 0, "w2": 0, "sales": 2.28, "wr": 0.0}, {"name": "まんまる鶏＆ハンバーグ弁当１", "s1": 1.5, "s2": 1, "w1": 0.25, "w2": 0, "sales": 2.5, "wr": 9.1}, {"name": "ごはん大盛！炭火焼牛カルビ弁当１", "s1": 1.29, "s2": 1, "w1": 0, "w2": 0, "sales": 2.29, "wr": 0.0}, {"name": "ごはん大盛！鶏のから揚げ弁当４", "s1": 1.33, "s2": 1, "w1": 0, "w2": 0.17, "sales": 2.33, "wr": 6.8}, {"name": "厚切りロースとんかつ＆から揚げ弁当１", "s1": 1, "s2": 1, "w1": 0, "w2": 0.5, "sales": 2, "wr": 20.0}, {"name": "から揚げ照りマヨ丼１", "s1": 1.83, "s2": 0, "w1": 0, "w2": 1, "sales": 1.83, "wr": 35.3}, {"name": "三元豚の厚切りカツ＆タマゴサンド６", "s1": 5, "s2": 0, "w1": 0, "w2": 0, "sales": 5, "wr": 0.0}, {"name": "三元豚の厚切りロースカツサンド３", "s1": 2, "s2": 0, "w1": 1, "w2": 0, "sales": 2, "wr": 33.3}, {"name": "三元豚の厚切りロースカツサンド（１個", "s1": 1.5, "s2": 0, "w1": 0, "w2": 0, "sales": 1.5, "wr": 0.0}, {"name": "海老カツタマゴサンド３", "s1": 2, "s2": 0, "w1": 0, "w2": 0, "sales": 2, "wr": 0.0}, {"name": "海老カツタマゴサンド１", "s1": 4, "s2": 0, "w1": 0, "w2": 0, "sales": 4, "wr": 0.0}, {"name": "海老カツタマゴサンド（１個入り）３", "s1": 2, "s2": 0, "w1": 0, "w2": 0, "sales": 2, "wr": 0.0}, {"name": "海老カツタマゴサンド（１個入り）１", "s1": 2, "s2": 0, "w1": 0, "w2": 0, "sales": 2, "wr": 0.0}, {"name": "海老カツバーガー２", "s1": 1.67, "s2": 0, "w1": 0.33, "w2": 0, "sales": 1.67, "wr": 16.5}, {"name": "ごろっとタマゴサンド（１個入り）４", "s1": 1.5, "s2": 0, "w1": 0, "w2": 0, "sales": 1.5, "wr": 0.0}, {"name": "まちかど厨房（販売）", "s1": 50.71, "s2": 48.71, "w1": 4, "w2": 5.43, "sales": 99.42, "wr": 8.7}], "南金田二丁目": [{"name": "三元豚の厚切りカツ＆タマゴサンド８", "s1": 2.33, "s2": 3.33, "w1": 0, "w2": 0.33, "sales": 5.66, "wr": 5.5}, {"name": "まんまる鶏＆ハンバーグ弁当１", "s1": 3.5, "s2": 3.29, "w1": 0.33, "w2": 0, "sales": 6.79, "wr": 4.6}, {"name": "ごはん大盛！まんまる鶏＆ハンバーグ弁", "s1": 2.86, "s2": 3.14, "w1": 0.29, "w2": 0.14, "sales": 6.0, "wr": 6.7}, {"name": "海鮮かき揚げ丼５", "s1": 2.71, "s2": 3, "w1": 0.57, "w2": 0.43, "sales": 5.71, "wr": 14.9}, {"name": "三元豚の厚切りロースカツサンド５", "s1": 1.67, "s2": 2.43, "w1": 0.33, "w2": 0.43, "sales": 4.1, "wr": 15.6}, {"name": "厚切りロースとんかつ＆から揚げ弁当１", "s1": 2.5, "s2": 2.29, "w1": 0.5, "w2": 0.29, "sales": 4.79, "wr": 14.2}, {"name": "鶏のから揚げ弁当４", "s1": 1.5, "s2": 2.17, "w1": 0.17, "w2": 0.67, "sales": 3.67, "wr": 18.6}, {"name": "備長炭焼き親子丼５", "s1": 1.33, "s2": 2.14, "w1": 0.83, "w2": 0.14, "sales": 3.47, "wr": 21.8}, {"name": "鹿児島県産桜島どりのチキン南蛮丼６", "s1": 2.14, "s2": 2.14, "w1": 0.29, "w2": 0.43, "sales": 4.28, "wr": 14.4}, {"name": "ごはん大盛！とんかつ＆から揚げ弁当１", "s1": 2, "s2": 2.14, "w1": 0.67, "w2": 0.29, "sales": 4.14, "wr": 18.8}, {"name": "新宿中村屋監修　カツカレー（中辛）１", "s1": 2.17, "s2": 1.86, "w1": 0, "w2": 0, "sales": 4.03, "wr": 0.0}, {"name": "三元豚の厚切りロースソースカツ丼５", "s1": 2.14, "s2": 1.86, "w1": 0.14, "w2": 0.71, "sales": 4.0, "wr": 17.5}, {"name": "惣菜　チーズ大葉チキンカツ", "s1": 1.67, "s2": 1.83, "w1": 0.33, "w2": 0, "sales": 3.5, "wr": 8.6}, {"name": "三元豚の厚切りロースカツサンド（１個", "s1": 2, "s2": 1.71, "w1": 0.67, "w2": 0.57, "sales": 3.71, "wr": 25.1}, {"name": "直火で炙った焼豚丼１", "s1": 2, "s2": 1.71, "w1": 0, "w2": 0.14, "sales": 3.71, "wr": 3.6}, {"name": "ガーリックトマトチキン丼", "s1": 1.33, "s2": 1.71, "w1": 0.67, "w2": 0.29, "sales": 3.04, "wr": 24.0}, {"name": "とろーりたまご三元豚厚切りロースカツ", "s1": 1.83, "s2": 1.6, "w1": 0.33, "w2": 0.4, "sales": 3.43, "wr": 17.5}, {"name": "惣菜　若鶏の砂肝にんにく", "s1": 2, "s2": 1.5, "w1": 0, "w2": 0.17, "sales": 3.5, "wr": 4.6}, {"name": "惣菜　鶏の炭火焼き３種盛り１", "s1": 1.33, "s2": 1.5, "w1": 0.67, "w2": 0.33, "sales": 2.83, "wr": 26.1}, {"name": "香ばし炒めチャーハン＆鶏から１", "s1": 1, "s2": 1.43, "w1": 0.71, "w2": 0.14, "sales": 2.43, "wr": 25.9}, {"name": "ごろっとタマゴサンド（１個入り）６", "s1": 1.75, "s2": 1.4, "w1": 0, "w2": 0.4, "sales": 3.15, "wr": 11.3}, {"name": "照焼きタルタル鶏竜田揚げバーガー", "s1": 1.5, "s2": 1.25, "w1": 0.5, "w2": 0.75, "sales": 2.75, "wr": 31.2}, {"name": "炭火焼牛カルビ弁当１", "s1": 1, "s2": 1.25, "w1": 0, "w2": 0, "sales": 2.25, "wr": 0.0}, {"name": "ごはん大盛！鶏のから揚げ弁当４", "s1": 1, "s2": 1.17, "w1": 0, "w2": 0.17, "sales": 2.17, "wr": 7.3}, {"name": "惣菜　三元豚の厚切りロースカツ", "s1": 0.5, "s2": 1, "w1": 0.5, "w2": 0, "sales": 1.5, "wr": 25.0}, {"name": "ごはん大盛！炭火焼牛カルビ弁当１", "s1": 1, "s2": 0.75, "w1": 0, "w2": 0.25, "sales": 1.75, "wr": 12.5}, {"name": "彩り野菜と鶏から揚げの甘酢たれ丼３", "s1": 2, "s2": 0, "w1": 0, "w2": 0, "sales": 2, "wr": 0.0}, {"name": "三元豚の厚切りカツ＆タマゴサンド６", "s1": 0.67, "s2": 0, "w1": 1, "w2": 0, "sales": 0.67, "wr": 59.9}, {"name": "三元豚の厚切りロースカツサンド３", "s1": 2, "s2": 0, "w1": 0, "w2": 0, "sales": 2, "wr": 0.0}, {"name": "海老カツタマゴサンド１", "s1": 1, "s2": 0, "w1": 0, "w2": 0, "sales": 1, "wr": 0.0}, {"name": "海老カツバーガー２", "s1": 0, "s2": 0, "w1": 1, "w2": 0, "sales": 0, "wr": 100.0}, {"name": "ごろっとタマゴサンド（１個入り）４", "s1": 0, "s2": 0, "w1": 3, "w2": 0, "sales": 0, "wr": 100.0}, {"name": "まちかど厨房（販売）", "s1": 42.14, "s2": 45.43, "w1": 8.29, "w2": 6.57, "sales": 87.57, "wr": 14.5}], "箕面白島二丁目": [{"name": "照焼きタルタル鶏竜田揚げバーガー", "s1": 5.71, "s2": 5.71, "w1": 0.14, "w2": 0.29, "sales": 11.42, "wr": 3.6}, {"name": "三元豚の厚切りロースカツサンド（１個", "s1": 5.33, "s2": 5.14, "w1": 0.67, "w2": 0.71, "sales": 10.47, "wr": 11.6}, {"name": "三元豚の厚切りカツ＆タマゴサンド８", "s1": 3.5, "s2": 5, "w1": 0.33, "w2": 0.29, "sales": 8.5, "wr": 6.8}, {"name": "三元豚の厚切りロースカツサンド５", "s1": 6.67, "s2": 4.71, "w1": 0.5, "w2": 0.86, "sales": 11.38, "wr": 10.7}, {"name": "香ばし炒めチャーハン＆鶏から１", "s1": 1, "s2": 2.86, "w1": 0, "w2": 0.71, "sales": 3.86, "wr": 15.5}, {"name": "ごろっとタマゴサンド（１個入り）６", "s1": 5.67, "s2": 2.43, "w1": 0.33, "w2": 0.29, "sales": 8.1, "wr": 7.1}, {"name": "まんまる鶏＆ハンバーグ弁当１", "s1": 2.8, "s2": 2, "w1": 1.4, "w2": 0, "sales": 4.8, "wr": 22.6}, {"name": "彩り野菜と鶏から揚げの甘酢たれ丼３", "s1": 0, "s2": 1.86, "w1": 0, "w2": 0.14, "sales": 1.86, "wr": 7.0}, {"name": "新宿中村屋監修　カツカレー（中辛）１", "s1": 1, "s2": 1.86, "w1": 0, "w2": 0.14, "sales": 2.86, "wr": 4.7}, {"name": "ごはん大盛！まんまる鶏＆ハンバーグ弁", "s1": 3.33, "s2": 1.83, "w1": 0.17, "w2": 0, "sales": 5.16, "wr": 3.2}, {"name": "鶏のから揚げ弁当４", "s1": 1.14, "s2": 1.57, "w1": 0, "w2": 0.14, "sales": 2.71, "wr": 4.9}, {"name": "鹿児島県産桜島どりのチキン南蛮丼６", "s1": 1, "s2": 1.43, "w1": 0, "w2": 0.14, "sales": 2.43, "wr": 5.4}, {"name": "三元豚の厚切りロースソースカツ丼５", "s1": 1, "s2": 1.43, "w1": 0, "w2": 0.14, "sales": 2.43, "wr": 5.4}, {"name": "直火で炙った焼豚丼１", "s1": 1.29, "s2": 1.33, "w1": 0, "w2": 1, "sales": 2.62, "wr": 27.6}, {"name": "海鮮かき揚げ丼５", "s1": 1.29, "s2": 1.29, "w1": 0, "w2": 0.29, "sales": 2.58, "wr": 10.1}, {"name": "ごはん大盛！鶏のから揚げ弁当４", "s1": 1, "s2": 1.2, "w1": 0.14, "w2": 0, "sales": 2.2, "wr": 6.0}, {"name": "炭火焼牛カルビ弁当１", "s1": 1.43, "s2": 1.17, "w1": 0, "w2": 0.33, "sales": 2.6, "wr": 11.3}, {"name": "惣菜　チーズ大葉チキンカツ", "s1": 1, "s2": 1, "w1": 0.2, "w2": 0.5, "sales": 2, "wr": 25.9}, {"name": "三元豚の厚切りロースカツサンド（１個", "s1": 3.5, "s2": 1, "w1": 1.5, "w2": 0, "sales": 4.5, "wr": 25.0}, {"name": "備長炭焼き親子丼５", "s1": 1, "s2": 1, "w1": 0, "w2": 0.29, "sales": 2, "wr": 12.7}, {"name": "ごはん大盛！炭火焼牛カルビ弁当１", "s1": 1.43, "s2": 1, "w1": 0, "w2": 0.17, "sales": 2.43, "wr": 6.5}, {"name": "厚切りロースとんかつ＆から揚げ弁当１", "s1": 0.71, "s2": 1, "w1": 0.29, "w2": 0, "sales": 1.71, "wr": 14.5}, {"name": "ごはん大盛！とんかつ＆から揚げ弁当１", "s1": 1, "s2": 0.86, "w1": 0, "w2": 0.14, "sales": 1.86, "wr": 7.0}, {"name": "惣菜　三元豚の厚切りロースカツ", "s1": 1.33, "s2": 0.8, "w1": 0, "w2": 0.2, "sales": 2.13, "wr": 8.6}, {"name": "三元豚の厚切りカツ＆タマゴサンド６", "s1": 1.5, "s2": 0, "w1": 1, "w2": 0, "sales": 1.5, "wr": 40.0}, {"name": "三元豚の厚切りロースカツサンド３", "s1": 2.5, "s2": 0, "w1": 1.5, "w2": 0, "sales": 2.5, "wr": 37.5}, {"name": "まちかど厨房（販売）", "s1": 47, "s2": 46.43, "w1": 4.57, "w2": 6.43, "sales": 93.43, "wr": 10.5}]};
@@ -227,171 +336,18 @@ var PT=[4545,1892,1922,2038,2515,6434,16251,30049,29378,18905,13645,17788,27183,
 var KB=[1547,128,338,0,0,0,0,869,3117,9225,9078,43026,105528,34274,14546,12932,20606,29274,48290,36194,27864,21365,12099,4829];
 var KP=[283,234,468,1385,1914,5292,10156,10293,8726,10293,15730,9534,12433,8946,5337,5351,6312,9298,6494,4958,3946,3067,1974,1063];
 
-// ページ切替
-function SP(id,btn){
-  document.querySelectorAll(".pg").forEach(function(p){p.classList.remove("on");});
-  document.querySelectorAll(".ntab").forEach(function(t){t.classList.remove("on");});
-  document.getElementById("pg-"+id).classList.add("on");
-  btn.classList.add("on");
-}
 
-// グラフ共通オプション(responsive:false)
-function bOpt(leg,horiz,pct,mx){
-  var o={responsive:false,plugins:{legend:{display:!!leg,labels:{font:{size:10},padding:6}}},
-    scales:{x:{ticks:{font:{size:9},maxRotation:0}},y:{ticks:{font:{size:9}},beginAtZero:true}}};
-  if(horiz){o.indexAxis="y";delete o.scales.x.ticks.maxRotation;}
-  if(pct) o.scales.y.ticks.callback=function(v){return v+"%";};
-  if(mx)  o.scales.y.max=mx;
-  return o;
-}
+// ============================================================
+//  設定値（実際の値に更新してください）
+// ============================================================
+var BRANCH_AVG_S4  = 45.0;  // ★吹田支店 販売数/日 平均（要確認・更新）
+var BRANCH_AVG_YOY = 125.0; // ★吹田支店 前年比% 平均（要確認・更新）
+var BRANCH_AVG_H4  = 20000; // ★吹田支店 売上高/日 平均（要確認・更新）
 
-// 全体グラフ
-var rt=BT.map(function(v,i){var t=v+KB[i];return t?Math.round(KB[i]/t*100):0;});
-new Chart(document.getElementById("cB"),{type:"bar",data:{labels:HL,datasets:[
-  {label:"弁当合計",data:BT,backgroundColor:"rgba(67,97,238,0.22)",borderColor:"rgba(67,97,238,0.7)",borderWidth:1},
-  {label:"厨房弁当",data:KB,backgroundColor:"rgba(230,57,70,0.65)",borderColor:"rgba(230,57,70,0.9)",borderWidth:1}
-]},options:bOpt(true)});
-new Chart(document.getElementById("cP"),{type:"bar",data:{labels:HL,datasets:[
-  {label:"調理パン合計",data:PT,backgroundColor:"rgba(67,97,238,0.22)",borderColor:"rgba(67,97,238,0.7)",borderWidth:1},
-  {label:"厨房調理パン",data:KP,backgroundColor:"rgba(244,162,97,0.75)",borderColor:"rgba(244,162,97,1)",borderWidth:1}
-]},options:bOpt(true)});
-new Chart(document.getElementById("cR"),{type:"bar",data:{labels:HL,datasets:[{
-  label:"厨房弁当 作成比率",data:rt,borderRadius:3,
-  backgroundColor:rt.map(function(v){return v<20?"rgba(230,57,70,0.8)":v<40?"rgba(244,162,97,0.8)":"rgba(45,198,83,0.7)";})
-}]},options:bOpt(false,false,true,100)});
-
-// 店舗テーブル
-var STD=[
-  {n:"新御堂筋上新田",s2:42.75,s3:52.00,s4:57.75,g3:1.216,g4:1.351,y4:157.88},
-  {n:"豊中服部元町一丁目",s2:37.21,s3:34.03,s4:45.33,g3:0.915,g4:1.218,y4:134.04},
-  {n:"江坂駅南口",s2:80.54,s3:94.77,s4:83.08,g3:1.177,g4:1.032,y4:113.76},
-  {n:"吹田朝日町",s2:54.50,s3:60.06,s4:59.17,g3:1.102,g4:1.086,y4:168.14},
-  {n:"吹田豊津中学校前",s2:33.86,s3:38.00,s4:39.67,g3:1.122,g4:1.172,y4:119.74},
-  {n:"吹田警察署前",s2:22.96,s3:26.39,s4:25.92,g3:1.149,g4:1.129,y4:158.6},
-  {n:"大道南一丁目",s2:32.50,s3:28.06,s4:29.42,g3:0.863,g4:0.905,y4:157.24},
-  {n:"吹田青山台三丁目",s2:49.82,s3:43.26,s4:47.08,g3:0.868,g4:0.945,y4:101.40},
-  {n:"江坂東",s2:43.86,s3:46.32,s4:47.17,g3:1.056,g4:1.075,y4:103.14},
-  {n:"南金田二丁目",s2:42.86,s3:35.26,s4:42.75,g3:0.823,g4:0.997,y4:115.38},
-  {n:"豊中原田南一丁目",s2:36.07,s3:43.77,s4:39.50,g3:1.213,g4:1.095,y4:129.28},
-  {n:"豊中利倉東一丁目",s2:38.36,s3:37.42,s4:38.00,g3:0.975,g4:0.991,y4:117.28},
-  {n:"東淀川大道南",s2:44.96,s3:40.45,s4:37.75,g3:0.900,g4:0.840,y4:120.83},
-  {n:"東淀川豊里五丁目",s2:60.07,s3:55.87,s4:49.08,g3:0.930,g4:0.817,y4:120.19},
-  {n:"箕面白島二丁目",s2:54.46,s3:45.90,s4:46.92,g3:0.843,g4:0.862,y4:null},
-  {n:"五月ケ丘東",s2:0,s3:0.97,s4:2.75,g3:null,g4:null,y4:76.3},
-];
-var sb=document.getElementById("sBody");
-STD.forEach(function(s){
-  var gc=function(r){return r!=null?(r>=1.05?"up":r<0.95?"dn":"nt"):"nt";};
-  var yc=function(v){return v!=null?(v>=110?"up":v<100?"dn":"nt"):"nt";};
-  var gs=function(r){return r!=null?(r>=1?"+":""):"";};
-  var gt=function(r){return r!=null?((r*100-100).toFixed(1)+"%"):"-";};
-  sb.innerHTML+="<tr><td class='sname'>"+s.n+"</td><td>"+s.s2.toFixed(1)+"</td><td>"+s.s3.toFixed(1)+"</td><td><b>"+s.s4.toFixed(1)+"</b></td><td class='"+gc(s.g3)+"'>"+gs(s.g3)+gt(s.g3)+"</td><td class='"+gc(s.g4)+"'>"+gs(s.g4)+gt(s.g4)+"</td><td class='"+yc(s.y4)+"'><b>"+(s.y4!=null?s.y4.toFixed(1)+"%":"-")+"</b></td></tr>";
-});
-
-// 前年比グラフ
-var yi=STD.filter(function(s){return s.y4!=null&&s.y4>0&&s.n!="五月ケ丘東";}).sort(function(a,b){return b.y4-a.y4;});
-var yo=bOpt(false,true,true);yo.scales.x.min=70;
-yo.plugins={legend:{display:false},tooltip:{callbacks:{label:function(c){return c.raw.toFixed(1)+"%";}}}};
-new Chart(document.getElementById("cY"),{type:"bar",data:{labels:yi.map(function(s){return s.n;}),datasets:[{
-  label:"前年比",data:yi.map(function(s){return s.y4;}),borderRadius:3,
-  backgroundColor:yi.map(function(s){return s.y4>=110?"rgba(45,198,83,0.75)":s.y4<100?"rgba(230,57,70,0.75)":"rgba(244,162,97,0.75)";})
-}]},options:yo});
-var uEl=document.getElementById("yUp"),dEl=document.getElementById("yDn");
-yi.forEach(function(s){var el=document.createElement("div");el.style.marginBottom="3px";
-  if(s.y4>=110){el.innerHTML="<b style='color:#2dc653'>▲"+s.n+"</b> <span style='font-size:10px'>"+s.y4.toFixed(1)+"%</span>";uEl.appendChild(el);}
-  else if(s.y4<100){el.innerHTML="<b style='color:#e63946'>▼"+s.n+"</b> <span style='font-size:10px'>"+s.y4.toFixed(1)+"%</span>";dEl.appendChild(el);}
-});
-
-// 個店セレクタ
-var sel=document.getElementById("storeSel");
-SL.forEach(function(s){var o=document.createElement("option");o.value=s;o.textContent=s;sel.appendChild(o);});
-
-var sCBi=null,sCPi=null,sCMi=null;
-function US(){
-  var st=document.getElementById("storeSel").value;
-  if(!st){document.getElementById("sDetail").style.display="none";document.getElementById("sEmpty").style.display="block";return;}
-  document.getElementById("sDetail").style.display="block";
-  document.getElementById("sEmpty").style.display="none";
-  document.getElementById("sTitle").textContent="🏪 "+st;
-  var m=MO[st]||{};
-  var g4c=m.g4!=null?(m.g4>=1.05?"#2dc653":m.g4<0.95?"#e63946":"#888"):"#888";
-  var y4c=m.y4!=null?(m.y4>=110?"#2dc653":m.y4<100?"#e63946":"#888"):"#888";
-  var g4t=m.g4!=null?((m.g4*100-100)>=0?"+":"")+((m.g4*100-100).toFixed(1))+"%":"--";
-  var g3c=m.g3!=null?(m.g3>=1.05?"#2dc653":m.g3<0.95?"#e63946":"#888"):"#888";
-  var g3t=m.g3!=null?((m.g3*100-100)>=0?"+":"")+((m.g3*100-100).toFixed(1))+"%":"--";
-  document.getElementById("sKpi").innerHTML=
-    "<div class='kc'><div class='kl'>2月 販売数/日</div><div class='kv'>"+(m.s2!=null?m.s2.toFixed(1):"--")+"</div></div>"+
-    "<div class='kc'><div class='kl'>4月 販売数/日</div><div class='kv' style='color:"+g4c+"'>"+(m.s4!=null?m.s4.toFixed(1):"--")+"</div><div class='ks'>"+g4t+"</div></div>"+
-    "<div class='kc'><div class='kl'>前年比(4月)</div><div class='kv' style='color:"+y4c+"'>"+(m.y4!=null?m.y4.toFixed(1)+"%":"--")+"</div></div>"+
-    "<div class='kc'><div class='kl'>2月 販売高/日</div><div class='kv' style='font-size:13px'>"+(m.h2!=null?(m.h2/1000).toFixed(1)+"k":"--")+"</div></div>"+
-    "<div class='kc'><div class='kl'>4月 販売高/日</div><div class='kv' style='font-size:13px'>"+(m.h4!=null?(m.h4/1000).toFixed(1)+"k":"--")+"</div></div>"+
-    "<div class='kc'><div class='kl'>3月 伸長</div><div class='kv' style='font-size:14px;color:"+g3c+"'>"+g3t+"</div></div>";
-  var h=SH[st];
-  // canvas リセット
-  function resetCanvas(id,w,hh){
-    var old=document.getElementById(id);
-    var nc=document.createElement("canvas");
-    nc.id=id;nc.width=w;nc.height=hh;
-    old.parentNode.replaceChild(nc,old);
-    return nc;
-  }
-  if(sCBi){sCBi.destroy();sCBi=null;}
-  if(sCPi){sCPi.destroy();sCPi=null;}
-  if(sCMi){sCMi.destroy();sCMi=null;}
-  var cbEl=resetCanvas("sCB",700,240);
-  var cpEl=resetCanvas("sCP",700,240);
-  var cmEl=resetCanvas("sCM",700,320);
-  if(h){
-    sCBi=new Chart(cbEl,{type:"bar",data:{labels:HL,datasets:[
-      {label:"弁当合計",data:h["弁当合計"],backgroundColor:"rgba(67,97,238,0.22)",borderColor:"rgba(67,97,238,0.7)",borderWidth:1},
-      {label:"厨房弁当",data:h["厨房弁当"],backgroundColor:"rgba(230,57,70,0.65)",borderColor:"rgba(230,57,70,0.9)",borderWidth:1}
-    ]},options:bOpt(true)});
-    sCPi=new Chart(cpEl,{type:"bar",data:{labels:HL,datasets:[
-      {label:"調理パン",data:h["調理パン"],backgroundColor:"rgba(67,97,238,0.22)",borderColor:"rgba(67,97,238,0.7)",borderWidth:1},
-      {label:"厨房調理パン",data:h["厨房調理パン"],backgroundColor:"rgba(244,162,97,0.75)",borderColor:"rgba(244,162,97,1)",borderWidth:1}
-    ]},options:bOpt(true)});
-    var lb=[],lp=[];
-    for(var i=0;i<24;i++){
-      var rb=h["厨房弁当"][i]/(h["弁当合計"][i]+h["厨房弁当"][i]+0.001)*100;
-      var rp=h["厨房調理パン"][i]/(h["調理パン"][i]+h["厨房調理パン"][i]+0.001)*100;
-      if(h["弁当合計"][i]>300&&rb<25)lb.push(i+"時("+Math.round(rb)+"%)");
-      if(h["調理パン"][i]>200&&rp<25)lp.push(i+"時("+Math.round(rp)+"%)");
-    }
-    var ln=document.getElementById("sLoss");ln.innerHTML="";
-    if(lb.length)ln.innerHTML+="<div style='margin-bottom:6px'><span style='color:#e63946;font-weight:700'>⚠️ 弁当ロス：</span>"+lb.join(" ")+"<br><span style='font-size:11px;color:#888'>需要はあるが厨房弁当比率25%未満</span></div>";
-    else ln.innerHTML+="<div style='color:#2dc653;font-weight:700;margin-bottom:4px'>✅ 弁当：大きなロスなし</div>";
-    if(lp.length)ln.innerHTML+="<div><span style='color:#f4a261;font-weight:700'>⚠️ 調理パンロス：</span>"+lp.join(" ")+"<br><span style='font-size:11px;color:#888'>需要はあるが厨房調理パン比率25%未満</span></div>";
-    else ln.innerHTML+="<div style='color:#2dc653;font-weight:700'>✅ 調理パン：大きなロスなし</div>";
-  } else {
-    document.getElementById("sLoss").textContent="この店舗の時間帯データなし（新規店舗等）";
-  }
-  // 単品マトリクス
-  var si=(SI[st]||[]).filter(function(x){return x.name!="まちかど厨房（販売）";});
-  var sv=si.filter(function(x){return x.sales>0;}).map(function(x){return x.sales;}).sort(function(a,b){return a-b;});
-  var sm=sv.length?sv[Math.floor(sv.length/2)]:5;
-  var aq=function(s,w){return s>=sm&&w<15?1:s<sm&&w<15?2:s>=sm&&w>=15?3:4;};
-  var qc={1:"rgba(67,97,238,0.8)",2:"rgba(45,198,83,0.8)",3:"rgba(244,162,97,0.8)",4:"rgba(230,57,70,0.8)"};
-  var ql={1:"①作成増",2:"②販売増",3:"③計画改善",4:"④カット"};
-  var sco={responsive:false,plugins:{legend:{labels:{font:{size:10},padding:6}},tooltip:{callbacks:{label:function(c){return c.raw.name+"（販売"+c.raw.x.toFixed(1)+" / 廃棄"+c.raw.y.toFixed(1)+"%)";}}}},
-    scales:{x:{title:{display:true,text:"販売数",font:{size:10}},ticks:{font:{size:9}},min:0},
-      y:{title:{display:true,text:"廃棄率(%)",font:{size:10}},ticks:{font:{size:9},callback:function(v){return v+"%";}},min:0,
-        grid:{color:function(c){return c.tick.value===15?"rgba(230,57,70,0.5)":"rgba(0,0,0,0.05)";}}}
-    }};
-  sCMi=new Chart(cmEl,{type:"scatter",data:{datasets:[1,2,3,4].map(function(q){return{label:ql[q],data:si.filter(function(x){return x.sales>0&&aq(x.sales,x.wr)===q;}).map(function(x){return{x:x.sales,y:x.wr,name:x.name};}),backgroundColor:qc[q],pointRadius:6,pointHoverRadius:8};})},options:sco});
-  var ib=document.getElementById("iBody");ib.innerHTML="";
-  si.slice().sort(function(a,b){return b.sales-a.sales;}).forEach(function(it){
-    var q=aq(it.sales,it.wr);
-    var qt=q===1?"<span class='tb' style='background:#e8f4ff;color:#4361ee'>①</span>":q===2?"<span class='tb' style='background:#e8f8ed;color:#2dc653'>②</span>":q===3?"<span class='tb' style='background:#fff8e8;color:#f4a261'>③</span>":"<span class='tb' style='background:#fff0f0;color:#e63946'>④</span>";
-    var wc=it.wr>=25?"color:#e63946":it.wr>=15?"color:#f4a261":"color:#2dc653";
-    var tc=it.s2>it.s1?"color:#2dc653":it.s2<it.s1?"color:#e63946":"color:#888";
-    var ar=it.s2>it.s1?"↑":it.s2<it.s1?"↓":"→";
-    var wb=it.wr>=25?"#e63946":it.wr>=15?"#f4a261":"#2dc653";
-    ib.innerHTML+="<tr><td style='padding:5px'>"+it.name+"</td><td>"+it.s1.toFixed(1)+"</td><td style='"+tc+"'>"+it.s2.toFixed(1)+" "+ar+"</td><td style='"+wc+"'>"+it.wr.toFixed(1)+"%<div class='wrbar'><div class='wrfill' style='width:"+Math.min(it.wr,60)/60*100+"%;background:"+wb+"'></div></div></td><td>"+qt+"</td></tr>";
-  });
-}
-
-// 全体単品マトリクス
-var AI=[
+// ============================================================
+//  固定データ
+// ============================================================
+var AI = [
   {n:"カツ＆タマゴサンド８個",s:126.2,w:10.4},{n:"ロースカツサンド５個",s:123.9,w:9.9},
   {n:"ロースカツサンド(1個)5個",s:78.3,w:10.3},{n:"まんまる鶏＆ハンバーグ弁当",s:76.3,w:9.4},
   {n:"海鮮かき揚げ丼",s:76.1,w:7.3},{n:"大盛まんまる鶏＆ハンバーグ",s:73.2,w:8.6},
@@ -413,21 +369,472 @@ var AI=[
   {n:"海老カツタマゴサンド",s:5.0,w:0.0},{n:"フランクドッグ",s:4.5,w:19.2},
   {n:"海老カツタマゴサンド(1個)",s:4.0,w:0.0},{n:"海老カツバーガー",s:2.8,w:32.1}
 ];
-var MED=43.15;
-var aqA=function(s,w){return s>=MED&&w<15?1:s<MED&&w<15?2:s>=MED&&w>=15?3:4;};
-var qcA={1:"rgba(67,97,238,0.8)",2:"rgba(45,198,83,0.8)",3:"rgba(244,162,97,0.8)",4:"rgba(230,57,70,0.8)"};
-var qlA={1:"①作成増チャンス",2:"②販売伸ばしたい",3:"③計画精度改善",4:"④カット対象"};
-var mxo={responsive:false,plugins:{legend:{labels:{font:{size:10},padding:8}},tooltip:{callbacks:{label:function(c){return c.raw.name+"（販売"+c.raw.x.toFixed(1)+" / 廃棄"+c.raw.y.toFixed(1)+"%)";}}}},
-  scales:{x:{title:{display:true,text:"販売数（PSA/D 16店合計）",font:{size:10}},ticks:{font:{size:9}},min:0},
-    y:{title:{display:true,text:"廃棄率(%)",font:{size:10}},ticks:{font:{size:9},callback:function(v){return v+"%";}},min:0,max:55,
-      grid:{color:function(c){return c.tick.value===15?"rgba(230,57,70,0.5)":"rgba(0,0,0,0.05)";}}}
-  }};
-new Chart(document.getElementById("cMX"),{type:"scatter",data:{datasets:[1,2,3,4].map(function(q){return{label:qlA[q],data:AI.filter(function(i){return aqA(i.s,i.w)===q;}).map(function(i){return{x:i.s,y:i.w,name:i.n};}),backgroundColor:qcA[q],pointRadius:7,pointHoverRadius:9};})},options:mxo});
+var MED = 43.15;
 
-function iCard(i,bg,bc){return "<div style='background:"+bg+";border:1px solid "+bc+";border-radius:8px;padding:6px 10px;font-size:11px'><b>"+i.n+"</b><br>販売"+i.s.toFixed(1)+"個 / 廃棄率"+i.w.toFixed(1)+"%</div>";}
-AI.filter(function(i){return aqA(i.s,i.w)===1;}).slice(0,10).forEach(function(i){document.getElementById("q1l").innerHTML+=iCard(i,"#e8f4ff","#4361ee");});
-AI.filter(function(i){return aqA(i.s,i.w)===3;}).forEach(function(i){document.getElementById("q3l").innerHTML+=iCard(i,"#fff8e8","#f4a261");});
-AI.filter(function(i){return aqA(i.s,i.w)===4;}).forEach(function(i){document.getElementById("q4l").innerHTML+=iCard(i,"#fff0f0","#e63946");});
+// 翌週計画設定（火〜月）
+var PLAN_DAYS   = ['火','水','木','金','土','日','月'];
+var PLAN_FACTOR = [0.90,0.95,1.00,1.10,1.20,1.15,0.85];
+var PLAN_LABEL  = ['控えめ','普通','普通','多め','最多','多め','少なめ'];
+var PLAN_COL    = ['#22c55e','#94a3b8','#94a3b8','#f59e0b','#ef4444','#ef4444','#22c55e'];
+var PLAN_BG     = ['#dcfce7','#f1f5f9','#f1f5f9','#fff7ed','#fee2e2','#fee2e2','#dcfce7'];
+
+// ============================================================
+//  廃棄率キャッシュ
+// ============================================================
+var wasteCache = {};
+SL.forEach(function(st){
+  var si=(SI[st]||[]).filter(function(x){return x.name!='まちかど厨房（販売）'&&x.sales>0;});
+  var tot=si.reduce(function(a,b){return a+b.sales;},0);
+  wasteCache[st]=tot>0?si.reduce(function(a,b){return a+b.wr*b.sales;},0)/tot:null;
+});
+
+// ============================================================
+//  組織平均算出
+// ============================================================
+var validSL = SL.filter(function(st){return (MO[st]||{}).s4>1;});
+var ORG_AVG_S4 = validSL.reduce(function(a,b){return a+(MO[b]||{}).s4;},0)/validSL.length;
+var validY = SL.filter(function(st){return (MO[st]||{}).y4!=null&&(MO[st]||{}).y4>0;});
+var ORG_AVG_YOY = validY.reduce(function(a,b){return a+(MO[b]||{}).y4;},0)/validY.length;
+var validH = SL.filter(function(st){return (MO[st]||{}).h4>1000;});
+var ORG_AVG_H4  = validH.reduce(function(a,b){return a+(MO[b]||{}).h4;},0)/validH.length;
+
+// ============================================================
+//  共通グラフオプション
+// ============================================================
+function bOpt(leg){
+  return {responsive:false,
+    plugins:{legend:{display:!!leg,labels:{font:{size:10},padding:6,usePointStyle:true}}},
+    scales:{x:{ticks:{font:{size:9},maxRotation:0}},y:{ticks:{font:{size:9}},beginAtZero:true}}};
+}
+function shortName(n){return n.replace(/（[^）]*）/g,'').replace(/[（(].*$/,'').trim().substring(0,18);}
+// 支援金ティア判定
+function supportTier(h4){
+  if(!h4||h4<1000) return {pct:0,txt:'0%',cls:'bg-lag',col:'#dc2626',hdrCls:'t0h'};
+  if(h4>=30000) return {pct:10,txt:'10%',cls:'bg-lead',col:'#15803d',hdrCls:'t10h'};
+  if(h4>=20000) return {pct:8, txt:'8%', cls:'bg-good',col:'#1d4ed8',hdrCls:'t8h'};
+  if(h4>=10000) return {pct:7, txt:'7%', cls:'bg-ok',  col:'#d97706',hdrCls:'t7h'};
+  return {pct:0,txt:'0%',cls:'bg-lag',col:'#dc2626',hdrCls:'t0h'};
+}
+function tierGap(h4){
+  if(!h4||h4>=30000) return null;
+  var next=h4>=20000?30000:h4>=10000?20000:10000;
+  return {next:next, gap:next-h4};
+}
+
+// ============================================================
+//  TAB 1: 数値検証
+// ============================================================
+function initVerify(){
+  // サマリーKPI
+  var orgVsBranch = ORG_AVG_S4 - BRANCH_AVG_S4;
+  var orgVsBranchPct = (orgVsBranch/BRANCH_AVG_S4*100).toFixed(1);
+  var orgSalesColor = orgVsBranch>=0?'c-g':'c-r';
+
+  var orgH4Clr = ORG_AVG_H4>=BRANCH_AVG_H4?'c-g':'c-r';
+  document.getElementById('vSummary').innerHTML =
+    '<div class="kc"><div class="kl">組織平均<br>（販売数/日）</div>'+
+    '<div class="kv '+orgSalesColor+'">'+ORG_AVG_S4.toFixed(1)+'</div>'+
+    '<div class="ks">'+validSL.length+'店舗 平均</div></div>'+
+    '<div class="kc"><div class="kl">支店平均<br>（販売数/日・設定値）</div>'+
+    '<div class="kv c-b">'+BRANCH_AVG_S4.toFixed(1)+'</div>'+
+    '<div class="ks">benchmark</div></div>';
+  document.getElementById('vSummaryH').innerHTML =
+    '<div class="kc"><div class="kl">組織平均<br>（厨房売上高/日）</div>'+
+    '<div class="kv '+orgH4Clr+'">'+(ORG_AVG_H4/10000).toFixed(1)+'万</div>'+
+    '<div class="ks">支援金: '+supportTier(ORG_AVG_H4).txt+'</div></div>'+
+    '<div class="kc"><div class="kl">支店平均<br>（売上高/日・設定値）</div>'+
+    '<div class="kv c-b">'+(BRANCH_AVG_H4/10000).toFixed(1)+'万</div>'+
+    '<div class="ks">支援金: '+supportTier(BRANCH_AVG_H4).txt+'</div></div>';
+
+  // 牽引バナー
+  var cls = orgVsBranch>=0?'pb-lead':orgVsBranch>-3?'pb-ok':'pb-lag';
+  var icon = orgVsBranch>=0?'🟢':orgVsBranch>-3?'🟡':'🔴';
+  var txt  = orgVsBranch>=0?'組織として支店平均を<b>牽引中</b>':orgVsBranch>-3?'支店平均と<b>ほぼ同水準</b>':'支店平均を<b>下回っています</b>';
+  var orgH4VsBranch = ORG_AVG_H4 - BRANCH_AVG_H4;
+  var sub  = '販売数：'+(orgVsBranch>=0?'+':'')+orgVsBranch.toFixed(1)+'個/日（'+orgVsBranchPct+'%）　売上高：'+(orgH4VsBranch>=0?'+':'')+Math.round(orgH4VsBranch).toLocaleString()+'円/日';
+  document.getElementById('vPullBanner').innerHTML =
+    '<div class="pull-banner '+cls+'">'+
+    '<div class="pb-icon">'+icon+'</div>'+
+    '<div class="pb-main"><div class="pb-title">'+txt+'</div><div class="pb-sub">'+sub+'</div></div>'+
+    '</div>';
+
+  // 支店平均設定状態の注意
+  document.getElementById('vBranchNote').innerHTML =
+    '<div class="alert y" style="font-size:11px"><b>ℹ️ 吹田支店平均について</b>'+
+    '現在の支店平均は設定値（'+BRANCH_AVG_S4.toFixed(1)+'個/日）です。実際の支店平均値に更新するには rebuild_kitchen.py の BRANCH_AVG_S4 を変更してください。</div>';
+
+  // 店舗テーブル
+  var sorted = SL.filter(function(st){return (MO[st]||{}).s4!=null;})
+    .slice().sort(function(a,b){return ((MO[b]||{}).h4||0)-((MO[a]||{}).h4||0);});
+
+  var tb = document.getElementById('vBody');
+  var vc=function(v){return v==null?'nt':v>=0?'up':v<-5?'dn':'nt';};
+  var vs=function(v){return v==null?'-':(v>=0?'+':'')+v.toFixed(1);};
+  sorted.forEach(function(st){
+    var m=MO[st]||{};
+    if(!m.s4) return;
+    var vsOrg   = m.s4 - ORG_AVG_S4;
+    var vsBranch= m.s4 - BRANCH_AVG_S4;
+    // 判定バッジ
+    var jcls,jtxt;
+    if(vsBranch>=0){jcls='bg-lead';jtxt='牽引中';}
+    else if(vsOrg>=0){jcls='bg-ok';jtxt='組織並み';}
+    else{jcls='bg-lag';jtxt='要強化';}
+    // 前年比（売上高ベース）
+    var yc = m.y4==null?'nt':m.y4>=110?'up':m.y4<100?'dn':'nt';
+    var yt = m.y4!=null?m.y4.toFixed(1)+'%':'-';
+    // 売上高
+    var h4Cls = !m.h4?'nt':m.h4>=BRANCH_AVG_H4?'up':m.h4>=ORG_AVG_H4?'nt':'dn';
+    var h4Txt = m.h4>0?(m.h4/10000).toFixed(1)+'万':'-';
+    // 2→4月 売上伸長
+    var growth = m.h2>0?((m.h4/m.h2-1)*100):null;
+    var gCls = growth==null?'nt':growth>=5?'up':growth<0?'dn':'nt';
+    var gTxt = growth!=null?(growth>=0?'+':'')+growth.toFixed(1)+'%':'-';
+    // 支援金ティア
+    var tier = supportTier(m.h4);
+    var gap  = tierGap(m.h4);
+    var gapBadge = gap&&gap.gap<2000?'<span class="tier-close">あと'+gap.gap.toLocaleString()+'円</span>':'';
+    tb.innerHTML += '<tr>'+
+      '<td class="l" style="padding-left:10px">'+st+'</td>'+
+      '<td class="'+(m.s4>=BRANCH_AVG_S4?'up':m.s4>=ORG_AVG_S4?'nt':'dn')+'"><b>'+m.s4.toFixed(1)+'</b></td>'+
+      '<td class="'+vc(vsBranch)+'">'+vs(vsBranch)+'</td>'+
+      '<td class="'+h4Cls+'"><b>'+h4Txt+'</b></td>'+
+      '<td class="'+gCls+'">'+gTxt+'</td>'+
+      '<td class="'+yc+'">'+yt+'</td>'+
+      '<td><span class="badge '+tier.cls+'">'+tier.txt+'</span>'+gapBadge+'</td>'+
+      '<td><span class="badge '+jcls+'">'+jtxt+'</span></td>'+
+    '</tr>';
+  });
+
+  // 好調 / 要強化
+  var good=sorted.filter(function(st){return (MO[st]||{}).s4>=BRANCH_AVG_S4;});
+  var weak=sorted.filter(function(st){return (MO[st]||{}).s4<ORG_AVG_S4;});
+  var makeGroup=function(list,colClass){
+    if(!list.length) return '<div class="sg-item" style="color:#94a3b8">なし</div>';
+    return list.map(function(st){
+      var m=MO[st]||{};
+      var v=m.s4-BRANCH_AVG_S4;
+      return '<div class="sg-item">'+
+        '<span style="font-weight:700;font-size:11px">'+st+'</span>'+
+        '<span class="'+colClass+'" style="font-size:11px;font-weight:700">'+
+          (v>=0?'+':'')+v.toFixed(1)+'</span>'+
+      '</div>';
+    }).join('');
+  };
+  document.getElementById('vGood').innerHTML=makeGroup(good,'up');
+  document.getElementById('vWeak').innerHTML=makeGroup(weak,'dn');
+
+  // 支援金ポジション
+  var tierDefs=[
+    {pct:10,hdrCls:'t10h',label:'10%支援（厨房売上高 3万円/日以上）'},
+    {pct:8, hdrCls:'t8h', label:'8%支援（2万円/日以上）'},
+    {pct:7, hdrCls:'t7h', label:'7%支援（1万円/日以上）'},
+    {pct:0, hdrCls:'t0h', label:'0%支援（1万円/日未満）'}
+  ];
+  var tierStores={10:[],8:[],7:[],0:[]};
+  sorted.forEach(function(st){
+    var h4=(MO[st]||{}).h4||0;
+    var t=supportTier(h4).pct;
+    if(tierStores[t]!==undefined) tierStores[t].push(st);
+  });
+  var tierHtml='';
+  tierDefs.forEach(function(td){
+    var list=tierStores[td.pct];
+    if(!list||!list.length) return;
+    tierHtml+='<div class="tier-section"><div class="tier-hdr '+td.hdrCls+'">💰 '+td.label+'（'+list.length+'店）</div>';
+    list.forEach(function(st){
+      var h4=(MO[st]||{}).h4||0;
+      var gap=tierGap(h4);
+      var isClose=gap&&gap.gap<2000;
+      tierHtml+='<div class="tier-item">'+
+        '<span style="font-weight:700">'+(isClose?'🔥 ':'')+st+'</span>'+
+        '<span style="display:flex;align-items:center;gap:6px">'+
+          '<span style="color:#64748b">'+(h4>0?(h4/10000).toFixed(2)+'万円/日':'-')+'</span>'+
+          (isClose?'<span class="tier-close">あと'+gap.gap.toLocaleString()+'円で昇格！</span>':'')+
+        '</span></div>';
+    });
+    tierHtml+='</div>';
+  });
+  document.getElementById('vTierSection').innerHTML=tierHtml||'<div style="color:#94a3b8;padding:8px">データなし</div>';
+
+  // 前年比グラフ
+  var yi=SL.filter(function(st){return (MO[st]||{}).y4!=null&&(MO[st]||{}).y4>0;})
+    .slice().sort(function(a,b){return (MO[b]||{}).y4-(MO[a]||{}).y4;});
+  var yiBG=yi.map(function(st){var y=(MO[st]||{}).y4;return y>=110?'rgba(34,197,94,.75)':y<100?'rgba(239,68,68,.75)':'rgba(245,158,11,.75)';});
+  var yoBase=bOpt(false);yoBase.indexAxis='y';
+  yoBase.scales.x.min=70;yoBase.scales.x.ticks.callback=function(v){return v+'%';};
+  yoBase.plugins={legend:{display:false},tooltip:{callbacks:{label:function(c){return c.raw.toFixed(1)+'%';}}}};
+  new Chart(document.getElementById('cY'),{type:'bar',data:{
+    labels:yi.map(function(st){return st;}),
+    datasets:[{data:yi.map(function(st){return (MO[st]||{}).y4;}),borderRadius:3,backgroundColor:yiBG}]
+  },options:yoBase});
+
+  // ブランチ参考線（前年比グラフ）
+  // ※ Chart.js 4 ではannotationプラグインが必要なため省略
+}
+
+// ============================================================
+//  TAB 2: 個店別
+// ============================================================
+var storeSel=document.getElementById('storeSel');
+SL.forEach(function(s){var o=document.createElement('option');o.value=s;o.textContent=s;storeSel.appendChild(o);});
+
+var sCBi=null,sCPi=null,sCMi=null;
+var currentStore='';
+var selectedDay=3; // default: 金曜
+
+function resetCanvas(id,w,h){
+  var old=document.getElementById(id),nc=document.createElement('canvas');
+  nc.id=id;nc.width=w;nc.height=h;old.parentNode.replaceChild(nc,old);return nc;
+}
+
+function US(){
+  var st=document.getElementById('storeSel').value;
+  if(!st){
+    document.getElementById('sDetail').style.display='none';
+    document.getElementById('sEmpty').style.display='block';
+    return;
+  }
+  currentStore=st;
+  document.getElementById('sDetail').style.display='block';
+  document.getElementById('sEmpty').style.display='none';
+
+  var m=MO[st]||{};
+  var wr=wasteCache[st];
+  var vsOrg=m.s4!=null?m.s4-ORG_AVG_S4:null;
+  var vsBranch=m.s4!=null?m.s4-BRANCH_AVG_S4:null;
+
+  // ① 基本数値 KPI
+  var sc=m.s4!=null?(m.s4>=BRANCH_AVG_S4?'c-g':m.s4>=ORG_AVG_S4?'c-o':'c-r'):'c-gy';
+  var vc=function(v){return v==null?'c-gy':v>=0?'c-g':v<-5?'c-r':'c-o';};
+  var vs=function(v,u){return v==null?'--':(v>=0?'+':'')+v.toFixed(1)+(u||'');};
+  var wrc=wr==null?'c-gy':wr<10?'c-g':wr<20?'c-o':'c-r';
+  document.getElementById('sKpi').innerHTML=
+    '<div class="kc"><div class="kl">4月 販売数/日</div><div class="kv '+sc+'">'+(m.s4!=null?m.s4.toFixed(1):'--')+'</div>'+
+    '<div class="ks">'+(m.g4!=null?'2月比 '+(m.g4>=1?'+':'')+((m.g4*100-100).toFixed(1))+'%':'')+'</div></div>'+
+    '<div class="kc"><div class="kl">vs 組織平均</div><div class="kv '+vc(vsOrg)+'">'+vs(vsOrg)+'</div>'+
+    '<div class="ks">組織平均 '+ORG_AVG_S4.toFixed(1)+'個/日</div></div>'+
+    '<div class="kc"><div class="kl">vs 支店平均</div><div class="kv '+vc(vsBranch)+'">'+vs(vsBranch)+'</div>'+
+    '<div class="ks">支店平均 '+BRANCH_AVG_S4.toFixed(1)+'個/日</div></div>'+
+    '<div class="kc"><div class="kl">廃棄率</div><div class="kv '+wrc+'">'+(wr!=null?wr.toFixed(1)+'%':'--')+'</div>'+
+    '<div class="ks">'+(wr!=null?wr<10?'良好':wr<20?'注意':'多すぎ':'')+'</div></div>';
+
+  // 牽引バナー
+  if(vsBranch!=null){
+    var cls2=vsBranch>=0?'pb-lead':vsBranch>-3?'pb-ok':'pb-lag';
+    var icon2=vsBranch>=0?'🟢':vsBranch>-3?'🟡':'🔴';
+    var txt2=vsBranch>=0?'<b>支店平均を牽引中</b>':vsBranch>-3?'<b>支店平均と同水準</b>':'<b>支店平均を下回っています</b>';
+    document.getElementById('sPullBanner').innerHTML=
+      '<div class="pull-banner '+cls2+'">'+
+      '<div class="pb-icon">'+icon2+'</div>'+
+      '<div class="pb-main"><div class="pb-title">'+txt2+'</div>'+
+      '<div class="pb-sub">支店平均差：'+(vsBranch>=0?'+':'')+vsBranch.toFixed(1)+'個/日 ／ 前年比：'+(m.y4!=null?m.y4.toFixed(1)+'%':'--')+'</div></div>'+
+      '</div>';
+  }
+
+  // ② 時間帯
+  var h=SH[st];
+  var lossHtml='',lossCount=0;
+  if(h){
+    for(var j=0;j<24;j++){
+      var tb2=h['弁当合計'][j];var kb2=h['厨房弁当'][j];
+      var tp2=h['調理パン'][j];var kp2=h['厨房調理パン'][j];
+      if(tb2>300&&kb2/(tb2+kb2+.001)*100<25){lossHtml+='<span class="lp lp-r">弁当 '+j+'時</span>';lossCount++;}
+      if(tp2>200&&kp2/(tp2+kp2+.001)*100<25){lossHtml+='<span class="lp lp-r">パン '+j+'時</span>';lossCount++;}
+    }
+  }
+  if(!lossCount)lossHtml='<span class="lp lp-g">問題なし ✅</span>';
+  document.getElementById('sLoss').innerHTML=lossHtml;
+
+  // チャート
+  if(sCBi){sCBi.destroy();sCBi=null;}if(sCPi){sCPi.destroy();sCPi=null;}if(sCMi){sCMi.destroy();sCMi=null;}
+  var cb=resetCanvas('sCB',700,210),cp=resetCanvas('sCP',700,210),cm=resetCanvas('sCM',700,300);
+  if(h){
+    var lbArr=[], lpArr=[];
+    for(var k=0;k<24;k++){
+      var rb=h['弁当合計'][k]>0?h['厨房弁当'][k]/(h['弁当合計'][k]+h['厨房弁当'][k]+.001)*100:100;
+      var rp=h['調理パン'][k]>0?h['厨房調理パン'][k]/(h['調理パン'][k]+h['厨房調理パン'][k]+.001)*100:100;
+      lbArr.push(h['弁当合計'][k]>300&&rb<25);
+      lpArr.push(h['調理パン'][k]>200&&rp<25);
+    }
+    sCBi=new Chart(cb,{type:'bar',data:{labels:HL,datasets:[
+      {label:'需要',data:h['弁当合計'],backgroundColor:lbArr.map(function(v){return v?'rgba(239,68,68,.18)':'rgba(37,99,235,.12)';}),borderColor:lbArr.map(function(v){return v?'rgba(239,68,68,.7)':'rgba(37,99,235,.4)';}),borderWidth:1},
+      {label:'作った数',data:h['厨房弁当'],backgroundColor:'rgba(34,197,94,.65)',borderColor:'rgba(34,197,94,.9)',borderWidth:1}
+    ]},options:bOpt(true)});
+    sCPi=new Chart(cp,{type:'bar',data:{labels:HL,datasets:[
+      {label:'需要',data:h['調理パン'],backgroundColor:lpArr.map(function(v){return v?'rgba(239,68,68,.18)':'rgba(37,99,235,.12)';}),borderColor:lpArr.map(function(v){return v?'rgba(239,68,68,.7)':'rgba(37,99,235,.4)';}),borderWidth:1},
+      {label:'作った数',data:h['厨房調理パン'],backgroundColor:'rgba(249,115,22,.7)',borderColor:'rgba(249,115,22,.9)',borderWidth:1}
+    ]},options:bOpt(true)});
+  }
+
+  // ③ 単品マトリクス
+  var si=(SI[st]||[]).filter(function(x){return x.name!='まちかど厨房（販売）'&&x.sales>0;});
+  var sv=si.map(function(x){return x.sales;}).sort(function(a,b){return a-b;});
+  var sm=sv.length?sv[Math.floor(sv.length/2)]:5;
+  var aq=function(s,w){return s>=sm&&w<15?1:s<sm&&w<15?2:s>=sm&&w>=15?3:4;};
+  var qcA2={1:'rgba(37,99,235,.8)',2:'rgba(34,197,94,.8)',3:'rgba(245,158,11,.8)',4:'rgba(239,68,68,.8)'};
+  var qlA2={1:'① 作成増',2:'② 廃棄優秀',3:'③ 計画改善',4:'④ カット'};
+  var mxo2={responsive:false,
+    plugins:{legend:{labels:{font:{size:10},padding:6,usePointStyle:true}},
+      tooltip:{callbacks:{label:function(c){return c.raw.name+'（'+c.raw.x.toFixed(1)+'個 / 廃棄'+c.raw.y.toFixed(1)+'%）';}}}
+    }
+  };
+  mxo2.scales={
+    x:{title:{display:true,text:'販売数（週平均/日）',font:{size:10}},ticks:{font:{size:9}},min:0},
+    y:{title:{display:true,text:'廃棄率（%）',font:{size:10}},ticks:{font:{size:9},callback:function(v){return v+'%';}},min:0,
+      grid:{color:function(c){return c.tick.value===15?'rgba(239,68,68,.5)':'rgba(0,0,0,.05)';}}}
+  };
+  sCMi=new Chart(cm,{type:'scatter',data:{datasets:[1,2,3,4].map(function(q){return{
+    label:qlA2[q],
+    data:si.filter(function(x){return aq(x.sales,x.wr)===q;}).map(function(x){return{x:x.sales,y:x.wr,name:x.name};}),
+    backgroundColor:qcA2[q],pointRadius:7,pointHoverRadius:9
+  };})},options:mxo2});
+
+  // 象限リスト
+  var mlHtml='<div class="quad-grid">';
+  var qTtl={1:'① 作成増のチャンス',2:'② 廃棄優秀・販売伸ばしたい',3:'③ 計画精度改善',4:'④ カット対象'};
+  var qCls2={1:'q1',2:'q2',3:'q3',4:'q4'};
+  [1,2,3,4].forEach(function(q){
+    var its=si.filter(function(x){return aq(x.sales,x.wr)===q;}).sort(function(a,b){return b.sales-a.sales;});
+    mlHtml+='<div class="qc '+qCls2[q]+'"><div class="qt">'+qTtl[q]+'</div>';
+    if(its.length){
+      mlHtml+=its.slice(0,6).map(function(i){return '<div style="font-size:10px;padding:2px 0;border-bottom:1px solid rgba(0,0,0,.06)">'+shortName(i.name)+' <span style="float:right;color:#64748b">'+i.s2.toFixed(1)+'個/日</span></div>';}).join('');
+    }else{mlHtml+='<div style="font-size:10px;color:#94a3b8">なし</div>';}
+    mlHtml+='</div>';
+  });
+  mlHtml+='</div>';
+  document.getElementById('sMatrixLists').innerHTML=mlHtml;
+
+  // ④ 翌週計画タブ
+  buildDayTabs(si);
+}
+
+// ============================================================
+//  翌週計画
+// ============================================================
+function buildDayTabs(si){
+  var tabs=document.getElementById('dayTabs');
+  tabs.innerHTML='';
+  PLAN_DAYS.forEach(function(d,i){
+    var btn=document.createElement('button');
+    btn.className='dtab'+(i===selectedDay?' on':'');
+    btn.style.borderColor=i===selectedDay?PLAN_COL[i]:'#e2e8f0';
+    btn.style.backgroundColor=i===selectedDay?PLAN_COL[i]:'#fff';
+    btn.innerHTML='<div>'+d+'</div><div style="font-size:9px">'+PLAN_LABEL[i]+'</div>';
+    btn.onclick=(function(idx){return function(){selectedDay=idx;buildDayTabs(si);};})(i);
+    tabs.appendChild(btn);
+  });
+  renderPlan(si, selectedDay);
+}
+
+function renderPlan(si, dayIdx){
+  var f=PLAN_FACTOR[dayIdx];
+  var label=PLAN_DAYS[dayIdx]+'曜（'+PLAN_LABEL[dayIdx]+'）';
+  var col=PLAN_COL[dayIdx];
+  var bg=PLAN_BG[dayIdx];
+
+  // 増やす：廃棄<20% かつ今週販売が一定以上
+  var pushItems=si.filter(function(x){return x.wr<20&&x.s2>=1;})
+    .sort(function(a,b){return b.s2-a.s2}).slice(0,10)
+    .map(function(x){
+      return {name:x.name, qty:Math.max(1,Math.round(x.s2*f)),
+              base:x.s2, trend:x.s2>x.s1*1.05?'↑':x.s2<x.s1*0.95?'↓':'→', wr:x.wr};
+    });
+
+  // 抑える：廃棄>=20% かつ販売少ない
+  var holdItems=si.filter(function(x){return x.wr>=20;})
+    .sort(function(a,b){return b.wr-a.wr}).slice(0,5)
+    .map(function(x){
+      return {name:x.name, qty:Math.max(1,Math.round(x.s2*f*0.7)), wr:x.wr};
+    });
+
+  var html='<div style="font-size:12px;font-weight:700;color:'+col+';margin-bottom:8px;padding:6px 8px;background:'+bg+';border-radius:8px">'+label+'</div>';
+
+  html+='<div class="plan-sec">'+
+    '<div class="plan-sec-ttl"><span style="color:'+col+'">▲</span> 強化商品（増やす）</div>';
+  if(pushItems.length){
+    pushItems.forEach(function(it){
+      html+='<div class="plan-item">'+
+        '<span class="pin">'+shortName(it.name)+'</span>'+
+        '<span class="ptrend" style="color:'+(it.trend==='↑'?'#22c55e':it.trend==='↓'?'#ef4444':'#94a3b8')+'">'+it.trend+'</span>'+
+        '<span class="pqty" style="color:'+col+'">'+it.qty+'</span>'+
+        '<span class="punit">個/日</span>'+
+      '</div>';
+    });
+  }else{html+='<div style="font-size:11px;color:#94a3b8;padding:4px 0">データなし</div>';}
+  html+='</div>';
+
+  if(holdItems.length){
+    html+='<div class="plan-sec">'+
+      '<div class="plan-sec-ttl"><span style="color:#ef4444">▼</span> 抑える商品（廃棄多め）</div>';
+    holdItems.forEach(function(it){
+      html+='<div class="plan-item">'+
+        '<span class="pin">'+shortName(it.name)+'</span>'+
+        '<span class="pwr">廃棄'+it.wr.toFixed(0)+'%</span>'+
+        '<span class="pqty c-o">'+it.qty+'</span>'+
+        '<span class="punit">個/日</span>'+
+      '</div>';
+    });
+    html+='</div>';
+  }
+
+  // 前年比トレンドメモ
+  var m=MO[currentStore]||{};
+  if(m.g4!=null){
+    var trend=m.g4>=1.1?'伸長中 📈':m.g4>=1?'維持中 ➡️':'注意 📉';
+    html+='<div style="font-size:10px;color:#64748b;margin-top:8px;padding:6px 8px;background:#f8fafc;border-radius:8px">'+
+      '2月比伸長率：'+(m.g4>=1?'+':'')+((m.g4*100-100).toFixed(1))+'% （'+trend+'）｜前年比：'+(m.y4!=null?m.y4.toFixed(1)+'%':'--')+
+    '</div>';
+  }
+
+  document.getElementById('planBody').innerHTML=html;
+}
+
+// ============================================================
+//  TAB 3: 単品マトリクス（全体）
+// ============================================================
+var aqA=function(s,w){return s>=MED&&w<15?1:s<MED&&w<15?2:s>=MED&&w>=15?3:4;};
+var qcAG={1:'rgba(37,99,235,.8)',2:'rgba(34,197,94,.8)',3:'rgba(245,158,11,.8)',4:'rgba(239,68,68,.8)'};
+var qlAG={1:'① 作成増',2:'② 廃棄優秀',3:'③ 計画改善',4:'④ カット'};
+var mxoG={responsive:false,
+  plugins:{legend:{labels:{font:{size:10},padding:8,usePointStyle:true}},
+    tooltip:{callbacks:{label:function(c){return c.raw.name+'（'+c.raw.x.toFixed(1)+'個 / 廃棄'+c.raw.y.toFixed(1)+'%）';}}}
+  }
+};
+mxoG.scales={
+  x:{title:{display:true,text:'販売数（PSA/D 16店合計）',font:{size:10}},ticks:{font:{size:9}},min:0},
+  y:{title:{display:true,text:'廃棄率（%）',font:{size:10}},ticks:{font:{size:9},callback:function(v){return v+'%';}},min:0,max:55,
+    grid:{color:function(c){return c.tick.value===15?'rgba(239,68,68,.5)':'rgba(0,0,0,.05)';}}}
+};
+new Chart(document.getElementById('cMX'),{type:'scatter',data:{datasets:[1,2,3,4].map(function(q){return{
+  label:qlAG[q],
+  data:AI.filter(function(i){return aqA(i.s,i.w)===q;}).map(function(i){return{x:i.s,y:i.w,name:i.n};}),
+  backgroundColor:qcAG[q],pointRadius:7,pointHoverRadius:9
+};})},options:mxoG});
+
+function qItem(i){
+  return '<div class="qli"><span>'+shortName(i.n)+'</span><span class="qli-r">'+i.s.toFixed(0)+'個 ／ 廃棄'+i.w.toFixed(1)+'%</span></div>';
+}
+['q1l','q2l','q3l','q4l'].forEach(function(id,qi){
+  var q=qi+1;
+  var its=AI.filter(function(i){return aqA(i.s,i.w)===q;});
+  document.getElementById(id).innerHTML=its.length?its.map(qItem).join(''):'<div class="qli" style="color:#94a3b8">なし</div>';
+});
+
+// ============================================================
+//  タブ切替
+// ============================================================
+function SP(id,btn){
+  document.querySelectorAll('.pg').forEach(function(p){p.classList.remove('on');});
+  document.querySelectorAll('.ntab').forEach(function(t){t.classList.remove('on');});
+  document.getElementById('pg-'+id).classList.add('on');
+  btn.classList.add('on');
+}
+
+// ============================================================
+//  初期化
+// ============================================================
+initVerify();
 </script>
 </body>
 </html>
