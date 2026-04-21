@@ -1,0 +1,443 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>🍗 からあげクン感謝祭 進捗ダッシュボード 4/21</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0 }
+body { font-family: 'Hiragino Sans','Hiragino Kaku Gothic ProN','Meiryo',sans-serif; background: #F0F4F8; color: #1A2B4A; -webkit-text-size-adjust: 100% }
+
+/* ── Header ── */
+.header { background: linear-gradient(135deg,#0054A6 0%,#003E7E 100%); color: #fff; padding: 14px 16px; text-align: center; position: sticky; top: 0; z-index: 100; box-shadow: 0 2px 8px rgba(0,0,0,.25) }
+.header h1 { font-size: 16px; font-weight: 700; letter-spacing: .4px }
+.header p { font-size: 12px; opacity: .85; margin-top: 3px }
+.badge-live { background: #E63946; color: #fff; border-radius: 20px; padding: 2px 8px; font-size: 10px; font-weight: 700; display: inline-block; margin-left: 6px; animation: blink 2s infinite }
+@keyframes blink { 0%,100%{opacity:1} 50%{opacity:.55} }
+
+/* ── Layout ── */
+.container { max-width: 520px; margin: 0 auto; padding: 12px }
+.section-title { font-size: 12px; font-weight: 700; color: #0054A6; letter-spacing: .8px; text-transform: uppercase; margin: 18px 0 8px; padding-left: 8px; border-left: 3px solid #0054A6 }
+.card { background: #fff; border-radius: 14px; padding: 16px; margin-bottom: 12px; box-shadow: 0 2px 8px rgba(0,84,166,.10) }
+.card-title { font-size: 11px; color: #7A8AA0; font-weight: 600; margin-bottom: 10px; letter-spacing: .4px }
+
+/* ── Today Donut ── */
+.donut-wrap { position: relative; width: 210px; height: 210px; margin: 0 auto }
+.donut-center { position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%); text-align: center; pointer-events: none }
+.donut-pct { font-size: 46px; font-weight: 900; color: #0054A6; line-height: 1 }
+.donut-sub { font-size: 11px; color: #5A6A8A; margin-top: 2px; font-weight: 600 }
+.donut-sub2 { font-size: 10px; color: #9AA5B4; margin-top: 1px }
+
+/* ── Stats ── */
+.stats-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-top: 14px }
+.stat-box { background: #EEF4FF; border-radius: 10px; padding: 11px 6px; text-align: center }
+.stat-box.green { background: #E8F5E9 }
+.stat-box.orange { background: #FFF8E1 }
+.stat-box.red { background: #FFF1F1 }
+.stat-num { font-size: 20px; font-weight: 800; color: #0054A6; line-height: 1 }
+.stat-num.green { color: #2E7D32 }
+.stat-num.orange { color: #F57F17 }
+.stat-num.red { color: #E63946 }
+.stat-label { font-size: 9.5px; color: #5A6A8A; margin-top: 3px; line-height: 1.3 }
+.stat-en { font-size: 8px; color: #9AA5B4 }
+
+/* ── Pace Banner ── */
+.pace-banner { border-radius: 10px; padding: 12px 14px; margin-top: 12px; display: flex; align-items: flex-start; gap: 10px }
+.pace-banner.warn { background: linear-gradient(135deg,#FF8C00,#E65100); color: #fff }
+.pace-banner.info { background: linear-gradient(135deg,#1565C0,#0054A6); color: #fff }
+.pace-icon { font-size: 22px; flex-shrink: 0; margin-top: 1px }
+.pace-text { font-size: 11px; line-height: 1.7 }
+.pace-text strong { font-size: 13px; display: block; margin-bottom: 2px }
+
+/* ── Week Timeline ── */
+.week-total-bar-wrap { margin-bottom: 12px }
+.week-total-label { display: flex; justify-content: space-between; font-size: 11px; color: #5A6A8A; margin-bottom: 5px }
+.week-total-bar-bg { background: #E8EDF5; border-radius: 8px; height: 22px; overflow: hidden }
+.week-total-bar-fill { height: 100%; background: linear-gradient(90deg,#0054A6,#42A5F5); border-radius: 8px; display: flex; align-items: center; padding-left: 8px; font-size: 10px; color: #fff; font-weight: 700; min-width: 48px; transition: width .9s ease }
+
+.day-grid { display: grid; grid-template-columns: repeat(7,1fr); gap: 5px }
+.day-box { border-radius: 9px; padding: 7px 3px; text-align: center }
+.day-box.today { background: #EEF4FF; border: 2px solid #0054A6 }
+.day-box.future { background: #F5F7FA; opacity: .75 }
+.day-box.sat { background: #FFF3E0 }
+.day-box.sun { background: #FFF1F1 }
+.day-label { font-size: 9px; font-weight: 700; color: #5A6A8A }
+.day-label.today-color { color: #0054A6 }
+.day-actual { font-size: 14px; font-weight: 800; color: #0054A6; line-height: 1.2 }
+.day-actual.tbd { color: #C8D0DC; font-size: 12px }
+.day-target { font-size: 8px; color: #9AA5B4; margin-top: 1px }
+.day-bar-wrap { height: 4px; background: #E0E6F0; border-radius: 2px; margin-top: 4px; overflow: hidden }
+.day-bar-fill { height: 100%; border-radius: 2px }
+
+/* ── Store Table ── */
+.store-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; border-radius: 12px }
+table { width: 100%; border-collapse: collapse; font-size: 11px; min-width: 360px }
+thead th { background: #0054A6; color: #fff; padding: 8px 6px; text-align: center; font-size: 10px; font-weight: 700; white-space: nowrap }
+thead th:first-child { text-align: left; min-width: 110px }
+tbody td { padding: 8px 6px; border-bottom: 1px solid #EEF2F7; text-align: center; vertical-align: middle }
+tbody tr:nth-child(even) td { background: #F8FAFD }
+tbody td:first-child { text-align: left }
+.rank { font-size: 10px; color: #9AA5B4; font-weight: 700; margin-right: 2px }
+.store-name { font-weight: 600; font-size: 11px }
+.pct-cell { font-weight: 800; font-size: 13px }
+.pct-bar-bg { height: 5px; background: #E8EDF5; border-radius: 3px; margin-top: 3px; overflow: hidden }
+.pct-bar-fill { height: 100%; border-radius: 3px }
+.status-badge { border-radius: 4px; padding: 2px 5px; font-size: 9px; font-weight: 700; white-space: nowrap; display: inline-block }
+.badge-on  { background: #E8F5E9; color: #2E7D32 }
+.badge-ok  { background: #FFF8E1; color: #F57F17 }
+.badge-ng  { background: #FFF1F1; color: #E63946 }
+.badge-na  { background: #F0F4F8; color: #9AA5B4 }
+
+/* ── Advice ── */
+.advice-item { display: flex; gap: 12px; padding: 13px 0; border-bottom: 1px solid #EEF2F7 }
+.advice-item:last-child { border-bottom: none }
+.advice-icon { width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 15px; flex-shrink: 0; margin-top: 1px }
+.icon-red    { background: #FFF1F1 }
+.icon-orange { background: #FFF8E1 }
+.icon-blue   { background: #EEF4FF }
+.icon-green  { background: #E8F5E9 }
+.icon-purple { background: #F3E5F5 }
+.advice-body {}
+.advice-title { font-size: 13px; font-weight: 700; color: #1A2B4A; margin-bottom: 4px; line-height: 1.4 }
+.advice-desc  { font-size: 11px; color: #5A6A8A; line-height: 1.7 }
+.hl-red    { background: #FFF1F1; color: #E63946; border-radius: 3px; padding: 0 4px; font-weight: 700 }
+.hl-orange { background: #FFF8E1; color: #E65100; border-radius: 3px; padding: 0 4px; font-weight: 700 }
+.hl-blue   { background: #EEF4FF; color: #0054A6; border-radius: 3px; padding: 0 4px; font-weight: 700 }
+.hl-green  { background: #E8F5E9; color: #2E7D32; border-radius: 3px; padding: 0 4px; font-weight: 700 }
+
+.footer { text-align: center; padding: 24px 16px; color: #9AA5B4; font-size: 11px }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>🍗 からあげクン感謝祭 進捗ダッシュボード</h1>
+  <p>4/21（火）16:30 時点 <span class="badge-live">● LIVE</span></p>
+</div>
+
+<div class="container">
+
+<!-- ①今日の進捗 -->
+<div class="section-title">① 今日の進捗 / Today's Progress（4/21）</div>
+<div class="card">
+  <div class="card-title">組織合計 販売数 vs 目標 ／ Total Sales vs Target</div>
+
+  <div class="donut-wrap">
+    <canvas id="todayDonut"></canvas>
+    <div class="donut-center">
+      <div class="donut-pct" id="pctText">46.4%</div>
+      <div class="donut-sub">達成率</div>
+      <div class="donut-sub2">Achievement</div>
+    </div>
+  </div>
+
+  <div class="stats-grid">
+    <div class="stat-box green">
+      <div class="stat-num green">793</div>
+      <div class="stat-label">現在の販売数（個）</div>
+      <div class="stat-en">Sold so far</div>
+    </div>
+    <div class="stat-box">
+      <div class="stat-num">1,709</div>
+      <div class="stat-label">本日の目標（個）</div>
+      <div class="stat-en">Today's target</div>
+    </div>
+    <div class="stat-box red">
+      <div class="stat-num red">916</div>
+      <div class="stat-label">残り必要数（個）</div>
+      <div class="stat-en">Still needed</div>
+    </div>
+  </div>
+
+  <div class="pace-banner warn" style="margin-top:12px">
+    <div class="pace-icon">⏱</div>
+    <div class="pace-text">
+      <strong>残り 7.5時間 で 916個 が必要</strong>
+      1店あたり <b>約6.4個／時</b> のペースが必要です。<br>
+      現在の平均ペースは約2.5個／時。<br>
+      夕食ピーク（18〜21時）で巻き返すチャンスあり！
+    </div>
+  </div>
+
+  <div class="pace-banner info" style="margin-top:8px">
+    <div class="pace-icon">📈</div>
+    <div class="pace-text">
+      <strong>現在ペースでの終日予測：約 1,153個（目標比 67%）</strong>
+      夕方の売上を1.5倍に伸ばせれば 約 1,450個（85%）に到達できます。
+    </div>
+  </div>
+</div>
+
+<!-- ②週間目標トラッキング -->
+<div class="section-title">② 週間目標トラッキング / Weekly Target（4/21〜4/27）</div>
+<div class="card">
+  <div class="card-title">週間組織合計 13,503個 に対する進捗 ／ Progress toward 13,503</div>
+
+  <div class="week-total-bar-wrap">
+    <div class="week-total-label">
+      <span>0</span>
+      <span style="color:#0054A6;font-weight:700">793個 (5.9%)</span>
+      <span>13,503個</span>
+    </div>
+    <div class="week-total-bar-bg">
+      <div class="week-total-bar-fill" style="width:5.9%">793</div>
+    </div>
+  </div>
+
+  <div class="day-grid" id="dayGrid"></div>
+
+  <div style="margin-top:10px;font-size:10px;color:#9AA5B4;text-align:center">
+    ※ 今日（4/21）以外の実績はまだありません。<br>
+    Today's data only — future days show targets.
+  </div>
+</div>
+
+<!-- ③店舗別進捗 -->
+<div class="section-title">③ 店舗別 進捗ランキング / Store Rankings</div>
+<div class="card" style="padding:0">
+  <div class="store-scroll">
+    <table>
+      <thead>
+        <tr>
+          <th>店舗名 / Store</th>
+          <th>目標<br>Target</th>
+          <th>実績<br>Actual</th>
+          <th>達成率<br>Rate</th>
+          <th>状況<br>Status</th>
+        </tr>
+      </thead>
+      <tbody id="storeTableBody"></tbody>
+    </table>
+  </div>
+  <div style="padding:8px 12px;font-size:10px;color:#9AA5B4">
+    ★ 箕面白島二丁目は今回の19店舗目標に含まれていませんが参考掲載。<br>
+    判定基準：<span class="status-badge badge-on">順調</span>≥55%　<span class="status-badge badge-ok">やや遅れ</span>40〜54%　<span class="status-badge badge-ng">要注意</span>&lt;40%
+  </div>
+</div>
+
+<!-- ④目標達成アドバイス -->
+<div class="section-title">④ 目標達成アドバイス / Action Plan</div>
+<div class="card">
+
+  <div class="advice-item">
+    <div class="advice-icon icon-orange">🌇</div>
+    <div class="advice-body">
+      <div class="advice-title">夕食タイム（18〜21時）が最大のチャンス</div>
+      <div class="advice-desc">
+        からあげクンは夕方〜夜に最も売れます。現在のペース（2.5個/時/店）から
+        <span class="hl-orange">6.4個/時/店</span> に引き上げるため、
+        この時間帯にホットコーナーの商品を満タンにし、
+        お客様への声かけを集中的に行ってください。<br>
+        ※ 今すぐ全店に「夕方強化」の一斉連絡を推奨します。
+      </div>
+    </div>
+  </div>
+
+  <div class="advice-item">
+    <div class="advice-icon icon-red">🚨</div>
+    <div class="advice-body">
+      <div class="advice-title">江坂駅南口を最優先でフォロー</div>
+      <div class="advice-desc">
+        組織最大目標 <span class="hl-red">213個</span> に対し現在 <span class="hl-red">72個（34%）</span>。<br>
+        19店舗の週間目標の約12%を1店舗で担う重要店舗です。<br>
+        スーパーバイザーの巡回を優先し、販売促進の施策（POP・陳列・声かけ）を
+        今すぐ確認してください。残り141個が必要です。
+      </div>
+    </div>
+  </div>
+
+  <div class="advice-item">
+    <div class="advice-icon icon-green">🏆</div>
+    <div class="advice-body">
+      <div class="advice-title">トップ店舗の成功を横展開する</div>
+      <div class="advice-desc">
+        現時点で最も高い達成率は <span class="hl-green">豊中利倉東一丁目（71%）</span>。<br>
+        次いで <span class="hl-green">豊中原田南一丁目（64%）</span>、
+        <span class="hl-green">吹田豊津中学校前（60%）</span> が順調です。<br>
+        これらの店舗に「何をしているか」を今日中に確認し、
+        遅れている店舗へ共有してください。小さな差が1週間で大きく変わります。
+      </div>
+    </div>
+  </div>
+
+  <div class="advice-item">
+    <div class="advice-icon icon-blue">📅</div>
+    <div class="advice-body">
+      <div class="advice-title">週間目標を見据えた明日以降の計画</div>
+      <div class="advice-desc">
+        週間合計目標 <span class="hl-blue">13,503個</span> のうち、
+        初日の今日が最も目標が低い日（1,709個）です。<br>
+        今日の遅れを明日以降で取り戻すには、
+        残り6日間の平均目標（約1,966個/日）をさらに上回るペースが必要です。<br>
+        <strong>土・日（4/25〜4/26）が週の山場。</strong>
+        それまでにホットコーナーの体制をしっかり整えておきましょう。
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<div class="footer">
+  データ基準：2026/04/21 16:30 ／ 19店舗合計<br>
+  <span style="color:#0054A6;font-weight:600">からあげクン感謝祭 4/21(火)〜4/27(月)</span>
+</div>
+
+</div><!-- /container -->
+
+<script>
+/* ─────────────────────────────────────────────
+   DATA
+───────────────────────────────────────────── */
+const TOTAL_TARGET  = 1709;
+const TOTAL_ACTUAL  = 793;
+const WEEK_TARGET   = 13503;
+
+// Store data: [name, today's target, today's actual]
+// Sorted by achievement % descending
+const stores = [
+  ['豊中利倉東一丁目',  83,  59],
+  ['豊中原田南一丁目',  69,  44],
+  ['吹田豊津中学校前',  74,  44],
+  ['豊中服部元町一丁目',112,  64],
+  ['豊中服部西町三丁目', 58,  32],
+  ['池田市役所前',      40,  22],
+  ['豊里六丁目',        51,  27],
+  ['吹田警察署前',      96,  50],
+  ['吹田青山台三丁目', 114,  58],
+  ['大道南一丁目',      72,  35],
+  ['南金田二丁目',     115,  51],
+  ['江坂東',            85,  38],
+  ['東淀川豊里五丁目',  91,  37],
+  ['新御堂筋上新田',   114,  46],
+  ['東淀川大道南',      98,  36],
+  ['吹田朝日町',       114,  41],
+  ['五月ケ丘東',        62,  22],
+  ['江坂駅南口',       213,  72],
+  ['吹田垂水三丁目',    48,  15],
+  ['箕面白島二丁目',    null, 47],  // target not in 19-store plan
+];
+
+// Weekly day targets (org total per day)
+const weekDays = [
+  { label:'火 4/21', target:1709, actual:793,  sat:false, sun:false, today:true  },
+  { label:'水 4/22', target:1589, actual:null, sat:false, sun:false, today:false },
+  { label:'木 4/23', target:1824, actual:null, sat:false, sun:false, today:false },
+  { label:'金 4/24', target:2147, actual:null, sat:false, sun:false, today:false },
+  { label:'土 4/25', target:2204, actual:null, sat:true,  sun:false, today:false },
+  { label:'日 4/26', target:2147, actual:null, sat:false, sun:true,  today:false },
+  { label:'月 4/27', target:1881, actual:null, sat:false, sun:false, today:false },
+];
+
+/* ─────────────────────────────────────────────
+   TODAY DONUT
+───────────────────────────────────────────── */
+const todayCtx = document.getElementById('todayDonut').getContext('2d');
+new Chart(todayCtx, {
+  type: 'doughnut',
+  data: {
+    labels: ['販売済み Sold','残り Remaining'],
+    datasets: [{
+      data: [TOTAL_ACTUAL, WEEK_TARGET - TOTAL_ACTUAL > 0 ? TOTAL_TARGET - TOTAL_ACTUAL : 0],
+      backgroundColor: ['#0054A6','#E8EDF5'],
+      borderWidth: 4,
+      borderColor: '#fff',
+      hoverOffset: 6
+    }]
+  },
+  options: {
+    cutout: '72%',
+    plugins: {
+      legend: { display: false },
+      tooltip: {
+        callbacks: {
+          label: ctx => ` ${ctx.label}：${ctx.raw.toLocaleString()}個`
+        }
+      }
+    },
+    animation: { duration: 1000, easing: 'easeInOutQuart' }
+  }
+});
+
+/* ─────────────────────────────────────────────
+   WEEKLY DAY GRID
+───────────────────────────────────────────── */
+const maxTarget = Math.max(...weekDays.map(d => d.target));
+const dayGrid = document.getElementById('dayGrid');
+
+weekDays.forEach(d => {
+  const pct = d.actual !== null ? (d.actual / d.target * 100).toFixed(0) : null;
+  const barPct = d.actual !== null ? Math.min(100, d.actual / d.target * 100) : 0;
+  const barColor = d.today ? '#0054A6' : d.sat ? '#FF8C00' : d.sun ? '#E63946' : '#B0B8C8';
+
+  let cls = 'day-box ';
+  if (d.today) cls += 'today';
+  else if (d.sat) cls += 'sat';
+  else if (d.sun) cls += 'sun';
+  else cls += 'future';
+
+  const box = document.createElement('div');
+  box.className = cls;
+  box.innerHTML = `
+    <div class="day-label ${d.today ? 'today-color' : ''}">${d.label.split(' ')[0]}<br><span style="font-size:8px;font-weight:400">${d.label.split(' ')[1]}</span></div>
+    <div class="day-actual ${d.actual === null ? 'tbd' : ''}">${d.actual !== null ? d.actual.toLocaleString() : '―'}</div>
+    <div class="day-target">目標 ${d.target.toLocaleString()}</div>
+    <div class="day-bar-wrap"><div class="day-bar-fill" style="width:${barPct}%;background:${barColor}"></div></div>
+    ${d.actual !== null ? `<div style="font-size:8px;font-weight:700;color:${barColor};margin-top:2px">${pct}%</div>` : ''}
+  `;
+  dayGrid.appendChild(box);
+});
+
+/* ─────────────────────────────────────────────
+   STORE TABLE
+───────────────────────────────────────────── */
+const tbody = document.getElementById('storeTableBody');
+
+stores.forEach((s, i) => {
+  const [name, target, actual] = s;
+  const pct = target !== null ? (actual / target * 100) : null;
+  const pctStr = pct !== null ? pct.toFixed(1) + '%' : '―';
+  const gap = target !== null ? (target - actual) : null;
+
+  let statusClass, statusLabel;
+  if (pct === null) {
+    statusClass = 'badge-na'; statusLabel = '対象外';
+  } else if (pct >= 55) {
+    statusClass = 'badge-on'; statusLabel = '順調';
+  } else if (pct >= 40) {
+    statusClass = 'badge-ok'; statusLabel = 'やや遅れ';
+  } else {
+    statusClass = 'badge-ng'; statusLabel = '要注意';
+  }
+
+  let barColor = '#E63946';
+  if (pct === null) barColor = '#B0B8C8';
+  else if (pct >= 55) barColor = '#2E7D32';
+  else if (pct >= 40) barColor = '#F57F17';
+
+  let pctColor = '#E63946';
+  if (pct === null) pctColor = '#9AA5B4';
+  else if (pct >= 55) pctColor = '#2E7D32';
+  else if (pct >= 40) pctColor = '#F57F17';
+
+  const tr = document.createElement('tr');
+  tr.innerHTML = `
+    <td>
+      <span class="rank">${i + 1}</span>
+      <span class="store-name">${name}</span>
+    </td>
+    <td>${target !== null ? target : '―'}</td>
+    <td><strong>${actual}</strong></td>
+    <td>
+      <div class="pct-cell" style="color:${pctColor}">${pctStr}</div>
+      <div class="pct-bar-bg">
+        <div class="pct-bar-fill" style="width:${pct !== null ? Math.min(100,pct) : 0}%;background:${barColor}"></div>
+      </div>
+    </td>
+    <td><span class="status-badge ${statusClass}">${statusLabel}</span></td>
+  `;
+  tbody.appendChild(tr);
+});
+</script>
+</body>
+</html>
