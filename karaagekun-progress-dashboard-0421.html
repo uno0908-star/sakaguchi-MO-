@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
-<title>🍗 からあげクン感謝祭 進捗ダッシュボード 4/21</title>
+<title>🍗 からあげクン感謝祭 進捗ダッシュボード 4/26終了時点</title>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <style>
 * { box-sizing: border-box; margin: 0; padding: 0 }
@@ -13,7 +13,8 @@ body { font-family: 'Hiragino Sans','Hiragino Kaku Gothic ProN','Meiryo',sans-se
 .header { background: linear-gradient(135deg,#0054A6 0%,#003E7E 100%); color: #fff; padding: 14px 16px; text-align: center; position: sticky; top: 0; z-index: 100; box-shadow: 0 2px 8px rgba(0,0,0,.25) }
 .header h1 { font-size: 16px; font-weight: 700; letter-spacing: .4px }
 .header p { font-size: 12px; opacity: .85; margin-top: 3px }
-.badge-live { background: #E63946; color: #fff; border-radius: 20px; padding: 2px 8px; font-size: 10px; font-weight: 700; display: inline-block; margin-left: 6px; animation: blink 2s infinite }
+.badge-final { background: #E63946; color: #fff; border-radius: 20px; padding: 2px 8px; font-size: 10px; font-weight: 700; display: inline-block; margin-left: 6px }
+.badge-today { background: #FF8C00; color: #fff; border-radius: 20px; padding: 2px 8px; font-size: 10px; font-weight: 700; display: inline-block; margin-left: 6px; animation: blink 2s infinite }
 @keyframes blink { 0%,100%{opacity:1} 50%{opacity:.55} }
 
 /* ── Layout ── */
@@ -35,10 +36,12 @@ body { font-family: 'Hiragino Sans','Hiragino Kaku Gothic ProN','Meiryo',sans-se
 .stat-box.green { background: #E8F5E9 }
 .stat-box.orange { background: #FFF8E1 }
 .stat-box.red { background: #FFF1F1 }
+.stat-box.purple { background: #F3E5F5 }
 .stat-num { font-size: 20px; font-weight: 800; color: #0054A6; line-height: 1 }
 .stat-num.green { color: #2E7D32 }
 .stat-num.orange { color: #F57F17 }
 .stat-num.red { color: #E63946 }
+.stat-num.purple { color: #6A1B9A }
 .stat-label { font-size: 9.5px; color: #5A6A8A; margin-top: 3px; line-height: 1.3 }
 .stat-en { font-size: 8px; color: #9AA5B4 }
 
@@ -46,6 +49,8 @@ body { font-family: 'Hiragino Sans','Hiragino Kaku Gothic ProN','Meiryo',sans-se
 .pace-banner { border-radius: 10px; padding: 12px 14px; margin-top: 12px; display: flex; align-items: flex-start; gap: 10px }
 .pace-banner.warn { background: linear-gradient(135deg,#FF8C00,#E65100); color: #fff }
 .pace-banner.info { background: linear-gradient(135deg,#1565C0,#0054A6); color: #fff }
+.pace-banner.danger { background: linear-gradient(135deg,#C62828,#E63946); color: #fff }
+.pace-banner.success { background: linear-gradient(135deg,#2E7D32,#43A047); color: #fff }
 .pace-icon { font-size: 22px; flex-shrink: 0; margin-top: 1px }
 .pace-text { font-size: 11px; line-height: 1.7 }
 .pace-text strong { font-size: 13px; display: block; margin-bottom: 2px }
@@ -58,24 +63,25 @@ body { font-family: 'Hiragino Sans','Hiragino Kaku Gothic ProN','Meiryo',sans-se
 
 .day-grid { display: grid; grid-template-columns: repeat(7,1fr); gap: 5px }
 .day-box { border-radius: 9px; padding: 7px 3px; text-align: center }
-.day-box.today { background: #EEF4FF; border: 2px solid #0054A6 }
-.day-box.future { background: #F5F7FA; opacity: .75 }
-.day-box.sat { background: #FFF3E0 }
+.day-box.past { background: #F0F4F8 }
+.day-box.today { background: #FFF8E1; border: 2px solid #FF8C00 }
+.day-box.sat { background: #EEF4FF }
 .day-box.sun { background: #FFF1F1 }
 .day-label { font-size: 9px; font-weight: 700; color: #5A6A8A }
-.day-label.today-color { color: #0054A6 }
-.day-actual { font-size: 14px; font-weight: 800; color: #0054A6; line-height: 1.2 }
+.day-label.today-color { color: #FF8C00 }
+.day-actual { font-size: 13px; font-weight: 800; color: #0054A6; line-height: 1.2 }
 .day-actual.tbd { color: #C8D0DC; font-size: 12px }
 .day-target { font-size: 8px; color: #9AA5B4; margin-top: 1px }
 .day-bar-wrap { height: 4px; background: #E0E6F0; border-radius: 2px; margin-top: 4px; overflow: hidden }
 .day-bar-fill { height: 100%; border-radius: 2px }
+.day-pct { font-size: 8px; font-weight: 700; margin-top: 2px }
 
 /* ── Store Table ── */
 .store-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; border-radius: 12px }
 table { width: 100%; border-collapse: collapse; font-size: 11px; min-width: 360px }
 thead th { background: #0054A6; color: #fff; padding: 8px 6px; text-align: center; font-size: 10px; font-weight: 700; white-space: nowrap }
-thead th:first-child { text-align: left; min-width: 110px }
-tbody td { padding: 8px 6px; border-bottom: 1px solid #EEF2F7; text-align: center; vertical-align: middle }
+thead th:first-child { text-align: left; min-width: 105px }
+tbody td { padding: 7px 6px; border-bottom: 1px solid #EEF2F7; text-align: center; vertical-align: middle }
 tbody tr:nth-child(even) td { background: #F8FAFD }
 tbody td:first-child { text-align: left }
 .rank { font-size: 10px; color: #9AA5B4; font-weight: 700; margin-right: 2px }
@@ -88,6 +94,7 @@ tbody td:first-child { text-align: left }
 .badge-ok  { background: #FFF8E1; color: #F57F17 }
 .badge-ng  { background: #FFF1F1; color: #E63946 }
 .badge-na  { background: #F0F4F8; color: #9AA5B4 }
+.rem-cell  { font-size: 12px; font-weight: 700; color: #E63946 }
 
 /* ── Advice ── */
 .advice-item { display: flex; gap: 12px; padding: 13px 0; border-bottom: 1px solid #EEF2F7 }
@@ -107,142 +114,168 @@ tbody td:first-child { text-align: left }
 .hl-green  { background: #E8F5E9; color: #2E7D32; border-radius: 3px; padding: 0 4px; font-weight: 700 }
 
 .footer { text-align: center; padding: 24px 16px; color: #9AA5B4; font-size: 11px }
+
+/* ── Final Day Alert Banner ── */
+.final-alert { background: linear-gradient(135deg,#FF8C00,#E65100); color: #fff; border-radius: 12px; padding: 14px 16px; margin-bottom: 14px; text-align: center }
+.final-alert-title { font-size: 16px; font-weight: 900; letter-spacing: .5px }
+.final-alert-sub { font-size: 12px; margin-top: 4px; opacity: .9 }
 </style>
 </head>
 <body>
 
 <div class="header">
   <h1>🍗 からあげクン感謝祭 進捗ダッシュボード</h1>
-  <p>4/21（火）16:30 時点 <span class="badge-live">● LIVE</span></p>
+  <p>4/26（日）終了時点 <span class="badge-final">6日間確定</span><span class="badge-today">● 本日4/27最終日</span></p>
 </div>
 
 <div class="container">
 
-<!-- ①今日の進捗 -->
-<div class="section-title">① 今日の進捗 / Today's Progress（4/21）</div>
+<!-- 最終日アラート -->
+<div class="final-alert">
+  <div class="final-alert-title">🔥 本日 4/27（月）が最終日です！</div>
+  <div class="final-alert-sub">残り目標 4,822個 — 全店で週間目標達成を目指しましょう</div>
+</div>
+
+<!-- ① 6日間累積進捗 -->
+<div class="section-title">① 6日間累積進捗 / 6-Day Cumulative（4/21〜4/26）</div>
 <div class="card">
-  <div class="card-title">組織合計 販売数 vs 目標 ／ Total Sales vs Target</div>
+  <div class="card-title">組織合計 累積販売数 vs 週間目標 ／ Cumulative vs Weekly Target</div>
 
   <div class="donut-wrap">
     <canvas id="todayDonut"></canvas>
     <div class="donut-center">
-      <div class="donut-pct" id="pctText">46.4%</div>
-      <div class="donut-sub">達成率</div>
-      <div class="donut-sub2">Achievement</div>
+      <div class="donut-pct" id="pctText">64.3%</div>
+      <div class="donut-sub">週間目標進捗</div>
+      <div class="donut-sub2">Weekly Progress</div>
     </div>
   </div>
 
   <div class="stats-grid">
     <div class="stat-box green">
-      <div class="stat-num green">793</div>
-      <div class="stat-label">現在の販売数（個）</div>
-      <div class="stat-en">Sold so far</div>
+      <div class="stat-num green">8,681</div>
+      <div class="stat-label">6日間累積実績（個）</div>
+      <div class="stat-en">6-day Actual</div>
     </div>
     <div class="stat-box">
-      <div class="stat-num">1,709</div>
-      <div class="stat-label">本日の目標（個）</div>
-      <div class="stat-en">Today's target</div>
+      <div class="stat-num">13,503</div>
+      <div class="stat-label">週間目標（個）</div>
+      <div class="stat-en">Weekly Target</div>
     </div>
     <div class="stat-box red">
-      <div class="stat-num red">916</div>
+      <div class="stat-num red">4,822</div>
       <div class="stat-label">残り必要数（個）</div>
-      <div class="stat-en">Still needed</div>
+      <div class="stat-en">Still Needed</div>
     </div>
   </div>
 
-  <div class="pace-banner warn" style="margin-top:12px">
-    <div class="pace-icon">⏱</div>
+  <div class="stats-grid" style="margin-top:8px">
+    <div class="stat-box purple">
+      <div class="stat-num purple">74.7%</div>
+      <div class="stat-label">6日間<br>計画達成率</div>
+      <div class="stat-en">vs 6-day Plan</div>
+    </div>
+    <div class="stat-box orange">
+      <div class="stat-num orange">1,881</div>
+      <div class="stat-label">本日目標（個）<br>4/27</div>
+      <div class="stat-en">Today's Target</div>
+    </div>
+    <div class="stat-box red">
+      <div class="stat-num red">2,941</div>
+      <div class="stat-label">週間目標との<br>乖離（個）</div>
+      <div class="stat-en">Gap from Plan</div>
+    </div>
+  </div>
+
+  <div class="pace-banner danger" style="margin-top:12px">
+    <div class="pace-icon">🚨</div>
     <div class="pace-text">
-      <strong>残り 7.5時間 で 916個 が必要</strong>
-      1店あたり <b>約6.4個／時</b> のペースが必要です。<br>
-      現在の平均ペースは約2.5個／時。<br>
-      夕食ピーク（18〜21時）で巻き返すチャンスあり！
+      <strong>最終日に4,822個が必要（週間目標比）</strong>
+      4/27目標の 1,881個 を超え、さらに <b>2,941個</b> の上積みが必要な状況。<br>
+      全店で過去最高の販売を目指してください！
     </div>
   </div>
 
   <div class="pace-banner info" style="margin-top:8px">
-    <div class="pace-icon">📈</div>
+    <div class="pace-icon">📊</div>
     <div class="pace-text">
-      <strong>現在ペースでの終日予測：約 1,153個（目標比 67%）</strong>
-      夕方の売上を1.5倍に伸ばせれば 約 1,450個（85%）に到達できます。
+      <strong>6日間計画比 74.7% — 毎日目標を下回ってきた</strong>
+      全6日間で目標を達成した日はゼロ。最高は4/21の84.5%。<br>
+      本日は全店が一致団結して挽回する最後のチャンスです。
     </div>
   </div>
 </div>
 
-<!-- ②週間目標トラッキング -->
-<div class="section-title">② 週間目標トラッキング / Weekly Target（4/21〜4/27）</div>
+<!-- ② 週間目標トラッキング -->
+<div class="section-title">② 週間日別トラッキング / Weekly Tracking（4/21〜4/27）</div>
 <div class="card">
   <div class="card-title">週間組織合計 13,503個 に対する進捗 ／ Progress toward 13,503</div>
 
   <div class="week-total-bar-wrap">
     <div class="week-total-label">
       <span>0</span>
-      <span style="color:#0054A6;font-weight:700">793個 (5.9%)</span>
+      <span style="color:#0054A6;font-weight:700">8,681個 (64.3%)</span>
       <span>13,503個</span>
     </div>
     <div class="week-total-bar-bg">
-      <div class="week-total-bar-fill" style="width:5.9%">793</div>
+      <div class="week-total-bar-fill" style="width:64.3%">8,681</div>
     </div>
   </div>
 
   <div class="day-grid" id="dayGrid"></div>
 
   <div style="margin-top:10px;font-size:10px;color:#9AA5B4;text-align:center">
-    ※ 今日（4/21）以外の実績はまだありません。<br>
-    Today's data only — future days show targets.
+    ※ 4/21〜4/26は確定実績。4/27（本日）は目標のみ。<br>
+    ※ カッコ内は日別達成率（実績÷目標）
   </div>
 </div>
 
-<!-- ③店舗別進捗 -->
-<div class="section-title">③ 店舗別 進捗ランキング / Store Rankings</div>
+<!-- ③ 店舗別 現時点達成率 -->
+<div class="section-title">③ 個店別 現時点達成率ランキング / Store Achievement Rate</div>
 <div class="card" style="padding:0">
   <div class="store-scroll">
     <table>
       <thead>
         <tr>
           <th>店舗名 / Store</th>
-          <th>目標<br>Target</th>
-          <th>実績<br>Actual</th>
-          <th>達成率<br>Rate</th>
-          <th>状況<br>Status</th>
+          <th>6日累計<br>実績</th>
+          <th>週間<br>目標</th>
+          <th>進捗率<br>（6日計画比）</th>
+          <th>4/27<br>残り必要</th>
+          <th>状況</th>
         </tr>
       </thead>
       <tbody id="storeTableBody"></tbody>
     </table>
   </div>
   <div style="padding:8px 12px;font-size:10px;color:#9AA5B4">
-    ★ 箕面白島二丁目は今回の19店舗目標に含まれていませんが参考掲載。<br>
-    判定基準：<span class="status-badge badge-on">順調</span>≥55%　<span class="status-badge badge-ok">やや遅れ</span>40〜54%　<span class="status-badge badge-ng">要注意</span>&lt;40%
+    ★ 箕面白島二丁目は19店舗目標に含まれていませんが参考掲載。<br>
+    <b>進捗率</b>＝6日間累積実績 ÷ 6日間累積計画（計画通りなら100%）<br>
+    判定：<span class="status-badge badge-on">順調</span>≥85%　<span class="status-badge badge-ok">やや遅れ</span>70〜84%　<span class="status-badge badge-ng">要注意</span>&lt;70%
   </div>
 </div>
 
-<!-- ④目標達成アドバイス -->
-<div class="section-title">④ 目標達成アドバイス / Action Plan</div>
+<!-- ④ 最終日アクションプラン -->
+<div class="section-title">④ 最終日アクションプラン / Final Day Actions</div>
 <div class="card">
 
   <div class="advice-item">
-    <div class="advice-icon icon-orange">🌇</div>
+    <div class="advice-icon icon-red">🚨</div>
     <div class="advice-body">
-      <div class="advice-title">夕食タイム（18〜21時）が最大のチャンス</div>
+      <div class="advice-title">東淀川大道南・江坂駅南口 — 最優先フォロー</div>
       <div class="advice-desc">
-        からあげクンは夕方〜夜に最も売れます。現在のペース（2.5個/時/店）から
-        <span class="hl-orange">6.4個/時/店</span> に引き上げるため、
-        この時間帯にホットコーナーの商品を満タンにし、
-        お客様への声かけを集中的に行ってください。<br>
-        ※ 今すぐ全店に「夕方強化」の一斉連絡を推奨します。
+        <span class="hl-red">東淀川大道南 61.5%</span> が19店舗最下位。週間目標755個に対し実績417個で<span class="hl-red">残り338個</span>。<br>
+        <span class="hl-red">江坂駅南口</span> も進捗率66.2%で残り<span class="hl-red">639個</span>。この2店舗の合計だけで977個の積み残しがあり、組織全体に大きく影響します。今すぐSCが巡回・支援を。
       </div>
     </div>
   </div>
 
   <div class="advice-item">
-    <div class="advice-icon icon-red">🚨</div>
+    <div class="advice-icon icon-orange">⚠️</div>
     <div class="advice-body">
-      <div class="advice-title">江坂駅南口を最優先でフォロー</div>
+      <div class="advice-title">要注意6店舗（進捗率70%未満）へ集中支援</div>
       <div class="advice-desc">
-        組織最大目標 <span class="hl-red">213個</span> に対し現在 <span class="hl-red">72個（34%）</span>。<br>
-        19店舗の週間目標の約12%を1店舗で担う重要店舗です。<br>
-        スーパーバイザーの巡回を優先し、販売促進の施策（POP・陳列・声かけ）を
-        今すぐ確認してください。残り141個が必要です。
+        <span class="hl-orange">吹田青山台三丁目・新御堂筋上新田・東淀川豊里五丁目・五月ケ丘東・江坂東・南金田二丁目</span> の6店舗が要注意ゾーン。合計残り1,772個。<br>
+        からあげクンの補充・POP掲示・声かけを徹底させてください。
       </div>
     </div>
   </div>
@@ -250,28 +283,33 @@ tbody td:first-child { text-align: left }
   <div class="advice-item">
     <div class="advice-icon icon-green">🏆</div>
     <div class="advice-body">
-      <div class="advice-title">トップ店舗の成功を横展開する</div>
+      <div class="advice-title">上位4店舗は週間目標圏内 — 達成を確実に</div>
       <div class="advice-desc">
-        現時点で最も高い達成率は <span class="hl-green">豊中利倉東一丁目（71%）</span>。<br>
-        次いで <span class="hl-green">豊中原田南一丁目（64%）</span>、
-        <span class="hl-green">吹田豊津中学校前（60%）</span> が順調です。<br>
-        これらの店舗に「何をしているか」を今日中に確認し、
-        遅れている店舗へ共有してください。小さな差が1週間で大きく変わります。
+        <span class="hl-green">豊中原田南一丁目（94.5%）・豊里六丁目（94.3%）・吹田垂水三丁目（90.8%）・豊中服部西町三丁目（89.7%）</span> はほぼ計画通り。<br>
+        残り目標も少ない（61〜137個）ため、本日中に週間達成が射程内です。最後まで気を抜かず完走しましょう。
       </div>
     </div>
   </div>
 
   <div class="advice-item">
-    <div class="advice-icon icon-blue">📅</div>
+    <div class="advice-icon icon-orange">🌇</div>
     <div class="advice-body">
-      <div class="advice-title">週間目標を見据えた明日以降の計画</div>
+      <div class="advice-title">夕方〜夜（17〜22時）が最大・最後のチャンス</div>
       <div class="advice-desc">
-        週間合計目標 <span class="hl-blue">13,503個</span> のうち、
-        初日の今日が最も目標が低い日（1,709個）です。<br>
-        今日の遅れを明日以降で取り戻すには、
-        残り6日間の平均目標（約1,966個/日）をさらに上回るペースが必要です。<br>
-        <strong>土・日（4/25〜4/26）が週の山場。</strong>
-        それまでにホットコーナーの体制をしっかり整えておきましょう。
+        月曜夕方は帰宅客・夕食需要が集中します。<br>
+        17時以降は全店でからあげクンを満タンにし、<span class="hl-orange">声かけ・試食訴求</span> を強化。閉店まで諦めずに取り組みましょう。<br>
+        全店が今日の目標の<b>2倍</b>を売れば週間目標に届きます。
+      </div>
+    </div>
+  </div>
+
+  <div class="advice-item">
+    <div class="advice-icon icon-blue">📣</div>
+    <div class="advice-body">
+      <div class="advice-title">「最終日」を全店に今すぐ一斉連絡</div>
+      <div class="advice-desc">
+        「本日が感謝祭最終日。全店で最高の販売を。」というメッセージを<span class="hl-blue">今すぐ一斉配信</span>してください。<br>
+        店長・クルーのモチベーションを最後まで高く保つことが、最終日売上の最大の鍵です。
       </div>
     </div>
   </div>
@@ -279,8 +317,9 @@ tbody td:first-child { text-align: left }
 </div>
 
 <div class="footer">
-  データ基準：2026/04/21 16:30 ／ 19店舗合計<br>
-  <span style="color:#0054A6;font-weight:600">からあげクン感謝祭 4/21(火)〜4/27(月)</span>
+  データ基準：2026/04/26 終日確定実績 ／ 19店舗合計<br>
+  ※ 箕面白島二丁目は週間目標対象外<br>
+  <span style="color:#0054A6;font-weight:600">からあげクン感謝祭 4/21(火)〜4/27(月) — 本日最終日！</span>
 </div>
 
 </div><!-- /container -->
@@ -289,56 +328,56 @@ tbody td:first-child { text-align: left }
 /* ─────────────────────────────────────────────
    DATA
 ───────────────────────────────────────────── */
-const TOTAL_TARGET  = 1709;
-const TOTAL_ACTUAL  = 793;
-const WEEK_TARGET   = 13503;
+const TOTAL_ACTUAL_6D = 8681;
+const WEEK_TARGET     = 13503;
+const DAY7_TARGET     = 1881;
 
-// Store data: [name, today's target, today's actual]
-// Sorted by achievement % descending
+// Store data: [name, weeklyTarget, cumActual6D, target6D]
+// Sorted by 6-day achievement rate (cumActual6D / target6D) descending
 const stores = [
-  ['豊中利倉東一丁目',  83,  59],
-  ['豊中原田南一丁目',  69,  44],
-  ['吹田豊津中学校前',  74,  44],
-  ['豊中服部元町一丁目',112,  64],
-  ['豊中服部西町三丁目', 58,  32],
-  ['池田市役所前',      40,  22],
-  ['豊里六丁目',        51,  27],
-  ['吹田警察署前',      96,  50],
-  ['吹田青山台三丁目', 114,  58],
-  ['大道南一丁目',      72,  35],
-  ['南金田二丁目',     115,  51],
-  ['江坂東',            85,  38],
-  ['東淀川豊里五丁目',  91,  37],
-  ['新御堂筋上新田',   114,  46],
-  ['東淀川大道南',      98,  36],
-  ['吹田朝日町',       114,  41],
-  ['五月ケ丘東',        62,  22],
-  ['江坂駅南口',       213,  72],
-  ['吹田垂水三丁目',    48,  15],
-  ['箕面白島二丁目',    null, 47],  // target not in 19-store plan
+  ['豊中原田南一丁目',   625,  489,  518],  // 94.5%
+  ['豊里六丁目',         340,  269,  285],  // 94.3%
+  ['吹田垂水三丁目',     285,  224,  247],  // 90.8%
+  ['豊中服部西町三丁目', 601,  464,  518],  // 89.7%
+  ['池田市役所前',       368,  263,  322],  // 81.7%
+  ['吹田朝日町',         822,  573,  702],  // 81.7%
+  ['吹田豊津中学校前',   615,  419,  516],  // 81.2%
+  ['豊中利倉東一丁目',   731,  498,  618],  // 80.5%
+  ['大道南一丁目',       575,  384,  489],  // 78.6%
+  ['豊中服部元町一丁目', 793,  524,  670],  // 78.2%
+  ['吹田警察署前',       604,  392,  518],  // 75.7%
+  ['吹田青山台三丁目',   876,  533,  771],  // 69.2%
+  ['新御堂筋上新田',     929,  570,  825],  // 69.1%
+  ['東淀川豊里五丁目',   753,  452,  657],  // 68.8%
+  ['五月ケ丘東',         489,  295,  429],  // 68.7%
+  ['江坂東',             708,  416,  614],  // 67.8%
+  ['南金田二丁目',      1146,  653,  973],  // 67.1%
+  ['江坂駅南口',        1485,  846, 1279],  // 66.2%
+  ['東淀川大道南',       755,  417,  678],  // 61.5%
+  ['箕面白島二丁目',    null,  575, null],  // not in 19-store plan
 ];
 
-// Weekly day targets (org total per day)
+// Weekly day data
 const weekDays = [
-  { label:'火 4/21', target:1709, actual:793,  sat:false, sun:false, today:true  },
-  { label:'水 4/22', target:1589, actual:null, sat:false, sun:false, today:false },
-  { label:'木 4/23', target:1824, actual:null, sat:false, sun:false, today:false },
-  { label:'金 4/24', target:2147, actual:null, sat:false, sun:false, today:false },
-  { label:'土 4/25', target:2204, actual:null, sat:true,  sun:false, today:false },
-  { label:'日 4/26', target:2147, actual:null, sat:false, sun:true,  today:false },
-  { label:'月 4/27', target:1881, actual:null, sat:false, sun:false, today:false },
+  { label:'火 4/21', target:1709, actual:1445, sat:false, sun:false, today:false },
+  { label:'水 4/22', target:1589, actual:1441, sat:false, sun:false, today:false },
+  { label:'木 4/23', target:1824, actual:1313, sat:false, sun:false, today:false },
+  { label:'金 4/24', target:2147, actual:1538, sat:false, sun:false, today:false },
+  { label:'土 4/25', target:2204, actual:1532, sat:true,  sun:false, today:false },
+  { label:'日 4/26', target:2147, actual:1412, sat:false, sun:true,  today:false },
+  { label:'月 4/27', target:1881, actual:null, sat:false, sun:false, today:true  },
 ];
 
 /* ─────────────────────────────────────────────
-   TODAY DONUT
+   DONUT CHART
 ───────────────────────────────────────────── */
 const todayCtx = document.getElementById('todayDonut').getContext('2d');
 new Chart(todayCtx, {
   type: 'doughnut',
   data: {
-    labels: ['販売済み Sold','残り Remaining'],
+    labels: ['累積実績 Actual','残り Remaining'],
     datasets: [{
-      data: [TOTAL_ACTUAL, WEEK_TARGET - TOTAL_ACTUAL > 0 ? TOTAL_TARGET - TOTAL_ACTUAL : 0],
+      data: [TOTAL_ACTUAL_6D, WEEK_TARGET - TOTAL_ACTUAL_6D],
       backgroundColor: ['#0054A6','#E8EDF5'],
       borderWidth: 4,
       borderColor: '#fff',
@@ -362,28 +401,40 @@ new Chart(todayCtx, {
 /* ─────────────────────────────────────────────
    WEEKLY DAY GRID
 ───────────────────────────────────────────── */
-const maxTarget = Math.max(...weekDays.map(d => d.target));
 const dayGrid = document.getElementById('dayGrid');
 
 weekDays.forEach(d => {
-  const pct = d.actual !== null ? (d.actual / d.target * 100).toFixed(0) : null;
+  const pct = d.actual !== null ? (d.actual / d.target * 100) : null;
   const barPct = d.actual !== null ? Math.min(100, d.actual / d.target * 100) : 0;
-  const barColor = d.today ? '#0054A6' : d.sat ? '#FF8C00' : d.sun ? '#E63946' : '#B0B8C8';
+
+  let barColor, pctColor;
+  if (d.today) {
+    barColor = '#FF8C00'; pctColor = '#FF8C00';
+  } else if (pct !== null && pct >= 85) {
+    barColor = '#2E7D32'; pctColor = '#2E7D32';
+  } else if (pct !== null && pct >= 70) {
+    barColor = '#F57F17'; pctColor = '#F57F17';
+  } else {
+    barColor = d.today ? '#FF8C00' : (d.sat ? '#FF8C00' : (d.sun ? '#E63946' : '#E63946'));
+    pctColor = barColor;
+  }
+  if (d.sat && !d.today && pct !== null) { barColor = '#1565C0'; pctColor = '#1565C0'; }
+  if (d.sun && !d.today && pct !== null) { barColor = '#E63946'; pctColor = '#E63946'; }
 
   let cls = 'day-box ';
   if (d.today) cls += 'today';
   else if (d.sat) cls += 'sat';
   else if (d.sun) cls += 'sun';
-  else cls += 'future';
+  else cls += 'past';
 
   const box = document.createElement('div');
   box.className = cls;
   box.innerHTML = `
     <div class="day-label ${d.today ? 'today-color' : ''}">${d.label.split(' ')[0]}<br><span style="font-size:8px;font-weight:400">${d.label.split(' ')[1]}</span></div>
     <div class="day-actual ${d.actual === null ? 'tbd' : ''}">${d.actual !== null ? d.actual.toLocaleString() : '―'}</div>
-    <div class="day-target">目標 ${d.target.toLocaleString()}</div>
+    <div class="day-target">目標${d.target.toLocaleString()}</div>
     <div class="day-bar-wrap"><div class="day-bar-fill" style="width:${barPct}%;background:${barColor}"></div></div>
-    ${d.actual !== null ? `<div style="font-size:8px;font-weight:700;color:${barColor};margin-top:2px">${pct}%</div>` : ''}
+    ${d.actual !== null ? `<div class="day-pct" style="color:${pctColor}">${pct.toFixed(0)}%</div>` : `<div class="day-pct" style="color:#FF8C00">本日</div>`}
   `;
   dayGrid.appendChild(box);
 });
@@ -394,17 +445,17 @@ weekDays.forEach(d => {
 const tbody = document.getElementById('storeTableBody');
 
 stores.forEach((s, i) => {
-  const [name, target, actual] = s;
-  const pct = target !== null ? (actual / target * 100) : null;
+  const [name, weeklyTarget, cumActual, target6d] = s;
+  const pct = target6d !== null ? (cumActual / target6d * 100) : null;
   const pctStr = pct !== null ? pct.toFixed(1) + '%' : '―';
-  const gap = target !== null ? (target - actual) : null;
+  const remaining = weeklyTarget !== null ? (weeklyTarget - cumActual) : null;
 
   let statusClass, statusLabel;
   if (pct === null) {
     statusClass = 'badge-na'; statusLabel = '対象外';
-  } else if (pct >= 55) {
+  } else if (pct >= 85) {
     statusClass = 'badge-on'; statusLabel = '順調';
-  } else if (pct >= 40) {
+  } else if (pct >= 70) {
     statusClass = 'badge-ok'; statusLabel = 'やや遅れ';
   } else {
     statusClass = 'badge-ng'; statusLabel = '要注意';
@@ -412,13 +463,17 @@ stores.forEach((s, i) => {
 
   let barColor = '#E63946';
   if (pct === null) barColor = '#B0B8C8';
-  else if (pct >= 55) barColor = '#2E7D32';
-  else if (pct >= 40) barColor = '#F57F17';
+  else if (pct >= 85) barColor = '#2E7D32';
+  else if (pct >= 70) barColor = '#F57F17';
 
   let pctColor = '#E63946';
   if (pct === null) pctColor = '#9AA5B4';
-  else if (pct >= 55) pctColor = '#2E7D32';
-  else if (pct >= 40) pctColor = '#F57F17';
+  else if (pct >= 85) pctColor = '#2E7D32';
+  else if (pct >= 70) pctColor = '#F57F17';
+
+  const remDisplay = remaining !== null
+    ? `<span class="rem-cell">${remaining.toLocaleString()}</span>`
+    : '―';
 
   const tr = document.createElement('tr');
   tr.innerHTML = `
@@ -426,14 +481,15 @@ stores.forEach((s, i) => {
       <span class="rank">${i + 1}</span>
       <span class="store-name">${name}</span>
     </td>
-    <td>${target !== null ? target : '―'}</td>
-    <td><strong>${actual}</strong></td>
+    <td><strong>${cumActual.toLocaleString()}</strong></td>
+    <td>${weeklyTarget !== null ? weeklyTarget.toLocaleString() : '―'}</td>
     <td>
       <div class="pct-cell" style="color:${pctColor}">${pctStr}</div>
       <div class="pct-bar-bg">
         <div class="pct-bar-fill" style="width:${pct !== null ? Math.min(100,pct) : 0}%;background:${barColor}"></div>
       </div>
     </td>
+    <td>${remDisplay}</td>
     <td><span class="status-badge ${statusClass}">${statusLabel}</span></td>
   `;
   tbody.appendChild(tr);
