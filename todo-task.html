@@ -511,22 +511,26 @@ const dL = d => Math.ceil((new Date(d) - new Date(today())) / 86400000);
 // ── 完了状態の判定（店舗単位） ──
 function isTaskDone(t) {
   if (t.type === 'sc') return !!t.done;
-  // 移行：completedStoresがなければdoneで判断
-  if (!t.completedStores || Object.keys(t.completedStores).length === 0) {
-    return !!t.done;
-  }
-  const cs = t.completedStores;
+
+  const cs             = t.completedStores || {};
   const assignedStores = (t.assignees || []).filter(a => STORES.includes(a));
+
+  // 店舗がアサインされていないタスク（旧データ等）→ done フラグで判断
   if (assignedStores.length === 0) return !!t.done;
 
   if (currentStore) {
-    // 自店舗がアサインされている場合：自店舗の状態
-    if (assignedStores.includes(currentStore)) return !!cs[currentStore];
-    // 自店舗がアサインされていない場合：全店舗完了で完了扱い
-    return assignedStores.every(s => cs[s]);
+    if (assignedStores.includes(currentStore)) {
+      // ★ 自店舗がアサインされている → completedStores[自店舗] のみで判断
+      //    t.done や他店舗の状態には一切影響されない
+      return !!cs[currentStore];
+    }
+    // 自店舗がアサインされていないタスク（他店舗専用）→ 全店舗完了で完了扱い
+    return assignedStores.every(s => !!cs[s]);
   }
-  // ゲスト/管理者：全店舗完了で完了
-  return assignedStores.every(s => cs[s]);
+
+  // ゲスト/管理者：completedStores が空なら旧データとして done で判断
+  if (Object.keys(cs).length === 0) return !!t.done;
+  return assignedStores.every(s => !!cs[s]);
 }
 
 // 完了店舗数情報
@@ -965,11 +969,20 @@ async function doToggle(id) {
   if (t.type === 'sc') {
     if (!isMgr) { toast('⚠️ SC タスクの完了は管理者のみ操作できます'); return; }
     const nv = !t.done;
-    loading(true);
-    const r = await gPost({action:'updateDone', id, done:nv});
-    if (r.ok) { t.done = nv; t.doneAt = nv ? today() : ''; render(); toast(nv ? '✅ 完了にしました' : '↩️ 未完了に戻しました'); }
-    else toast('⚠️ 更新失敗');
-    loading(false);
+    // ① 即座にUI更新
+    t.done = nv; t.doneAt = nv ? today() : '';
+    render();
+    toast(nv ? '✅ 完了にしました' : '↩️ 未完了に戻しました');
+    // ② バックグラウンドでGASに保存
+    try {
+      const r = await gPost({action:'updateDone', id, done:nv});
+      if (!r.ok) throw new Error(r.error || '更新失敗');
+    } catch(e) {
+      // 失敗したら元に戻す
+      t.done = !nv; t.doneAt = !nv ? today() : '';
+      render();
+      toast('⚠️ 保存失敗。元に戻しました');
+    }
     return;
   }
 
@@ -979,15 +992,23 @@ async function doToggle(id) {
 
   const cs = t.completedStores || {};
   const nv = !cs[currentStore];
-  loading(true);
-  const r = await gPost({action:'updateDone', id, storeName:currentStore, done:nv});
-  if (r.ok) {
-    if (!t.completedStores) t.completedStores = {};
-    t.completedStores[currentStore] = nv;
+
+  // ① 即座にUI更新（GASの応答を待たない）
+  if (!t.completedStores) t.completedStores = {};
+  t.completedStores[currentStore] = nv;
+  render();
+  toast(nv ? '✅ 完了にしました' : '↩️ 未完了に戻しました');
+
+  // ② バックグラウンドでGASに保存（失敗したら元に戻す）
+  try {
+    const r = await gPost({action:'updateDone', id, storeName:currentStore, done:nv});
+    if (!r.ok) throw new Error(r.error || '更新失敗');
+  } catch(e) {
+    // GAS保存失敗 → UIを元の状態に戻す
+    t.completedStores[currentStore] = !nv;
     render();
-    toast(nv ? '✅ 完了にしました' : '↩️ 未完了に戻しました');
-  } else toast('⚠️ 更新失敗');
-  loading(false);
+    toast('⚠️ 保存失敗。もう一度お試しください');
+  }
 }
 
 async function doDel(id) {
