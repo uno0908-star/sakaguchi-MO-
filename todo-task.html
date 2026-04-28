@@ -10,7 +10,7 @@
 <!-- LINE in-app browser キャッシュ対策：バージョンが変わったら自動リロード -->
 <script>
 (function(){
-  var VER = '20260428-4'; // ★ 更新時はここを変える
+  var VER = '20260428-5'; // ★ 更新時はここを変える
   var stored = localStorage.getItem('_appVer');
   var param  = new URLSearchParams(location.search).get('_v');
   if (stored !== VER) {
@@ -1265,7 +1265,8 @@ async function doToggle(id) {
     } catch(e) {
       t.completedStores[currentSC] = !nv;
       render();
-      toast('⚠️ 保存失敗。もう一度お試しください');
+      console.error('[doToggle SC] 保存失敗:', e.message);
+      toast('⚠️ 保存失敗: ' + e.message);
     }
     return;
   }
@@ -1291,7 +1292,8 @@ async function doToggle(id) {
     // GAS保存失敗 → UIを元の状態に戻す
     t.completedStores[currentStore] = !nv;
     render();
-    toast('⚠️ 保存失敗。もう一度お試しください');
+    console.error('[doToggle Store] 保存失敗:', e.message);
+    toast('⚠️ 保存失敗: ' + e.message);
   }
 }
 
