@@ -304,7 +304,18 @@ main{padding:20px;max-width:960px;margin:0 auto;}
   .stats-row{grid-template-columns:repeat(2,1fr);}
   .fgrid{grid-template-columns:1fr;}
   .tc{grid-template-columns:30px 1fr;}
-  .tr{display:none;}
+  /* 右パネルをカード下部に横並びで表示 */
+  .tr{
+    display:flex;flex-direction:row;flex-wrap:wrap;
+    gap:5px;align-items:center;justify-content:flex-end;
+    grid-column:1/-1;
+    border-top:1px solid var(--border);
+    padding-top:8px;margin-top:6px;min-width:0;
+  }
+  .dpill{display:none;} /* 日付はdateバーで確認できるため省略 */
+  .card-btns{flex-direction:row;flex-wrap:wrap;gap:5px;align-items:center;}
+  .bcomplete{font-size:13px;padding:7px 14px;}
+  .bdel,.bedit,.bcal{font-size:12px;padding:5px 10px;}
   main{padding:12px;}
 
   /* ── ヘッダー：高さ固定を解除・コンパクト化 ── */
