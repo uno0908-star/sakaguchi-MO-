@@ -1344,8 +1344,11 @@ async function doEdit() {
 
   loading(true);
   try {
-    const r = await gPost({action:'updateTask', pw:curPw, id, title, taskKind:kind,
-      startDate:start, endDate:end, type, priority:pri, urgency:urg, note, assignees:asgn});
+    const payload = {action:'updateTask', pw:curPw, id, title, taskKind:kind,
+      startDate:start, endDate:end, type, priority:pri, urgency:urg, note, assignees:asgn};
+    console.log('[doEdit] 送信データ:', JSON.stringify(payload));
+    const r = await gPost(payload);
+    console.log('[doEdit] GAS応答:', JSON.stringify(r));
     if (r.ok) {
       // ローカルのタスクオブジェクトを即時更新
       const t = tasks.find(x => x.id === id);
@@ -1357,9 +1360,14 @@ async function doEdit() {
       ok.style.display = 'block';
       setTimeout(() => { ok.style.display = 'none'; closeEdit(); }, 1200);
     } else {
-      toast('⚠️ ' + (r.error || '更新失敗'));
+      const errMsg = typeof r.error === 'object' ? JSON.stringify(r.error) : (r.error || '更新失敗');
+      console.error('[doEdit] エラー詳細:', r);
+      toast('⚠️ ' + errMsg);
     }
-  } catch(e) { toast('⚠️ 通信エラー。時間をおいて再試行してください'); }
+  } catch(e) {
+    console.error('[doEdit] 例外:', e);
+    toast('⚠️ 通信エラー: ' + e.message);
+  }
   loading(false);
 }
 
