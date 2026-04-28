@@ -36,13 +36,14 @@ header::after{content:'';position:absolute;bottom:0;left:0;right:0;height:2.5px;
 .hbtn.line{border-color:#06C755;color:#06C755;background:#F0FBF4;}.hbtn.line:hover{background:#DDF7E8;}
 .hbtn.key{border-color:var(--accent-bd);color:var(--accent);background:var(--accent-bg);}.hbtn.key:hover{background:#DCE9FD;}
 .hbtn.ref{border-color:var(--green-bd);color:var(--green);background:var(--green-bg);}.hbtn.ref:hover{background:#D5F5E3;}
-.store-badge{background:var(--accent-bg);color:var(--accent);border:1.5px solid var(--accent-bd);border-radius:20px;font-size:11px;font-weight:700;padding:5px 12px;display:none;}
+.store-badge{background:var(--accent-bg);color:var(--accent);border:1.5px solid var(--accent-bd);border-radius:20px;font-size:11px;font-weight:700;padding:5px 12px;display:none;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:160px;}
 .store-badge.show{display:inline-flex;align-items:center;gap:5px;}
-.mgr-badge{background:#FFF8E8;color:var(--gold);border:1.5px solid rgba(176,112,16,.22);border-radius:20px;font-size:11px;font-weight:700;padding:5px 12px;display:none;}
+.mgr-badge{background:#FFF8E8;color:var(--gold);border:1.5px solid rgba(176,112,16,.22);border-radius:20px;font-size:11px;font-weight:700;padding:5px 12px;display:none;white-space:nowrap;}
 .mgr-badge.show{display:inline-flex;align-items:center;gap:5px;}
 
 /* TABS */
 .tab-bar{background:#fff;border-bottom:1.5px solid var(--border);display:flex;overflow-x:auto;padding:0 18px;scrollbar-width:none;position:sticky;top:64px;z-index:99;box-shadow:var(--sh0);}
+@media(max-width:640px){.tab-bar{top:52px;}}
 .tab-bar::-webkit-scrollbar{display:none;}
 .tab{padding:0 15px;height:48px;font-size:13px;font-weight:500;color:var(--text3);cursor:pointer;white-space:nowrap;border-bottom:2.5px solid transparent;transition:all .18s;display:flex;align-items:center;gap:6px;}
 .tab:hover{color:var(--text2);}
@@ -262,8 +263,33 @@ main{padding:20px;max-width:960px;margin:0 auto;}
   .tc{grid-template-columns:30px 1fr;}
   .tr{display:none;}
   main{padding:12px;}
-  header{padding:0 13px;}
+
+  /* ── ヘッダー：高さ固定を解除・コンパクト化 ── */
+  header{padding:0 10px;height:auto;min-height:52px;}
+
+  /* ロゴマークを小さく */
+  .logo-mark{width:30px;height:30px;font-size:16px;border-radius:8px;}
+
+  /* ロゴテキスト：1行に収める */
+  .logo-main{font-size:15px;letter-spacing:.06em;white-space:nowrap;}
+  .logo-sub{display:none;}
+
+  /* ヘッダー右側：ボタンのテキストを非表示・サイズ縮小 */
+  .hbtn{height:32px;padding:0 9px;font-size:11px;gap:3px;}
   .hbtn span{display:none;}
+  .hdr-r{gap:5px;}
+
+  /* 店舗・管理者バッジ：横1行・折り返し禁止 */
+  .store-badge,.mgr-badge{
+    white-space:nowrap;
+    font-size:11px;
+    padding:4px 9px;
+    max-width:none;
+  }
+
+  /* タブバーのtopをヘッダー高さに合わせる */
+  .tab-bar{top:52px;}
+
   .sc-num{font-size:40px;}
   .cal-grid{gap:2px;}
   .cal-cell{min-height:54px;}
