@@ -10,7 +10,7 @@
 <!-- LINE in-app browser キャッシュ対策：バージョンが変わったら自動リロード -->
 <script>
 (function(){
-  var VER = '20260428-3'; // ★ 更新時はここを変える
+  var VER = '20260428-4'; // ★ 更新時はここを変える
   var stored = localStorage.getItem('_appVer');
   var param  = new URLSearchParams(location.search).get('_v');
   if (stored !== VER) {
@@ -676,6 +676,18 @@ const dateOf = d => d ? d.slice(0, 10) : '';
 // 日時を表示用にフォーマット（時刻付きなら "YYYY/MM/DD HH:mm"、日付のみなら "YYYY/MM/DD"）
 const fmtDate = d => {
   if (!d) return '';
+  // GASがDateオブジェクトをString()変換した英語形式 "Sun May 03 2026 ..." への対応
+  if (/^[A-Za-z]{3}\s/.test(d)) {
+    try {
+      const p = new Date(d);
+      if (!isNaN(p)) {
+        const y = p.getFullYear(), mo = String(p.getMonth()+1).padStart(2,'0'), dd = String(p.getDate()).padStart(2,'0');
+        const h = p.getHours(), mi = p.getMinutes();
+        if (h === 0 && mi === 0) return `${y}/${mo}/${dd}`;
+        return `${y}/${mo}/${dd} ${String(h).padStart(2,'0')}:${String(mi).padStart(2,'0')}`;
+      }
+    } catch(e) {}
+  }
   if (d.includes('T')) {
     return d.slice(0, 10).replace(/-/g, '/') + ' ' + d.slice(11, 16);
   }
