@@ -3,7 +3,26 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
 <title>阪口商店 タスク管理</title>
+<!-- LINE in-app browser キャッシュ対策：バージョンが変わったら自動リロード -->
+<script>
+(function(){
+  var VER = '20260428-3'; // ★ 更新時はここを変える
+  var stored = localStorage.getItem('_appVer');
+  var param  = new URLSearchParams(location.search).get('_v');
+  if (stored !== VER) {
+    localStorage.setItem('_appVer', VER);
+    if (param !== VER) {
+      var u = new URL(location.href);
+      u.searchParams.set('_v', VER);
+      location.replace(u.toString());
+    }
+  }
+})();
+</script>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;700;900&family=Bebas+Neue&family=DM+Mono:wght@400;500&display=swap');
 :root{
@@ -147,6 +166,8 @@ main{padding:20px;max-width:960px;margin:0 auto;}
 .spill.overdue-alert{background:var(--red-bg);color:var(--red);border-color:var(--red-bd);}
 .inc-stores{font-size:10px;color:var(--text3);line-height:1.6;margin-top:2px;}
 .inc-stores strong{color:var(--red);font-size:9px;text-transform:uppercase;letter-spacing:.06em;margin-right:3px;}
+.comp-stores{font-size:10px;color:var(--text3);line-height:1.6;margin-top:2px;}
+.comp-stores strong{color:var(--green);font-size:9px;text-transform:uppercase;letter-spacing:.06em;margin-right:3px;}
 
 /* RIGHT PANEL */
 .tr{display:flex;flex-direction:column;align-items:flex-end;gap:6px;min-width:110px;}
@@ -460,12 +481,12 @@ main{padding:20px;max-width:960px;margin:0 auto;}
         <input class="fi" id="f-title" placeholder="例：月次報告書を提出してください" maxlength="80">
       </div>
       <div>
-        <div class="fl">📅 開始日（任意）</div>
-        <input class="fi" type="date" id="f-start">
+        <div class="fl">📅 開始日時（任意）</div>
+        <input class="fi" type="datetime-local" id="f-start">
       </div>
       <div>
-        <div class="fl">📅 終了日（必須）</div>
-        <input class="fi" type="date" id="f-end">
+        <div class="fl">📅 終了日時（必須）</div>
+        <input class="fi" type="datetime-local" id="f-end">
       </div>
       <div>
         <div class="fl">📂 タスク種別</div>
@@ -559,7 +580,33 @@ let tasks = [], curF = 'open', selStore = null, selSC = null;
 let calY, calM;
 
 const today = () => new Date().toISOString().split('T')[0];
-const dL = d => Math.ceil((new Date(d) - new Date(today())) / 86400000);
+
+// 日時文字列から日付部分のみ取得（カレンダー・pending判定用）
+const dateOf = d => d ? d.slice(0, 10) : '';
+
+// 日時を表示用にフォーマット（時刻付きなら "YYYY/MM/DD HH:mm"、日付のみなら "YYYY/MM/DD"）
+const fmtDate = d => {
+  if (!d) return '';
+  if (d.includes('T')) {
+    return d.slice(0, 10).replace(/-/g, '/') + ' ' + d.slice(11, 16);
+  }
+  return d.replace(/-/g, '/');
+};
+
+// 期限までの日数（負 = 期限超過）。時刻付き文字列は現在時刻と比較
+const dL = d => {
+  if (!d.includes('T')) {
+    // 日付のみ（旧形式）：従来通り
+    return Math.ceil((new Date(d) - new Date(today())) / 86400000);
+  }
+  // 日時形式：今日0:00からの日数差
+  const end = new Date(d);
+  const todayStart = new Date(today() + 'T00:00:00');
+  const days = Math.floor((end - todayStart) / 86400000);
+  // 同日でも時刻が過ぎていたら期限超過
+  if (days === 0 && end < new Date()) return -1;
+  return days;
+};
 
 // ── 完了状態の判定（店舗・SCメンバー単位） ──
 function isTaskDone(t) {
@@ -615,7 +662,7 @@ function tStatus(t) {
   if (d < 0)  return 'overdue';
   if (d === 0) return 'today';
   if (d <= 3)  return 'soon';
-  if (t.startDate && t.startDate > today()) return 'pending';
+  if (t.startDate && dateOf(t.startDate) > today()) return 'pending';
   return 'active';
 }
 
@@ -952,14 +999,16 @@ function cardH(t) {
   if (myDone) { dlTxt = `完了\n${t.doneAt || ''}`; dlCls = 'dp-dn'; }
   else {
     const d = dL(t.endDate);
-    dlTxt = t.endDate.replace(/-/g, '/') + '\n' + (d < 0 ? `${Math.abs(d)}日超過` : d === 0 ? '今日まで' : d === 1 ? '明日まで' : `あと${d}日`);
+    dlTxt = fmtDate(t.endDate) + '\n' + (d < 0 ? `${Math.abs(d)}日超過` : d === 0 ? '今日まで' : d === 1 ? '明日まで' : `あと${d}日`);
     dlCls = st === 'overdue' || st === 'today' ? 'dp-ov' : st === 'soon' ? 'dp-so' : st === 'pending' ? 'dp-pe' : 'dp-ok';
   }
 
   // 日付バー
+  const startLbl = t.startDate && t.startDate.includes('T') ? '開始日時' : '開始日';
+  const endLbl   = t.endDate   && t.endDate.includes('T')   ? '終了日時' : '終了日';
   const dateBar = `<div class="tdate">
-    ${t.startDate ? `<div class="tdate-block"><span class="tdate-lbl">開始日</span><span class="tdate-val">${t.startDate.replace(/-/g,'/')}</span></div><span class="tdate-arr">→</span>` : ''}
-    <div class="tdate-block"><span class="tdate-lbl">終了日</span><span class="tdate-val end">${t.endDate.replace(/-/g,'/')}</span></div>
+    ${t.startDate ? `<div class="tdate-block"><span class="tdate-lbl">${startLbl}</span><span class="tdate-val">${fmtDate(t.startDate)}</span></div><span class="tdate-arr">→</span>` : ''}
+    <div class="tdate-block"><span class="tdate-lbl">${endLbl}</span><span class="tdate-val end">${fmtDate(t.endDate)}</span></div>
   </div>`;
 
   // 進捗（店舗・SCメンバー）
@@ -973,7 +1022,16 @@ function cardH(t) {
       <div class="spill${allDone ? ' all-done' : isOverdue && !allDone ? ' overdue-alert' : ''}">
         ${allDone ? '✅' : '📊'} ${info.done}/${info.total} ${unitWord}完了
       </div>`;
-    if (!allDone && info.incomplete.length > 0) {
+    if (isMgr) {
+      // 管理者：完了・未完了を全員分表示
+      if (info.complete.length > 0) {
+        progHtml += `<div class="comp-stores"><strong>✅ 完了</strong>${info.complete.join('、')}</div>`;
+      }
+      if (info.incomplete.length > 0) {
+        progHtml += `<div class="inc-stores"><strong>⬜ 未完了</strong>${info.incomplete.join('、')}</div>`;
+      }
+    } else if (!allDone && info.incomplete.length > 0) {
+      // 非管理者：未完了のみ最大4件
       const maxShow = 4;
       const shown   = info.incomplete.slice(0, maxShow).join('、');
       const more    = info.incomplete.length > maxShow ? ` 他${info.incomplete.length - maxShow}${unitWord}` : '';
@@ -1064,9 +1122,9 @@ function renderCal() {
     const ds = `${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
     const isT = ds === td;
     const myFilter = t => !currentStore || (t.assignees || []).includes(currentStore);
-    const starts = tasks.filter(t => t.startDate === ds && !isTaskDone(t) && myFilter(t));
-    const ends   = tasks.filter(t => t.endDate   === ds && !isTaskDone(t) && myFilter(t));
-    const acts   = tasks.filter(t => t.startDate && t.startDate < ds && t.endDate > ds && !isTaskDone(t) && myFilter(t));
+    const starts = tasks.filter(t => dateOf(t.startDate) === ds && !isTaskDone(t) && myFilter(t));
+    const ends   = tasks.filter(t => dateOf(t.endDate)   === ds && !isTaskDone(t) && myFilter(t));
+    const acts   = tasks.filter(t => t.startDate && dateOf(t.startDate) < ds && dateOf(t.endDate) > ds && !isTaskDone(t) && myFilter(t));
     let dots = '';
     starts.slice(0,2).forEach(t => dots += `<div class="cal-dot dot-s">▶ ${t.title.slice(0,9)}</div>`);
     ends.slice(0,2).forEach(t => dots += `<div class="cal-dot dot-e">🏁 ${t.title.slice(0,9)}</div>`);
@@ -1164,7 +1222,7 @@ async function doAdd() {
     tasks.push({id:r.id, title, taskKind:kind, startDate:start, endDate:end, type, priority:pri, urgency:urg, note, assignees:asgn, registeredBy:uName, done:false, doneAt:'', completedStores:{}, createdAt:today()});
     document.getElementById('f-title').value = '';
     document.getElementById('f-start').value = '';
-    document.getElementById('f-end').value   = today();
+    document.getElementById('f-end').value   = today() + 'T23:59';
     document.getElementById('f-note').value  = '';
     const ca = document.getElementById('chkAll'); if (ca) ca.checked = false;
     document.querySelectorAll('.chk-m').forEach(c => c.checked = false);
@@ -1221,7 +1279,7 @@ document.addEventListener('keydown', e => {
 });
 
 upChk();
-document.getElementById('f-end').value = today();
+document.getElementById('f-end').value = today() + 'T23:59';
 
 // ページを開くたびに必ずログイン画面を表示する
 // （前回の店舗があれば「かんたんログイン」ボタンで表示）
