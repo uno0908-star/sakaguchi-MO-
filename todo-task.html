@@ -257,6 +257,17 @@ main{padding:20px;max-width:960px;margin:0 auto;}
 .sb-stat-num{font-family:'Bebas Neue',sans-serif;font-size:28px;color:var(--accent);line-height:1;}
 .sb-stat-lbl{font-size:10px;color:var(--text3);}
 
+/* ── SC LOGIN ── */
+.login-tabs{display:flex;gap:6px;margin-bottom:14px;}
+.ltab{flex:1;padding:9px;border:1.5px solid var(--border2);border-radius:var(--rs);font-family:inherit;font-size:13px;font-weight:500;cursor:pointer;background:var(--bg);color:var(--text2);transition:all .18s;}
+.ltab.active{background:var(--accent);border-color:var(--accent);color:#fff;font-weight:700;}
+.ltab.sc-tab.active{background:var(--purple);border-color:var(--purple);}
+.sc-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:7px;margin-bottom:13px;}
+.sc-mbtn{padding:11px 8px;border:1.5px solid var(--border2);border-radius:var(--rs);font-family:inherit;font-size:13px;cursor:pointer;background:var(--bg);color:var(--text2);transition:all .18s;text-align:center;font-weight:500;}
+.sc-mbtn:hover,.sc-mbtn:active{background:var(--purple-bg);border-color:var(--purple);color:var(--purple);font-weight:700;}
+.sc-badge{background:var(--purple-bg);color:var(--purple);border:1.5px solid var(--purple-bd);border-radius:20px;font-size:11px;font-weight:700;padding:5px 12px;display:none;white-space:nowrap;}
+.sc-badge.show{display:inline-flex;align-items:center;gap:5px;}
+
 @media(max-width:640px){
   .stats-row{grid-template-columns:repeat(2,1fr);}
   .fgrid{grid-template-columns:1fr;}
@@ -308,11 +319,17 @@ main{padding:20px;max-width:960px;margin:0 auto;}
     <div class="pwico">🏪</div>
     <div class="pwtitle">阪口商店 タスク管理</div>
 
-    <!-- かんたんログイン（前回の店舗がある場合のみ表示） -->
+    <!-- かんたんログイン（前回セッションがある場合のみ表示） -->
     <div id="section-quick" style="display:none">
-      <div class="pwsub" style="margin-bottom:10px">前回ログインした店舗</div>
+      <div class="pwsub" style="margin-bottom:10px">前回のログイン</div>
       <button class="pwbtn" id="quick-btn" onclick="doQuickLogin()" style="font-size:15px;letter-spacing:.04em;margin-bottom:6px"></button>
-      <div class="pwdivider">別の店舗コードを入力</div>
+      <div class="pwdivider">別のアカウントでログイン</div>
+    </div>
+
+    <!-- 種別タブ（店舗 / SC・ASC） -->
+    <div class="login-tabs" id="login-tabs">
+      <button class="ltab active" id="ltab-store" onclick="showStoreSection()">🏪 店舗</button>
+      <button class="ltab sc-tab" id="ltab-sc" onclick="showScSection()">👔 SC・ASC</button>
     </div>
 
     <!-- 店舗ログイン -->
@@ -320,10 +337,18 @@ main{padding:20px;max-width:960px;margin:0 auto;}
       <div class="pwsub" id="pwsub-store">店舗コードを入力してください<br><small style="color:var(--text3)">6桁の数字コード</small></div>
       <input class="pwpi" id="pwcode" placeholder="000000" maxlength="6" inputmode="numeric" type="text">
       <button class="pwbtn" onclick="doStoreLogin()">🏪 店舗ログイン</button>
-      <div class="pwbtns-row">
-        <button class="pwgh" onclick="doGuest()">👀 閲覧のみ</button>
-        <button class="pwgh" style="font-size:11px;color:var(--text3)" onclick="showMgrSection()">🔑 管理者</button>
-      </div>
+    </div>
+
+    <!-- SC/ASCログイン -->
+    <div id="section-sc" style="display:none">
+      <div class="pwsub">名前を選んでください</div>
+      <div class="sc-grid" id="sc-grid"></div>
+    </div>
+
+    <!-- 共通：閲覧のみ・管理者 -->
+    <div class="pwbtns-row" id="common-btns">
+      <button class="pwgh" onclick="doGuest()">👀 閲覧のみ</button>
+      <button class="pwgh" style="font-size:11px;color:var(--text3)" onclick="showMgrSection()">🔑 管理者</button>
     </div>
 
     <!-- 管理者ログイン -->
@@ -349,6 +374,7 @@ main{padding:20px;max-width:960px;margin:0 auto;}
   </div>
   <div class="hdr-r">
     <span class="store-badge" id="store-badge"></span>
+    <span class="sc-badge" id="sc-badge"></span>
     <span class="mgr-badge" id="mgr-badge"></span>
     <button class="hbtn ref" onclick="loadTasks()">🔄 <span>更新</span></button>
     <button class="hbtn line" onclick="doLine()">💬 <span>LINE共有</span></button>
@@ -370,15 +396,15 @@ main{padding:20px;max-width:960px;margin:0 auto;}
 <div class="view active" id="view-all">
   <div class="store-banner" id="store-banner">
     <div class="sb-left">
-      <div class="sb-icon">🏪</div>
+      <div class="sb-icon" id="sb-icon">🏪</div>
       <div>
         <div class="sb-name" id="sb-name">-</div>
-        <div class="sb-sub">自店舗のタスクを優先表示しています</div>
+        <div class="sb-sub" id="sb-sub">自店舗のタスクを優先表示しています</div>
       </div>
     </div>
     <div class="sb-stat">
       <div class="sb-stat-num" id="sb-stat-num">-</div>
-      <div class="sb-stat-lbl">自店舗 未完了</div>
+      <div class="sb-stat-lbl" id="sb-stat-lbl">未完了</div>
     </div>
   </div>
   <div class="stats-row">
@@ -525,7 +551,8 @@ const STORE_CODES = {
 const STORES = Object.values(STORE_CODES);
 const SCS    = ['髙橋','五島','プラカス','ダハル','ビスワス','フィ','サントス','スラズ'];
 
-let currentStore = null; // ログイン中の店舗名（null = ゲスト/管理者）
+let currentStore = null; // ログイン中の店舗名
+let currentSC    = null; // ログイン中のSC/ASCメンバー名
 let isMgr = false;
 let uName = '', curPw = '';
 let tasks = [], curF = 'open', selStore = null, selSC = null;
@@ -534,40 +561,52 @@ let calY, calM;
 const today = () => new Date().toISOString().split('T')[0];
 const dL = d => Math.ceil((new Date(d) - new Date(today())) / 86400000);
 
-// ── 完了状態の判定（店舗単位） ──
+// ── 完了状態の判定（店舗・SCメンバー単位） ──
 function isTaskDone(t) {
-  if (t.type === 'sc') return !!t.done;
+  const cs = t.completedStores || {};
 
-  const cs             = t.completedStores || {};
-  const assignedStores = (t.assignees || []).filter(a => STORES.includes(a));
-
-  // 店舗がアサインされていないタスク（旧データ等）→ done フラグで判断
-  if (assignedStores.length === 0) return !!t.done;
-
-  if (currentStore) {
-    if (assignedStores.includes(currentStore)) {
-      // ★ 自店舗がアサインされている → completedStores[自店舗] のみで判断
-      //    t.done や他店舗の状態には一切影響されない
-      return !!cs[currentStore];
+  if (t.type === 'sc') {
+    const assignedSC = (t.assignees || []).filter(a => SCS.includes(a));
+    if (assignedSC.length === 0) return !!t.done;
+    if (currentSC) {
+      // 自分がアサインされている → 自分の完了フラグのみで判断
+      if (assignedSC.includes(currentSC)) return !!cs[currentSC];
+      return assignedSC.every(m => !!cs[m]);
     }
-    // 自店舗がアサインされていないタスク（他店舗専用）→ 全店舗完了で完了扱い
-    return assignedStores.every(s => !!cs[s]);
+    // ゲスト/管理者：全メンバー完了で完了扱い
+    if (Object.keys(cs).length === 0) return !!t.done;
+    return assignedSC.every(m => !!cs[m]);
   }
 
-  // ゲスト/管理者：completedStores が空なら旧データとして done で判断
+  // 店舗タスク
+  const assignedStores = (t.assignees || []).filter(a => STORES.includes(a));
+  if (assignedStores.length === 0) return !!t.done;
+  if (currentStore) {
+    if (assignedStores.includes(currentStore)) return !!cs[currentStore];
+    return assignedStores.every(s => !!cs[s]);
+  }
   if (Object.keys(cs).length === 0) return !!t.done;
   return assignedStores.every(s => !!cs[s]);
 }
 
-// 完了店舗数情報
+// 完了数情報（店舗・SCメンバー共通）
 function completionInfo(t) {
-  if (t.type !== 'store') return null;
-  const assignedStores = (t.assignees || []).filter(a => STORES.includes(a));
-  if (assignedStores.length === 0) return null;
   const cs = t.completedStores || {};
-  const doneList = assignedStores.filter(s => cs[s]);
-  const incList  = assignedStores.filter(s => !cs[s]);
-  return { done: doneList.length, total: assignedStores.length, incomplete: incList, complete: doneList };
+  if (t.type === 'store') {
+    const assigned = (t.assignees || []).filter(a => STORES.includes(a));
+    if (assigned.length === 0) return null;
+    const doneList = assigned.filter(s => cs[s]);
+    const incList  = assigned.filter(s => !cs[s]);
+    return { done: doneList.length, total: assigned.length, incomplete: incList, complete: doneList };
+  }
+  if (t.type === 'sc') {
+    const assigned = (t.assignees || []).filter(a => SCS.includes(a));
+    if (assigned.length === 0) return null;
+    const doneList = assigned.filter(m => cs[m]);
+    const incList  = assigned.filter(m => !cs[m]);
+    return { done: doneList.length, total: assigned.length, incomplete: incList, complete: doneList };
+  }
+  return null;
 }
 
 function tStatus(t) {
@@ -611,81 +650,113 @@ async function loadTasks() {
 // ── 認証 ──
 function showStoreSection() {
   document.getElementById('section-store').style.display = 'block';
-  document.getElementById('section-mgr').style.display   = 'none';
+  document.getElementById('section-sc').style.display   = 'none';
+  document.getElementById('section-mgr').style.display  = 'none';
+  document.getElementById('common-btns').style.display  = 'flex';
+  document.getElementById('ltab-store').classList.add('active');
+  document.getElementById('ltab-sc').classList.remove('active');
   document.getElementById('pwerr').style.display = 'none';
   document.getElementById('pwerr').textContent = '';
 }
+
+function showScSection() {
+  document.getElementById('section-store').style.display = 'none';
+  document.getElementById('section-sc').style.display   = 'block';
+  document.getElementById('section-mgr').style.display  = 'none';
+  document.getElementById('common-btns').style.display  = 'flex';
+  document.getElementById('ltab-store').classList.remove('active');
+  document.getElementById('ltab-sc').classList.add('active');
+  document.getElementById('pwerr').style.display = 'none';
+  // SCメンバーボタンを生成（初回のみ）
+  const grid = document.getElementById('sc-grid');
+  if (!grid.innerHTML) {
+    grid.innerHTML = SCS.map(m =>
+      `<button class="sc-mbtn" onclick="doScLogin('${m}')">${m}</button>`
+    ).join('');
+  }
+}
+
 function showMgrSection() {
   document.getElementById('section-store').style.display = 'none';
-  document.getElementById('section-mgr').style.display   = 'block';
+  document.getElementById('section-sc').style.display   = 'none';
+  document.getElementById('section-mgr').style.display  = 'block';
+  document.getElementById('common-btns').style.display  = 'none';
   document.getElementById('pwerr').style.display = 'none';
   document.getElementById('pwerr').textContent = '';
 }
 
 function doStoreLogin() {
-  const code = String(document.getElementById('pwcode').value).trim().padStart(6, '0').replace(/\D/g,'');
-  // そのままの入力でも試す
   const rawCode = String(document.getElementById('pwcode').value).trim();
+  const code    = rawCode.padStart(6, '0').replace(/\D/g, '');
   const storeName = STORE_CODES[rawCode] || STORE_CODES[code];
   if (!storeName) {
-    const err = document.getElementById('pwerr');
-    err.textContent = '❌ 店舗コードが違います';
-    err.style.display = 'block';
+    showErr('❌ 店舗コードが違います');
     return;
   }
-  currentStore = storeName;
-  isMgr = false;
-  localStorage.setItem('storeSession', JSON.stringify({storeName}));
-  localStorage.removeItem('mgrSession');
+  currentStore = storeName; currentSC = null; isMgr = false;
+  localStorage.setItem('storeSession', JSON.stringify({type:'store', name:storeName}));
+  finLogin();
+}
+
+function doScLogin(name) {
+  if (!SCS.includes(name)) return;
+  currentSC = name; currentStore = null; isMgr = false;
+  localStorage.setItem('storeSession', JSON.stringify({type:'sc', name}));
   finLogin();
 }
 
 function doPwLogin() {
   const pw = document.getElementById('pwpass').value;
   const nm = document.getElementById('pwname').value.trim();
-  if (pw !== PASSWORD) {
-    const err = document.getElementById('pwerr');
-    err.textContent = '❌ パスワードが違います';
-    err.style.display = 'block';
-    return;
-  }
+  if (pw !== PASSWORD) { showErr('❌ パスワードが違います'); return; }
   isMgr = true; curPw = pw; uName = nm || '管理者';
-  currentStore = null;
+  currentStore = null; currentSC = null;
   localStorage.setItem('mgrSession', JSON.stringify({uName}));
   localStorage.removeItem('storeSession');
   finLogin();
 }
 
 function doGuest() {
-  isMgr = false; currentStore = null; uName = '';
+  isMgr = false; currentStore = null; currentSC = null; uName = '';
   localStorage.removeItem('storeSession');
   localStorage.removeItem('mgrSession');
   finLogin();
+}
+
+function showErr(msg) {
+  const e = document.getElementById('pwerr');
+  e.textContent = msg; e.style.display = 'block';
 }
 
 function finLogin() {
   document.getElementById('pwov').style.display = 'none';
   document.body.classList.toggle('is-mgr', isMgr);
 
-  const sb = document.getElementById('store-badge');
-  const mb = document.getElementById('mgr-badge');
+  const sb  = document.getElementById('store-badge');
+  const scb = document.getElementById('sc-badge');
+  const mb  = document.getElementById('mgr-badge');
+  sb.classList.remove('show'); scb.classList.remove('show'); mb.classList.remove('show');
 
   if (currentStore) {
-    sb.textContent = '🏪 ' + currentStore;
-    sb.classList.add('show');
-    mb.classList.remove('show');
+    sb.textContent = '🏪 ' + currentStore; sb.classList.add('show');
+  } else if (currentSC) {
+    scb.textContent = '👔 ' + currentSC; scb.classList.add('show');
   } else if (isMgr) {
-    mb.textContent = '👔 ' + uName;
-    mb.classList.add('show');
-    sb.classList.remove('show');
-  } else {
-    sb.classList.remove('show');
-    mb.classList.remove('show');
+    mb.textContent = '👔 ' + uName; mb.classList.add('show');
   }
 
   const banner = document.getElementById('store-banner');
   if (currentStore) {
-    document.getElementById('sb-name').textContent = currentStore;
+    document.getElementById('sb-icon').textContent     = '🏪';
+    document.getElementById('sb-name').textContent     = currentStore;
+    document.getElementById('sb-sub').textContent      = '自店舗のタスクを優先表示しています';
+    document.getElementById('sb-stat-lbl').textContent = '自店舗 未完了';
+    banner.classList.add('show');
+  } else if (currentSC) {
+    document.getElementById('sb-icon').textContent     = '👔';
+    document.getElementById('sb-name').textContent     = currentSC;
+    document.getElementById('sb-sub').textContent      = '自分のタスクを優先表示しています';
+    document.getElementById('sb-stat-lbl').textContent = '自分 未完了';
     banner.classList.add('show');
   } else {
     banner.classList.remove('show');
@@ -700,42 +771,44 @@ function showPw() {
   document.getElementById('pwname').value = '';
   document.getElementById('pwerr').style.display = 'none';
   showStoreSection();
-  initQuickLogin(); // かんたんログイン表示を更新
+  initQuickLogin();
   document.getElementById('pwov').style.display = 'flex';
 }
 
-// かんたんログイン：前回の店舗をボタンで表示
+// かんたんログイン：前回セッションをボタン表示
 function initQuickLogin() {
+  const qsec = document.getElementById('section-quick');
   try {
-    const st = localStorage.getItem('storeSession');
-    if (!st) { document.getElementById('section-quick').style.display = 'none'; return; }
-    const s = JSON.parse(st);
-    if (!STORES.includes(s.storeName)) { document.getElementById('section-quick').style.display = 'none'; return; }
-    // ボタンに店舗名をセット
-    document.getElementById('quick-btn').textContent = '🏪 ' + s.storeName + ' でログイン';
-    document.getElementById('section-quick').style.display = 'block';
-    // pwsub-store のテキストを「別の店舗コード」に変更
-    document.getElementById('pwsub-store').innerHTML = '別の店舗でログイン<br><small style="color:var(--text3)">6桁の数字コードを入力</small>';
-    // コード入力欄は空にしておく（別店舗入力しやすく）
+    const raw = localStorage.getItem('storeSession');
+    if (!raw) { qsec.style.display = 'none'; return; }
+    const s = JSON.parse(raw);
+    let label = '';
+    if (s.type === 'store' && STORES.includes(s.name)) {
+      label = '🏪 ' + s.name + ' でログイン';
+    } else if (s.type === 'sc' && SCS.includes(s.name)) {
+      label = '👔 ' + s.name + ' でログイン';
+    } else {
+      qsec.style.display = 'none'; return;
+    }
+    document.getElementById('quick-btn').textContent = label;
+    qsec.style.display = 'block';
     document.getElementById('pwcode').value = '';
-  } catch(e) {
-    document.getElementById('section-quick').style.display = 'none';
-  }
+  } catch(e) { qsec.style.display = 'none'; }
 }
 
 // かんたんログイン実行
 function doQuickLogin() {
   try {
-    const st = localStorage.getItem('storeSession');
-    if (!st) return;
-    const s = JSON.parse(st);
-    if (!STORES.includes(s.storeName)) return;
-    currentStore = s.storeName;
-    isMgr = false;
+    const raw = localStorage.getItem('storeSession');
+    if (!raw) return;
+    const s = JSON.parse(raw);
+    if (s.type === 'store' && STORES.includes(s.name)) {
+      currentStore = s.name; currentSC = null; isMgr = false;
+    } else if (s.type === 'sc' && SCS.includes(s.name)) {
+      currentSC = s.name; currentStore = null; isMgr = false;
+    } else return;
     finLogin();
-  } catch(e) {
-    toast('⚠️ ログインに失敗しました');
-  }
+  } catch(e) { toast('⚠️ ログインに失敗しました'); }
 }
 
 function toggleForm() {
@@ -766,24 +839,31 @@ function restoreSession() {
 
 // ── レンダリング ──
 function sortT(a, b) {
-  // 自店舗タスクを優先
+  // 自店舗・自分のタスクを優先
   if (currentStore) {
     const aOwn = (a.assignees || []).includes(currentStore);
     const bOwn = (b.assignees || []).includes(currentStore);
     if (aOwn !== bOwn) return aOwn ? -1 : 1;
   }
+  if (currentSC) {
+    const aOwn = (a.assignees || []).includes(currentSC);
+    const bOwn = (b.assignees || []).includes(currentSC);
+    if (aOwn !== bOwn) return aOwn ? -1 : 1;
+  }
   const o = {overdue:0, today:1, soon:2, active:3, pending:4, done:5};
-  const sa = o[tStatus(a)] ?? 9, sb = o[tStatus(b)] ?? 9;
-  return sa !== sb ? sa - sb : new Date(a.endDate) - new Date(b.endDate);
+  const sa = o[tStatus(a)] ?? 9, sb2 = o[tStatus(b)] ?? 9;
+  return sa !== sb2 ? sa - sb2 : new Date(a.endDate) - new Date(b.endDate);
 }
 
 const cntOpen = (ts, type) => ts.filter(t => !isTaskDone(t) && (type ? t.type === type : true)).length;
 function setBdg(id, n) { const e = document.getElementById(id); e.textContent = n; e.className = 'bdg' + (n === 0 ? ' zero' : ''); }
 
 function render() {
-  // 自店舗タスクのフィルタ
+  // 自分のタスクのフィルタ（店舗またはSCメンバー）
   const myTasks = currentStore
     ? tasks.filter(t => (t.assignees || []).includes(currentStore))
+    : currentSC
+    ? tasks.filter(t => (t.assignees || []).includes(currentSC))
     : tasks;
 
   const myOpen  = myTasks.filter(t => !isTaskDone(t));
@@ -797,14 +877,14 @@ function render() {
   document.getElementById('s2').textContent = done;
   document.getElementById('s3').textContent = total;
 
-  const sub = currentStore ? '（自店舗）' : '';
+  const sub = currentStore ? '（自店舗）' : currentSC ? '（自分）' : '';
   document.getElementById('s0-sub').textContent = sub;
   document.getElementById('s1-sub').textContent = sub;
   document.getElementById('s2-sub').textContent = sub;
   document.getElementById('s3-sub').textContent = sub;
 
   // バナー更新
-  if (currentStore) {
+  if (currentStore || currentSC) {
     document.getElementById('sb-stat-num').textContent = myOpen.length;
   }
 
@@ -837,9 +917,11 @@ function renderMem(type, members, btnId, listId) {
 
   document.getElementById(btnId).innerHTML = members.map(m => {
     const c = tasks.filter(t => t.type === type && !isTaskDone(t) && (t.assignees || []).includes(m)).length;
-    const isOwn = currentStore && type === 'store' && m === currentStore;
+    const isOwn = (currentStore && type === 'store' && m === currentStore) ||
+                  (currentSC    && type === 'sc'    && m === currentSC);
+    const ownIcon = currentSC && type === 'sc' ? '👔 ' : '🏪 ';
     return `<button class="mflt${sel === m ? ' active' : ''}${isOwn ? ' own-store-btn' : ''}" onclick="selM('${type}','${m.replace(/'/g,"\\'")}')">
-      ${isOwn ? '🏪 ' : ''}${m} <span class="mcnt${c === 0 ? ' z' : ''}">${c}</span>
+      ${isOwn ? ownIcon : ''}${m} <span class="mcnt${c === 0 ? ' z' : ''}">${c}</span>
     </button>`;
   }).join('');
 
@@ -851,7 +933,9 @@ function selM(type, name) { if (type === 'store') selStore = name; else selSC = 
 
 function cardH(t) {
   const st = tStatus(t);
-  const isOwn = currentStore && (t.assignees || []).includes(currentStore);
+  const isOwnStore = !!(currentStore && (t.assignees || []).includes(currentStore));
+  const isOwnSC    = !!(currentSC    && t.type === 'sc' && (t.assignees || []).includes(currentSC));
+  const isOwn      = isOwnStore || isOwnSC;
   const myDone = isTaskDone(t);
 
   const tTag  = t.type === 'sc' ? '<span class="tag t-sc">👔 SC/ASC</span>' : '<span class="tag t-store">🏪 店舗</span>';
@@ -859,7 +943,8 @@ function cardH(t) {
   const kTag  = t.taskKind === '固定タスク' ? '<span class="tag t-fixed">📌 固定</span>' : '<span class="tag t-extra">➕ 追加</span>';
   const pTag  = {高:'<span class="tag t-phi">⭐ 高</span>',中:'<span class="tag t-pmi">⭐ 中</span>',低:'<span class="tag t-plo">⭐ 低</span>'}[t.priority] || '';
   const uTag  = {緊急:'<span class="tag t-uehi">🚨 緊急</span>',通常:'<span class="tag t-uemi">📌 通常</span>','余裕あり':'<span class="tag t-uelo">😌 余裕</span>'}[t.urgency] || '';
-  const ownTag = isOwn ? '<span class="tag t-mystore">🏪 自店舗</span>' : '';
+  const ownTag = isOwnStore ? '<span class="tag t-mystore">🏪 自店舗</span>'
+               : isOwnSC    ? '<span class="tag t-mystore">👔 自分</span>' : '';
   const who = (t.assignees || []).join(' ・ ') || '全員';
 
   // 期限ピル
@@ -877,52 +962,60 @@ function cardH(t) {
     <div class="tdate-block"><span class="tdate-lbl">終了日</span><span class="tdate-val end">${t.endDate.replace(/-/g,'/')}</span></div>
   </div>`;
 
-  // 店舗進捗（store タスクのみ）
+  // 進捗（店舗・SCメンバー）
   let progHtml = '';
-  if (t.type === 'store') {
-    const info = completionInfo(t);
-    if (info) {
-      const allDone = info.done === info.total;
-      const isOverdue = ['overdue','today'].includes(st);
-      progHtml = `<div class="store-prog">
-        <div class="spill${allDone ? ' all-done' : isOverdue && !allDone ? ' overdue-alert' : ''}">
-          ${allDone ? '✅' : '📊'} ${info.done}/${info.total} 店舗完了
-        </div>`;
-      if (!allDone && info.incomplete.length > 0) {
-        const maxShow = 4;
-        const shown = info.incomplete.slice(0, maxShow).join('、');
-        const more  = info.incomplete.length > maxShow ? ` 他${info.incomplete.length - maxShow}店舗` : '';
-        progHtml += `<div class="inc-stores"><strong>未完了</strong>${shown}${more}</div>`;
-      }
-      // 自店舗状態
-      if (isOwn) {
-        const cs = t.completedStores || {};
-        const myStatus = cs[currentStore];
-        progHtml += `<div style="margin-top:3px"><span class="tag ${myStatus ? 't-done' : st === 'overdue' || st === 'today' ? 't-overdue' : 't-uemi'}">
-          ${myStatus ? '✅ 自店舗：完了' : '⬜ 自店舗：未完了'}
-        </span></div>`;
-      }
-      progHtml += '</div>';
+  const info = completionInfo(t);
+  if (info) {
+    const allDone   = info.done === info.total;
+    const isOverdue = ['overdue','today'].includes(st);
+    const unitWord  = t.type === 'sc' ? 'メンバー' : '店舗';
+    progHtml = `<div class="store-prog">
+      <div class="spill${allDone ? ' all-done' : isOverdue && !allDone ? ' overdue-alert' : ''}">
+        ${allDone ? '✅' : '📊'} ${info.done}/${info.total} ${unitWord}完了
+      </div>`;
+    if (!allDone && info.incomplete.length > 0) {
+      const maxShow = 4;
+      const shown   = info.incomplete.slice(0, maxShow).join('、');
+      const more    = info.incomplete.length > maxShow ? ` 他${info.incomplete.length - maxShow}${unitWord}` : '';
+      progHtml += `<div class="inc-stores"><strong>未完了</strong>${shown}${more}</div>`;
     }
+    // 自店舗・自分の状態
+    if (isOwnStore) {
+      const cs = t.completedStores || {};
+      const myStatus = cs[currentStore];
+      progHtml += `<div style="margin-top:3px"><span class="tag ${myStatus ? 't-done' : st === 'overdue' || st === 'today' ? 't-overdue' : 't-uemi'}">
+        ${myStatus ? '✅ 自店舗：完了' : '⬜ 自店舗：未完了'}
+      </span></div>`;
+    }
+    if (isOwnSC) {
+      const cs = t.completedStores || {};
+      const myStatus = cs[currentSC];
+      progHtml += `<div style="margin-top:3px"><span class="tag ${myStatus ? 't-done' : 't-uemi'}">
+        ${myStatus ? '✅ 自分：完了' : '⬜ 自分：未完了'}
+      </span></div>`;
+    }
+    progHtml += '</div>';
   }
 
   // 完了ボタン
   let completeBtn = '';
-  if (t.type === 'store' && isOwn && currentStore) {
+  if (t.type === 'store' && isOwnStore) {
     const cs = t.completedStores || {};
     const storeIsDone = !!cs[currentStore];
     completeBtn = `<button class="bcomplete${storeIsDone ? ' is-done' : ''}" onclick="doToggle('${t.id}')">
       ${storeIsDone ? '↩️ 未完了に戻す' : '✅ 完了にする'}
     </button>`;
-  } else if (t.type === 'sc' && isMgr) {
-    completeBtn = `<button class="bcomplete${t.done ? ' is-done' : ''}" onclick="doToggle('${t.id}')">
-      ${t.done ? '↩️ 未完了に戻す' : '✅ 完了にする'}
+  } else if (t.type === 'sc' && isOwnSC) {
+    const cs = t.completedStores || {};
+    const scIsDone = !!cs[currentSC];
+    completeBtn = `<button class="bcomplete${scIsDone ? ' is-done' : ''}" onclick="doToggle('${t.id}')">
+      ${scIsDone ? '↩️ 未完了に戻す' : '✅ 完了にする'}
     </button>`;
   }
 
   // チェックボックス（左側の視覚インジケーター）
   const chkDone = myDone;
-  const chkClickable = (t.type === 'store' && isOwn && currentStore) || (t.type === 'sc' && isMgr);
+  const chkClickable = (t.type === 'store' && isOwnStore) || (t.type === 'sc' && isOwnSC);
 
   // Googleカレンダー URL
   const gcStart = (t.startDate || t.endDate).replace(/-/g, '');
@@ -991,23 +1084,28 @@ async function doToggle(id) {
   const t = tasks.find(x => x.id === id);
   if (!t) return;
 
-  // SC タスク → 管理者のみ
+  // SC タスク → SCメンバーログインが必要
   if (t.type === 'sc') {
-    if (!isMgr) { toast('⚠️ SC タスクの完了は管理者のみ操作できます'); return; }
-    const nv = !t.done;
+    if (!currentSC) { toast('⚠️ SC/ASCメンバーのログインが必要です'); showPw(); return; }
+    if (!(t.assignees || []).includes(currentSC)) { toast('⚠️ このメンバーは対象外のタスクです'); return; }
+
+    const cs = t.completedStores || {};
+    const nv = !cs[currentSC];
+
     // ① 即座にUI更新
-    t.done = nv; t.doneAt = nv ? today() : '';
+    if (!t.completedStores) t.completedStores = {};
+    t.completedStores[currentSC] = nv;
     render();
     toast(nv ? '✅ 完了にしました' : '↩️ 未完了に戻しました');
-    // ② バックグラウンドでGASに保存
+
+    // ② バックグラウンドでGASに保存（失敗したら元に戻す）
     try {
-      const r = await gPost({action:'updateDone', id, done:nv});
+      const r = await gPost({action:'updateDone', id, memberName:currentSC, done:nv});
       if (!r.ok) throw new Error(r.error || '更新失敗');
     } catch(e) {
-      // 失敗したら元に戻す
-      t.done = !nv; t.doneAt = !nv ? today() : '';
+      t.completedStores[currentSC] = !nv;
       render();
-      toast('⚠️ 保存失敗。元に戻しました');
+      toast('⚠️ 保存失敗。もう一度お試しください');
     }
     return;
   }
