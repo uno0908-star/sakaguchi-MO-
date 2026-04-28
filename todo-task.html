@@ -282,9 +282,16 @@ main{padding:20px;max-width:960px;margin:0 auto;}
     <div class="pwico">🏪</div>
     <div class="pwtitle">阪口商店 タスク管理</div>
 
+    <!-- かんたんログイン（前回の店舗がある場合のみ表示） -->
+    <div id="section-quick" style="display:none">
+      <div class="pwsub" style="margin-bottom:10px">前回ログインした店舗</div>
+      <button class="pwbtn" id="quick-btn" onclick="doQuickLogin()" style="font-size:15px;letter-spacing:.04em;margin-bottom:6px"></button>
+      <div class="pwdivider">別の店舗コードを入力</div>
+    </div>
+
     <!-- 店舗ログイン -->
     <div id="section-store">
-      <div class="pwsub">店舗コードを入力してください<br><small style="color:var(--text3)">6桁の数字コード</small></div>
+      <div class="pwsub" id="pwsub-store">店舗コードを入力してください<br><small style="color:var(--text3)">6桁の数字コード</small></div>
       <input class="pwpi" id="pwcode" placeholder="000000" maxlength="6" inputmode="numeric" type="text">
       <button class="pwbtn" onclick="doStoreLogin()">🏪 店舗ログイン</button>
       <div class="pwbtns-row">
@@ -659,12 +666,46 @@ function finLogin() {
 }
 
 function showPw() {
-  document.getElementById('pwcode').value = '';
   document.getElementById('pwpass').value = '';
   document.getElementById('pwname').value = '';
   document.getElementById('pwerr').style.display = 'none';
   showStoreSection();
+  initQuickLogin(); // かんたんログイン表示を更新
   document.getElementById('pwov').style.display = 'flex';
+}
+
+// かんたんログイン：前回の店舗をボタンで表示
+function initQuickLogin() {
+  try {
+    const st = localStorage.getItem('storeSession');
+    if (!st) { document.getElementById('section-quick').style.display = 'none'; return; }
+    const s = JSON.parse(st);
+    if (!STORES.includes(s.storeName)) { document.getElementById('section-quick').style.display = 'none'; return; }
+    // ボタンに店舗名をセット
+    document.getElementById('quick-btn').textContent = '🏪 ' + s.storeName + ' でログイン';
+    document.getElementById('section-quick').style.display = 'block';
+    // pwsub-store のテキストを「別の店舗コード」に変更
+    document.getElementById('pwsub-store').innerHTML = '別の店舗でログイン<br><small style="color:var(--text3)">6桁の数字コードを入力</small>';
+    // コード入力欄は空にしておく（別店舗入力しやすく）
+    document.getElementById('pwcode').value = '';
+  } catch(e) {
+    document.getElementById('section-quick').style.display = 'none';
+  }
+}
+
+// かんたんログイン実行
+function doQuickLogin() {
+  try {
+    const st = localStorage.getItem('storeSession');
+    if (!st) return;
+    const s = JSON.parse(st);
+    if (!STORES.includes(s.storeName)) return;
+    currentStore = s.storeName;
+    isMgr = false;
+    finLogin();
+  } catch(e) {
+    toast('⚠️ ログインに失敗しました');
+  }
 }
 
 function toggleForm() {
@@ -1037,10 +1078,9 @@ document.addEventListener('keydown', e => {
 upChk();
 document.getElementById('f-end').value = today();
 
-// セッション復元 → ログイン済みならモーダル非表示
-if (restoreSession()) {
-  finLogin();
-}
+// ページを開くたびに必ずログイン画面を表示する
+// （前回の店舗があれば「かんたんログイン」ボタンで表示）
+initQuickLogin();
 
 loadTasks();
 </script>
