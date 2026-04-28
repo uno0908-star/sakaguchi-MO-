@@ -36,8 +36,10 @@ header::after{content:'';position:absolute;bottom:0;left:0;right:0;height:2.5px;
 .hbtn.line{border-color:#06C755;color:#06C755;background:#F0FBF4;}.hbtn.line:hover{background:#DDF7E8;}
 .hbtn.key{border-color:var(--accent-bd);color:var(--accent);background:var(--accent-bg);}.hbtn.key:hover{background:#DCE9FD;}
 .hbtn.ref{border-color:var(--green-bd);color:var(--green);background:var(--green-bg);}.hbtn.ref:hover{background:#D5F5E3;}
-.rbadge{font-size:10px;padding:3px 9px;border-radius:20px;font-weight:700;background:var(--accent-bg);color:var(--accent);border:1px solid var(--accent-bd);display:none;}
-.rbadge.show{display:inline;}
+.store-badge{background:var(--accent-bg);color:var(--accent);border:1.5px solid var(--accent-bd);border-radius:20px;font-size:11px;font-weight:700;padding:5px 12px;display:none;}
+.store-badge.show{display:inline-flex;align-items:center;gap:5px;}
+.mgr-badge{background:#FFF8E8;color:var(--gold);border:1.5px solid rgba(176,112,16,.22);border-radius:20px;font-size:11px;font-weight:700;padding:5px 12px;display:none;}
+.mgr-badge.show{display:inline-flex;align-items:center;gap:5px;}
 
 /* TABS */
 .tab-bar{background:#fff;border-bottom:1.5px solid var(--border);display:flex;overflow-x:auto;padding:0 18px;scrollbar-width:none;position:sticky;top:64px;z-index:99;box-shadow:var(--sh0);}
@@ -71,6 +73,7 @@ main{padding:20px;max-width:960px;margin:0 auto;}
 .sc-num{font-family:'Bebas Neue',sans-serif;font-size:50px;line-height:1;letter-spacing:.04em;}
 .sc.d .sc-num{color:var(--red);}.sc.w .sc-num{color:var(--orange);}.sc.g .sc-num{color:var(--green);}.sc.b .sc-num{color:var(--accent);}
 .sc-ico{position:absolute;right:12px;bottom:8px;font-size:38px;opacity:.07;}
+.sc-sub{font-size:10px;color:var(--text3);margin-top:2px;}
 
 /* FILTER */
 .frow{display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap;}
@@ -93,13 +96,15 @@ main{padding:20px;max-width:960px;margin:0 auto;}
 .tc.s-done{opacity:.4;background:var(--surface2);}
 .tc.s-done::before{background:var(--border2);}
 .tc:hover:not(.s-done){box-shadow:var(--sh1);border-color:var(--border2);transform:translateX(2px);}
+.tc.own-store{border-top:2px solid var(--accent);}
 
-.chk{width:30px;height:30px;border:2px solid var(--border2);border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:13px;transition:all .18s;flex-shrink:0;background:var(--bg);color:transparent;margin-top:2px;}
+.chk{width:30px;height:30px;border:2px solid var(--border2);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;transition:all .18s;flex-shrink:0;background:var(--bg);color:transparent;margin-top:2px;}
+.chk.clickable{cursor:pointer;}
+.chk.clickable:hover{transform:scale(1.12);}
 .tc.s-overdue .chk,.tc.s-today .chk{border-color:var(--red);}
 .tc.s-soon .chk{border-color:var(--orange);}
 .tc.s-active .chk{border-color:var(--accent);}
-.tc.s-done .chk{background:var(--green);border-color:var(--green);color:#fff;}
-.chk:hover{transform:scale(1.12);}
+.chk.chk-done{background:var(--green);border-color:var(--green);color:#fff;}
 
 /* TAGS */
 .tag{font-size:10px;font-weight:700;padding:2px 7px;border-radius:20px;white-space:nowrap;letter-spacing:.03em;}
@@ -119,6 +124,7 @@ main{padding:20px;max-width:960px;margin:0 auto;}
 .t-uehi{background:#FFF0F8;color:#C0308A;border:1px solid rgba(192,48,138,.2);}
 .t-uemi{background:var(--bg2);color:var(--text2);border:1px solid var(--border2);}
 .t-uelo{background:#F0FAFF;color:#2080A0;border:1px solid rgba(32,128,160,.2);}
+.t-mystore{background:linear-gradient(135deg,var(--accent-bg),#E0EFFE);color:var(--accent);border:1.5px solid var(--accent);font-weight:800;}
 
 .ttitle{font-size:14px;font-weight:600;margin-bottom:5px;display:flex;align-items:center;gap:6px;flex-wrap:wrap;line-height:1.4;}
 .tc.s-done .ttitle{text-decoration:line-through;color:var(--text3);}
@@ -133,8 +139,16 @@ main{padding:20px;max-width:960px;margin:0 auto;}
 .tdate-val.end{background:var(--red-bg);border-color:var(--red-bd);color:var(--red);}
 .tdate-arr{color:var(--text3);font-size:12px;}
 
+/* STORE PROGRESS */
+.store-prog{margin-top:8px;display:flex;flex-direction:column;gap:4px;}
+.spill{font-family:'DM Mono',monospace;font-size:11px;font-weight:700;padding:3px 9px;border-radius:var(--rs);background:var(--accent-bg);color:var(--accent);border:1px solid var(--accent-bd);display:inline-block;}
+.spill.all-done{background:var(--green-bg);color:var(--green);border-color:var(--green-bd);}
+.spill.overdue-alert{background:var(--red-bg);color:var(--red);border-color:var(--red-bd);}
+.inc-stores{font-size:10px;color:var(--text3);line-height:1.6;margin-top:2px;}
+.inc-stores strong{color:var(--red);font-size:9px;text-transform:uppercase;letter-spacing:.06em;margin-right:3px;}
+
 /* RIGHT PANEL */
-.tr{display:flex;flex-direction:column;align-items:flex-end;gap:6px;min-width:86px;}
+.tr{display:flex;flex-direction:column;align-items:flex-end;gap:6px;min-width:110px;}
 .dpill{font-family:'DM Mono',monospace;font-size:11px;font-weight:500;padding:5px 10px;border-radius:var(--rs);white-space:pre;text-align:right;line-height:1.5;border:1px solid var(--border);}
 .dp-ov,.dp-td{background:var(--red-bg);color:var(--red);border-color:var(--red-bd);}
 .dp-so{background:var(--orange-bg);color:var(--orange);border-color:var(--orange-bd);}
@@ -148,12 +162,18 @@ main{padding:20px;max-width:960px;margin:0 auto;}
 .is-mgr .bdel{display:inline;}
 .bcal{background:none;border:1px solid var(--accent-bd);color:var(--accent);}
 .bcal:hover{background:var(--accent-bg);}
+.bcomplete{font-family:inherit;font-size:12px;font-weight:700;padding:6px 11px;border-radius:var(--rs);cursor:pointer;transition:all .18s;white-space:nowrap;border:1.5px solid var(--green-bd);background:var(--green-bg);color:var(--green);}
+.bcomplete:hover{background:#C8F0DC;transform:scale(1.03);}
+.bcomplete.is-done{border-color:var(--border2);background:var(--bg2);color:var(--text3);font-weight:400;font-size:11px;}
+.bcomplete.is-done:hover{background:var(--red-bg);color:var(--red);border-color:var(--red-bd);}
 
 /* MEMBER FILTER */
 .mfrow{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px;padding:13px;background:var(--surface);border:1.5px solid var(--border);border-radius:var(--r);box-shadow:var(--sh0);}
 .mflt{padding:5px 11px;border:1.5px solid var(--border2);border-radius:20px;background:var(--surface2);font-family:inherit;font-size:12px;cursor:pointer;color:var(--text2);transition:all .18s;display:flex;align-items:center;gap:5px;}
 .mflt:hover{background:var(--bg2);color:var(--text);}
 .mflt.active{background:var(--accent);border-color:var(--accent);color:#fff;font-weight:700;}
+.mflt.own-store-btn{border-color:var(--accent);color:var(--accent);background:var(--accent-bg);}
+.mflt.own-store-btn.active{background:var(--accent);}
 .mcnt{font-size:10px;background:var(--red-bg);color:var(--red);padding:1px 5px;border-radius:10px;font-weight:700;}
 .mcnt.z{background:var(--bg2);color:var(--text3);}
 .mflt.active .mcnt{background:rgba(255,255,255,.25);color:#fff;}
@@ -165,7 +185,7 @@ main{padding:20px;max-width:960px;margin:0 auto;}
 .cal-nbtn:hover{background:var(--bg2);color:var(--text);}
 .cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:3px;}
 .cal-dow{text-align:center;font-size:11px;font-weight:700;color:var(--text3);padding:6px 0;letter-spacing:.04em;}
-.cal-cell{background:var(--surface);border:1.5px solid var(--border);border-radius:8px;min-height:74px;padding:5px;transition:all .15s;}
+.cal-cell{background:var(--surface);border:1.5px solid var(--border);border-radius:8px;min-height:74px;padding:5px;transition:all .15px;}
 .cal-cell.today{border-color:var(--accent);background:var(--accent-bg);}
 .cal-cell.other{opacity:.45;}
 .cal-d{font-size:12px;font-weight:700;color:var(--text2);margin-bottom:3px;}
@@ -198,27 +218,43 @@ main{padding:20px;max-width:960px;margin:0 auto;}
 .bsub:hover{transform:translateY(-1px);box-shadow:0 8px 22px rgba(43,107,224,.36);}
 .fok{text-align:center;color:var(--green);font-size:13px;font-weight:700;padding:10px;display:none;}
 
-/* PASSWORD */
+/* LOGIN OVERLAY */
 .pwov{position:fixed;inset:0;background:rgba(20,28,70,.55);z-index:200;display:flex;align-items:center;justify-content:center;backdrop-filter:blur(10px);}
-.pwbox{background:#fff;border:1.5px solid var(--border);border-radius:18px;padding:36px;width:330px;box-shadow:var(--sh2);text-align:center;}
+.pwbox{background:#fff;border:1.5px solid var(--border);border-radius:18px;padding:36px;width:340px;box-shadow:var(--sh2);text-align:center;}
 .pwico{font-size:38px;margin-bottom:10px;}
 .pwtitle{font-size:17px;font-weight:700;margin-bottom:5px;}
 .pwsub{font-size:12px;color:var(--text3);margin-bottom:20px;line-height:1.7;}
 .pwni{width:100%;padding:9px 13px;background:var(--bg);border:1.5px solid var(--border2);border-radius:var(--rs);font-family:inherit;font-size:13px;color:var(--text);outline:none;margin-bottom:8px;transition:border-color .18s;}
 .pwni:focus{border-color:var(--accent);}
-.pwpi{width:100%;padding:12px;background:var(--bg);border:1.5px solid var(--border2);border-radius:var(--rs);font-size:17px;text-align:center;letter-spacing:.3em;color:var(--text);outline:none;margin-bottom:13px;transition:border-color .18s;}
+.pwpi{width:100%;padding:12px;background:var(--bg);border:1.5px solid var(--border2);border-radius:var(--rs);font-size:17px;text-align:center;letter-spacing:.3em;color:var(--text);outline:none;margin-bottom:13px;transition:border-color .18s;font-family:'DM Mono',monospace;}
 .pwpi:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(43,107,224,.1);}
 .pwbtn{width:100%;padding:12px;background:linear-gradient(135deg,var(--accent),var(--accent2));border:none;border-radius:var(--rs);font-family:inherit;font-size:14px;font-weight:700;color:#fff;cursor:pointer;margin-bottom:9px;transition:all .2s;box-shadow:0 4px 14px rgba(43,107,224,.26);}
 .pwbtn:hover{transform:translateY(-1px);}
 .pwgh{width:100%;padding:10px;background:transparent;border:1.5px solid var(--border2);border-radius:var(--rs);font-family:inherit;font-size:13px;color:var(--text2);cursor:pointer;transition:all .18s;}
 .pwgh:hover{background:var(--bg2);}
 .pwerr{color:var(--red);font-size:12px;margin-top:9px;display:none;font-weight:700;}
+.pwdivider{display:flex;align-items:center;gap:10px;margin:14px 0 10px;color:var(--text3);font-size:11px;}
+.pwdivider::before,.pwdivider::after{content:'';flex:1;height:1px;background:var(--border);}
+.pwbtns-row{display:flex;gap:8px;margin-top:8px;}
+.pwbtns-row .pwgh{flex:1;font-size:12px;}
+
 .lockmsg{text-align:center;padding:55px 20px;color:var(--text3);}
 .lockico{font-size:48px;margin-bottom:14px;opacity:.32;}
 .locktitle{font-size:16px;font-weight:700;color:var(--text2);margin-bottom:7px;}
 .empty-state{text-align:center;padding:48px 20px;color:var(--text3);}
 .empty-ico{font-size:42px;margin-bottom:12px;opacity:.32;}
 .empty-msg{font-size:14px;color:var(--text2);}
+
+/* STORE STATUS BANNER */
+.store-banner{background:linear-gradient(135deg,var(--accent-bg),#E4EFFE);border:1.5px solid var(--accent-bd);border-radius:var(--r);padding:14px 18px;margin-bottom:18px;display:none;align-items:center;justify-content:space-between;gap:12px;}
+.store-banner.show{display:flex;}
+.sb-left{display:flex;align-items:center;gap:10px;}
+.sb-icon{font-size:24px;}
+.sb-name{font-size:15px;font-weight:700;color:var(--accent);}
+.sb-sub{font-size:11px;color:var(--text3);}
+.sb-stat{text-align:right;}
+.sb-stat-num{font-family:'Bebas Neue',sans-serif;font-size:28px;color:var(--accent);line-height:1;}
+.sb-stat-lbl{font-size:10px;color:var(--text3);}
 
 @media(max-width:640px){
   .stats-row{grid-template-columns:repeat(2,1fr);}
@@ -231,6 +267,7 @@ main{padding:20px;max-width:960px;margin:0 auto;}
   .sc-num{font-size:40px;}
   .cal-grid{gap:2px;}
   .cal-cell{min-height:54px;}
+  .store-banner{flex-direction:column;align-items:flex-start;}
 }
 </style>
 </head>
@@ -239,17 +276,33 @@ main{padding:20px;max-width:960px;margin:0 auto;}
 <div class="lbar" id="lbar"></div>
 <div class="toast" id="toast"></div>
 
-<!-- PASSWORD -->
+<!-- LOGIN -->
 <div class="pwov" id="pwov">
   <div class="pwbox">
-    <div class="pwico">👋</div>
+    <div class="pwico">🏪</div>
     <div class="pwtitle">阪口商店 タスク管理</div>
-    <div class="pwsub">お名前とパスワードを入力してください<br><small style="color:var(--text3)">閲覧のみの場合はパスワード不要です</small></div>
-    <input class="pwni" id="pwname" placeholder="お名前（例：神田、髙橋）" maxlength="20">
-    <input class="pwpi" type="password" id="pwpass" placeholder="••••••" maxlength="12">
-    <button class="pwbtn" onclick="doPwLogin()">ログイン</button>
-    <button class="pwgh" onclick="doGuest()">👀 閲覧のみで続ける</button>
-    <div class="pwerr" id="pwerr">❌ パスワードが違います</div>
+
+    <!-- 店舗ログイン -->
+    <div id="section-store">
+      <div class="pwsub">店舗コードを入力してください<br><small style="color:var(--text3)">6桁の数字コード</small></div>
+      <input class="pwpi" id="pwcode" placeholder="000000" maxlength="6" inputmode="numeric" type="text">
+      <button class="pwbtn" onclick="doStoreLogin()">🏪 店舗ログイン</button>
+      <div class="pwbtns-row">
+        <button class="pwgh" onclick="doGuest()">👀 閲覧のみ</button>
+        <button class="pwgh" style="font-size:11px;color:var(--text3)" onclick="showMgrSection()">🔑 管理者</button>
+      </div>
+    </div>
+
+    <!-- 管理者ログイン -->
+    <div id="section-mgr" style="display:none">
+      <div class="pwsub">管理者パスワードを入力してください</div>
+      <input class="pwni" id="pwname" placeholder="お名前（例：髙橋）" maxlength="20">
+      <input class="pwpi" type="password" id="pwpass" placeholder="••••••" maxlength="12">
+      <button class="pwbtn" onclick="doPwLogin()">🔑 管理者ログイン</button>
+      <button class="pwgh" onclick="showStoreSection()" style="margin-top:4px">← 戻る</button>
+    </div>
+
+    <div class="pwerr" id="pwerr"></div>
   </div>
 </div>
 
@@ -262,10 +315,11 @@ main{padding:20px;max-width:960px;margin:0 auto;}
     </div>
   </div>
   <div class="hdr-r">
-    <span class="rbadge" id="rbadge"></span>
+    <span class="store-badge" id="store-badge"></span>
+    <span class="mgr-badge" id="mgr-badge"></span>
     <button class="hbtn ref" onclick="loadTasks()">🔄 <span>更新</span></button>
     <button class="hbtn line" onclick="doLine()">💬 <span>LINE共有</span></button>
-    <button class="hbtn key" onclick="showPw()">🔑 <span>ログイン</span></button>
+    <button class="hbtn key" onclick="showPw()">🔑 <span>切替</span></button>
   </div>
 </header>
 
@@ -281,11 +335,24 @@ main{padding:20px;max-width:960px;margin:0 auto;}
 
 <!-- ALL -->
 <div class="view active" id="view-all">
+  <div class="store-banner" id="store-banner">
+    <div class="sb-left">
+      <div class="sb-icon">🏪</div>
+      <div>
+        <div class="sb-name" id="sb-name">-</div>
+        <div class="sb-sub">自店舗のタスクを優先表示しています</div>
+      </div>
+    </div>
+    <div class="sb-stat">
+      <div class="sb-stat-num" id="sb-stat-num">-</div>
+      <div class="sb-stat-lbl">自店舗 未完了</div>
+    </div>
+  </div>
   <div class="stats-row">
-    <div class="sc d"><div class="sc-lbl">超過・今日期限</div><div class="sc-num" id="s0">0</div><div class="sc-ico">🔴</div></div>
-    <div class="sc w"><div class="sc-lbl">3日以内</div><div class="sc-num" id="s1">0</div><div class="sc-ico">🟡</div></div>
-    <div class="sc g"><div class="sc-lbl">完了済み</div><div class="sc-num" id="s2">0</div><div class="sc-ico">✅</div></div>
-    <div class="sc b"><div class="sc-lbl">全タスク</div><div class="sc-num" id="s3">0</div><div class="sc-ico">📋</div></div>
+    <div class="sc d"><div class="sc-lbl">超過・今日期限</div><div class="sc-num" id="s0">0</div><div class="sc-sub" id="s0-sub"></div><div class="sc-ico">🔴</div></div>
+    <div class="sc w"><div class="sc-lbl">3日以内</div><div class="sc-num" id="s1">0</div><div class="sc-sub" id="s1-sub"></div><div class="sc-ico">🟡</div></div>
+    <div class="sc g"><div class="sc-lbl">完了済み</div><div class="sc-num" id="s2">0</div><div class="sc-sub" id="s2-sub"></div><div class="sc-ico">✅</div></div>
+    <div class="sc b"><div class="sc-lbl">全タスク</div><div class="sc-num" id="s3">0</div><div class="sc-sub" id="s3-sub"></div><div class="sc-ico">📋</div></div>
   </div>
   <div class="frow">
     <button class="flt active" onclick="sf('open',this)">進行中・近日</button>
@@ -387,8 +454,8 @@ main{padding:20px;max-width:960px;margin:0 auto;}
   </div>
   <div class="lockmsg" id="lockmsg">
     <div class="lockico">🔐</div>
-    <div class="locktitle">ログインが必要です</div>
-    <div style="font-size:13px">右上の 🔑 ボタンからログインしてください</div>
+    <div class="locktitle">管理者ログインが必要です</div>
+    <div style="font-size:13px">右上の 🔑 ボタンから管理者ログインしてください</div>
   </div>
 </div>
 
@@ -398,18 +465,76 @@ main{padding:20px;max-width:960px;margin:0 auto;}
 const GAS_URL  = 'https://script.google.com/macros/s/AKfycbx5ZJgKO3rgUjZIXZ4SPxSFxkv_fVx6v9E4DuuTaZbxmDyS6dpOxrz3jiVgNBtsQzWj/exec';
 const PASSWORD = 'Lawson3963';
 
-const STORES = ['吹田垂水三丁目','江坂東','江坂駅南口','吹田警察署前','豊中原田南一丁目','南金田二丁目','吹田豊津中学校前','新御堂筋上新田','東淀川大道南','豊中服部西町三丁目','大道南一丁目','豊里六丁目','吹田青山台三丁目','豊中利倉東一丁目','五月ケ丘東','豊中服部元町一丁目','吹田朝日町','東淀川豊里五丁目','池田市役所前','箕面白島二丁目'];
+// 店舗コード → 店舗名マップ（コードは必ず文字列）
+const STORE_CODES = {
+  '065554': '吹田垂水三丁目',
+  '190489': '江坂東',
+  '171115': '江坂駅南口',
+  '153005': '吹田警察署前',
+  '121420': '豊中原田南一丁目',
+  '229435': '南金田二丁目',
+  '229234': '吹田豊津中学校前',
+  '234880': '新御堂筋上新田',
+  '190348': '東淀川大道南',
+  '096550': '豊中服部西町三丁目',
+  '121880': '大道南一丁目',
+  '086361': '豊里六丁目',
+  '366280': '吹田青山台三丁目',
+  '368993': '豊中利倉東一丁目',
+  '040070': '五月ケ丘東',
+  '369053': '豊中服部元町一丁目',
+  '376886': '吹田朝日町',
+  '377058': '東淀川豊里五丁目',
+  '087188': '池田市役所前',
+  '378862': '箕面白島二丁目'
+};
+
+const STORES = Object.values(STORE_CODES);
 const SCS    = ['髙橋','五島','プラカス','ダハル','ビスワス','フィ','サントス','スラズ'];
 
-let isMgr=false, uName='', curPw='';
-let tasks=[], curF='open', selStore=null, selSC=null;
+let currentStore = null; // ログイン中の店舗名（null = ゲスト/管理者）
+let isMgr = false;
+let uName = '', curPw = '';
+let tasks = [], curF = 'open', selStore = null, selSC = null;
 let calY, calM;
 
 const today = () => new Date().toISOString().split('T')[0];
 const dL = d => Math.ceil((new Date(d) - new Date(today())) / 86400000);
 
+// ── 完了状態の判定（店舗単位） ──
+function isTaskDone(t) {
+  if (t.type === 'sc') return !!t.done;
+  // 移行：completedStoresがなければdoneで判断
+  if (!t.completedStores || Object.keys(t.completedStores).length === 0) {
+    return !!t.done;
+  }
+  const cs = t.completedStores;
+  const assignedStores = (t.assignees || []).filter(a => STORES.includes(a));
+  if (assignedStores.length === 0) return !!t.done;
+
+  if (currentStore) {
+    // 自店舗がアサインされている場合：自店舗の状態
+    if (assignedStores.includes(currentStore)) return !!cs[currentStore];
+    // 自店舗がアサインされていない場合：全店舗完了で完了扱い
+    return assignedStores.every(s => cs[s]);
+  }
+  // ゲスト/管理者：全店舗完了で完了
+  return assignedStores.every(s => cs[s]);
+}
+
+// 完了店舗数情報
+function completionInfo(t) {
+  if (t.type !== 'store') return null;
+  const assignedStores = (t.assignees || []).filter(a => STORES.includes(a));
+  if (assignedStores.length === 0) return null;
+  const cs = t.completedStores || {};
+  const doneList = assignedStores.filter(s => cs[s]);
+  const incList  = assignedStores.filter(s => !cs[s]);
+  return { done: doneList.length, total: assignedStores.length, incomplete: incList, complete: doneList };
+}
+
 function tStatus(t) {
-  if (t.done) return 'done';
+  if (isTaskDone(t)) return 'done';
   const d = dL(t.endDate);
   if (d < 0)  return 'overdue';
   if (d === 0) return 'today';
@@ -419,267 +544,504 @@ function tStatus(t) {
 }
 
 // ── GAS通信 ──
-const loading = on => document.getElementById('lbar').style.display = on?'block':'none';
+const loading = on => document.getElementById('lbar').style.display = on ? 'block' : 'none';
 function toast(msg, ms=2600) {
-  const e=document.getElementById('toast');
-  e.textContent=msg; e.classList.add('on');
-  setTimeout(()=>e.classList.remove('on'), ms);
+  const e = document.getElementById('toast');
+  e.textContent = msg; e.classList.add('on');
+  setTimeout(() => e.classList.remove('on'), ms);
 }
-async function gGet(p)  { return (await fetch(GAS_URL+'?'+new URLSearchParams(p))).json(); }
-async function gPost(b) { return (await fetch(GAS_URL,{method:'POST',body:JSON.stringify(b)})).json(); }
+async function gGet(p)  { return (await fetch(GAS_URL + '?' + new URLSearchParams(p))).json(); }
+async function gPost(b) { return (await fetch(GAS_URL, {method:'POST', body:JSON.stringify(b)})).json(); }
 
 async function loadTasks() {
   loading(true);
   try {
     const r = await gGet({action:'getTasks'});
-    if (r.ok) { tasks=r.tasks; render(); toast('🔄 データを更新しました'); }
-    else toast('⚠️ 読込エラー: '+r.error);
+    if (r.ok) {
+      tasks = r.tasks.map(t => ({
+        ...t,
+        completedStores: (typeof t.completedStores === 'string')
+          ? (t.completedStores ? JSON.parse(t.completedStores) : {})
+          : (t.completedStores || {})
+      }));
+      render();
+      toast('🔄 データを更新しました');
+    } else toast('⚠️ 読込エラー: ' + r.error);
   } catch(e) { toast('⚠️ 通信エラー。時間をおいて再試行してください'); }
   loading(false);
 }
 
 // ── 認証 ──
-function doPwLogin() {
-  const pw=document.getElementById('pwpass').value;
-  const nm=document.getElementById('pwname').value.trim();
-  if (pw!==PASSWORD) { document.getElementById('pwerr').style.display='block'; return; }
-  isMgr=true; curPw=pw; uName=nm||'スタッフ';
+function showStoreSection() {
+  document.getElementById('section-store').style.display = 'block';
+  document.getElementById('section-mgr').style.display   = 'none';
+  document.getElementById('pwerr').style.display = 'none';
+  document.getElementById('pwerr').textContent = '';
+}
+function showMgrSection() {
+  document.getElementById('section-store').style.display = 'none';
+  document.getElementById('section-mgr').style.display   = 'block';
+  document.getElementById('pwerr').style.display = 'none';
+  document.getElementById('pwerr').textContent = '';
+}
+
+function doStoreLogin() {
+  const code = String(document.getElementById('pwcode').value).trim().padStart(6, '0').replace(/\D/g,'');
+  // そのままの入力でも試す
+  const rawCode = String(document.getElementById('pwcode').value).trim();
+  const storeName = STORE_CODES[rawCode] || STORE_CODES[code];
+  if (!storeName) {
+    const err = document.getElementById('pwerr');
+    err.textContent = '❌ 店舗コードが違います';
+    err.style.display = 'block';
+    return;
+  }
+  currentStore = storeName;
+  isMgr = false;
+  localStorage.setItem('storeSession', JSON.stringify({storeName}));
+  localStorage.removeItem('mgrSession');
   finLogin();
 }
-function doGuest() { isMgr=false; uName=''; finLogin(); }
+
+function doPwLogin() {
+  const pw = document.getElementById('pwpass').value;
+  const nm = document.getElementById('pwname').value.trim();
+  if (pw !== PASSWORD) {
+    const err = document.getElementById('pwerr');
+    err.textContent = '❌ パスワードが違います';
+    err.style.display = 'block';
+    return;
+  }
+  isMgr = true; curPw = pw; uName = nm || '管理者';
+  currentStore = null;
+  localStorage.setItem('mgrSession', JSON.stringify({uName}));
+  localStorage.removeItem('storeSession');
+  finLogin();
+}
+
+function doGuest() {
+  isMgr = false; currentStore = null; uName = '';
+  localStorage.removeItem('storeSession');
+  localStorage.removeItem('mgrSession');
+  finLogin();
+}
+
 function finLogin() {
-  document.getElementById('pwov').style.display='none';
-  if(isMgr) document.body.classList.add('is-mgr');
-  else document.body.classList.remove('is-mgr');
-  const rb=document.getElementById('rbadge');
-  if(isMgr){rb.textContent='👔 '+uName;rb.classList.add('show');}
-  else rb.classList.remove('show');
+  document.getElementById('pwov').style.display = 'none';
+  document.body.classList.toggle('is-mgr', isMgr);
+
+  const sb = document.getElementById('store-badge');
+  const mb = document.getElementById('mgr-badge');
+
+  if (currentStore) {
+    sb.textContent = '🏪 ' + currentStore;
+    sb.classList.add('show');
+    mb.classList.remove('show');
+  } else if (isMgr) {
+    mb.textContent = '👔 ' + uName;
+    mb.classList.add('show');
+    sb.classList.remove('show');
+  } else {
+    sb.classList.remove('show');
+    mb.classList.remove('show');
+  }
+
+  const banner = document.getElementById('store-banner');
+  if (currentStore) {
+    document.getElementById('sb-name').textContent = currentStore;
+    banner.classList.add('show');
+  } else {
+    banner.classList.remove('show');
+  }
+
   toggleForm();
+  render();
 }
+
 function showPw() {
-  document.getElementById('pwpass').value='';
-  document.getElementById('pwname').value='';
-  document.getElementById('pwerr').style.display='none';
-  document.getElementById('pwov').style.display='flex';
+  document.getElementById('pwcode').value = '';
+  document.getElementById('pwpass').value = '';
+  document.getElementById('pwname').value = '';
+  document.getElementById('pwerr').style.display = 'none';
+  showStoreSection();
+  document.getElementById('pwov').style.display = 'flex';
 }
+
 function toggleForm() {
-  document.getElementById('addcard').style.display=isMgr?'block':'none';
-  document.getElementById('lockmsg').style.display=isMgr?'none':'block';
+  document.getElementById('addcard').style.display  = isMgr ? 'block' : 'none';
+  document.getElementById('lockmsg').style.display  = isMgr ? 'none'  : 'block';
+}
+
+// ── セッション復元 ──
+function restoreSession() {
+  try {
+    const st = localStorage.getItem('storeSession');
+    const mg = localStorage.getItem('mgrSession');
+    if (st) {
+      const s = JSON.parse(st);
+      if (STORES.includes(s.storeName)) {
+        currentStore = s.storeName; isMgr = false;
+        return true;
+      }
+    }
+    if (mg) {
+      const m = JSON.parse(mg);
+      isMgr = true; uName = m.uName || '管理者'; curPw = PASSWORD;
+      return true;
+    }
+  } catch(e) {}
+  return false;
 }
 
 // ── レンダリング ──
-function sortT(a,b) {
-  const o={overdue:0,today:1,soon:2,active:3,pending:4,done:5};
-  const sa=o[tStatus(a)]??9, sb=o[tStatus(b)]??9;
-  return sa!==sb?sa-sb:new Date(a.endDate)-new Date(b.endDate);
+function sortT(a, b) {
+  // 自店舗タスクを優先
+  if (currentStore) {
+    const aOwn = (a.assignees || []).includes(currentStore);
+    const bOwn = (b.assignees || []).includes(currentStore);
+    if (aOwn !== bOwn) return aOwn ? -1 : 1;
+  }
+  const o = {overdue:0, today:1, soon:2, active:3, pending:4, done:5};
+  const sa = o[tStatus(a)] ?? 9, sb = o[tStatus(b)] ?? 9;
+  return sa !== sb ? sa - sb : new Date(a.endDate) - new Date(b.endDate);
 }
-const cntOpen=(ts,type)=>ts.filter(t=>!t.done&&(type?t.type===type:true)).length;
-function setBdg(id,n){const e=document.getElementById(id);e.textContent=n;e.className='bdg'+(n===0?' zero':'');}
+
+const cntOpen = (ts, type) => ts.filter(t => !isTaskDone(t) && (type ? t.type === type : true)).length;
+function setBdg(id, n) { const e = document.getElementById(id); e.textContent = n; e.className = 'bdg' + (n === 0 ? ' zero' : ''); }
 
 function render() {
-  const open=tasks.filter(t=>!t.done);
-  document.getElementById('s0').textContent=open.filter(t=>['overdue','today'].includes(tStatus(t))).length;
-  document.getElementById('s1').textContent=open.filter(t=>tStatus(t)==='soon').length;
-  document.getElementById('s2').textContent=tasks.filter(t=>t.done).length;
-  document.getElementById('s3').textContent=tasks.length;
-  setBdg('b-all',cntOpen(tasks));
-  setBdg('b-store',cntOpen(tasks,'store'));
-  setBdg('b-sc',cntOpen(tasks,'sc'));
+  // 自店舗タスクのフィルタ
+  const myTasks = currentStore
+    ? tasks.filter(t => (t.assignees || []).includes(currentStore))
+    : tasks;
 
-  let f=[...tasks];
-  if(curF==='open')   f=tasks.filter(t=>['overdue','today','soon','active'].includes(tStatus(t)));
-  if(curF==='urgent') f=tasks.filter(t=>['overdue','today','soon'].includes(tStatus(t)));
-  if(curF==='pending')f=tasks.filter(t=>!t.done);
-  if(curF==='done')   f=tasks.filter(t=>t.done);
-  f.sort(sortT);
-  document.getElementById('l-all').innerHTML=f.length?f.map(cardH).join(''):emptyH();
-  renderMem('store',STORES,'m-store','l-store');
-  renderMem('sc',SCS,'m-sc','l-sc');
-  if(calY!==undefined) renderCal();
-}
+  const myOpen  = myTasks.filter(t => !isTaskDone(t));
+  const urgent  = myOpen.filter(t => ['overdue','today'].includes(tStatus(t))).length;
+  const soon    = myOpen.filter(t => tStatus(t) === 'soon').length;
+  const done    = myTasks.filter(t => isTaskDone(t)).length;
+  const total   = myTasks.length;
 
-function renderMem(type,members,btnId,listId) {
-  let sel=type==='store'?selStore:selSC;
-  if(!sel||!members.includes(sel))sel=members[0];
-  if(type==='store')selStore=sel;else selSC=sel;
-  document.getElementById(btnId).innerHTML=members.map(m=>{
-    const c=tasks.filter(t=>t.type===type&&!t.done&&(t.assignees||[]).includes(m)).length;
-    return`<button class="mflt${sel===m?' active':''}" onclick="selM('${type}','${m}')">${m} <span class="mcnt${c===0?' z':''}">${c}</span></button>`;
-  }).join('');
-  const list=tasks.filter(t=>t.type===type&&(t.assignees||[]).includes(sel)).sort(sortT);
-  document.getElementById(listId).innerHTML=list.length?list.map(cardH).join('')
-    :`<div class="empty-state"><div class="empty-ico">✨</div><div class="empty-msg">${sel} のタスクはありません</div></div>`;
-}
-function selM(type,name){if(type==='store')selStore=name;else selSC=name;render();}
+  document.getElementById('s0').textContent = urgent;
+  document.getElementById('s1').textContent = soon;
+  document.getElementById('s2').textContent = done;
+  document.getElementById('s3').textContent = total;
 
-function cardH(t) {
-  const st=tStatus(t);
-  const tTag=t.type==='sc'?'<span class="tag t-sc">👔 SC/ASC</span>':'<span class="tag t-store">🏪 店舗</span>';
-  const stTag={overdue:'<span class="tag t-overdue">🔴 期限超過</span>',today:'<span class="tag t-today">🔴 今日まで</span>',soon:'<span class="tag t-soon">🟡 もうすぐ</span>',active:'<span class="tag t-active">🔵 進行中</span>',pending:'<span class="tag t-pending">📅 開始前</span>',done:'<span class="tag t-done">✅ 完了</span>'}[st]||'';
-  const kTag=t.taskKind==='固定タスク'?'<span class="tag t-fixed">📌 固定</span>':'<span class="tag t-extra">➕ 追加</span>';
-  const pTag={高:'<span class="tag t-phi">⭐ 高</span>',中:'<span class="tag t-pmi">⭐ 中</span>',低:'<span class="tag t-plo">⭐ 低</span>'}[t.priority]||'';
-  const uTag={緊急:'<span class="tag t-uehi">🚨 緊急</span>',通常:'<span class="tag t-uemi">📌 通常</span>','余裕あり':'<span class="tag t-uelo">😌 余裕</span>'}[t.urgency]||'';
-  const who=(t.assignees||[]).join(' ・ ')||'全員';
+  const sub = currentStore ? '（自店舗）' : '';
+  document.getElementById('s0-sub').textContent = sub;
+  document.getElementById('s1-sub').textContent = sub;
+  document.getElementById('s2-sub').textContent = sub;
+  document.getElementById('s3-sub').textContent = sub;
 
-  // 期限ピル
-  let dlTxt='',dlCls='dp-ok';
-  if(t.done){dlTxt=`完了\n${t.doneAt||''}`;dlCls='dp-dn';}
-  else{
-    const d=dL(t.endDate);
-    dlTxt=t.endDate.replace(/-/g,'/')+'\n'+(d<0?`${Math.abs(d)}日超過`:d===0?'今日まで':d===1?'明日まで':`あと${d}日`);
-    dlCls=st==='overdue'||st==='today'?'dp-ov':st==='soon'?'dp-so':st==='pending'?'dp-pe':'dp-ok';
+  // バナー更新
+  if (currentStore) {
+    document.getElementById('sb-stat-num').textContent = myOpen.length;
   }
 
-  // 日付バー（開始日・終了日を同じスタイルで並べる）
-  const dateBar=`<div class="tdate">
-    ${t.startDate?`<div class="tdate-block"><span class="tdate-lbl">開始日</span><span class="tdate-val">${t.startDate.replace(/-/g,'/')}</span></div><span class="tdate-arr">→</span>`:''}
+  setBdg('b-all',   cntOpen(tasks));
+  setBdg('b-store', cntOpen(tasks, 'store'));
+  setBdg('b-sc',    cntOpen(tasks, 'sc'));
+
+  // フィルター
+  let f = [...tasks];
+  if (curF === 'open')    f = tasks.filter(t => ['overdue','today','soon','active'].includes(tStatus(t)));
+  if (curF === 'urgent')  f = tasks.filter(t => ['overdue','today','soon'].includes(tStatus(t)));
+  if (curF === 'pending') f = tasks.filter(t => !isTaskDone(t));
+  if (curF === 'done')    f = tasks.filter(t => isTaskDone(t));
+  f.sort(sortT);
+  document.getElementById('l-all').innerHTML = f.length ? f.map(cardH).join('') : emptyH();
+
+  renderMem('store', STORES, 'm-store', 'l-store');
+  renderMem('sc', SCS, 'm-sc', 'l-sc');
+  if (calY !== undefined) renderCal();
+}
+
+function renderMem(type, members, btnId, listId) {
+  let sel = type === 'store' ? selStore : selSC;
+  // 自店舗を優先選択
+  if (currentStore && type === 'store' && members.includes(currentStore)) {
+    if (!sel) sel = currentStore;
+  }
+  if (!sel || !members.includes(sel)) sel = members[0];
+  if (type === 'store') selStore = sel; else selSC = sel;
+
+  document.getElementById(btnId).innerHTML = members.map(m => {
+    const c = tasks.filter(t => t.type === type && !isTaskDone(t) && (t.assignees || []).includes(m)).length;
+    const isOwn = currentStore && type === 'store' && m === currentStore;
+    return `<button class="mflt${sel === m ? ' active' : ''}${isOwn ? ' own-store-btn' : ''}" onclick="selM('${type}','${m.replace(/'/g,"\\'")}')">
+      ${isOwn ? '🏪 ' : ''}${m} <span class="mcnt${c === 0 ? ' z' : ''}">${c}</span>
+    </button>`;
+  }).join('');
+
+  const list = tasks.filter(t => t.type === type && (t.assignees || []).includes(sel)).sort(sortT);
+  document.getElementById(listId).innerHTML = list.length ? list.map(cardH).join('')
+    : `<div class="empty-state"><div class="empty-ico">✨</div><div class="empty-msg">${sel} のタスクはありません</div></div>`;
+}
+function selM(type, name) { if (type === 'store') selStore = name; else selSC = name; render(); }
+
+function cardH(t) {
+  const st = tStatus(t);
+  const isOwn = currentStore && (t.assignees || []).includes(currentStore);
+  const myDone = isTaskDone(t);
+
+  const tTag  = t.type === 'sc' ? '<span class="tag t-sc">👔 SC/ASC</span>' : '<span class="tag t-store">🏪 店舗</span>';
+  const stTag = {overdue:'<span class="tag t-overdue">🔴 期限超過</span>',today:'<span class="tag t-today">🔴 今日まで</span>',soon:'<span class="tag t-soon">🟡 もうすぐ</span>',active:'<span class="tag t-active">🔵 進行中</span>',pending:'<span class="tag t-pending">📅 開始前</span>',done:'<span class="tag t-done">✅ 完了</span>'}[st] || '';
+  const kTag  = t.taskKind === '固定タスク' ? '<span class="tag t-fixed">📌 固定</span>' : '<span class="tag t-extra">➕ 追加</span>';
+  const pTag  = {高:'<span class="tag t-phi">⭐ 高</span>',中:'<span class="tag t-pmi">⭐ 中</span>',低:'<span class="tag t-plo">⭐ 低</span>'}[t.priority] || '';
+  const uTag  = {緊急:'<span class="tag t-uehi">🚨 緊急</span>',通常:'<span class="tag t-uemi">📌 通常</span>','余裕あり':'<span class="tag t-uelo">😌 余裕</span>'}[t.urgency] || '';
+  const ownTag = isOwn ? '<span class="tag t-mystore">🏪 自店舗</span>' : '';
+  const who = (t.assignees || []).join(' ・ ') || '全員';
+
+  // 期限ピル
+  let dlTxt = '', dlCls = 'dp-ok';
+  if (myDone) { dlTxt = `完了\n${t.doneAt || ''}`; dlCls = 'dp-dn'; }
+  else {
+    const d = dL(t.endDate);
+    dlTxt = t.endDate.replace(/-/g, '/') + '\n' + (d < 0 ? `${Math.abs(d)}日超過` : d === 0 ? '今日まで' : d === 1 ? '明日まで' : `あと${d}日`);
+    dlCls = st === 'overdue' || st === 'today' ? 'dp-ov' : st === 'soon' ? 'dp-so' : st === 'pending' ? 'dp-pe' : 'dp-ok';
+  }
+
+  // 日付バー
+  const dateBar = `<div class="tdate">
+    ${t.startDate ? `<div class="tdate-block"><span class="tdate-lbl">開始日</span><span class="tdate-val">${t.startDate.replace(/-/g,'/')}</span></div><span class="tdate-arr">→</span>` : ''}
     <div class="tdate-block"><span class="tdate-lbl">終了日</span><span class="tdate-val end">${t.endDate.replace(/-/g,'/')}</span></div>
   </div>`;
 
-  // Googleカレンダー用URL
-  const gcStart=(t.startDate||t.endDate).replace(/-/g,'');
-  const gcEnd=t.endDate.replace(/-/g,'');
-  const gcDetails=encodeURIComponent(`担当：${who}\n優先度：${t.priority}　緊急度：${t.urgency}\nタスク種別：${t.taskKind}${t.note?'\nメモ：'+t.note:''}`);
-  const gcTitle=encodeURIComponent(t.title);
-  const gcUrl=`https://calendar.google.com/calendar/render?action=TEMPLATE&text=${gcTitle}&dates=${gcStart}/${gcEnd}&details=${gcDetails}`;
+  // 店舗進捗（store タスクのみ）
+  let progHtml = '';
+  if (t.type === 'store') {
+    const info = completionInfo(t);
+    if (info) {
+      const allDone = info.done === info.total;
+      const isOverdue = ['overdue','today'].includes(st);
+      progHtml = `<div class="store-prog">
+        <div class="spill${allDone ? ' all-done' : isOverdue && !allDone ? ' overdue-alert' : ''}">
+          ${allDone ? '✅' : '📊'} ${info.done}/${info.total} 店舗完了
+        </div>`;
+      if (!allDone && info.incomplete.length > 0) {
+        const maxShow = 4;
+        const shown = info.incomplete.slice(0, maxShow).join('、');
+        const more  = info.incomplete.length > maxShow ? ` 他${info.incomplete.length - maxShow}店舗` : '';
+        progHtml += `<div class="inc-stores"><strong>未完了</strong>${shown}${more}</div>`;
+      }
+      // 自店舗状態
+      if (isOwn) {
+        const cs = t.completedStores || {};
+        const myStatus = cs[currentStore];
+        progHtml += `<div style="margin-top:3px"><span class="tag ${myStatus ? 't-done' : st === 'overdue' || st === 'today' ? 't-overdue' : 't-uemi'}">
+          ${myStatus ? '✅ 自店舗：完了' : '⬜ 自店舗：未完了'}
+        </span></div>`;
+      }
+      progHtml += '</div>';
+    }
+  }
 
-  return`<div class="tc s-${st}">
-    <div class="chk" onclick="doToggle('${t.id}')">${t.done?'✓':''}</div>
+  // 完了ボタン
+  let completeBtn = '';
+  if (t.type === 'store' && isOwn && currentStore) {
+    const cs = t.completedStores || {};
+    const storeIsDone = !!cs[currentStore];
+    completeBtn = `<button class="bcomplete${storeIsDone ? ' is-done' : ''}" onclick="doToggle('${t.id}')">
+      ${storeIsDone ? '↩️ 未完了に戻す' : '✅ 完了にする'}
+    </button>`;
+  } else if (t.type === 'sc' && isMgr) {
+    completeBtn = `<button class="bcomplete${t.done ? ' is-done' : ''}" onclick="doToggle('${t.id}')">
+      ${t.done ? '↩️ 未完了に戻す' : '✅ 完了にする'}
+    </button>`;
+  }
+
+  // チェックボックス（左側の視覚インジケーター）
+  const chkDone = myDone;
+  const chkClickable = (t.type === 'store' && isOwn && currentStore) || (t.type === 'sc' && isMgr);
+
+  // Googleカレンダー URL
+  const gcStart = (t.startDate || t.endDate).replace(/-/g, '');
+  const gcEnd   = t.endDate.replace(/-/g, '');
+  const gcTitle = encodeURIComponent(t.title);
+  const gcDetails = encodeURIComponent(`担当：${who}\n優先度：${t.priority}　緊急度：${t.urgency}\nタスク種別：${t.taskKind}${t.note ? '\nメモ：' + t.note : ''}`);
+  const gcUrl = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${gcTitle}&dates=${gcStart}/${gcEnd}&details=${gcDetails}`;
+
+  return `<div class="tc s-${st}${isOwn ? ' own-store' : ''}">
+    <div class="chk${chkDone ? ' chk-done' : ''}${chkClickable ? ' clickable' : ''}" ${chkClickable ? `onclick="doToggle('${t.id}')"` : ''}>${chkDone ? '✓' : ''}</div>
     <div>
-      <div class="ttitle">${t.title} ${tTag} ${kTag} ${stTag} ${pTag} ${uTag}</div>
+      <div class="ttitle">${t.title} ${tTag} ${kTag} ${stTag} ${pTag} ${uTag} ${ownTag}</div>
       <div class="tmeta">
         <span>📍 <strong>${who}</strong></span>
-        ${t.registeredBy?`<span>✏️ ${t.registeredBy}</span>`:''}
-        ${t.note?`<span>📌 ${t.note}</span>`:''}
-        ${t.done&&t.doneAt?`<span>✅ ${t.doneAt} 完了</span>`:''}
+        ${t.registeredBy ? `<span>✏️ ${t.registeredBy}</span>` : ''}
+        ${t.note ? `<span>📌 ${t.note}</span>` : ''}
       </div>
       ${dateBar}
+      ${progHtml}
     </div>
     <div class="tr">
       <div class="dpill ${dlCls}">${dlTxt}</div>
       <div class="card-btns">
-        <button class="bcal" onclick="window.open('${gcUrl}','_blank')">📅 カレンダー追加</button>
+        ${completeBtn}
+        <button class="bcal" onclick="window.open('${gcUrl}','_blank')">📅 カレンダー</button>
         <button class="bdel" onclick="doDel('${t.id}')">🗑 削除</button>
       </div>
     </div>
   </div>`;
 }
 
-function emptyH(){return'<div class="empty-state"><div class="empty-ico">🎉</div><div class="empty-msg">タスクがありません！</div></div>';}
+function emptyH() { return '<div class="empty-state"><div class="empty-ico">🎉</div><div class="empty-msg">タスクがありません！</div></div>'; }
 
 // ── カレンダー ──
-function renderCal(){
-  const y=calY,m=calM;
-  document.getElementById('cal-t').textContent=`${y}年 ${m+1}月`;
-  const dows=['日','月','火','水','木','金','土'];
-  let html=dows.map(d=>`<div class="cal-dow">${d}</div>`).join('');
-  const first=new Date(y,m,1).getDay(),last=new Date(y,m+1,0).getDate(),td=today();
-  for(let i=0;i<first;i++){const d=new Date(y,m,0).getDate()-first+1+i;html+=`<div class="cal-cell other"><div class="cal-d">${d}</div></div>`;}
-  for(let d=1;d<=last;d++){
-    const ds=`${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
-    const isT=ds===td;
-    const starts=tasks.filter(t=>t.startDate===ds&&!t.done);
-    const ends=tasks.filter(t=>t.endDate===ds&&!t.done);
-    const acts=tasks.filter(t=>t.startDate&&t.startDate<ds&&t.endDate>ds&&!t.done);
-    let dots='';
-    starts.slice(0,2).forEach(t=>dots+=`<div class="cal-dot dot-s">▶ ${t.title.slice(0,9)}</div>`);
-    ends.slice(0,2).forEach(t=>dots+=`<div class="cal-dot dot-e">🏁 ${t.title.slice(0,9)}</div>`);
-    acts.slice(0,1).forEach(t=>dots+=`<div class="cal-dot dot-a">… ${t.title.slice(0,9)}</div>`);
-    html+=`<div class="cal-cell${isT?' today':''}"><div class="cal-d">${d}</div>${dots}</div>`;
+function renderCal() {
+  const y = calY, m = calM;
+  document.getElementById('cal-t').textContent = `${y}年 ${m+1}月`;
+  const dows = ['日','月','火','水','木','金','土'];
+  let html = dows.map(d => `<div class="cal-dow">${d}</div>`).join('');
+  const first = new Date(y, m, 1).getDay(), last = new Date(y, m+1, 0).getDate(), td = today();
+  for (let i = 0; i < first; i++) {
+    const d = new Date(y, m, 0).getDate() - first + 1 + i;
+    html += `<div class="cal-cell other"><div class="cal-d">${d}</div></div>`;
   }
-  const rem=(7-(first+last)%7)%7;
-  for(let d=1;d<=rem;d++)html+=`<div class="cal-cell other"><div class="cal-d">${d}</div></div>`;
-  document.getElementById('cal-g').innerHTML=html;
+  for (let d = 1; d <= last; d++) {
+    const ds = `${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    const isT = ds === td;
+    const myFilter = t => !currentStore || (t.assignees || []).includes(currentStore);
+    const starts = tasks.filter(t => t.startDate === ds && !isTaskDone(t) && myFilter(t));
+    const ends   = tasks.filter(t => t.endDate   === ds && !isTaskDone(t) && myFilter(t));
+    const acts   = tasks.filter(t => t.startDate && t.startDate < ds && t.endDate > ds && !isTaskDone(t) && myFilter(t));
+    let dots = '';
+    starts.slice(0,2).forEach(t => dots += `<div class="cal-dot dot-s">▶ ${t.title.slice(0,9)}</div>`);
+    ends.slice(0,2).forEach(t => dots += `<div class="cal-dot dot-e">🏁 ${t.title.slice(0,9)}</div>`);
+    acts.slice(0,1).forEach(t => dots += `<div class="cal-dot dot-a">… ${t.title.slice(0,9)}</div>`);
+    html += `<div class="cal-cell${isT ? ' today' : ''}"><div class="cal-d">${d}</div>${dots}</div>`;
+  }
+  const rem = (7 - (first + last) % 7) % 7;
+  for (let d = 1; d <= rem; d++) html += `<div class="cal-cell other"><div class="cal-d">${d}</div></div>`;
+  document.getElementById('cal-g').innerHTML = html;
 }
-function cm(delta){calM+=delta;if(calM>11){calM=0;calY++;}if(calM<0){calM=11;calY--;}renderCal();}
+function cm(delta) { calM += delta; if (calM > 11) { calM = 0; calY++; } if (calM < 0) { calM = 11; calY--; } renderCal(); }
 
 // ── タスク操作 ──
-async function doToggle(id){
-  const t=tasks.find(x=>x.id===id);if(!t)return;
-  const nv=!t.done;
+async function doToggle(id) {
+  const t = tasks.find(x => x.id === id);
+  if (!t) return;
+
+  // SC タスク → 管理者のみ
+  if (t.type === 'sc') {
+    if (!isMgr) { toast('⚠️ SC タスクの完了は管理者のみ操作できます'); return; }
+    const nv = !t.done;
+    loading(true);
+    const r = await gPost({action:'updateDone', id, done:nv});
+    if (r.ok) { t.done = nv; t.doneAt = nv ? today() : ''; render(); toast(nv ? '✅ 完了にしました' : '↩️ 未完了に戻しました'); }
+    else toast('⚠️ 更新失敗');
+    loading(false);
+    return;
+  }
+
+  // 店舗タスク → 店舗ログインが必要
+  if (!currentStore) { toast('⚠️ 店舗ログインが必要です'); showPw(); return; }
+  if (!(t.assignees || []).includes(currentStore)) { toast('⚠️ この店舗は対象外のタスクです'); return; }
+
+  const cs = t.completedStores || {};
+  const nv = !cs[currentStore];
   loading(true);
-  const r=await gPost({action:'updateDone',id,done:nv});
-  if(r.ok){t.done=nv;t.doneAt=nv?today():'';render();toast(nv?'✅ 完了にしました':'↩️ 未完了に戻しました');}
-  else toast('⚠️ 更新失敗');
+  const r = await gPost({action:'updateDone', id, storeName:currentStore, done:nv});
+  if (r.ok) {
+    if (!t.completedStores) t.completedStores = {};
+    t.completedStores[currentStore] = nv;
+    render();
+    toast(nv ? '✅ 完了にしました' : '↩️ 未完了に戻しました');
+  } else toast('⚠️ 更新失敗');
   loading(false);
 }
 
-async function doDel(id){
-  if(!isMgr)return;
-  if(!confirm('このタスクを削除しますか？'))return;
+async function doDel(id) {
+  if (!isMgr) return;
+  if (!confirm('このタスクを削除しますか？')) return;
   loading(true);
-  const r=await gPost({action:'deleteTask',id,pw:curPw});
-  if(r.ok){tasks=tasks.filter(t=>t.id!==id);render();toast('🗑 削除しました');}
-  else toast('⚠️ '+(r.error||'削除失敗'));
+  const r = await gPost({action:'deleteTask', id, pw:curPw});
+  if (r.ok) { tasks = tasks.filter(t => t.id !== id); render(); toast('🗑 削除しました'); }
+  else toast('⚠️ ' + (r.error || '削除失敗'));
   loading(false);
 }
 
-async function doAdd(){
-  const title=document.getElementById('f-title').value.trim();
-  const start=document.getElementById('f-start').value;
-  const end=document.getElementById('f-end').value;
-  const kind=document.getElementById('f-kind').value;
-  const type=document.getElementById('f-type').value;
-  const pri=document.getElementById('f-pri').value;
-  const urg=document.getElementById('f-urg').value;
-  const note=document.getElementById('f-note').value.trim();
-  const asgn=[...document.querySelectorAll('.chk-m:checked')].map(c=>c.value);
-  if(!title||!end){alert('タスク内容と終了日は必須です');return;}
-  if(asgn.length===0){alert('割り当て先を1つ以上選んでください');return;}
-  if(start&&start>end){alert('開始日は終了日より前に設定してください');return;}
+async function doAdd() {
+  const title = document.getElementById('f-title').value.trim();
+  const start = document.getElementById('f-start').value;
+  const end   = document.getElementById('f-end').value;
+  const kind  = document.getElementById('f-kind').value;
+  const type  = document.getElementById('f-type').value;
+  const pri   = document.getElementById('f-pri').value;
+  const urg   = document.getElementById('f-urg').value;
+  const note  = document.getElementById('f-note').value.trim();
+  const asgn  = [...document.querySelectorAll('.chk-m:checked')].map(c => c.value);
+  if (!title || !end)   { alert('タスク内容と終了日は必須です'); return; }
+  if (asgn.length === 0) { alert('割り当て先を1つ以上選んでください'); return; }
+  if (start && start > end) { alert('開始日は終了日より前に設定してください'); return; }
   loading(true);
-  const r=await gPost({action:'addTask',pw:curPw,title,taskKind:kind,startDate:start,endDate:end,type,priority:pri,urgency:urg,note,assignees:asgn,registeredBy:uName});
-  if(r.ok){
-    tasks.push({id:r.id,title,taskKind:kind,startDate:start,endDate:end,type,priority:pri,urgency:urg,note,assignees:asgn,registeredBy:uName,done:false,doneAt:'',createdAt:today()});
-    document.getElementById('f-title').value='';
-    document.getElementById('f-start').value='';
-    document.getElementById('f-end').value=today();
-    document.getElementById('f-note').value='';
-    const ca=document.getElementById('chkAll');if(ca)ca.checked=false;
-    document.querySelectorAll('.chk-m').forEach(c=>c.checked=false);
-    const ok=document.getElementById('fok');ok.style.display='block';setTimeout(()=>ok.style.display='none',2500);
-    render();toast('🎉 タスクを登録しました！');
-  } else toast('⚠️ '+(r.error||'登録失敗'));
+  const r = await gPost({action:'addTask', pw:curPw, title, taskKind:kind, startDate:start, endDate:end, type, priority:pri, urgency:urg, note, assignees:asgn, registeredBy:uName});
+  if (r.ok) {
+    tasks.push({id:r.id, title, taskKind:kind, startDate:start, endDate:end, type, priority:pri, urgency:urg, note, assignees:asgn, registeredBy:uName, done:false, doneAt:'', completedStores:{}, createdAt:today()});
+    document.getElementById('f-title').value = '';
+    document.getElementById('f-start').value = '';
+    document.getElementById('f-end').value   = today();
+    document.getElementById('f-note').value  = '';
+    const ca = document.getElementById('chkAll'); if (ca) ca.checked = false;
+    document.querySelectorAll('.chk-m').forEach(c => c.checked = false);
+    const ok = document.getElementById('fok'); ok.style.display = 'block'; setTimeout(() => ok.style.display = 'none', 2500);
+    render(); toast('🎉 タスクを登録しました！');
+  } else toast('⚠️ ' + (r.error || '登録失敗'));
   loading(false);
 }
 
 // ── チェックボックス ──
-function upChk(){
-  const members=document.getElementById('f-type').value==='store'?STORES:SCS;
-  document.getElementById('chkwrap').innerHTML=
-    `<label class="ci all"><input type="checkbox" id="chkAll" onchange="taAll(this)"> 全選択</label>`+
-    members.map(m=>`<label class="ci"><input type="checkbox" class="chk-m" value="${m}"> ${m}</label>`).join('');
+function upChk() {
+  const members = document.getElementById('f-type').value === 'store' ? STORES : SCS;
+  document.getElementById('chkwrap').innerHTML =
+    `<label class="ci all"><input type="checkbox" id="chkAll" onchange="taAll(this)"> 全選択</label>` +
+    members.map(m => `<label class="ci"><input type="checkbox" class="chk-m" value="${m}"> ${m}</label>`).join('');
 }
-function taAll(cb){document.querySelectorAll('.chk-m').forEach(c=>c.checked=cb.checked);}
+function taAll(cb) { document.querySelectorAll('.chk-m').forEach(c => c.checked = cb.checked); }
 
 // ── フィルター・タブ ──
-function sf(f,btn){curF=f;document.querySelectorAll('.frow .flt').forEach(b=>b.classList.remove('active'));btn.classList.add('active');render();}
-function sv(v,el){
-  document.querySelectorAll('.view').forEach(x=>x.classList.remove('active'));
-  document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));
-  document.getElementById('view-'+v).classList.add('active');el.classList.add('active');
-  if(v==='cal'&&calY===undefined){const n=new Date();calY=n.getFullYear();calM=n.getMonth();}
+function sf(f, btn) { curF = f; document.querySelectorAll('.frow .flt').forEach(b => b.classList.remove('active')); btn.classList.add('active'); render(); }
+function sv(v, el) {
+  document.querySelectorAll('.view').forEach(x => x.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(x => x.classList.remove('active'));
+  document.getElementById('view-' + v).classList.add('active'); el.classList.add('active');
+  if (v === 'cal' && calY === undefined) { const n = new Date(); calY = n.getFullYear(); calM = n.getMonth(); }
   render();
 }
 
 // ── LINE共有 ──
-function doLine(){
-  const ts=tasks.filter(t=>!t.done).sort(sortT);
-  if(!ts.length){alert('未完了タスクがありません');return;}
-  let txt=`📋 阪口商店 タスク共有\n${today()} 時点\n${'ー'.repeat(18)}\n`;
-  ts.slice(0,12).forEach(t=>{
-    const st=tStatus(t);
-    const m=st==='overdue'||st==='today'?'🔴':st==='soon'?'🟡':st==='pending'?'⏳':'🔵';
-    txt+=`\n${m}【${t.taskKind}】${t.title}\n   終了日：${t.endDate}　対象：${(t.assignees||[]).join('・')}\n   優先度：${t.priority}　緊急度：${t.urgency}\n`;
+function doLine() {
+  const ts = tasks.filter(t => !isTaskDone(t)).sort(sortT);
+  if (!ts.length) { alert('未完了タスクがありません'); return; }
+  let txt = `📋 阪口商店 タスク共有\n${today()} 時点\n${'ー'.repeat(18)}\n`;
+  ts.slice(0, 12).forEach(t => {
+    const st = tStatus(t);
+    const m = st === 'overdue' || st === 'today' ? '🔴' : st === 'soon' ? '🟡' : st === 'pending' ? '⏳' : '🔵';
+    const info = completionInfo(t);
+    const prog = info ? `  進捗：${info.done}/${info.total}店舗完了\n` : '';
+    txt += `\n${m}【${t.taskKind}】${t.title}\n   終了日：${t.endDate}　対象：${(t.assignees || []).join('・')}\n${prog}`;
   });
-  if(ts.length>12)txt+=`\n…他 ${ts.length-12} 件`;
-  navigator.clipboard.writeText(txt).then(()=>toast('✅ LINEに貼り付けできるテキストをコピーしました'));
+  if (ts.length > 12) txt += `\n…他 ${ts.length - 12} 件`;
+  navigator.clipboard.writeText(txt).then(() => toast('✅ LINEに貼り付けできるテキストをコピーしました'));
 }
 
 // ── Init ──
-document.addEventListener('keydown',e=>{if(e.key==='Enter'&&document.getElementById('pwov').style.display!=='none')doPwLogin();});
+document.addEventListener('keydown', e => {
+  if (e.key === 'Enter') {
+    const ov = document.getElementById('pwov');
+    if (ov.style.display !== 'none') {
+      const mgrVisible = document.getElementById('section-mgr').style.display !== 'none';
+      if (mgrVisible) doPwLogin(); else doStoreLogin();
+    }
+  }
+});
+
 upChk();
-document.getElementById('f-end').value=today();
+document.getElementById('f-end').value = today();
+
+// セッション復元 → ログイン済みならモーダル非表示
+if (restoreSession()) {
+  finLogin();
+}
+
 loadTasks();
 </script>
 </body>
