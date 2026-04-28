@@ -178,12 +178,23 @@ main{padding:20px;max-width:960px;margin:0 auto;}
 .dp-pe,.dp-dn{background:var(--bg2);color:var(--text3);}
 
 .card-btns{display:flex;flex-direction:column;gap:5px;align-items:flex-end;}
-.bdel,.bcal{font-family:inherit;font-size:11px;padding:3px 9px;border-radius:6px;cursor:pointer;transition:all .15s;white-space:nowrap;}
+.bdel,.bcal,.bedit{font-family:inherit;font-size:11px;padding:3px 9px;border-radius:6px;cursor:pointer;transition:all .15s;white-space:nowrap;}
 .bdel{background:none;border:1px solid var(--red-bd);color:var(--red);display:none;}
 .bdel:hover{background:var(--red-bg);}
 .is-mgr .bdel{display:inline;}
 .bcal{background:none;border:1px solid var(--accent-bd);color:var(--accent);}
 .bcal:hover{background:var(--accent-bg);}
+.bedit{background:none;border:1px solid var(--orange-bd);color:var(--orange);display:none;}
+.bedit:hover{background:var(--orange-bg);}
+.is-mgr .bedit{display:inline;}
+
+/* EDIT MODAL */
+.editov{position:fixed;inset:0;background:rgba(20,28,70,.55);z-index:200;display:flex;align-items:flex-start;justify-content:center;backdrop-filter:blur(6px);overflow-y:auto;padding:24px 16px;}
+.editbox{background:#fff;border:1.5px solid var(--border);border-radius:18px;padding:28px;width:100%;max-width:580px;box-shadow:var(--sh2);margin:auto;}
+.edit-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;}
+.edit-title{font-size:16px;font-weight:700;}
+.edit-close{width:34px;height:34px;border:1.5px solid var(--border2);background:var(--bg);border-radius:8px;cursor:pointer;font-size:17px;display:flex;align-items:center;justify-content:center;color:var(--text2);transition:all .15s;flex-shrink:0;}
+.edit-close:hover{background:var(--red-bg);border-color:var(--red-bd);color:var(--red);}
 .bcomplete{font-family:inherit;font-size:12px;font-weight:700;padding:6px 11px;border-radius:var(--rs);cursor:pointer;transition:all .18s;white-space:nowrap;border:1.5px solid var(--green-bd);background:var(--green-bg);color:var(--green);}
 .bcomplete:hover{background:#C8F0DC;transform:scale(1.03);}
 .bcomplete.is-done{border-color:var(--border2);background:var(--bg2);color:var(--text3);font-weight:400;font-size:11px;}
@@ -382,6 +393,73 @@ main{padding:20px;max-width:960px;margin:0 auto;}
     </div>
 
     <div class="pwerr" id="pwerr"></div>
+  </div>
+</div>
+
+<!-- EDIT MODAL -->
+<div class="editov" id="editov" style="display:none" onclick="editOvClick(event)">
+  <div class="editbox" id="editbox">
+    <div class="edit-hdr">
+      <div class="edit-title">✏️ タスクを編集</div>
+      <button class="edit-close" onclick="closeEdit()">✕</button>
+    </div>
+    <input type="hidden" id="e-id">
+    <div class="fgrid">
+      <div class="full">
+        <div class="fl">📝 タスク内容（必須）</div>
+        <input class="fi" id="e-title" placeholder="タスク内容" maxlength="80">
+      </div>
+      <div>
+        <div class="fl">📅 開始日時（任意）</div>
+        <input class="fi" type="datetime-local" id="e-start">
+      </div>
+      <div>
+        <div class="fl">📅 終了日時（必須）</div>
+        <input class="fi" type="datetime-local" id="e-end">
+      </div>
+      <div>
+        <div class="fl">📂 タスク種別</div>
+        <select class="fs" id="e-kind">
+          <option value="固定タスク">📌 固定タスク（定期業務）</option>
+          <option value="追加タスク">➕ 追加タスク（単発業務）</option>
+        </select>
+      </div>
+      <div>
+        <div class="fl">🎯 割り当て種別</div>
+        <select class="fs" id="e-type" onchange="upEditChk()">
+          <option value="store">🏪 店舗</option>
+          <option value="sc">👔 SC / ASC</option>
+        </select>
+      </div>
+      <div>
+        <div class="fl">⭐ 優先度</div>
+        <select class="fs" id="e-pri">
+          <option value="高">🔴 高</option>
+          <option value="中">🟡 中</option>
+          <option value="低">🟢 低</option>
+        </select>
+      </div>
+      <div>
+        <div class="fl">⚡ 緊急度</div>
+        <select class="fs" id="e-urg">
+          <option value="緊急">🚨 緊急</option>
+          <option value="通常">📌 通常</option>
+          <option value="余裕あり">😌 余裕あり</option>
+        </select>
+      </div>
+      <div class="full">
+        <div class="fl">👤 割り当て先（複数選択可）</div>
+        <div class="chkgrid" id="e-chkwrap"></div>
+      </div>
+      <div class="full">
+        <div class="fl">📌 メモ（任意）</div>
+        <textarea class="fta" id="e-note" placeholder="補足・詳細があれば入力"></textarea>
+      </div>
+      <div class="full">
+        <button class="bsub" onclick="doEdit()">💾 変更を保存する</button>
+        <div class="fok" id="e-fok">✅ 更新しました！</div>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -1099,6 +1177,7 @@ function cardH(t) {
       <div class="card-btns">
         ${completeBtn}
         <button class="bcal" onclick="window.open('${gcUrl}','_blank')">📅 カレンダー</button>
+        <button class="bedit" onclick="openEdit('${t.id}')">✏️ 編集</button>
         <button class="bdel" onclick="doDel('${t.id}')">🗑 削除</button>
       </div>
     </div>
@@ -1200,6 +1279,87 @@ async function doDel(id) {
   const r = await gPost({action:'deleteTask', id, pw:curPw});
   if (r.ok) { tasks = tasks.filter(t => t.id !== id); render(); toast('🗑 削除しました'); }
   else toast('⚠️ ' + (r.error || '削除失敗'));
+  loading(false);
+}
+
+// ── タスク編集 ──
+function openEdit(id) {
+  if (!isMgr) return;
+  const t = tasks.find(x => x.id === id);
+  if (!t) return;
+
+  document.getElementById('e-id').value    = t.id;
+  document.getElementById('e-title').value = t.title      || '';
+  document.getElementById('e-start').value = t.startDate  || '';
+  document.getElementById('e-end').value   = t.endDate    || '';
+  document.getElementById('e-note').value  = t.note       || '';
+  document.getElementById('e-kind').value  = t.taskKind   || '固定タスク';
+  document.getElementById('e-pri').value   = t.priority   || '中';
+  document.getElementById('e-urg').value   = t.urgency    || '通常';
+  document.getElementById('e-type').value  = t.type       || 'store';
+  upEditChk();
+
+  // チェックボックス生成後にアサイン状態を反映
+  const assignees = t.assignees || [];
+  document.querySelectorAll('#e-chkwrap .chk-e').forEach(cb => {
+    cb.checked = assignees.includes(cb.value);
+  });
+
+  document.getElementById('e-fok').style.display = 'none';
+  document.getElementById('editov').style.display = 'flex';
+}
+
+function closeEdit() {
+  document.getElementById('editov').style.display = 'none';
+}
+
+// 編集モーダル外クリックで閉じる
+function editOvClick(ev) {
+  if (ev.target === document.getElementById('editov')) closeEdit();
+}
+
+function upEditChk() {
+  const members = document.getElementById('e-type').value === 'store' ? STORES : SCS;
+  document.getElementById('e-chkwrap').innerHTML =
+    `<label class="ci all"><input type="checkbox" id="e-chkAll" onchange="eAll(this)"> 全選択</label>` +
+    members.map(m => `<label class="ci"><input type="checkbox" class="chk-e" value="${m}"> ${m}</label>`).join('');
+}
+function eAll(cb) { document.querySelectorAll('.chk-e').forEach(c => c.checked = cb.checked); }
+
+async function doEdit() {
+  const id    = document.getElementById('e-id').value;
+  const title = document.getElementById('e-title').value.trim();
+  const start = document.getElementById('e-start').value;
+  const end   = document.getElementById('e-end').value;
+  const kind  = document.getElementById('e-kind').value;
+  const type  = document.getElementById('e-type').value;
+  const pri   = document.getElementById('e-pri').value;
+  const urg   = document.getElementById('e-urg').value;
+  const note  = document.getElementById('e-note').value.trim();
+  const asgn  = [...document.querySelectorAll('.chk-e:checked')].map(c => c.value);
+
+  if (!title || !end)    { alert('タスク内容と終了日時は必須です'); return; }
+  if (!asgn.length)      { alert('割り当て先を1つ以上選んでください'); return; }
+  if (start && start > end) { alert('開始日時は終了日時より前に設定してください'); return; }
+
+  loading(true);
+  try {
+    const r = await gPost({action:'updateTask', pw:curPw, id, title, taskKind:kind,
+      startDate:start, endDate:end, type, priority:pri, urgency:urg, note, assignees:asgn});
+    if (r.ok) {
+      // ローカルのタスクオブジェクトを即時更新
+      const t = tasks.find(x => x.id === id);
+      if (t) Object.assign(t, {title, taskKind:kind, startDate:start, endDate:end,
+        type, priority:pri, urgency:urg, note, assignees:asgn});
+      render();
+      toast('✅ タスクを更新しました');
+      const ok = document.getElementById('e-fok');
+      ok.style.display = 'block';
+      setTimeout(() => { ok.style.display = 'none'; closeEdit(); }, 1200);
+    } else {
+      toast('⚠️ ' + (r.error || '更新失敗'));
+    }
+  } catch(e) { toast('⚠️ 通信エラー。時間をおいて再試行してください'); }
   loading(false);
 }
 
