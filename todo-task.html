@@ -10,7 +10,7 @@
 <!-- LINE in-app browser キャッシュ対策：バージョンが変わったら自動リロード -->
 <script>
 (function(){
-  var VER = '20260428-5'; // ★ 更新時はここを変える
+  var VER = '20260429-2'; // ★ 更新時はここを変える
   var stored = localStorage.getItem('_appVer');
   var param  = new URLSearchParams(location.search).get('_v');
   if (stored !== VER) {
@@ -1093,7 +1093,10 @@ function cardH(t) {
   const uTag  = {緊急:'<span class="tag t-uehi">🚨 緊急</span>',通常:'<span class="tag t-uemi">📌 通常</span>','余裕あり':'<span class="tag t-uelo">😌 余裕</span>'}[t.urgency] || '';
   const ownTag = isOwnStore ? '<span class="tag t-mystore">🏪 自店舗</span>'
                : isOwnSC    ? '<span class="tag t-mystore">👔 自分</span>' : '';
-  const who = (t.assignees || []).join(' ・ ') || '全員';
+  const allMembers = t.type === 'sc' ? SCS : STORES;
+  const assignees  = t.assignees || [];
+  const isAllStores = assignees.length > 0 && assignees.length >= allMembers.length;
+  const who = isAllStores ? (t.type === 'sc' ? '全メンバー' : '全店舗') : assignees.join(' ・ ') || '全員';
 
   // 期限ピル
   let dlTxt = '', dlCls = 'dp-ok';
@@ -1190,7 +1193,7 @@ function cardH(t) {
       <div class="tmeta">
         <span>📍 <strong>${who}</strong></span>
         ${t.registeredBy ? `<span>✏️ ${t.registeredBy}</span>` : ''}
-        ${t.note ? `<span>📌 ${t.note}</span>` : ''}
+        ${t.note ? `<span style="white-space:pre-line">📌 ${t.note}</span>` : ''}
       </div>
       ${dateBar}
       ${progHtml}
@@ -1363,37 +1366,35 @@ async function doEdit() {
   const note  = document.getElementById('e-note').value.trim();
   const asgn  = [...document.querySelectorAll('.chk-e:checked')].map(c => c.value);
 
-  if (!title || !end)    { alert('タスク内容と終了日時は必須です'); return; }
-  if (!asgn.length)      { alert('割り当て先を1つ以上選んでください'); return; }
+  if (!title || !end)       { alert('タスク内容と終了日時は必須です'); return; }
+  if (!asgn.length)         { alert('割り当て先を1つ以上選んでください'); return; }
   if (start && start > end) { alert('開始日時は終了日時より前に設定してください'); return; }
 
-  loading(true);
+  // 楽観的更新：即座にローカルを書き換えてUI再描画
+  const t = tasks.find(x => x.id === id);
+  const prev = t ? {...t} : null; // ロールバック用
+  if (t) Object.assign(t, {title, taskKind:kind, startDate:start, endDate:end,
+    type, priority:pri, urgency:urg, note, assignees:asgn});
+  render();
+  toast('✅ タスクを更新しました');
+  closeEdit();
+
+  // バックグラウンドでサーバーに保存
+  const payload = {action:'updateTask', pw:curPw, id, title, taskKind:kind,
+    startDate:start, endDate:end, type, priority:pri, urgency:urg, note, assignees:asgn};
   try {
-    const payload = {action:'updateTask', pw:curPw, id, title, taskKind:kind,
-      startDate:start, endDate:end, type, priority:pri, urgency:urg, note, assignees:asgn};
-    console.log('[doEdit] 送信データ:', JSON.stringify(payload));
     const r = await gPost(payload);
-    console.log('[doEdit] GAS応答:', JSON.stringify(r));
-    if (r.ok) {
-      // ローカルのタスクオブジェクトを即時更新
-      const t = tasks.find(x => x.id === id);
-      if (t) Object.assign(t, {title, taskKind:kind, startDate:start, endDate:end,
-        type, priority:pri, urgency:urg, note, assignees:asgn});
+    if (!r.ok) {
+      if (t && prev) Object.assign(t, prev); // ロールバック
       render();
-      toast('✅ タスクを更新しました');
-      const ok = document.getElementById('e-fok');
-      ok.style.display = 'block';
-      setTimeout(() => { ok.style.display = 'none'; closeEdit(); }, 1200);
-    } else {
       const errMsg = typeof r.error === 'object' ? JSON.stringify(r.error) : (r.error || '更新失敗');
-      console.error('[doEdit] エラー詳細:', r);
-      toast('⚠️ ' + errMsg);
+      toast('⚠️ 保存エラー: ' + errMsg);
     }
   } catch(e) {
-    console.error('[doEdit] 例外:', e);
+    if (t && prev) Object.assign(t, prev); // ロールバック
+    render();
     toast('⚠️ 通信エラー: ' + e.message);
   }
-  loading(false);
 }
 
 async function doAdd() {
