@@ -10,7 +10,7 @@
 <!-- LINE in-app browser キャッシュ対策：バージョンが変わったら自動リロード -->
 <script>
 (function(){
-  var VER = '20260429-3'; // ★ 更新時はここを変える
+  var VER = '20260429-5'; // ★ 更新時はここを変える
   var stored = localStorage.getItem('_appVer');
   var param  = new URLSearchParams(location.search).get('_v');
   if (stored !== VER) {
@@ -31,9 +31,10 @@
   --text:#1A1F36;--text2:#5A6080;--text3:#9AA0B8;
   --accent:#2B6BE0;--accent2:#6B50E8;
   --red:#D93030;--orange:#D97020;--green:#18A060;--gold:#B07010;--purple:#7B3FA0;
-  --red-bg:#FEF0F0;--orange-bg:#FEF4E8;--green-bg:#EDFAF3;--accent-bg:#EEF4FE;--purple-bg:#F5EFFE;
+  --pink:#C0308A;
+  --red-bg:#FEF0F0;--orange-bg:#FEF4E8;--green-bg:#EDFAF3;--accent-bg:#EEF4FE;--purple-bg:#F5EFFE;--pink-bg:#FFF0F8;
   --red-bd:rgba(217,48,48,.2);--orange-bd:rgba(217,112,32,.2);
-  --green-bd:rgba(24,160,96,.18);--accent-bd:rgba(43,107,224,.18);--purple-bd:rgba(123,63,160,.2);
+  --green-bd:rgba(24,160,96,.18);--accent-bd:rgba(43,107,224,.18);--purple-bd:rgba(123,63,160,.2);--pink-bd:rgba(192,48,138,.2);
   --sh0:0 1px 4px rgba(26,31,54,.07);--sh1:0 4px 16px rgba(26,31,54,.09);--sh2:0 8px 32px rgba(26,31,54,.13);
   --r:14px;--rs:9px;
 }
@@ -59,6 +60,8 @@ header::after{content:'';position:absolute;bottom:0;left:0;right:0;height:2.5px;
 .store-badge.show{display:inline-flex;align-items:center;gap:5px;}
 .mgr-badge{background:#FFF8E8;color:var(--gold);border:1.5px solid rgba(176,112,16,.22);border-radius:20px;font-size:11px;font-weight:700;padding:5px 12px;display:none;white-space:nowrap;}
 .mgr-badge.show{display:inline-flex;align-items:center;gap:5px;}
+.creator-badge{background:var(--pink-bg);color:var(--pink);border:1.5px solid var(--pink-bd);border-radius:20px;font-size:11px;font-weight:700;padding:5px 12px;display:none;white-space:nowrap;}
+.creator-badge.show{display:inline-flex;align-items:center;gap:5px;}
 
 /* TABS */
 .tab-bar{background:#fff;border-bottom:1.5px solid var(--border);display:flex;overflow-x:auto;padding:0 18px;scrollbar-width:none;position:sticky;top:64px;z-index:99;box-shadow:var(--sh0);}
@@ -145,6 +148,8 @@ main{padding:20px;max-width:960px;margin:0 auto;}
 .t-uemi{background:var(--bg2);color:var(--text2);border:1px solid var(--border2);}
 .t-uelo{background:#F0FAFF;color:#2080A0;border:1px solid rgba(32,128,160,.2);}
 .t-mystore{background:linear-gradient(135deg,var(--accent-bg),#E0EFFE);color:var(--accent);border:1.5px solid var(--accent);font-weight:800;}
+.t-rec{background:#F0F8FF;color:#2060B0;border:1px solid rgba(32,96,176,.2);}
+.t-tmpl{background:var(--pink-bg);color:var(--pink);border:1px solid var(--pink-bd);}
 
 .ttitle{font-size:14px;font-weight:600;margin-bottom:5px;display:flex;align-items:center;gap:6px;flex-wrap:wrap;line-height:1.4;}
 .tc.s-done .ttitle{text-decoration:line-through;color:var(--text3);}
@@ -177,16 +182,28 @@ main{padding:20px;max-width:960px;margin:0 auto;}
 .dp-ok{background:var(--green-bg);color:var(--green);border-color:var(--green-bd);}
 .dp-pe,.dp-dn{background:var(--bg2);color:var(--text3);}
 
+/* CARD BUTTONS */
 .card-btns{display:flex;flex-direction:column;gap:5px;align-items:flex-end;}
-.bdel,.bcal,.bedit{font-family:inherit;font-size:11px;padding:3px 9px;border-radius:6px;cursor:pointer;transition:all .15s;white-space:nowrap;}
+.bdel,.bcal,.bedit,.bcopy{font-family:inherit;font-size:11px;padding:3px 9px;border-radius:6px;cursor:pointer;transition:all .15s;white-space:nowrap;}
+/* 削除・編集は管理者のみ */
 .bdel{background:none;border:1px solid var(--red-bd);color:var(--red);display:none;}
 .bdel:hover{background:var(--red-bg);}
 .is-mgr .bdel{display:inline;}
-.bcal{background:none;border:1px solid var(--accent-bd);color:var(--accent);}
-.bcal:hover{background:var(--accent-bg);}
 .bedit{background:none;border:1px solid var(--orange-bd);color:var(--orange);display:none;}
 .bedit:hover{background:var(--orange-bg);}
 .is-mgr .bedit{display:inline;}
+/* コピーはタスク作成者・管理者に表示 */
+.bcopy{background:none;border:1px solid var(--green-bd);color:var(--green);display:none;}
+.bcopy:hover{background:var(--green-bg);}
+.is-creator .bcopy,.is-mgr .bcopy{display:inline;}
+/* カレンダー */
+.bcal{background:none;border:1px solid var(--accent-bd);color:var(--accent);}
+.bcal:hover{background:var(--accent-bg);}
+/* 完了ボタン */
+.bcomplete{font-family:inherit;font-size:12px;font-weight:700;padding:6px 11px;border-radius:var(--rs);cursor:pointer;transition:all .18s;white-space:nowrap;border:1.5px solid var(--green-bd);background:var(--green-bg);color:var(--green);}
+.bcomplete:hover{background:#C8F0DC;transform:scale(1.03);}
+.bcomplete.is-done{border-color:var(--border2);background:var(--bg2);color:var(--text3);font-weight:400;font-size:11px;}
+.bcomplete.is-done:hover{background:var(--red-bg);color:var(--red);border-color:var(--red-bd);}
 
 /* EDIT MODAL */
 .editov{position:fixed;inset:0;background:rgba(20,28,70,.55);z-index:200;display:flex;align-items:flex-start;justify-content:center;backdrop-filter:blur(6px);overflow-y:auto;padding:24px 16px;}
@@ -195,10 +212,6 @@ main{padding:20px;max-width:960px;margin:0 auto;}
 .edit-title{font-size:16px;font-weight:700;}
 .edit-close{width:34px;height:34px;border:1.5px solid var(--border2);background:var(--bg);border-radius:8px;cursor:pointer;font-size:17px;display:flex;align-items:center;justify-content:center;color:var(--text2);transition:all .15s;flex-shrink:0;}
 .edit-close:hover{background:var(--red-bg);border-color:var(--red-bd);color:var(--red);}
-.bcomplete{font-family:inherit;font-size:12px;font-weight:700;padding:6px 11px;border-radius:var(--rs);cursor:pointer;transition:all .18s;white-space:nowrap;border:1.5px solid var(--green-bd);background:var(--green-bg);color:var(--green);}
-.bcomplete:hover{background:#C8F0DC;transform:scale(1.03);}
-.bcomplete.is-done{border-color:var(--border2);background:var(--bg2);color:var(--text3);font-weight:400;font-size:11px;}
-.bcomplete.is-done:hover{background:var(--red-bg);color:var(--red);border-color:var(--red-bd);}
 
 /* MEMBER FILTER */
 .mfrow{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px;padding:13px;background:var(--surface);border:1.5px solid var(--border);border-radius:var(--r);box-shadow:var(--sh0);}
@@ -250,6 +263,8 @@ main{padding:20px;max-width:960px;margin:0 auto;}
 .bsub{width:100%;padding:12px;background:linear-gradient(135deg,var(--accent),var(--accent2));border:none;border-radius:var(--rs);font-family:inherit;font-size:14px;font-weight:700;color:#fff;cursor:pointer;transition:all .2s;letter-spacing:.04em;box-shadow:0 4px 14px rgba(43,107,224,.28);}
 .bsub:hover{transform:translateY(-1px);box-shadow:0 8px 22px rgba(43,107,224,.36);}
 .fok{text-align:center;color:var(--green);font-size:13px;font-weight:700;padding:10px;display:none;}
+/* 繰り返しセクション */
+.rec-box{background:var(--pink-bg);border:1.5px solid var(--pink-bd);border-radius:var(--rs);padding:14px;margin-top:4px;}
 
 /* LOGIN OVERLAY */
 .pwov{position:fixed;inset:0;background:rgba(20,28,70,.55);z-index:200;display:flex;align-items:center;justify-content:center;backdrop-filter:blur(10px);}
@@ -304,7 +319,6 @@ main{padding:20px;max-width:960px;margin:0 auto;}
   .stats-row{grid-template-columns:repeat(2,1fr);}
   .fgrid{grid-template-columns:1fr;}
   .tc{grid-template-columns:30px 1fr;}
-  /* 右パネルをカード下部に横並びで表示 */
   .tr{
     display:flex;flex-direction:row;flex-wrap:wrap;
     gap:5px;align-items:center;justify-content:flex-end;
@@ -312,38 +326,20 @@ main{padding:20px;max-width:960px;margin:0 auto;}
     border-top:1px solid var(--border);
     padding-top:8px;margin-top:6px;min-width:0;
   }
-  .dpill{display:none;} /* 日付はdateバーで確認できるため省略 */
+  .dpill{display:none;}
   .card-btns{flex-direction:row;flex-wrap:wrap;gap:5px;align-items:center;}
   .bcomplete{font-size:13px;padding:7px 14px;}
-  .bdel,.bedit,.bcal{font-size:12px;padding:5px 10px;}
+  .bdel,.bedit,.bcal,.bcopy{font-size:12px;padding:5px 10px;}
   main{padding:12px;}
-
-  /* ── ヘッダー：高さ固定を解除・コンパクト化 ── */
   header{padding:0 10px;height:auto;min-height:52px;}
-
-  /* ロゴマークを小さく */
   .logo-mark{width:30px;height:30px;font-size:16px;border-radius:8px;}
-
-  /* ロゴテキスト：1行に収める */
   .logo-main{font-size:15px;letter-spacing:.06em;white-space:nowrap;}
   .logo-sub{display:none;}
-
-  /* ヘッダー右側：ボタンのテキストを非表示・サイズ縮小 */
   .hbtn{height:32px;padding:0 9px;font-size:11px;gap:3px;}
   .hbtn span{display:none;}
   .hdr-r{gap:5px;}
-
-  /* 店舗・管理者バッジ：横1行・折り返し禁止 */
-  .store-badge,.mgr-badge{
-    white-space:nowrap;
-    font-size:11px;
-    padding:4px 9px;
-    max-width:none;
-  }
-
-  /* タブバーのtopをヘッダー高さに合わせる */
+  .store-badge,.mgr-badge,.creator-badge{white-space:nowrap;font-size:11px;padding:4px 9px;max-width:none;}
   .tab-bar{top:52px;}
-
   .sc-num{font-size:40px;}
   .cal-grid{gap:2px;}
   .cal-cell{min-height:54px;}
@@ -388,18 +384,18 @@ main{padding:20px;max-width:960px;margin:0 auto;}
       <div class="sc-grid" id="sc-grid"></div>
     </div>
 
-    <!-- 共通：閲覧のみ・管理者 -->
+    <!-- 共通：閲覧のみ・スタッフ/管理者 -->
     <div class="pwbtns-row" id="common-btns">
       <button class="pwgh" onclick="doGuest()">👀 閲覧のみ</button>
-      <button class="pwgh" style="font-size:11px;color:var(--text3)" onclick="showMgrSection()">🔑 管理者</button>
+      <button class="pwgh" style="font-size:11px;color:var(--text3)" onclick="showMgrSection()">🔑 スタッフ・管理者</button>
     </div>
 
-    <!-- 管理者ログイン -->
+    <!-- スタッフ・管理者ログイン -->
     <div id="section-mgr" style="display:none">
-      <div class="pwsub">管理者パスワードを入力してください</div>
+      <div class="pwsub">パスコードを入力してください<br><small style="color:var(--text3)">タスク作成者または管理者</small></div>
       <input class="pwni" id="pwname" placeholder="お名前（例：髙橋）" maxlength="20">
       <input class="pwpi" type="password" id="pwpass" placeholder="••••••" maxlength="12">
-      <button class="pwbtn" onclick="doPwLogin()">🔑 管理者ログイン</button>
+      <button class="pwbtn" onclick="doPwLogin()">🔑 ログイン</button>
       <button class="pwgh" onclick="showStoreSection()" style="margin-top:4px">← 戻る</button>
     </div>
 
@@ -407,7 +403,7 @@ main{padding:20px;max-width:960px;margin:0 auto;}
   </div>
 </div>
 
-<!-- EDIT MODAL -->
+<!-- EDIT MODAL (管理者のみ使用) -->
 <div class="editov" id="editov" style="display:none" onclick="editOvClick(event)">
   <div class="editbox" id="editbox">
     <div class="edit-hdr">
@@ -485,6 +481,7 @@ main{padding:20px;max-width:960px;margin:0 auto;}
   <div class="hdr-r">
     <span class="store-badge" id="store-badge"></span>
     <span class="sc-badge" id="sc-badge"></span>
+    <span class="creator-badge" id="creator-badge"></span>
     <span class="mgr-badge" id="mgr-badge"></span>
     <button class="hbtn ref" onclick="loadTasks()">🔄 <span>更新</span></button>
     <button class="hbtn line" onclick="doLine()">💬 <span>LINE共有</span></button>
@@ -615,6 +612,29 @@ main{padding:20px;max-width:960px;margin:0 auto;}
         <div class="fl">📌 メモ（任意）</div>
         <textarea class="fta" id="f-note" placeholder="補足・詳細があれば入力してください"></textarea>
       </div>
+      <!-- 繰り返し設定（管理者のみ表示） -->
+      <div class="full" id="recurrence-section" style="display:none">
+        <div class="fl" style="margin-bottom:10px">🔁 繰り返し設定（管理者のみ）</div>
+        <div class="rec-box">
+          <div class="fgrid">
+            <div>
+              <div class="fl">繰り返し種別</div>
+              <select class="fs" id="f-recurrence" onchange="upRecurrence()">
+                <option value="none">繰り返しなし</option>
+                <option value="weekly">毎週</option>
+                <option value="monthly">毎月</option>
+              </select>
+            </div>
+            <div id="f-recday-wrap" style="display:none">
+              <div class="fl" id="f-recday-label">曜日</div>
+              <select class="fs" id="f-recurrence-day"></select>
+            </div>
+          </div>
+          <div style="font-size:11px;color:var(--text3);margin-top:8px">
+            ※ 繰り返し設定すると毎朝5:00に自動でタスクが生成されます
+          </div>
+        </div>
+      </div>
       <div class="full">
         <button class="bsub" onclick="doAdd()">✅ タスクを登録する</button>
         <div class="fok" id="fok">🎉 タスクを登録しました！</div>
@@ -623,18 +643,19 @@ main{padding:20px;max-width:960px;margin:0 auto;}
   </div>
   <div class="lockmsg" id="lockmsg">
     <div class="lockico">🔐</div>
-    <div class="locktitle">管理者ログインが必要です</div>
-    <div style="font-size:13px">右上の 🔑 ボタンから管理者ログインしてください</div>
+    <div class="locktitle">タスク作成者または管理者ログインが必要です</div>
+    <div style="font-size:13px">右上の 🔑 ボタンからログインしてください</div>
   </div>
 </div>
 
 </main>
 
 <script>
-const GAS_URL  = 'https://script.google.com/macros/s/AKfycbz76sbHekFY6QzYQrNpkWGKquW2keSSboS5Zm1JB4pLmbYvEi2SMPzvR7awNT8dStXg/exec';
-const PASSWORD = 'Lawson3963';
+const GAS_URL    = 'https://script.google.com/macros/s/AKfycbz76sbHekFY6QzYQrNpkWGKquW2keSSboS5Zm1JB4pLmbYvEi2SMPzvR7awNT8dStXg/exec';
+const CREATOR_PW = 'Lawson3963';  // タスク作成者パスワード
+const ADMIN_PW   = '3272885';     // 管理者パスワード
 
-// 店舗コード → 店舗名マップ（コードは必ず文字列）
+// 店舗コード → 店舗名マップ
 const STORE_CODES = {
   '065554': '吹田垂水三丁目',
   '190489': '江坂東',
@@ -661,22 +682,21 @@ const STORE_CODES = {
 const STORES = Object.values(STORE_CODES);
 const SCS    = ['髙橋','五島','プラカス','ダハル','ビスワス','フィ','サントス','スラズ'];
 
-let currentStore = null; // ログイン中の店舗名
-let currentSC    = null; // ログイン中のSC/ASCメンバー名
-let isMgr = false;
+// ── 状態変数 ──
+let currentStore = null;  // ログイン中の店舗名
+let currentSC    = null;  // ログイン中のSC/ASCメンバー名
+let isMgr        = false; // 管理者フラグ
+let isCreator    = false; // タスク作成者フラグ
 let uName = '', curPw = '';
 let tasks = [], curF = 'open', selStore = null, selSC = null;
 let calY, calM;
 
-const today = () => new Date().toISOString().split('T')[0];
-
-// 日時文字列から日付部分のみ取得（カレンダー・pending判定用）
+const today  = () => new Date().toISOString().split('T')[0];
 const dateOf = d => d ? d.slice(0, 10) : '';
 
-// 日時を表示用にフォーマット（時刻付きなら "YYYY/MM/DD HH:mm"、日付のみなら "YYYY/MM/DD"）
+// 日時を表示用にフォーマット
 const fmtDate = d => {
   if (!d) return '';
-  // GASがDateオブジェクトをString()変換した英語形式 "Sun May 03 2026 ..." への対応
   if (/^[A-Za-z]{3}\s/.test(d)) {
     try {
       const p = new Date(d);
@@ -694,39 +714,41 @@ const fmtDate = d => {
   return d.replace(/-/g, '/');
 };
 
-// 期限までの日数（負 = 期限超過）。時刻付き文字列は現在時刻と比較
+// datetime-local input 用フォーマット（YYYY-MM-DDTHH:MM）
+function toDatetimeLocal(d) {
+  if (!d) return '';
+  // すでに datetime-local 形式
+  if (d.includes('T') && d.length >= 16) return d.slice(0, 16);
+  // 日付のみ（YYYY-MM-DD） → 時刻を00:00で補完
+  if (/^\d{4}-\d{2}-\d{2}$/.test(d)) return d + 'T00:00';
+  return d.slice(0, 16);
+}
+
+// 期限までの日数
 const dL = d => {
   if (!d.includes('T')) {
-    // 日付のみ（旧形式）：従来通り
     return Math.ceil((new Date(d) - new Date(today())) / 86400000);
   }
-  // 日時形式：今日0:00からの日数差
   const end = new Date(d);
   const todayStart = new Date(today() + 'T00:00:00');
   const days = Math.floor((end - todayStart) / 86400000);
-  // 同日でも時刻が過ぎていたら期限超過
   if (days === 0 && end < new Date()) return -1;
   return days;
 };
 
-// ── 完了状態の判定（店舗・SCメンバー単位） ──
+// ── 完了状態の判定 ──
 function isTaskDone(t) {
   const cs = t.completedStores || {};
-
   if (t.type === 'sc') {
     const assignedSC = (t.assignees || []).filter(a => SCS.includes(a));
     if (assignedSC.length === 0) return !!t.done;
     if (currentSC) {
-      // 自分がアサインされている → 自分の完了フラグのみで判断
       if (assignedSC.includes(currentSC)) return !!cs[currentSC];
       return assignedSC.every(m => !!cs[m]);
     }
-    // ゲスト/管理者：全メンバー完了で完了扱い
     if (Object.keys(cs).length === 0) return !!t.done;
     return assignedSC.every(m => !!cs[m]);
   }
-
-  // 店舗タスク
   const assignedStores = (t.assignees || []).filter(a => STORES.includes(a));
   if (assignedStores.length === 0) return !!t.done;
   if (currentStore) {
@@ -737,7 +759,6 @@ function isTaskDone(t) {
   return assignedStores.every(s => !!cs[s]);
 }
 
-// 完了数情報（店舗・SCメンバー共通）
 function completionInfo(t) {
   const cs = t.completedStores || {};
   if (t.type === 'store') {
@@ -785,7 +806,7 @@ async function loadTasks() {
       tasks = r.tasks.map(t => ({
         ...t,
         completedStores: (typeof t.completedStores === 'string')
-          ? (t.completedStores ? JSON.parse(t.completedStores) : {})
+          ? (t.completedStores ? (() => { try { return JSON.parse(t.completedStores); } catch(e) { return {}; } })() : {})
           : (t.completedStores || {})
       }));
       render();
@@ -815,7 +836,6 @@ function showScSection() {
   document.getElementById('ltab-store').classList.remove('active');
   document.getElementById('ltab-sc').classList.add('active');
   document.getElementById('pwerr').style.display = 'none';
-  // SCメンバーボタンを生成（初回のみ）
   const grid = document.getElementById('sc-grid');
   if (!grid.innerHTML) {
     grid.innerHTML = SCS.map(m =>
@@ -837,35 +857,42 @@ function doStoreLogin() {
   const rawCode = String(document.getElementById('pwcode').value).trim();
   const code    = rawCode.padStart(6, '0').replace(/\D/g, '');
   const storeName = STORE_CODES[rawCode] || STORE_CODES[code];
-  if (!storeName) {
-    showErr('❌ 店舗コードが違います');
-    return;
-  }
-  currentStore = storeName; currentSC = null; isMgr = false;
+  if (!storeName) { showErr('❌ 店舗コードが違います'); return; }
+  currentStore = storeName; currentSC = null; isMgr = false; isCreator = false;
   localStorage.setItem('storeSession', JSON.stringify({type:'store', name:storeName}));
   finLogin();
 }
 
 function doScLogin(name) {
   if (!SCS.includes(name)) return;
-  currentSC = name; currentStore = null; isMgr = false;
+  currentSC = name; currentStore = null; isMgr = false; isCreator = false;
   localStorage.setItem('storeSession', JSON.stringify({type:'sc', name}));
   finLogin();
 }
 
+// パスコードでログイン（タスク作成者 or 管理者）
 function doPwLogin() {
   const pw = document.getElementById('pwpass').value;
   const nm = document.getElementById('pwname').value.trim();
-  if (pw !== PASSWORD) { showErr('❌ パスワードが違います'); return; }
-  isMgr = true; curPw = pw; uName = nm || '管理者';
-  currentStore = null; currentSC = null;
-  localStorage.setItem('mgrSession', JSON.stringify({uName}));
-  localStorage.removeItem('storeSession');
-  finLogin();
+  if (pw === ADMIN_PW) {
+    isMgr = true; isCreator = false; curPw = pw; uName = nm || '管理者';
+    currentStore = null; currentSC = null;
+    localStorage.setItem('mgrSession', JSON.stringify({uName, role:'admin'}));
+    localStorage.removeItem('storeSession');
+    finLogin();
+  } else if (pw === CREATOR_PW) {
+    isMgr = false; isCreator = true; curPw = pw; uName = nm || 'タスク作成者';
+    currentStore = null; currentSC = null;
+    localStorage.setItem('mgrSession', JSON.stringify({uName, role:'creator'}));
+    localStorage.removeItem('storeSession');
+    finLogin();
+  } else {
+    showErr('❌ パスコードが違います');
+  }
 }
 
 function doGuest() {
-  isMgr = false; currentStore = null; currentSC = null; uName = '';
+  isMgr = false; isCreator = false; currentStore = null; currentSC = null; uName = '';
   localStorage.removeItem('storeSession');
   localStorage.removeItem('mgrSession');
   finLogin();
@@ -878,19 +905,26 @@ function showErr(msg) {
 
 function finLogin() {
   document.getElementById('pwov').style.display = 'none';
-  document.body.classList.toggle('is-mgr', isMgr);
+  document.body.classList.toggle('is-mgr',     isMgr);
+  document.body.classList.toggle('is-creator', isCreator);
 
   const sb  = document.getElementById('store-badge');
   const scb = document.getElementById('sc-badge');
   const mb  = document.getElementById('mgr-badge');
-  sb.classList.remove('show'); scb.classList.remove('show'); mb.classList.remove('show');
+  const cb  = document.getElementById('creator-badge');
+  sb.classList.remove('show');
+  scb.classList.remove('show');
+  mb.classList.remove('show');
+  cb.classList.remove('show');
 
   if (currentStore) {
     sb.textContent = '🏪 ' + currentStore; sb.classList.add('show');
   } else if (currentSC) {
     scb.textContent = '👔 ' + currentSC; scb.classList.add('show');
   } else if (isMgr) {
-    mb.textContent = '👔 ' + uName; mb.classList.add('show');
+    mb.textContent = '👑 ' + uName; mb.classList.add('show');
+  } else if (isCreator) {
+    cb.textContent = '✏️ ' + uName; cb.classList.add('show');
   }
 
   const banner = document.getElementById('store-banner');
@@ -923,7 +957,7 @@ function showPw() {
   document.getElementById('pwov').style.display = 'flex';
 }
 
-// かんたんログイン：前回セッションをボタン表示
+// かんたんログイン
 function initQuickLogin() {
   const qsec = document.getElementById('section-quick');
   try {
@@ -944,24 +978,27 @@ function initQuickLogin() {
   } catch(e) { qsec.style.display = 'none'; }
 }
 
-// かんたんログイン実行
 function doQuickLogin() {
   try {
     const raw = localStorage.getItem('storeSession');
     if (!raw) return;
     const s = JSON.parse(raw);
     if (s.type === 'store' && STORES.includes(s.name)) {
-      currentStore = s.name; currentSC = null; isMgr = false;
+      currentStore = s.name; currentSC = null; isMgr = false; isCreator = false;
     } else if (s.type === 'sc' && SCS.includes(s.name)) {
-      currentSC = s.name; currentStore = null; isMgr = false;
+      currentSC = s.name; currentStore = null; isMgr = false; isCreator = false;
     } else return;
     finLogin();
   } catch(e) { toast('⚠️ ログインに失敗しました'); }
 }
 
 function toggleForm() {
-  document.getElementById('addcard').style.display  = isMgr ? 'block' : 'none';
-  document.getElementById('lockmsg').style.display  = isMgr ? 'none'  : 'block';
+  const canCreate = isMgr || isCreator;
+  document.getElementById('addcard').style.display = canCreate ? 'block' : 'none';
+  document.getElementById('lockmsg').style.display = canCreate ? 'none'  : 'block';
+  // 繰り返しセクションは管理者のみ表示
+  const recSect = document.getElementById('recurrence-section');
+  if (recSect) recSect.style.display = isMgr ? 'block' : 'none';
 }
 
 // ── セッション復元 ──
@@ -971,14 +1008,25 @@ function restoreSession() {
     const mg = localStorage.getItem('mgrSession');
     if (st) {
       const s = JSON.parse(st);
-      if (STORES.includes(s.storeName)) {
-        currentStore = s.storeName; isMgr = false;
+      if (s.type === 'store' && STORES.includes(s.name)) {
+        currentStore = s.name; isMgr = false; isCreator = false;
+        return true;
+      } else if (s.type === 'sc' && SCS.includes(s.name)) {
+        currentSC = s.name; isMgr = false; isCreator = false;
         return true;
       }
     }
     if (mg) {
       const m = JSON.parse(mg);
-      isMgr = true; uName = m.uName || '管理者'; curPw = PASSWORD;
+      uName = m.uName || '管理者';
+      if (m.role === 'admin') {
+        isMgr = true; isCreator = false; curPw = ADMIN_PW;
+      } else if (m.role === 'creator') {
+        isMgr = false; isCreator = true; curPw = CREATOR_PW;
+      } else {
+        // 旧形式互換
+        isMgr = true; isCreator = false; curPw = ADMIN_PW;
+      }
       return true;
     }
   } catch(e) {}
@@ -987,7 +1035,6 @@ function restoreSession() {
 
 // ── レンダリング ──
 function sortT(a, b) {
-  // 自店舗・自分のタスクを優先
   if (currentStore) {
     const aOwn = (a.assignees || []).includes(currentStore);
     const bOwn = (b.assignees || []).includes(currentStore);
@@ -1007,18 +1054,17 @@ const cntOpen = (ts, type) => ts.filter(t => !isTaskDone(t) && (type ? t.type ==
 function setBdg(id, n) { const e = document.getElementById(id); e.textContent = n; e.className = 'bdg' + (n === 0 ? ' zero' : ''); }
 
 function render() {
-  // 自分のタスクのフィルタ（店舗またはSCメンバー）
   const myTasks = currentStore
     ? tasks.filter(t => (t.assignees || []).includes(currentStore))
     : currentSC
     ? tasks.filter(t => (t.assignees || []).includes(currentSC))
     : tasks;
 
-  const myOpen  = myTasks.filter(t => !isTaskDone(t));
-  const urgent  = myOpen.filter(t => ['overdue','today'].includes(tStatus(t))).length;
-  const soon    = myOpen.filter(t => tStatus(t) === 'soon').length;
-  const done    = myTasks.filter(t => isTaskDone(t)).length;
-  const total   = myTasks.length;
+  const myOpen = myTasks.filter(t => !isTaskDone(t));
+  const urgent = myOpen.filter(t => ['overdue','today'].includes(tStatus(t))).length;
+  const soon   = myOpen.filter(t => tStatus(t) === 'soon').length;
+  const done   = myTasks.filter(t => isTaskDone(t)).length;
+  const total  = myTasks.length;
 
   document.getElementById('s0').textContent = urgent;
   document.getElementById('s1').textContent = soon;
@@ -1031,7 +1077,6 @@ function render() {
   document.getElementById('s2-sub').textContent = sub;
   document.getElementById('s3-sub').textContent = sub;
 
-  // バナー更新
   if (currentStore || currentSC) {
     document.getElementById('sb-stat-num').textContent = myOpen.length;
   }
@@ -1040,7 +1085,6 @@ function render() {
   setBdg('b-store', cntOpen(tasks, 'store'));
   setBdg('b-sc',    cntOpen(tasks, 'sc'));
 
-  // フィルター
   let f = [...tasks];
   if (curF === 'open')    f = tasks.filter(t => ['overdue','today','soon','active'].includes(tStatus(t)));
   if (curF === 'urgent')  f = tasks.filter(t => ['overdue','today','soon'].includes(tStatus(t)));
@@ -1056,7 +1100,6 @@ function render() {
 
 function renderMem(type, members, btnId, listId) {
   let sel = type === 'store' ? selStore : selSC;
-  // 自店舗を優先選択
   if (currentStore && type === 'store' && members.includes(currentStore)) {
     if (!sel) sel = currentStore;
   }
@@ -1084,7 +1127,7 @@ function cardH(t) {
   const isOwnStore = !!(currentStore && (t.assignees || []).includes(currentStore));
   const isOwnSC    = !!(currentSC    && t.type === 'sc' && (t.assignees || []).includes(currentSC));
   const isOwn      = isOwnStore || isOwnSC;
-  const myDone = isTaskDone(t);
+  const myDone     = isTaskDone(t);
 
   const tTag  = t.type === 'sc' ? '<span class="tag t-sc">👔 SC/ASC</span>' : '<span class="tag t-store">🏪 店舗</span>';
   const stTag = {overdue:'<span class="tag t-overdue">🔴 期限超過</span>',today:'<span class="tag t-today">🔴 今日まで</span>',soon:'<span class="tag t-soon">🟡 もうすぐ</span>',active:'<span class="tag t-active">🔵 進行中</span>',pending:'<span class="tag t-pending">📅 開始前</span>',done:'<span class="tag t-done">✅ 完了</span>'}[st] || '';
@@ -1093,6 +1136,9 @@ function cardH(t) {
   const uTag  = {緊急:'<span class="tag t-uehi">🚨 緊急</span>',通常:'<span class="tag t-uemi">📌 通常</span>','余裕あり':'<span class="tag t-uelo">😌 余裕</span>'}[t.urgency] || '';
   const ownTag = isOwnStore ? '<span class="tag t-mystore">🏪 自店舗</span>'
                : isOwnSC    ? '<span class="tag t-mystore">👔 自分</span>' : '';
+  // 繰り返しバッジ
+  const recTag  = t.recurrenceTemplate ? '<span class="tag t-tmpl">🔁 繰り返し</span>' : (t.recurrenceType && t.recurrenceType !== 'none' ? '<span class="tag t-rec">🔁</span>' : '');
+
   const allMembers = t.type === 'sc' ? SCS : STORES;
   const assignees  = t.assignees || [];
   const isAllStores = assignees.length > 0 && assignees.length >= allMembers.length;
@@ -1115,7 +1161,7 @@ function cardH(t) {
     <div class="tdate-block"><span class="tdate-lbl">${endLbl}</span><span class="tdate-val end">${fmtDate(t.endDate)}</span></div>
   </div>`;
 
-  // 進捗（店舗・SCメンバー）
+  // 進捗
   let progHtml = '';
   const info = completionInfo(t);
   if (info) {
@@ -1127,7 +1173,6 @@ function cardH(t) {
         ${allDone ? '✅' : '📊'} ${info.done}/${info.total} ${unitWord}完了
       </div>`;
     if (isMgr) {
-      // 管理者：完了・未完了を全員分表示
       if (info.complete.length > 0) {
         progHtml += `<div class="comp-stores"><strong>✅ 完了</strong>${info.complete.join('、')}</div>`;
       }
@@ -1135,13 +1180,11 @@ function cardH(t) {
         progHtml += `<div class="inc-stores"><strong>⬜ 未完了</strong>${info.incomplete.join('、')}</div>`;
       }
     } else if (!allDone && info.incomplete.length > 0) {
-      // 非管理者：未完了のみ最大4件
       const maxShow = 4;
       const shown   = info.incomplete.slice(0, maxShow).join('、');
       const more    = info.incomplete.length > maxShow ? ` 他${info.incomplete.length - maxShow}${unitWord}` : '';
       progHtml += `<div class="inc-stores"><strong>未完了</strong>${shown}${more}</div>`;
     }
-    // 自店舗・自分の状態
     if (isOwnStore) {
       const cs = t.completedStores || {};
       const myStatus = cs[currentStore];
@@ -1159,7 +1202,7 @@ function cardH(t) {
     progHtml += '</div>';
   }
 
-  // 完了ボタン
+  // 完了ボタン（店舗・SC/ASCメンバーのみ）
   let completeBtn = '';
   if (t.type === 'store' && isOwnStore) {
     const cs = t.completedStores || {};
@@ -1175,21 +1218,20 @@ function cardH(t) {
     </button>`;
   }
 
-  // チェックボックス（左側の視覚インジケーター）
   const chkDone = myDone;
   const chkClickable = (t.type === 'store' && isOwnStore) || (t.type === 'sc' && isOwnSC);
 
   // Googleカレンダー URL
-  const gcStart = (t.startDate || t.endDate).replace(/-/g, '');
-  const gcEnd   = t.endDate.replace(/-/g, '');
-  const gcTitle = encodeURIComponent(t.title);
+  const gcStart   = (t.startDate || t.endDate).replace(/-/g, '').replace('T','T').slice(0,8);
+  const gcEnd     = t.endDate.replace(/-/g, '').slice(0,8);
+  const gcTitle   = encodeURIComponent(t.title);
   const gcDetails = encodeURIComponent(`担当：${who}\n優先度：${t.priority}　緊急度：${t.urgency}\nタスク種別：${t.taskKind}${t.note ? '\nメモ：' + t.note : ''}`);
-  const gcUrl = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${gcTitle}&dates=${gcStart}/${gcEnd}&details=${gcDetails}`;
+  const gcUrl     = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${gcTitle}&dates=${gcStart}/${gcEnd}&details=${gcDetails}`;
 
   return `<div class="tc s-${st}${isOwn ? ' own-store' : ''}">
     <div class="chk${chkDone ? ' chk-done' : ''}${chkClickable ? ' clickable' : ''}" ${chkClickable ? `onclick="doToggle('${t.id}')"` : ''}>${chkDone ? '✓' : ''}</div>
     <div>
-      <div class="ttitle">${t.title} ${tTag} ${kTag} ${stTag} ${pTag} ${uTag} ${ownTag}</div>
+      <div class="ttitle">${t.title} ${tTag} ${kTag} ${stTag} ${pTag} ${uTag} ${ownTag} ${recTag}</div>
       <div class="tmeta">
         <span>📍 <strong>${who}</strong></span>
         ${t.registeredBy ? `<span>✏️ ${t.registeredBy}</span>` : ''}
@@ -1203,6 +1245,7 @@ function cardH(t) {
       <div class="card-btns">
         ${completeBtn}
         <button class="bcal" onclick="window.open('${gcUrl}','_blank')">📅 カレンダー</button>
+        <button class="bcopy" onclick="doCopy('${t.id}')">📋 コピー</button>
         <button class="bedit" onclick="openEdit('${t.id}')">✏️ 編集</button>
         <button class="bdel" onclick="doDel('${t.id}')">🗑 削除</button>
       </div>
@@ -1247,61 +1290,46 @@ async function doToggle(id) {
   const t = tasks.find(x => x.id === id);
   if (!t) return;
 
-  // SC タスク → SCメンバーログインが必要
   if (t.type === 'sc') {
     if (!currentSC) { toast('⚠️ SC/ASCメンバーのログインが必要です'); showPw(); return; }
     if (!(t.assignees || []).includes(currentSC)) { toast('⚠️ このメンバーは対象外のタスクです'); return; }
-
     const cs = t.completedStores || {};
     const nv = !cs[currentSC];
-
-    // ① 即座にUI更新
     if (!t.completedStores) t.completedStores = {};
     t.completedStores[currentSC] = nv;
     render();
     toast(nv ? '✅ 完了にしました' : '↩️ 未完了に戻しました');
-
-    // ② バックグラウンドでGASに保存（失敗したら元に戻す）
     try {
       const r = await gPost({action:'updateDone', id, memberName:currentSC, done:nv});
       if (!r.ok) throw new Error(r.error || '更新失敗');
     } catch(e) {
       t.completedStores[currentSC] = !nv;
       render();
-      console.error('[doToggle SC] 保存失敗:', e.message);
       toast('⚠️ 保存失敗: ' + e.message);
     }
     return;
   }
 
-  // 店舗タスク → 店舗ログインが必要
   if (!currentStore) { toast('⚠️ 店舗ログインが必要です'); showPw(); return; }
   if (!(t.assignees || []).includes(currentStore)) { toast('⚠️ この店舗は対象外のタスクです'); return; }
-
   const cs = t.completedStores || {};
   const nv = !cs[currentStore];
-
-  // ① 即座にUI更新（GASの応答を待たない）
   if (!t.completedStores) t.completedStores = {};
   t.completedStores[currentStore] = nv;
   render();
   toast(nv ? '✅ 完了にしました' : '↩️ 未完了に戻しました');
-
-  // ② バックグラウンドでGASに保存（失敗したら元に戻す）
   try {
     const r = await gPost({action:'updateDone', id, storeName:currentStore, done:nv});
     if (!r.ok) throw new Error(r.error || '更新失敗');
   } catch(e) {
-    // GAS保存失敗 → UIを元の状態に戻す
     t.completedStores[currentStore] = !nv;
     render();
-    console.error('[doToggle Store] 保存失敗:', e.message);
     toast('⚠️ 保存失敗: ' + e.message);
   }
 }
 
 async function doDel(id) {
-  if (!isMgr) return;
+  if (!isMgr) { toast('⚠️ 管理者権限が必要です'); return; }
   if (!confirm('このタスクを削除しますか？')) return;
   loading(true);
   const r = await gPost({action:'deleteTask', id, pw:curPw});
@@ -1310,16 +1338,18 @@ async function doDel(id) {
   loading(false);
 }
 
-// ── タスク編集 ──
+// ── タスク編集（管理者のみ） ──
 function openEdit(id) {
-  if (!isMgr) return;
+  if (!isMgr) { toast('⚠️ 管理者権限が必要です'); return; }
   const t = tasks.find(x => x.id === id);
   if (!t) return;
 
   document.getElementById('e-id').value    = t.id;
   document.getElementById('e-title').value = t.title      || '';
-  document.getElementById('e-start').value = t.startDate  || '';
-  document.getElementById('e-end').value   = t.endDate    || '';
+  // ① 開始日時：既存の値を正しい形式で設定する
+  document.getElementById('e-start').value = toDatetimeLocal(t.startDate);
+  // ② 終了日時：既存の値を正しい形式で設定する
+  document.getElementById('e-end').value   = toDatetimeLocal(t.endDate);
   document.getElementById('e-note').value  = t.note       || '';
   document.getElementById('e-kind').value  = t.taskKind   || '固定タスク';
   document.getElementById('e-pri').value   = t.priority   || '中';
@@ -1341,7 +1371,6 @@ function closeEdit() {
   document.getElementById('editov').style.display = 'none';
 }
 
-// 編集モーダル外クリックで閉じる
 function editOvClick(ev) {
   if (ev.target === document.getElementById('editov')) closeEdit();
 }
@@ -1355,9 +1384,10 @@ function upEditChk() {
 function eAll(cb) { document.querySelectorAll('.chk-e').forEach(c => c.checked = cb.checked); }
 
 async function doEdit() {
+  if (!isMgr) { toast('⚠️ 管理者権限が必要です'); return; }
   const id    = document.getElementById('e-id').value;
   const title = document.getElementById('e-title').value.trim();
-  const start = document.getElementById('e-start').value;
+  const start = document.getElementById('e-start').value;  // 空欄ならユーザーが意図的に削除
   const end   = document.getElementById('e-end').value;
   const kind  = document.getElementById('e-kind').value;
   const type  = document.getElementById('e-type').value;
@@ -1370,78 +1400,121 @@ async function doEdit() {
   if (!asgn.length)         { alert('割り当て先を1つ以上選んでください'); return; }
   if (start && start > end) { alert('開始日時は終了日時より前に設定してください'); return; }
 
-  // 楽観的更新：即座にローカルを書き換えてUI再描画
   const t = tasks.find(x => x.id === id);
-  const prev = t ? {...t} : null; // ロールバック用
+  const prev = t ? {...t} : null;
   if (t) Object.assign(t, {title, taskKind:kind, startDate:start, endDate:end,
     type, priority:pri, urgency:urg, note, assignees:asgn});
   render();
   toast('✅ タスクを更新しました');
   closeEdit();
 
-  // バックグラウンドでサーバーに保存
   const payload = {action:'updateTask', pw:curPw, id, title, taskKind:kind,
     startDate:start, endDate:end, type, priority:pri, urgency:urg, note, assignees:asgn};
   try {
     const r = await gPost(payload);
     if (!r.ok) {
-      if (t && prev) Object.assign(t, prev); // ロールバック
+      if (t && prev) Object.assign(t, prev);
       render();
       const errMsg = typeof r.error === 'object' ? JSON.stringify(r.error) : (r.error || '更新失敗');
       toast('⚠️ 保存エラー: ' + errMsg);
     }
   } catch(e) {
-    if (t && prev) Object.assign(t, prev); // ロールバック
+    if (t && prev) Object.assign(t, prev);
     render();
     toast('⚠️ 通信エラー: ' + e.message);
   }
 }
 
+// ── タスクコピー（管理者・タスク作成者） ──
+function doCopy(id) {
+  if (!isMgr && !isCreator) { toast('⚠️ コピーするにはログインが必要です'); return; }
+  const t = tasks.find(x => x.id === id);
+  if (!t) return;
+
+  // タスク登録タブに切り替え
+  document.querySelectorAll('.view').forEach(x => x.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(x => x.classList.remove('active'));
+  document.getElementById('view-add').classList.add('active');
+  const addTab = [...document.querySelectorAll('.tab')].find(el => el.getAttribute('onclick') === "sv('add',this)");
+  if (addTab) addTab.classList.add('active');
+
+  // フォームに値をセット（id・完了情報・日付はコピーしない）
+  document.getElementById('f-title').value = t.title      || '';
+  document.getElementById('f-kind').value  = t.taskKind   || '固定タスク';
+  document.getElementById('f-type').value  = t.type       || 'store';
+  document.getElementById('f-pri').value   = t.priority   || '中';
+  document.getElementById('f-urg').value   = t.urgency    || '通常';
+  document.getElementById('f-note').value  = t.note       || '';
+  document.getElementById('f-start').value = '';  // 日付は手動入力
+  document.getElementById('f-end').value   = '';
+
+  // 割り当て先チェックボックスを更新
+  upChk();
+  const assignees = t.assignees || [];
+  document.querySelectorAll('.chk-m').forEach(cb => {
+    cb.checked = assignees.includes(cb.value);
+  });
+
+  // ページ上部にスクロール
+  window.scrollTo({top: 0, behavior: 'smooth'});
+  toast('📋 コピーしました。開始日・終了日を設定して登録してください');
+}
+
+// ── タスク追加 ──
 async function doAdd() {
-  const title = document.getElementById('f-title').value.trim();
-  const start = document.getElementById('f-start').value;
-  const end   = document.getElementById('f-end').value;
-  const kind  = document.getElementById('f-kind').value;
-  const type  = document.getElementById('f-type').value;
-  const pri   = document.getElementById('f-pri').value;
-  const urg   = document.getElementById('f-urg').value;
-  const note  = document.getElementById('f-note').value.trim();
-  const asgn  = [...document.querySelectorAll('.chk-m:checked')].map(c => c.value);
+  const title   = document.getElementById('f-title').value.trim();
+  const start   = document.getElementById('f-start').value;
+  const end     = document.getElementById('f-end').value;
+  const kind    = document.getElementById('f-kind').value;
+  const type    = document.getElementById('f-type').value;
+  const pri     = document.getElementById('f-pri').value;
+  const urg     = document.getElementById('f-urg').value;
+  const note    = document.getElementById('f-note').value.trim();
+  const asgn    = [...document.querySelectorAll('.chk-m:checked')].map(c => c.value);
+  // 繰り返し設定（管理者のみ）
+  const recType = isMgr ? (document.getElementById('f-recurrence')?.value || 'none') : 'none';
+  const recDay  = (recType !== 'none' && isMgr) ? (document.getElementById('f-recurrence-day')?.value || '') : '';
+  const isTmpl  = recType !== 'none';
+
   if (!title || !end)    { alert('タスク内容と終了日は必須です'); return; }
   if (asgn.length === 0) { alert('割り当て先を1つ以上選んでください'); return; }
   if (start && start > end) { alert('開始日は終了日より前に設定してください'); return; }
 
-  // 楽観的更新：仮IDで即座に追加してUI再描画
   const tmpId = 'tmp_' + Date.now();
   const newTask = {id:tmpId, title, taskKind:kind, startDate:start, endDate:end,
     type, priority:pri, urgency:urg, note, assignees:asgn,
-    registeredBy:uName, done:false, doneAt:'', completedStores:{}, createdAt:today()};
+    registeredBy:uName, done:false, doneAt:'', completedStores:{}, createdAt:today(),
+    recurrenceType:recType, recurrenceDay:recDay, recurrenceTemplate:isTmpl, lastGeneratedDate:''};
   tasks.push(newTask);
+
+  // フォームをリセット
   document.getElementById('f-title').value = '';
   document.getElementById('f-start').value = '';
   document.getElementById('f-end').value   = today() + 'T23:59';
   document.getElementById('f-note').value  = '';
   const ca = document.getElementById('chkAll'); if (ca) ca.checked = false;
   document.querySelectorAll('.chk-m').forEach(c => c.checked = false);
+  if (isMgr && document.getElementById('f-recurrence')) {
+    document.getElementById('f-recurrence').value = 'none';
+    document.getElementById('f-recday-wrap').style.display = 'none';
+  }
+
   const ok = document.getElementById('fok'); ok.style.display = 'block'; setTimeout(() => ok.style.display = 'none', 2500);
   render(); toast('🎉 タスクを登録しました！');
 
-  // バックグラウンドでサーバーに保存
   try {
     const r = await gPost({action:'addTask', pw:curPw, title, taskKind:kind,
       startDate:start, endDate:end, type, priority:pri, urgency:urg, note,
-      assignees:asgn, registeredBy:uName});
+      assignees:asgn, registeredBy:uName,
+      recurrenceType:recType, recurrenceDay:recDay, recurrenceTemplate:isTmpl});
     if (r.ok) {
-      // 仮IDを実IDに差し替え
       newTask.id = r.id;
     } else {
-      // ロールバック
       tasks.splice(tasks.indexOf(newTask), 1);
       render();
       toast('⚠️ 登録エラー: ' + (r.error || '登録失敗'));
     }
   } catch(e) {
-    // ロールバック
     tasks.splice(tasks.indexOf(newTask), 1);
     render();
     toast('⚠️ 通信エラー: ' + e.message);
@@ -1456,6 +1529,26 @@ function upChk() {
     members.map(m => `<label class="ci"><input type="checkbox" class="chk-m" value="${m}"> ${m}</label>`).join('');
 }
 function taAll(cb) { document.querySelectorAll('.chk-m').forEach(c => c.checked = cb.checked); }
+
+// ── 繰り返し設定 ──
+function upRecurrence() {
+  const type    = document.getElementById('f-recurrence').value;
+  const wrap    = document.getElementById('f-recday-wrap');
+  const label   = document.getElementById('f-recday-label');
+  const sel     = document.getElementById('f-recurrence-day');
+
+  if (type === 'none') { wrap.style.display = 'none'; return; }
+  wrap.style.display = 'block';
+
+  if (type === 'weekly') {
+    label.textContent = '曜日';
+    sel.innerHTML = ['日','月','火','水','木','金','土'].map(d => `<option value="${d}">${d}曜日</option>`).join('');
+  } else if (type === 'monthly') {
+    label.textContent = '日付';
+    const days = Array.from({length:28}, (_,i) => `<option value="${i+1}">${i+1}日</option>`).join('');
+    sel.innerHTML = days + '<option value="末日">末日</option>';
+  }
+}
 
 // ── フィルター・タブ ──
 function sf(f, btn) { curF = f; document.querySelectorAll('.frow .flt').forEach(b => b.classList.remove('active')); btn.classList.add('active'); render(); }
@@ -1498,9 +1591,7 @@ upChk();
 document.getElementById('f-end').value = today() + 'T23:59';
 
 // ページを開くたびに必ずログイン画面を表示する
-// （前回の店舗があれば「かんたんログイン」ボタンで表示）
 initQuickLogin();
-
 loadTasks();
 </script>
 </body>
