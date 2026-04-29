@@ -10,7 +10,7 @@
 <!-- LINE in-app browser キャッシュ対策：バージョンが変わったら自動リロード -->
 <script>
 (function(){
-  var VER = '20260429-2'; // ★ 更新時はここを変える
+  var VER = '20260429-3'; // ★ 更新時はここを変える
   var stored = localStorage.getItem('_appVer');
   var param  = new URLSearchParams(location.search).get('_v');
   if (stored !== VER) {
@@ -1407,23 +1407,45 @@ async function doAdd() {
   const urg   = document.getElementById('f-urg').value;
   const note  = document.getElementById('f-note').value.trim();
   const asgn  = [...document.querySelectorAll('.chk-m:checked')].map(c => c.value);
-  if (!title || !end)   { alert('タスク内容と終了日は必須です'); return; }
+  if (!title || !end)    { alert('タスク内容と終了日は必須です'); return; }
   if (asgn.length === 0) { alert('割り当て先を1つ以上選んでください'); return; }
   if (start && start > end) { alert('開始日は終了日より前に設定してください'); return; }
-  loading(true);
-  const r = await gPost({action:'addTask', pw:curPw, title, taskKind:kind, startDate:start, endDate:end, type, priority:pri, urgency:urg, note, assignees:asgn, registeredBy:uName});
-  if (r.ok) {
-    tasks.push({id:r.id, title, taskKind:kind, startDate:start, endDate:end, type, priority:pri, urgency:urg, note, assignees:asgn, registeredBy:uName, done:false, doneAt:'', completedStores:{}, createdAt:today()});
-    document.getElementById('f-title').value = '';
-    document.getElementById('f-start').value = '';
-    document.getElementById('f-end').value   = today() + 'T23:59';
-    document.getElementById('f-note').value  = '';
-    const ca = document.getElementById('chkAll'); if (ca) ca.checked = false;
-    document.querySelectorAll('.chk-m').forEach(c => c.checked = false);
-    const ok = document.getElementById('fok'); ok.style.display = 'block'; setTimeout(() => ok.style.display = 'none', 2500);
-    render(); toast('🎉 タスクを登録しました！');
-  } else toast('⚠️ ' + (r.error || '登録失敗'));
-  loading(false);
+
+  // 楽観的更新：仮IDで即座に追加してUI再描画
+  const tmpId = 'tmp_' + Date.now();
+  const newTask = {id:tmpId, title, taskKind:kind, startDate:start, endDate:end,
+    type, priority:pri, urgency:urg, note, assignees:asgn,
+    registeredBy:uName, done:false, doneAt:'', completedStores:{}, createdAt:today()};
+  tasks.push(newTask);
+  document.getElementById('f-title').value = '';
+  document.getElementById('f-start').value = '';
+  document.getElementById('f-end').value   = today() + 'T23:59';
+  document.getElementById('f-note').value  = '';
+  const ca = document.getElementById('chkAll'); if (ca) ca.checked = false;
+  document.querySelectorAll('.chk-m').forEach(c => c.checked = false);
+  const ok = document.getElementById('fok'); ok.style.display = 'block'; setTimeout(() => ok.style.display = 'none', 2500);
+  render(); toast('🎉 タスクを登録しました！');
+
+  // バックグラウンドでサーバーに保存
+  try {
+    const r = await gPost({action:'addTask', pw:curPw, title, taskKind:kind,
+      startDate:start, endDate:end, type, priority:pri, urgency:urg, note,
+      assignees:asgn, registeredBy:uName});
+    if (r.ok) {
+      // 仮IDを実IDに差し替え
+      newTask.id = r.id;
+    } else {
+      // ロールバック
+      tasks.splice(tasks.indexOf(newTask), 1);
+      render();
+      toast('⚠️ 登録エラー: ' + (r.error || '登録失敗'));
+    }
+  } catch(e) {
+    // ロールバック
+    tasks.splice(tasks.indexOf(newTask), 1);
+    render();
+    toast('⚠️ 通信エラー: ' + e.message);
+  }
 }
 
 // ── チェックボックス ──
