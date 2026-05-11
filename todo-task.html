@@ -231,12 +231,16 @@ main{padding:20px;max-width:960px;margin:0 auto;}
 .cal-nbtn:hover{background:var(--bg2);color:var(--text);}
 .cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:3px;}
 .cal-dow{text-align:center;font-size:11px;font-weight:700;color:var(--text3);padding:6px 0;letter-spacing:.04em;}
-.cal-cell{background:var(--surface);border:1.5px solid var(--border);border-radius:8px;min-height:74px;padding:5px;transition:all .15px;}
+.cal-cell{background:var(--surface);border:1.5px solid var(--border);border-radius:8px;min-height:74px;padding:5px;transition:all .15px;display:flex;flex-direction:column;min-width:0;overflow:hidden;}
 .cal-cell.today{border-color:var(--accent);background:var(--accent-bg);}
 .cal-cell.other{opacity:.45;}
-.cal-d{font-size:12px;font-weight:700;color:var(--text2);margin-bottom:3px;}
+.cal-d{font-size:12px;font-weight:700;color:var(--text2);margin-bottom:3px;flex-shrink:0;}
 .cal-cell.today .cal-d{color:var(--accent);}
-.cal-dot{font-size:9px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding:1px 4px;border-radius:3px;margin-bottom:2px;line-height:1.45;}
+.cal-dots-wrap{overflow-y:auto;max-height:120px;display:flex;flex-direction:column;gap:1px;}
+.cal-dots-wrap::-webkit-scrollbar{width:3px;}
+.cal-dots-wrap::-webkit-scrollbar-thumb{background:var(--border2);border-radius:2px;}
+.cal-dot{font-size:9px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding:2px 4px;border-radius:3px;line-height:1.5;min-height:1.5em;box-sizing:content-box;cursor:pointer;}
+.cal-dot:hover{filter:brightness(.88);}
 .dot-s{background:var(--accent-bg);color:var(--accent);}
 .dot-e{background:var(--red-bg);color:var(--red);}
 .dot-a{background:var(--green-bg);color:var(--green);}
@@ -343,6 +347,7 @@ main{padding:20px;max-width:960px;margin:0 auto;}
   .sc-num{font-size:40px;}
   .cal-grid{gap:2px;}
   .cal-cell{min-height:54px;}
+  .cal-dots-wrap{max-height:80px;}
   .store-banner{flex-direction:column;align-items:flex-start;}
 }
 </style>
@@ -776,6 +781,19 @@ function completionInfo(t) {
     return { done: doneList.length, total: assigned.length, incomplete: incList, complete: doneList };
   }
   return null;
+}
+
+// 全担当者（店舗・メンバー）が完了しているか（カレンダー非表示判定用）
+function isAllDone(t) {
+  const cs = t.completedStores || {};
+  if (t.type === 'sc') {
+    const assigned = (t.assignees || []).filter(a => SCS.includes(a));
+    if (assigned.length === 0) return !!t.done;
+    return assigned.every(m => !!cs[m]);
+  }
+  const assigned = (t.assignees || []).filter(a => STORES.includes(a));
+  if (assigned.length === 0) return !!t.done;
+  return assigned.every(s => !!cs[s]);
 }
 
 function tStatus(t) {
@@ -1269,15 +1287,21 @@ function renderCal() {
   for (let d = 1; d <= last; d++) {
     const ds = `${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
     const isT = ds === td;
+    const calDone  = t => isMgr ? isAllDone(t) : isTaskDone(t);
     const myFilter = t => !currentStore || (t.assignees || []).includes(currentStore);
-    const starts = tasks.filter(t => dateOf(t.startDate) === ds && !isTaskDone(t) && myFilter(t));
-    const ends   = tasks.filter(t => dateOf(t.endDate)   === ds && !isTaskDone(t) && myFilter(t));
-    const acts   = tasks.filter(t => t.startDate && dateOf(t.startDate) < ds && dateOf(t.endDate) > ds && !isTaskDone(t) && myFilter(t));
+    const starts = tasks.filter(t => dateOf(t.startDate) === ds && !calDone(t) && myFilter(t));
+    const ends   = tasks.filter(t => dateOf(t.endDate)   === ds && !calDone(t) && myFilter(t));
+    const acts   = tasks.filter(t => t.startDate && dateOf(t.startDate) < ds && dateOf(t.endDate) > ds && !calDone(t) && myFilter(t));
+    const mkTip  = t => {
+      const assignees = (t.assignees || []).join('、') || '全員';
+      const start = t.startDate ? fmtDate(t.startDate) + ' → ' : '';
+      return `${t.title}\n担当：${assignees}\n期間：${start}${fmtDate(t.endDate)}\n優先度：${t.priority || '-'}　緊急度：${t.urgency || '-'}${t.note ? '\nメモ：' + t.note : ''}`;
+    };
     let dots = '';
-    starts.slice(0,2).forEach(t => dots += `<div class="cal-dot dot-s">▶ ${t.title.slice(0,9)}</div>`);
-    ends.slice(0,2).forEach(t => dots += `<div class="cal-dot dot-e">🏁 ${t.title.slice(0,9)}</div>`);
-    acts.slice(0,1).forEach(t => dots += `<div class="cal-dot dot-a">… ${t.title.slice(0,9)}</div>`);
-    html += `<div class="cal-cell${isT ? ' today' : ''}"><div class="cal-d">${d}</div>${dots}</div>`;
+    starts.forEach(t => dots += `<div class="cal-dot dot-s" title="${mkTip(t).replace(/"/g,'&quot;')}">▶ ${t.title}</div>`);
+    ends.forEach(t   => dots += `<div class="cal-dot dot-e" title="${mkTip(t).replace(/"/g,'&quot;')}">🏁 ${t.title}</div>`);
+    acts.forEach(t   => dots += `<div class="cal-dot dot-a" title="${mkTip(t).replace(/"/g,'&quot;')}">… ${t.title}</div>`);
+    html += `<div class="cal-cell${isT ? ' today' : ''}"><div class="cal-d">${d}</div><div class="cal-dots-wrap">${dots}</div></div>`;
   }
   const rem = (7 - (first + last) % 7) % 7;
   for (let d = 1; d <= rem; d++) html += `<div class="cal-cell other"><div class="cal-d">${d}</div></div>`;
