@@ -135,8 +135,10 @@ canvas{display:block}
 .vc-chart-lbl{font-size:8px;color:#94a3b8;text-align:center;font-weight:600;margin-bottom:1px}
 .tbl-toggle-row{cursor:pointer;display:flex;align-items:center;justify-content:space-between}
 .tgl-arrow{font-size:11px;color:#94a3b8;transition:transform .2s}
-.oc-wrap{background:#fff;border-radius:12px;padding:12px;box-shadow:0 2px 8px rgba(0,0,0,.06);margin-bottom:8px;overflow:hidden}
-.oc-lbl{font-size:11px;font-weight:700;color:#475569;margin-bottom:4px}
+.oc-scroll{display:flex;gap:8px;overflow-x:auto;margin-bottom:8px;-webkit-overflow-scrolling:touch;padding-bottom:4px}
+.oc-scroll::-webkit-scrollbar{height:4px}.oc-scroll::-webkit-scrollbar-thumb{background:#e2e8f0;border-radius:2px}
+.oc-wrap{min-width:240px;flex-shrink:0;background:#fff;border-radius:12px;padding:10px;box-shadow:0 2px 8px rgba(0,0,0,.06);overflow:hidden}
+.oc-lbl{font-size:10px;font-weight:700;color:#475569;margin-bottom:4px}
 </style>
 </head>
 <body>
@@ -164,17 +166,19 @@ canvas{display:block}
 
     <!-- ② 全体推移グラフ（2〜5月） -->
     <div class="sec-ttl">📈 全体推移（2〜5月）</div>
-    <div class="oc-wrap">
-      <div class="oc-lbl">販売数/日 平均推移（個）</div>
-      <canvas id="cOrgS"></canvas>
-    </div>
-    <div class="oc-wrap">
-      <div class="oc-lbl">売上高/日 平均推移（万円）</div>
-      <canvas id="cOrgH"></canvas>
-    </div>
-    <div class="oc-wrap">
-      <div class="oc-lbl">前年比 平均推移（赤点線＝100%）</div>
-      <canvas id="cOrgY"></canvas>
+    <div class="oc-scroll">
+      <div class="oc-wrap">
+        <div class="oc-lbl">販売数/日 平均推移（個）</div>
+        <canvas id="cOrgS"></canvas>
+      </div>
+      <div class="oc-wrap">
+        <div class="oc-lbl">売上高/日 平均推移（万円）</div>
+        <canvas id="cOrgH"></canvas>
+      </div>
+      <div class="oc-wrap">
+        <div class="oc-lbl">前年比 平均推移（赤点線＝100%）</div>
+        <canvas id="cOrgY"></canvas>
+      </div>
     </div>
 
     <!-- ③ 店舗別推移カード -->
@@ -490,7 +494,7 @@ function drawOverallCharts(){
 
   function mkLineOpt(suffix,ref100){
     return {
-      responsive:true,maintainAspectRatio:true,aspectRatio:2.8,
+      responsive:true,maintainAspectRatio:true,aspectRatio:1.8,
       plugins:{
         legend:{display:true,labels:{font:{size:10},padding:6,usePointStyle:true}},
         tooltip:{mode:'index',intersect:false,callbacks:{label:function(c){return c.dataset.label+': '+(c.raw!=null?c.raw.toFixed(1):'-')+(suffix||'');}}}
