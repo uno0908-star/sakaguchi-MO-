@@ -349,7 +349,38 @@ main{padding:20px;max-width:960px;margin:0 auto;}
   .cal-cell{min-height:54px;}
   .cal-dots-wrap{max-height:80px;}
   .store-banner{flex-direction:column;align-items:flex-start;}
+  .alert-chips{gap:5px;}
+  .alert-chip{font-size:11px;padding:4px 9px;}
 }
+
+/* ── 未完了状況ビュー ── */
+.alert-date-header{font-size:12px;color:var(--text3);font-weight:600;letter-spacing:.08em;text-transform:uppercase;margin-bottom:14px;padding-bottom:8px;border-bottom:1.5px solid var(--border);}
+.alert-card{background:var(--surface);border:1.5px solid var(--border);border-radius:var(--r);padding:16px 18px;margin-bottom:14px;box-shadow:var(--sh0);}
+.alert-card.st-overdue{border-left:4px solid var(--red);}
+.alert-card.st-today{border-left:4px solid var(--red);}
+.alert-card.st-soon{border-left:4px solid var(--orange);}
+.alert-card.st-active{border-left:4px solid var(--accent);}
+.alert-card-title{font-size:15px;font-weight:700;color:var(--text);margin-bottom:6px;}
+.alert-card-meta{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:12px;}
+.alert-badge{font-size:11px;font-weight:700;padding:3px 9px;border-radius:20px;}
+.alert-badge.overdue,.alert-badge.today{background:var(--red-bg);color:var(--red);border:1px solid var(--red-bd);}
+.alert-badge.soon{background:var(--orange-bg);color:var(--orange);border:1px solid var(--orange-bd);}
+.alert-badge.active{background:var(--accent-bg);color:var(--accent);border:1px solid var(--accent-bd);}
+.alert-deadline{font-size:12px;color:var(--text2);}
+.alert-progress{font-size:12px;font-weight:600;}
+.alert-progress.all-done{color:var(--green);}
+.alert-progress.none-done{color:var(--red);}
+.alert-section{margin-top:10px;}
+.alert-section-label{font-size:11px;font-weight:700;color:var(--text3);margin-bottom:6px;letter-spacing:.05em;}
+.alert-chips{display:flex;flex-wrap:wrap;gap:6px;}
+.alert-chip{font-size:12px;font-weight:500;padding:4px 11px;border-radius:20px;white-space:nowrap;}
+.alert-chip.todo{background:var(--red-bg);color:var(--red);border:1px solid var(--red-bd);}
+.alert-chip.done{background:var(--green-bg);color:var(--green);border:1px solid var(--green-bd);}
+.alert-copy-btn{margin-top:12px;padding:7px 14px;font-size:12px;font-weight:600;border:1.5px solid var(--border2);background:var(--surface2);color:var(--text2);border-radius:var(--rs);cursor:pointer;font-family:inherit;transition:all .18s;}
+.alert-copy-btn:hover{background:var(--bg2);color:var(--text);}
+.alert-empty{text-align:center;padding:60px 20px;color:var(--text3);}
+.alert-empty-ico{font-size:48px;margin-bottom:12px;}
+.alert-empty-msg{font-size:15px;font-weight:500;}
 </style>
 </head>
 <body>
@@ -500,6 +531,7 @@ main{padding:20px;max-width:960px;margin:0 auto;}
   <div class="tab" onclick="sv('sc',this)">👔 SC/ASC別 <span class="bdg" id="b-sc">0</span></div>
   <div class="tab" onclick="sv('cal',this)">📅 カレンダー</div>
   <div class="tab" onclick="sv('add',this)">➕ タスク登録</div>
+  <div class="tab" onclick="sv('alert',this)">📊 未完了状況 <span class="bdg" id="b-alert">0</span></div>
 </div>
 
 <main>
@@ -651,6 +683,11 @@ main{padding:20px;max-width:960px;margin:0 auto;}
     <div class="locktitle">タスク作成者または管理者ログインが必要です</div>
     <div style="font-size:13px">右上の 🔑 ボタンからログインしてください</div>
   </div>
+</div>
+
+<!-- ALERT VIEW -->
+<div class="view" id="view-alert">
+  <div id="alert-content"></div>
 </div>
 
 </main>
@@ -1102,6 +1139,8 @@ function render() {
   setBdg('b-all',   cntOpen(tasks));
   setBdg('b-store', cntOpen(tasks, 'store'));
   setBdg('b-sc',    cntOpen(tasks, 'sc'));
+  const alertUrgent = tasks.filter(t => !t.recurrenceTemplate && !isAllDone(t) && ['overdue','today'].includes(tStatus(t))).length;
+  setBdg('b-alert', alertUrgent);
 
   let f = [...tasks];
   if (curF === 'open')    f = tasks.filter(t => ['overdue','today','soon','active'].includes(tStatus(t)));
@@ -1581,7 +1620,101 @@ function sv(v, el) {
   document.querySelectorAll('.tab').forEach(x => x.classList.remove('active'));
   document.getElementById('view-' + v).classList.add('active'); el.classList.add('active');
   if (v === 'cal' && calY === undefined) { const n = new Date(); calY = n.getFullYear(); calM = n.getMonth(); }
+  if (v === 'alert') renderAlertView();
   render();
+}
+
+// ── 未完了状況ビュー ──
+function renderAlertView() {
+  const stLabels = { overdue:'🚨 期限超過', today:'🔴 今日まで', soon:'🟡 もうすぐ', active:'🔵 進行中' };
+  const statuses  = ['overdue','today','soon','active'];
+
+  const storeTasks = tasks
+    .filter(t => !t.recurrenceTemplate && t.type === 'store' && !isAllDone(t) && (t.assignees||[]).length > 0)
+    .filter(t => statuses.includes(tStatus(t)))
+    .sort(sortT);
+
+  const scTasks = tasks
+    .filter(t => !t.recurrenceTemplate && t.type === 'sc' && !isAllDone(t) && (t.assignees||[]).length > 0)
+    .filter(t => statuses.includes(tStatus(t)))
+    .sort(sortT);
+
+  const urgentCnt = [...storeTasks, ...scTasks].filter(t => ['overdue','today'].includes(tStatus(t))).length;
+  setBdg('b-alert', urgentCnt);
+
+  if (!storeTasks.length && !scTasks.length) {
+    document.getElementById('alert-content').innerHTML =
+      '<div class="alert-empty"><div class="alert-empty-ico">✅</div><div class="alert-empty-msg">未完了タスクはありません</div></div>';
+    return;
+  }
+
+  function makeCards(taskList, isStore) {
+    return taskList.map(t => {
+      const st = tStatus(t);
+      const members = isStore
+        ? (t.assignees||[]).filter(a => STORES.includes(a))
+        : (t.assignees||[]).filter(a => SCS.includes(a));
+      const cs = t.completedStores || {};
+      const doneList = members.filter(m => cs[m]);
+      const todoList = members.filter(m => !cs[m]);
+      const progressCls = todoList.length === 0 ? 'all-done' : doneList.length === 0 ? 'none-done' : '';
+      const deadline = t.endDate ? t.endDate.slice(0,10).replace(/-/g,'/') : '-';
+      const unit = isStore ? '店舗' : '名';
+      return `<div class="alert-card st-${st}">
+        <div class="alert-card-title">${t.title}</div>
+        <div class="alert-card-meta">
+          <span class="alert-badge ${st}">${stLabels[st]||''}</span>
+          <span class="alert-deadline">📅 期限：${deadline}</span>
+          <span class="alert-progress ${progressCls}">✅ ${doneList.length} / ${members.length} ${unit}完了</span>
+        </div>
+        ${todoList.length > 0 ? `<div class="alert-section">
+          <div class="alert-section-label">❌ 未完了（${todoList.length}${unit}）</div>
+          <div class="alert-chips">${todoList.map(m => `<span class="alert-chip todo">${m}</span>`).join('')}</div>
+        </div>` : ''}
+        ${doneList.length > 0 ? `<div class="alert-section">
+          <div class="alert-section-label">✅ 完了済み（${doneList.length}${unit}）</div>
+          <div class="alert-chips">${doneList.map(m => `<span class="alert-chip done">${m}</span>`).join('')}</div>
+        </div>` : ''}
+        <button class="alert-copy-btn" onclick="copyAlertTask('${t.id.replace(/'/g,"\\'")}')">📋 このタスクをコピー</button>
+      </div>`;
+    }).join('');
+  }
+
+  let html = `<div class="alert-date-header">📊 未完了状況一覧　${today()} 時点</div>`;
+  if (storeTasks.length) {
+    html += `<div class="alert-date-header" style="margin-top:18px">🏪 店舗タスク（${storeTasks.length}件）</div>`;
+    html += makeCards(storeTasks, true);
+  }
+  if (scTasks.length) {
+    html += `<div class="alert-date-header" style="margin-top:18px">👔 SC/ASCタスク（${scTasks.length}件）</div>`;
+    html += makeCards(scTasks, false);
+  }
+
+  document.getElementById('alert-content').innerHTML = html;
+}
+
+function copyAlertTask(id) {
+  const t = tasks.find(x => x.id === id);
+  if (!t) return;
+  const isStore = t.type === 'store';
+  const members = isStore
+    ? (t.assignees||[]).filter(a => STORES.includes(a))
+    : (t.assignees||[]).filter(a => SCS.includes(a));
+  const cs = t.completedStores || {};
+  const doneList = members.filter(m => cs[m]);
+  const todoList = members.filter(m => !cs[m]);
+  const unit = isStore ? '店舗' : '名';
+  const deadline = t.endDate ? t.endDate.slice(0,10).replace(/-/g,'/') : '-';
+  const st = tStatus(t);
+  const stLabel = { overdue:'🚨 期限超過', today:'🔴 今日まで', soon:'🟡 もうすぐ', active:'🔵 進行中' }[st] || '';
+  let txt = `【阪口商店 タスク確認】\n`;
+  txt += `${stLabel}　${t.title}\n`;
+  txt += `期限：${deadline}\n`;
+  txt += `━━━━━━━━━━━━━━\n`;
+  txt += `✅ 完了：${doneList.length}${unit} / 未完了：${todoList.length}${unit}\n`;
+  if (todoList.length > 0) txt += `\n❌ 未完了\n${todoList.join('、')}\n`;
+  txt += `\n早めに対応をお願いします🙏`;
+  navigator.clipboard.writeText(txt).then(() => toast('✅ コピーしました。LINEに貼り付けてください'));
 }
 
 // ── LINE共有 ──
