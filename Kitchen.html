@@ -79,7 +79,7 @@ body{font-family:"Hiragino Sans","Meiryo",sans-serif;background:#f0f4f8;color:#1
 .cw{background:#fff;border-radius:12px;padding:12px;box-shadow:0 2px 8px rgba(0,0,0,.06);overflow-x:auto}
 .clbl{font-size:11px;font-weight:700;color:#475569;margin-bottom:4px}
 .chint{font-size:10px;color:#94a3b8;margin-bottom:8px}
-canvas{display:block}
+canvas{display:block;max-width:100%}
 /* 店舗セレクト */
 .store-sel{width:100%;padding:12px 14px;font-size:15px;font-weight:700;border:2px solid #2563eb;border-radius:12px;background:#fff;color:#1e2a3a;display:block}
 /* 時間帯ロスピル */
@@ -269,11 +269,11 @@ canvas{display:block}
       <div class="loss-row" id="sLoss"></div>
       <div class="cw" style="margin-top:8px">
         <div class="clbl">弁当：需要 vs 作った数（赤 ＝ 作れていない）</div>
-        <canvas id="sCB" width="700" height="210"></canvas>
+        <canvas id="sCB" height="210"></canvas>
       </div>
       <div class="cw" style="margin-top:8px">
         <div class="clbl">調理パン：需要 vs 作った数（赤 ＝ 作れていない）</div>
-        <canvas id="sCP" width="700" height="210"></canvas>
+        <canvas id="sCP" height="210"></canvas>
       </div>
     </div>
 
@@ -283,7 +283,7 @@ canvas{display:block}
       <div class="cw">
         <div class="clbl">この店舗の単品マトリクス</div>
         <div class="chint">横：販売数（週平均/日）｜縦：廃棄率｜縦線15% ＝ 廃棄目標</div>
-        <canvas id="sCM" width="700" height="300"></canvas>
+        <canvas id="sCM" height="300"></canvas>
         <div class="quad-grid" style="margin-top:10px">
           <div class="qc q1"><div class="qt">① 作成増のチャンス</div><div class="qi">売れてる × 廃棄低い<br>→ 積極的に作成数UP</div></div>
           <div class="qc q2"><div class="qt">② 廃棄優秀・販売伸ばしたい</div><div class="qi">まだ少ない × 廃棄低い<br>→ 認知・陳列を強化</div></div>
@@ -799,7 +799,10 @@ var selectedDay=3; // default: 金曜
 
 function resetCanvas(id,w,h){
   var old=document.getElementById(id),nc=document.createElement('canvas');
-  nc.id=id;nc.width=w;nc.height=h;old.parentNode.replaceChild(nc,old);return nc;
+  var cw=old.parentNode.clientWidth||w;
+  var rw=Math.min(w,cw);
+  var rh=Math.round(h*rw/w);
+  nc.id=id;nc.width=rw;nc.height=rh;old.parentNode.replaceChild(nc,old);return nc;
 }
 
 function US(){
