@@ -560,7 +560,7 @@ function deduplicateSubmissions(data){
       }
     });
 
-    finalDates.sort((a,b)=>a.date.localeCompare(b.date));
+    finalDates.sort((a,b)=>ds2d(a.date).getTime()-ds2d(b.date).getTime());
     result.push({
       ...latest,
       _allIds:sorted.map(s=>s.id),
@@ -1066,7 +1066,7 @@ function _renderAdminWithData(data,fs,fo,sortMode,fw){
     const card=document.createElement('div');card.className='submission-card';
 
     // 日付行（確定ボタン・確定バッジ付き）週フィルター適用
-    const displayDates=fw?(s.dates||[]).filter(dt=>isInWeek(dt.date,fw)):(s.dates||[]);
+    const displayDates=(fw?(s.dates||[]).filter(dt=>isInWeek(dt.date,fw)):(s.dates||[])).slice().sort((a,b)=>ds2d(a.date).getTime()-ds2d(b.date).getTime());
     const dateRows=displayDates.map(dt=>{
       const d=ds2d(dt.date);
       if(isNaN(d.getTime())){
