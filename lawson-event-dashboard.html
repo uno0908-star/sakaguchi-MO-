@@ -1,0 +1,1023 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>26年5月 FF＋厨房 イベントダッシュボード</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+:root {
+  --bg: #ffffff;
+  --bg2: #f8fafc;
+  --card: rgba(0,0,0,0.03);
+  --card-border: rgba(0,0,0,0.10);
+  --text: #1e293b;
+  --sub: #64748b;
+  --gold: #d97706;
+  --blue: #2563eb;
+  --green: #059669;
+  --yellow: #ca8a04;
+  --orange: #f97316;
+  --red: #ef4444;
+  --lawson: #004aad;
+  --lawson2: #0062cc;
+  --radius: 16px;
+  --radius-sm: 10px;
+}
+* { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+html { scroll-behavior:smooth; }
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Noto Sans JP', 'Hiragino Sans', system-ui, sans-serif;
+  font-size: 14px;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+/* ── HEADER ── */
+.header {
+  background: linear-gradient(135deg, #001a4d 0%, #003399 50%, #0d1b3e 100%);
+  padding: 20px 16px 16px;
+  position: sticky; top: 0; z-index: 100;
+  border-bottom: 1px solid rgba(0,100,255,0.3);
+  box-shadow: 0 4px 30px rgba(0,0,0,0.5);
+}
+.header-top { display:flex; align-items:center; justify-content:space-between; }
+.header-logo { display:flex; align-items:center; gap:10px; }
+.logo-badge {
+  background: #e60012; color:#fff; font-weight:900; font-size:13px;
+  padding: 4px 10px; border-radius:6px; letter-spacing:1px;
+}
+.header-title { font-size:16px; font-weight:700; letter-spacing:0.5px; color:#ffffff; }
+.header-subtitle { font-size:11px; color:rgba(255,255,255,0.6); margin-top:2px; }
+.countdown-badge {
+  background: rgba(255,255,255,0.12); border:1px solid rgba(255,255,255,0.2);
+  border-radius:20px; padding:4px 12px; text-align:center;
+}
+.countdown-num { font-size:22px; font-weight:900; color: var(--gold); line-height:1; }
+.countdown-label { font-size:9px; color:rgba(255,255,255,0.6); }
+.header-meta {
+  display:flex; align-items:center; justify-content:space-between;
+  margin-top:12px; padding-top:10px;
+  border-top:1px solid rgba(255,255,255,0.1);
+}
+.header-date { font-size:11px; color:rgba(255,255,255,0.5); }
+.event-period { font-size:11px; color:rgba(255,255,255,0.7); font-weight:500; }
+/* ── MAIN SCROLL ── */
+.main { padding: 0 12px 80px; max-width: 600px; margin: 0 auto; }
+/* ── SECTION ── */
+.section { margin-top: 20px; }
+.section-title {
+  font-size:12px; font-weight:700; color:var(--sub); letter-spacing:2px;
+  text-transform:uppercase; margin-bottom:10px;
+  display:flex; align-items:center; gap:8px;
+}
+.section-title::before { content:''; display:block; width:3px; height:14px; background:var(--lawson2); border-radius:2px; }
+/* ── CARDS ── */
+.card {
+  background: var(--card);
+  border: 1px solid var(--card-border);
+  border-radius: var(--radius);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+/* ── SUMMARY ── */
+.summary-card {
+  background: linear-gradient(135deg, rgba(0,74,173,0.07) 0%, rgba(10,20,60,0.06) 100%);
+  border: 1px solid rgba(0,100,255,0.18);
+  border-radius: var(--radius);
+  padding: 20px 16px;
+  margin-top: 16px;
+  position: relative;
+  overflow: hidden;
+}
+.summary-card::before {
+  content:''; position:absolute; top:-40px; right:-40px;
+  width:150px; height:150px; border-radius:50%;
+  background: radial-gradient(circle, rgba(0,100,255,0.2) 0%, transparent 70%);
+}
+.summary-org { font-size:11px; color:var(--sub); letter-spacing:1px; font-weight:500; }
+.summary-title { font-size:17px; font-weight:700; margin-top:3px; }
+.summary-eval {
+  display:inline-flex; align-items:center; gap:6px;
+  background: rgba(245,158,11,0.2); border:1px solid rgba(245,158,11,0.4);
+  border-radius:20px; padding:3px 12px; margin-top:8px;
+}
+.summary-eval-icon { font-size:16px; }
+.summary-eval-text { font-size:12px; font-weight:700; color:var(--yellow); }
+.summary-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:14px; }
+.summary-metric { }
+.sm-label { font-size:10px; color:var(--sub); margin-bottom:3px; }
+.sm-value { font-size:26px; font-weight:900; line-height:1; }
+.sm-value.green { color: var(--green); }
+.sm-value.yellow { color: var(--yellow); }
+.sm-value.red { color: var(--red); }
+.sm-value.gold { color: var(--gold); }
+.sm-sub { font-size:10px; color:var(--sub); margin-top:2px; }
+.summary-bar-wrap { margin-top:14px; }
+.summary-bar-label {
+  display:flex; justify-content:space-between; align-items:center;
+  font-size:10px; color:var(--sub); margin-bottom:5px;
+}
+.progress-track { background:rgba(0,0,0,0.10); border-radius:999px; height:8px; overflow:hidden; }
+.progress-fill {
+  height:100%; border-radius:999px;
+  background: linear-gradient(90deg, var(--lawson2), var(--gold));
+  transition: width 1s ease;
+  position:relative;
+}
+.progress-fill::after {
+  content:''; position:absolute; right:0; top:-2px;
+  width:12px; height:12px; border-radius:50%;
+  background:var(--gold); box-shadow:0 0 8px var(--gold);
+}
+.target-marker { position:relative; margin-top:-4px; }
+.target-line {
+  position:absolute; width:2px; height:16px; background:rgba(0,0,0,0.3);
+  top:-12px; transform:translateX(-50%);
+}
+.target-label { font-size:9px; color:rgba(0,0,0,0.5); position:absolute; top:4px; transform:translateX(-50%); white-space:nowrap; }
+/* ── QUICK STATS ── */
+.quick-stats { display:grid; grid-template-columns:repeat(4,1fr); gap:8px; margin-top:14px; }
+.qs-card {
+  border-radius:var(--radius-sm);
+  padding: 10px 6px;
+  text-align:center;
+  border: 1px solid;
+}
+.qs-card.gold { background:rgba(251,191,36,0.12); border-color:rgba(251,191,36,0.3); }
+.qs-card.green { background:rgba(16,185,129,0.12); border-color:rgba(16,185,129,0.3); }
+.qs-card.yellow { background:rgba(245,158,11,0.12); border-color:rgba(245,158,11,0.3); }
+.qs-card.red { background:rgba(239,68,68,0.12); border-color:rgba(239,68,68,0.3); }
+.qs-num { font-size:28px; font-weight:900; line-height:1; }
+.qs-card.gold .qs-num { color:var(--gold); }
+.qs-card.green .qs-num { color:var(--green); }
+.qs-card.yellow .qs-num { color:var(--yellow); }
+.qs-card.red .qs-num { color:var(--red); }
+.qs-label { font-size:9px; color:var(--sub); margin-top:3px; line-height:1.3; }
+/* ── DONUT CHART ── */
+.donut-section { margin-top:20px; }
+.donut-wrap {
+  background: var(--card); border:1px solid var(--card-border);
+  border-radius:var(--radius); padding:16px;
+}
+.donut-inner { display:flex; align-items:center; gap:16px; }
+.donut-canvas-wrap { position:relative; width:130px; height:130px; flex-shrink:0; }
+.donut-center {
+  position:absolute; top:50%; left:50%; transform:translate(-50%,-50%);
+  text-align:center;
+}
+.donut-pct { font-size:22px; font-weight:900; color:var(--text); }
+.donut-pct-label { font-size:9px; color:var(--sub); }
+.donut-legend { flex:1; }
+.legend-item { display:flex; align-items:center; gap:8px; margin-bottom:8px; }
+.legend-dot { width:10px; height:10px; border-radius:50%; flex-shrink:0; }
+.legend-text { font-size:11px; flex:1; }
+.legend-count { font-size:13px; font-weight:700; }
+/* ── FILTERS ── */
+.filter-wrap { margin-top:20px; overflow-x:auto; -webkit-overflow-scrolling:touch; }
+.filter-scroll { display:flex; gap:8px; padding-bottom:4px; }
+.filter-btn {
+  border: 1px solid var(--card-border);
+  background: var(--card);
+  color: var(--sub);
+  border-radius: 999px;
+  padding: 7px 14px;
+  font-size: 12px;
+  font-weight: 500;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-family: inherit;
+}
+.filter-btn.active {
+  background: var(--lawson2);
+  border-color: var(--lawson2);
+  color: white;
+  font-weight: 700;
+}
+/* ── STORE CARDS ── */
+.stores-list { display:flex; flex-direction:column; gap:10px; margin-top:12px; }
+.store-card {
+  background: var(--card);
+  border: 1px solid var(--card-border);
+  border-radius: var(--radius);
+  padding: 14px 14px;
+  transition: all 0.2s;
+  position: relative;
+  overflow: hidden;
+}
+.store-card.danger { border-color: rgba(239,68,68,0.4); background: rgba(239,68,68,0.05); }
+.store-card.excellent { border-color: rgba(251,191,36,0.3); background: rgba(251,191,36,0.04); }
+.store-card.great { border-color: rgba(59,130,246,0.3); background: rgba(59,130,246,0.04); }
+.store-card.achieve { border-color: rgba(16,185,129,0.3); background: rgba(16,185,129,0.04); }
+.store-rank-badge {
+  position:absolute; top:10px; right:12px;
+  font-size:11px; color:var(--sub); font-weight:700;
+}
+.store-top { display:flex; align-items:flex-start; gap:10px; }
+.store-rank-num {
+  font-size:20px; font-weight:900; width:30px; text-align:center;
+  flex-shrink:0; margin-top:2px;
+}
+.rank-1 { color:var(--gold); }
+.rank-2 { color:#6b7280; }
+.rank-3 { color:#92400e; }
+.rank-n { color:var(--sub); }
+.store-info { flex:1; min-width:0; }
+.store-name { font-size:14px; font-weight:700; }
+.store-badges { display:flex; gap:5px; margin-top:5px; flex-wrap:wrap; }
+.badge {
+  font-size:9px; padding:2px 7px; border-radius:999px; font-weight:700; letter-spacing:0.5px;
+}
+.badge.chef { background:rgba(37,99,235,0.12); color:#1d4ed8; border:1px solid rgba(37,99,235,0.3); }
+.badge.no-chef { background:rgba(100,116,139,0.12); color:#475569; border:1px solid rgba(100,116,139,0.25); }
+.badge.new-chef { background:rgba(5,150,105,0.12); color:#047857; border:1px solid rgba(5,150,105,0.3); }
+.badge.danger-badge { background:rgba(220,38,38,0.12); color:#dc2626; border:1px solid rgba(220,38,38,0.3); }
+.store-eval { text-align:right; flex-shrink:0; }
+.eval-grade { font-size:20px; font-weight:900; }
+.eval-label { font-size:10px; color:var(--sub); margin-top:1px; }
+.store-metrics { margin-top:12px; display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+.metric-block { }
+.metric-label { font-size:9px; color:var(--sub); margin-bottom:3px; }
+.metric-row { display:flex; align-items:center; gap:6px; }
+.metric-value { font-size:18px; font-weight:900; line-height:1; }
+.metric-value.green { color:var(--green); }
+.metric-value.yellow { color:var(--yellow); }
+.metric-value.orange { color:var(--orange); }
+.metric-value.red { color:var(--red); }
+.metric-value.gold { color:var(--gold); }
+.metric-value.blue { color:var(--blue); }
+.metric-value.gray { color:var(--sub); }
+.metric-trend { font-size:10px; font-weight:700; }
+.trend-up { color:var(--green); }
+.trend-down { color:var(--red); }
+.trend-flat { color:var(--sub); }
+.metric-bar-wrap { margin-top:5px; }
+.metric-bar-track { background:rgba(0,0,0,0.08); border-radius:999px; height:4px; overflow:hidden; }
+.metric-bar-fill { height:100%; border-radius:999px; transition: width 0.8s ease; }
+.metric-bar-fill.green { background:var(--green); }
+.metric-bar-fill.yellow { background:var(--yellow); }
+.metric-bar-fill.orange { background:var(--orange); }
+.metric-bar-fill.red { background:var(--red); }
+.metric-bar-fill.gold { background:var(--gold); }
+.metric-bar-fill.blue { background:var(--blue); }
+.chef-divider { grid-column:1/-1; border-top:1px solid rgba(0,0,0,0.08); padding-top:8px; margin-top:2px; }
+.chef-block { grid-column:1/-1; }
+.danger-alert {
+  grid-column:1/-1; margin-top:4px;
+  background:rgba(239,68,68,0.1); border:1px solid rgba(239,68,68,0.25);
+  border-radius:8px; padding:6px 10px;
+  font-size:10px; color:#dc2626;
+  display:flex; align-items:center; gap:6px;
+}
+/* ── CHART SECTIONS ── */
+.chart-card {
+  background:var(--card); border:1px solid var(--card-border);
+  border-radius:var(--radius); padding:16px; margin-top:14px;
+}
+.chart-title { font-size:12px; font-weight:700; color:var(--sub); margin-bottom:12px; display:flex; align-items:center; gap:6px; }
+.chart-wrap { position:relative; }
+/* ── HEATMAP ── */
+.heatmap-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:6px; margin-top:12px; }
+.hm-cell {
+  border-radius:10px; padding:8px 4px;
+  text-align:center; border:1px solid;
+  cursor:default;
+}
+.hm-cell.excellent { background:rgba(251,191,36,0.15); border-color:rgba(251,191,36,0.4); }
+.hm-cell.great { background:rgba(59,130,246,0.15); border-color:rgba(59,130,246,0.4); }
+.hm-cell.achieve { background:rgba(16,185,129,0.15); border-color:rgba(16,185,129,0.4); }
+.hm-cell.caution { background:rgba(245,158,11,0.15); border-color:rgba(245,158,11,0.4); }
+.hm-cell.danger { background:rgba(239,68,68,0.18); border-color:rgba(239,68,68,0.5); }
+.hm-name { font-size:8px; color:var(--sub); line-height:1.3; margin-bottom:3px; }
+.hm-rate { font-size:12px; font-weight:900; }
+.hm-cell.excellent .hm-rate { color:var(--gold); }
+.hm-cell.great .hm-rate { color:var(--blue); }
+.hm-cell.achieve .hm-rate { color:var(--green); }
+.hm-cell.caution .hm-rate { color:var(--yellow); }
+.hm-cell.danger .hm-rate { color:#dc2626; }
+/* ── LEGEND ── */
+.hm-legend { display:flex; gap:10px; flex-wrap:wrap; margin-top:10px; }
+.hm-legend-item { display:flex; align-items:center; gap:4px; font-size:9px; color:var(--sub); }
+.hm-legend-dot { width:8px; height:8px; border-radius:3px; }
+/* ── NOTE ── */
+.note-card {
+  background:rgba(0,74,173,0.12); border:1px solid rgba(0,100,255,0.2);
+  border-radius:var(--radius-sm); padding:12px 14px; margin-top:16px;
+}
+.note-title { font-size:11px; font-weight:700; color:#1d4ed8; margin-bottom:6px; }
+.note-text { font-size:11px; color:var(--sub); line-height:1.7; }
+/* ── FOOTER ── */
+.footer { text-align:center; padding:20px; font-size:10px; color:rgba(0,0,0,0.35); }
+/* ── HIDDEN ── */
+.hidden { display:none !important; }
+/* ── PULSE ANIMATION ── */
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.6} }
+.pulse { animation:pulse 2s infinite; }
+@keyframes fadeIn { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:none} }
+.fade-in { animation:fadeIn 0.3s ease; }
+</style>
+</head>
+<body>
+
+<!-- ═══ HEADER ═══ -->
+<div class="header">
+  <div class="header-top">
+    <div class="header-logo">
+      <div class="logo-badge">LAWSON</div>
+      <div>
+        <div class="header-title">FF＋厨房 イベント</div>
+        <div class="header-subtitle">阪口商店 5月度 荒利伸長競争</div>
+      </div>
+    </div>
+    <div class="countdown-badge">
+      <div class="countdown-num" id="daysLeft">18</div>
+      <div class="countdown-label">残り日数</div>
+    </div>
+  </div>
+  <div class="header-meta">
+    <div class="header-date">集計日: 2026年5月13日</div>
+    <div class="event-period">5月1日 〜 5月31日</div>
+  </div>
+</div>
+
+<!-- ═══ MAIN ═══ -->
+<div class="main">
+
+  <!-- ▶ MO SUMMARY -->
+  <div class="section">
+    <div class="section-title">組織全体サマリー</div>
+    <div class="summary-card">
+      <div class="summary-org">阪口清治 MO ／ 全店平均</div>
+      <div class="summary-title">FF荒利益高 3月対比</div>
+      <div class="summary-eval">
+        <span class="summary-eval-icon">⚠️</span>
+        <span class="summary-eval-text">現在評価：△ ギリギリ　目標まであと少し</span>
+      </div>
+      <div class="summary-grid">
+        <div class="summary-metric">
+          <div class="sm-label">FF荒利益高 3月対比</div>
+          <div class="sm-value yellow">99.1<span style="font-size:16px">%</span></div>
+          <div class="sm-sub">目標：100%以上</div>
+        </div>
+        <div class="summary-metric">
+          <div class="sm-label">厨房荒利益高 3月対比</div>
+          <div class="sm-value red">92.8<span style="font-size:16px">%</span></div>
+          <div class="sm-sub">参考指標（加点評価）</div>
+        </div>
+        <div class="summary-metric">
+          <div class="sm-label">達成店舗数</div>
+          <div class="sm-value green">8<span style="font-size:14px">/20</span></div>
+          <div class="sm-sub">100%以上達成</div>
+        </div>
+        <div class="summary-metric">
+          <div class="sm-label">危険店舗数</div>
+          <div class="sm-value red">6<span style="font-size:14px">店</span></div>
+          <div class="sm-sub">FF 95%未満</div>
+        </div>
+      </div>
+      <div class="summary-bar-wrap">
+        <div class="summary-bar-label">
+          <span>FF荒利益高 達成率ゲージ（3月対比）</span>
+          <span style="color:var(--yellow); font-weight:700">99.1%</span>
+        </div>
+        <div class="progress-track">
+          <div class="progress-fill" style="width:82%"></div>
+        </div>
+        <div class="target-marker">
+          <div class="target-line" style="left:83.3%"></div>
+          <div class="target-label" style="left:83.3%">目標100%</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- QUICK STATS -->
+    <div class="quick-stats">
+      <div class="qs-card gold">
+        <div class="qs-num">4</div>
+        <div class="qs-label">超優秀<br>105%以上</div>
+      </div>
+      <div class="qs-card green">
+        <div class="qs-num">4</div>
+        <div class="qs-label">達成<br>100-105%</div>
+      </div>
+      <div class="qs-card yellow">
+        <div class="qs-num">6</div>
+        <div class="qs-label">ギリギリ<br>95-100%</div>
+      </div>
+      <div class="qs-card red">
+        <div class="qs-num">6</div>
+        <div class="qs-label">危険<br>95%未満</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ▶ DONUT -->
+  <div class="section">
+    <div class="section-title">イベント達成状況</div>
+    <div class="donut-wrap">
+      <div class="donut-inner">
+        <div class="donut-canvas-wrap">
+          <canvas id="donutChart" width="130" height="130"></canvas>
+          <div class="donut-center">
+            <div class="donut-pct">40<span style="font-size:12px">%</span></div>
+            <div class="donut-pct-label">達成店率</div>
+          </div>
+        </div>
+        <div class="donut-legend">
+          <div class="legend-item">
+            <div class="legend-dot" style="background:var(--gold)"></div>
+            <div class="legend-text">超優秀（105%+）</div>
+            <div class="legend-count" style="color:var(--gold)">4</div>
+          </div>
+          <div class="legend-item">
+            <div class="legend-dot" style="background:var(--green)"></div>
+            <div class="legend-text">達成（100-105%）</div>
+            <div class="legend-count" style="color:var(--green)">4</div>
+          </div>
+          <div class="legend-item">
+            <div class="legend-dot" style="background:var(--yellow)"></div>
+            <div class="legend-text">ギリギリ（95-100%）</div>
+            <div class="legend-count" style="color:var(--yellow)">6</div>
+          </div>
+          <div class="legend-item">
+            <div class="legend-dot" style="background:var(--red)"></div>
+            <div class="legend-text">危険（95%未満）</div>
+            <div class="legend-count" style="color:var(--red)">6</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ▶ FILTERS -->
+  <div class="section">
+    <div class="section-title">店舗ランキング</div>
+    <div class="filter-wrap">
+      <div class="filter-scroll">
+        <button class="filter-btn active" onclick="setFilter('all',this)">全店</button>
+        <button class="filter-btn" onclick="setFilter('chef',this)">厨房あり</button>
+        <button class="filter-btn" onclick="setFilter('no-chef',this)">厨房なし</button>
+        <button class="filter-btn" onclick="setFilter('danger',this)">🔴 危険店舗</button>
+        <button class="filter-btn" onclick="setFilter('top5',this)">上位5店舗</button>
+        <button class="filter-btn" onclick="setFilter('bottom5',this)">下位5店舗</button>
+      </div>
+    </div>
+    <div class="stores-list" id="storesList"></div>
+  </div>
+
+  <!-- ▶ TREND CHART -->
+  <div class="section">
+    <div class="section-title">月次推移グラフ（FF荒利益高 PSA/D）</div>
+    <div class="chart-card">
+      <div class="chart-title">📈 3月→4月→5月 全店推移</div>
+      <div class="chart-wrap">
+        <canvas id="trendChart" height="220"></canvas>
+      </div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-title">🏆 上位3店 vs ⚠️ 下位3店 推移比較</div>
+      <div class="chart-wrap">
+        <canvas id="compareChart" height="220"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <!-- ▶ HEATMAP -->
+  <div class="section">
+    <div class="section-title">危険度ヒートマップ（FF伸長率）</div>
+    <div class="chart-card">
+      <div class="hm-legend">
+        <div class="hm-legend-item"><div class="hm-legend-dot" style="background:var(--gold)"></div>超優秀 105%+</div>
+        <div class="hm-legend-item"><div class="hm-legend-dot" style="background:var(--blue)"></div>達成 100-105%</div>
+        <div class="hm-legend-item"><div class="hm-legend-dot" style="background:var(--green)"></div>達成 100%</div>
+        <div class="hm-legend-item"><div class="hm-legend-dot" style="background:var(--yellow)"></div>ギリギリ</div>
+        <div class="hm-legend-item"><div class="hm-legend-dot" style="background:var(--red)"></div>危険</div>
+      </div>
+      <div class="heatmap-grid" id="heatmapGrid"></div>
+    </div>
+  </div>
+
+  <!-- ▶ BAR CHART -->
+  <div class="section">
+    <div class="section-title">全店舗ランキングバー</div>
+    <div class="chart-card">
+      <div class="chart-title">📊 FF荒利益高 3月対比 順位グラフ</div>
+      <div class="chart-wrap">
+        <canvas id="barChart" height="500"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <!-- ▶ CHEF ANALYSIS (厨房のみ) -->
+  <div class="section">
+    <div class="section-title">厨房導入店 加点評価（参考）</div>
+    <div class="chart-card">
+      <div class="chart-title">🍳 FF × 厨房 ダブル評価マトリクス</div>
+      <div class="chart-wrap">
+        <canvas id="scatterChart" height="260"></canvas>
+      </div>
+      <div style="font-size:10px; color:var(--sub); margin-top:10px; line-height:1.6;">
+        ※ 厨房評価はFFが基礎評価を満たした店舗への加点評価です。<br>
+        　 厨房非導入店はFF評価のみで公平に判定されます。
+      </div>
+    </div>
+  </div>
+
+  <!-- ▶ NOTE -->
+  <div class="note-card">
+    <div class="note-title">📋 評価設計ルール（公平性確保）</div>
+    <div class="note-text">
+      ✅ <strong>全店共通KPI</strong>：FF荒利益高 3月対比伸長率<br>
+      ➕ <strong>厨房店のみ加点</strong>：厨房荒利益高伸長を追加評価<br>
+      ⚠️ <strong>FFが未達の場合</strong>：厨房成績が良くても×寄りの評価<br>
+      🎯 <strong>ボーナス設計</strong>：厨房評価は「特別加点」として処理し、<br>
+      　　　　　　　　　非導入店との不公平感を排除<br>
+      📊 <strong>PSA/D</strong>：日割り荒利益高（月間日数差を自動補正）
+    </div>
+  </div>
+
+  <div class="footer">
+    阪口商店 ／ 2026年5月度 自社イベント ／ 集計：2026.05.13<br>
+    ※ 5月データは集計日時点の速報値（PSA/D = 日割荒利益高）
+  </div>
+</div>
+
+<script>
+// ══════════════════════════════════════════
+// DATA
+// ══════════════════════════════════════════
+const stores = [
+  { id:1,  name:'池田市役所前',      short:'池田市役所前',   hasChef:false, isNewChef:false,
+    ff:{ mar:12828.47, apr:12882.74, may:10218.19 }, chef:null },
+  { id:2,  name:'江坂駅南口',        short:'江坂駅南口',     hasChef:true,  isNewChef:false,
+    ff:{ mar:34825.47, apr:35778.31, may:34602.10 }, chef:{ mar:10241.56, apr:8736.11,  may:7746.70  } },
+  { id:3,  name:'江坂東',            short:'江坂東',         hasChef:true,  isNewChef:false,
+    ff:{ mar:23917.60, apr:22654.43, may:21458.43 }, chef:{ mar:8480.32,  apr:8793.08,  may:6908.99  } },
+  { id:4,  name:'五月ケ丘東',        short:'五月ケ丘東',     hasChef:true,  isNewChef:true,
+    ff:{ mar:10107.75, apr:10806.67, may:9755.93  }, chef:{ mar:158.51,   apr:331.48,   may:438.70   } },
+  { id:5,  name:'新御堂筋上新田',    short:'新御堂筋',       hasChef:true,  isNewChef:false,
+    ff:{ mar:24174.25, apr:27487.37, may:24755.33 }, chef:{ mar:5502.13,  apr:5842.82,  may:4636.83  } },
+  { id:6,  name:'吹田青山台三丁目',  short:'青山台三',       hasChef:true,  isNewChef:false,
+    ff:{ mar:25063.59, apr:24556.98, may:25317.95 }, chef:{ mar:7597.84,  apr:8877.74,  may:7244.58  } },
+  { id:7,  name:'吹田朝日町',        short:'吹田朝日町',     hasChef:true,  isNewChef:false,
+    ff:{ mar:24260.58, apr:26156.71, may:23877.08 }, chef:{ mar:7845.45,  apr:8742.67,  may:7603.20  } },
+  { id:8,  name:'吹田警察署前',      short:'警察署前',       hasChef:true,  isNewChef:false,
+    ff:{ mar:17411.37, apr:16399.64, may:15817.80 }, chef:{ mar:4699.36,  apr:4624.86,  may:3359.30  } },
+  { id:9,  name:'吹田垂水三丁目',    short:'垂水三丁目',     hasChef:false, isNewChef:false,
+    ff:{ mar:10891.56, apr:11203.59, may:9982.38  }, chef:null },
+  { id:10, name:'吹田豊津中学校前',  short:'豊津中学校前',   hasChef:true,  isNewChef:false,
+    ff:{ mar:20202.49, apr:20289.91, may:16469.72 }, chef:{ mar:8648.59,  apr:8911.77,  may:6111.04  } },
+  { id:11, name:'大道南一丁目',      short:'大道南一',       hasChef:true,  isNewChef:false,
+    ff:{ mar:18811.09, apr:17438.07, may:16998.66 }, chef:{ mar:3849.08,  apr:4353.96,  may:3934.91  } },
+  { id:12, name:'豊里六丁目',        short:'豊里六丁目',     hasChef:false, isNewChef:false,
+    ff:{ mar:9333.57,  apr:11193.68, may:9243.84  }, chef:null },
+  { id:13, name:'豊中利倉東一丁目',  short:'利倉東一',       hasChef:true,  isNewChef:false,
+    ff:{ mar:26702.87, apr:26527.73, may:25949.31 }, chef:{ mar:4866.15,  apr:5651.38,  may:4816.47  } },
+  { id:14, name:'豊中服部西町三丁目',short:'服部西町三',     hasChef:false, isNewChef:false,
+    ff:{ mar:14998.45, apr:16676.00, may:17906.49 }, chef:null },
+  { id:15, name:'豊中服部元町一丁目',short:'服部元町一',     hasChef:true,  isNewChef:false,
+    ff:{ mar:20764.36, apr:21801.88, may:21761.13 }, chef:{ mar:5662.91,  apr:7073.08,  may:7877.22  } },
+  { id:16, name:'豊中原田南一丁目',  short:'原田南一',       hasChef:true,  isNewChef:false,
+    ff:{ mar:20474.28, apr:22409.47, may:20733.37 }, chef:{ mar:5562.97,  apr:6285.77,  may:6139.80  } },
+  { id:17, name:'東淀川大道南',      short:'東淀川大道南',   hasChef:true,  isNewChef:false,
+    ff:{ mar:18542.21, apr:18746.39, may:21061.75 }, chef:{ mar:5397.99,  apr:5361.38,  may:3546.26  } },
+  { id:18, name:'東淀川豊里五丁目',  short:'豊里五丁目',     hasChef:true,  isNewChef:false,
+    ff:{ mar:23198.44, apr:22938.30, may:24838.87 }, chef:{ mar:8273.63,  apr:8451.56,  may:6806.85  } },
+  { id:19, name:'南金田二丁目',      short:'南金田二',       hasChef:true,  isNewChef:false,
+    ff:{ mar:32090.95, apr:30850.08, may:30774.02 }, chef:{ mar:6316.23,  apr:6933.14,  may:5709.15  } },
+  { id:20, name:'箕面白島二丁目',    short:'箕面白島二',     hasChef:true,  isNewChef:false,
+    ff:{ mar:24911.12, apr:25461.03, may:28182.96 }, chef:{ mar:7548.89,  apr:8843.80,  may:10550.16 } },
+];
+
+// ── COMPUTE RATES ──
+stores.forEach(s => {
+  s.ffRate  = s.ff.may  / s.ff.mar  * 100;
+  s.ffRateApr = s.ff.apr / s.ff.mar * 100;
+  s.ffTrend = s.ff.may - s.ff.apr; // positive = improving vs Apr
+  s.chefRate = (s.chef && !s.isNewChef) ? s.chef.may / s.chef.mar * 100 : null;
+  s.chefRateApr = (s.chef && !s.isNewChef) ? s.chef.apr / s.chef.mar * 100 : null;
+  s.isDanger = s.ffRate < 95;
+  s.isChefDanger = s.chef && !s.isNewChef && s.chefRate !== null && s.chefRate < 90;
+  // Total evaluation
+  s.eval = getEval(s);
+});
+
+// Sort by FF rate desc
+const sortedStores = [...stores].sort((a,b) => b.ffRate - a.ffRate);
+sortedStores.forEach((s,i) => { s.rank = i+1; });
+
+function getEval(s) {
+  const ff = s.ffRate;
+  const chef = s.chefRate;
+  const hasChef = s.hasChef && !s.isNewChef;
+
+  let grade, label, cls, color;
+
+  if (ff >= 115) {
+    grade='◎◎'; label='最優秀'; cls='excellent'; color='var(--gold)';
+  } else if (ff >= 105) {
+    grade='◎'; label='超優秀'; cls='excellent'; color='var(--gold)';
+    // chef bonus
+    if (hasChef && chef !== null && chef >= 110) { grade='◎◎'; label='最優秀'; }
+  } else if (ff >= 100) {
+    grade='○'; label='達成'; cls='achieve'; color='var(--green)';
+    // chef bonus → ◎
+    if (hasChef && chef !== null && chef >= 105) { grade='◎'; label='優秀'; cls='great'; color='var(--blue)'; }
+  } else if (ff >= 95) {
+    grade='△'; label='ギリギリ'; cls='caution'; color='var(--yellow)';
+  } else {
+    grade='×'; label='未達危険'; cls='danger'; color='var(--red)';
+  }
+
+  return { grade, label, cls, color };
+}
+
+function getRateClass(rate) {
+  if (rate >= 105) return 'gold';
+  if (rate >= 100) return 'green';
+  if (rate >= 95)  return 'yellow';
+  return 'red';
+}
+
+function getBarClass(rate) {
+  if (rate >= 105) return 'gold';
+  if (rate >= 100) return 'green';
+  if (rate >= 95)  return 'yellow';
+  return 'red';
+}
+
+function getBarWidth(rate) {
+  return Math.min(100, Math.max(5, (rate / 130) * 100)) + '%';
+}
+
+function getTrend(s) {
+  const diff = s.ff.may - s.ff.apr;
+  if (diff > 200)  return { icon:'▲', cls:'trend-up',   label:`+${Math.round(diff)}` };
+  if (diff < -200) return { icon:'▼', cls:'trend-down',  label:`${Math.round(diff)}` };
+  return { icon:'→', cls:'trend-flat', label:'横ばい' };
+}
+
+// ══════════════════════════════════════════
+// RENDER STORE CARDS
+// ══════════════════════════════════════════
+let currentFilter = 'all';
+
+function setFilter(f, btn) {
+  currentFilter = f;
+  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  renderCards();
+}
+
+function getFilteredStores() {
+  let arr = [...sortedStores];
+  switch(currentFilter) {
+    case 'chef':    return arr.filter(s => s.hasChef);
+    case 'no-chef': return arr.filter(s => !s.hasChef);
+    case 'danger':  return arr.filter(s => s.isDanger);
+    case 'top5':    return arr.slice(0,5);
+    case 'bottom5': return arr.slice(-5).reverse();
+    default:        return arr;
+  }
+}
+
+function renderCards() {
+  const list = document.getElementById('storesList');
+  const filtered = getFilteredStores();
+
+  if (filtered.length === 0) {
+    list.innerHTML = '<div style="text-align:center;padding:20px;color:var(--sub)">該当店舗なし</div>';
+    return;
+  }
+
+  list.innerHTML = filtered.map(s => {
+    const ev = s.eval;
+    const trend = getTrend(s);
+    const ffRateFmt = s.ffRate.toFixed(1);
+    const rateClass = getRateClass(s.ffRate);
+    const barClass = getBarClass(s.ffRate);
+    const rankClass = s.rank <= 3 ? `rank-${s.rank}` : 'rank-n';
+
+    let chefHtml = '';
+    if (s.hasChef && !s.isNewChef && s.chefRate !== null) {
+      const cr = s.chefRate.toFixed(1);
+      const cc = getRateClass(s.chefRate);
+      const cb = getBarClass(s.chefRate);
+      chefHtml = `
+        <div class="chef-block">
+          <div class="metric-label">🍳 厨房荒利益高 3月対比（加点評価）</div>
+          <div class="metric-row">
+            <span class="metric-value ${cc}">${cr}<span style="font-size:12px">%</span></span>
+            <span style="font-size:10px;color:var(--sub)">${s.chefRate>=100?'✅ 達成':s.chefRate>=95?'⚠️ 注意':'🔴 悪化'}</span>
+          </div>
+          <div class="metric-bar-wrap">
+            <div class="metric-bar-track">
+              <div class="metric-bar-fill ${cb}" style="width:${getBarWidth(s.chefRate)}"></div>
+            </div>
+          </div>
+        </div>`;
+    } else if (s.isNewChef) {
+      chefHtml = `<div class="chef-block"><div class="metric-label">🍳 厨房（新規導入中・伸長率除外）</div><span class="badge new-chef">新規導入</span></div>`;
+    }
+
+    let dangerHtml = '';
+    if (s.isDanger) {
+      dangerHtml = `
+        <div class="danger-alert">
+          🚨 FF伸長率95%未満 — 重点強化店舗
+        </div>`;
+    }
+    if (s.isChefDanger && !s.isDanger) {
+      dangerHtml = `
+        <div class="danger-alert" style="background:rgba(249,115,22,0.1);border-color:rgba(249,115,22,0.3);color:#fb923c;">
+          ⚠️ 厨房荒利益悪化傾向あり（要注意）
+        </div>`;
+    }
+
+    let badgeHtml = '';
+    if (!s.hasChef) badgeHtml += `<span class="badge no-chef">厨房なし</span>`;
+    else if (s.isNewChef) badgeHtml += `<span class="badge new-chef">厨房 新規</span>`;
+    else badgeHtml += `<span class="badge chef">厨房あり</span>`;
+    if (s.isDanger) badgeHtml += `<span class="badge danger-badge">危険</span>`;
+
+    return `
+    <div class="store-card ${ev.cls} fade-in">
+      <div class="store-top">
+        <div class="store-rank-num ${rankClass}">${s.rank}</div>
+        <div class="store-info">
+          <div class="store-name">${s.name}</div>
+          <div class="store-badges">${badgeHtml}</div>
+        </div>
+        <div class="store-eval">
+          <div class="eval-grade" style="color:${ev.color}">${ev.grade}</div>
+          <div class="eval-label">${ev.label}</div>
+        </div>
+      </div>
+      <div class="store-metrics">
+        <div class="metric-block">
+          <div class="metric-label">FF荒利益高 3月対比 ⭐主評価</div>
+          <div class="metric-row">
+            <span class="metric-value ${rateClass}">${ffRateFmt}<span style="font-size:12px">%</span></span>
+            <span class="metric-trend ${trend.cls}">${trend.icon} ${trend.label}円/日</span>
+          </div>
+          <div class="metric-bar-wrap">
+            <div class="metric-bar-track">
+              <div class="metric-bar-fill ${barClass}" style="width:${getBarWidth(s.ffRate)}"></div>
+            </div>
+          </div>
+        </div>
+        <div class="metric-block">
+          <div class="metric-label">4月対比トレンド</div>
+          <div class="metric-row">
+            <span class="metric-value ${getRateClass(s.ffRateApr)}">${s.ffRateApr.toFixed(1)}<span style="font-size:11px">%</span></span>
+            <span style="font-size:9px;color:var(--sub)">4月/3月比</span>
+          </div>
+          <div class="metric-bar-wrap">
+            <div class="metric-bar-track">
+              <div class="metric-bar-fill ${getBarClass(s.ffRateApr)}" style="width:${getBarWidth(s.ffRateApr)}"></div>
+            </div>
+          </div>
+        </div>
+        ${s.hasChef ? '<div class="chef-divider"></div>' : ''}
+        ${chefHtml}
+        ${dangerHtml}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+renderCards();
+
+// ══════════════════════════════════════════
+// HEATMAP
+// ══════════════════════════════════════════
+function getHmClass(rate) {
+  if (rate >= 115) return 'excellent';
+  if (rate >= 105) return 'excellent';
+  if (rate >= 100) return 'achieve';
+  if (rate >= 95)  return 'caution';
+  return 'danger';
+}
+
+const hmGrid = document.getElementById('heatmapGrid');
+hmGrid.innerHTML = sortedStores.map(s => `
+  <div class="hm-cell ${getHmClass(s.ffRate)}">
+    <div class="hm-name">${s.short}</div>
+    <div class="hm-rate">${s.ffRate.toFixed(1)}%</div>
+  </div>
+`).join('');
+
+// ══════════════════════════════════════════
+// CHARTS
+// ══════════════════════════════════════════
+Chart.defaults.color = '#475569';
+Chart.defaults.font.family = "'Noto Sans JP', system-ui, sans-serif";
+Chart.defaults.font.size = 11;
+
+// ── DONUT ──
+new Chart(document.getElementById('donutChart'), {
+  type: 'doughnut',
+  data: {
+    labels:['超優秀(105%+)','達成(100-105%)','ギリギリ(95-100%)','危険(<95%)'],
+    datasets:[{
+      data:[4,4,6,6],
+      backgroundColor:['#d97706','#059669','#ca8a04','#ef4444'],
+      borderWidth:0,
+      hoverOffset:4
+    }]
+  },
+  options: {
+    cutout:'68%',
+    plugins:{ legend:{ display:false }, tooltip:{ callbacks:{
+      label: ctx => ` ${ctx.label}: ${ctx.raw}店舗`
+    }}},
+    animation:{ duration:1200, easing:'easeOutCubic' }
+  }
+});
+
+// ── TREND CHART (all stores, 3 months) ──
+const trendColors = sortedStores.map(s => {
+  const e = s.eval.cls;
+  if(e==='excellent') return '#d97706';
+  if(e==='great')     return '#2563eb';
+  if(e==='achieve')   return '#059669';
+  if(e==='caution')   return '#ca8a04';
+  return '#ef4444';
+});
+
+new Chart(document.getElementById('trendChart'), {
+  type: 'line',
+  data: {
+    labels:['3月','4月','5月（現在）'],
+    datasets: sortedStores.map((s,i) => ({
+      label: s.short,
+      data:[s.ffRate/s.ffRate*100*0 + 100, s.ffRateApr, s.ffRate],
+      // Actually show actual PSA/D values normalized
+      borderColor: trendColors[i],
+      backgroundColor:'transparent',
+      borderWidth: 1.5,
+      pointRadius: 2,
+      tension: 0.3,
+    }))
+  },
+  options: {
+    responsive:true,
+    plugins:{
+      legend:{ display:false },
+      tooltip:{ mode:'index', intersect:false,
+        callbacks:{ label: ctx => ` ${ctx.dataset.label}: ${ctx.raw.toFixed(1)}%` }
+      }
+    },
+    scales:{
+      y:{
+        grid:{ color:'rgba(0,0,0,0.08)' },
+        ticks:{ callback: v => v+'%' },
+        min:70, max:130,
+      },
+      x:{ grid:{ color:'rgba(0,0,0,0.08)' } }
+    }
+  }
+});
+
+// ── COMPARE CHART (top3 + bottom3) ──
+const top3 = sortedStores.slice(0,3);
+const bot3 = sortedStores.slice(-3);
+const compareStores = [...top3, ...bot3];
+const compareColors = ['#d97706','#ca8a04','#059669','#ef4444','#dc2626','#b91c1c'];
+
+new Chart(document.getElementById('compareChart'), {
+  type: 'line',
+  data: {
+    labels:['3月','4月','5月（現在）'],
+    datasets: compareStores.map((s,i) => ({
+      label: s.name,
+      data: [100, s.ffRateApr, s.ffRate],
+      borderColor: compareColors[i],
+      backgroundColor: compareColors[i]+'22',
+      borderWidth: 2.5,
+      pointRadius: 4,
+      pointBackgroundColor: compareColors[i],
+      fill: false,
+      tension: 0.3,
+    }))
+  },
+  options:{
+    responsive:true,
+    plugins:{
+      legend:{ position:'bottom', labels:{ boxWidth:10, padding:10, font:{size:10} } },
+      tooltip:{ callbacks:{ label: ctx => ` ${ctx.dataset.label}: ${ctx.raw.toFixed(1)}%` } },
+    },
+    scales:{
+      y:{
+        grid:{ color:'rgba(0,0,0,0.08)' },
+        ticks:{ callback:v=>v+'%' }, min:75, max:125,
+      },
+      x:{ grid:{ color:'rgba(0,0,0,0.08)' } }
+    }
+  }
+});
+
+// ── BAR CHART ──
+const barColors = sortedStores.map(s => {
+  const e = s.eval.cls;
+  if(e==='excellent') return '#d97706';
+  if(e==='great')     return '#2563eb';
+  if(e==='achieve')   return '#059669';
+  if(e==='caution')   return '#ca8a04';
+  return '#ef4444';
+});
+
+new Chart(document.getElementById('barChart'), {
+  type: 'bar',
+  data: {
+    labels: sortedStores.map(s => s.short),
+    datasets:[{
+      label:'FF荒利益高 3月対比(%)',
+      data: sortedStores.map(s => s.ffRate),
+      backgroundColor: barColors,
+      borderRadius:4,
+      borderSkipped:false,
+    }]
+  },
+  options:{
+    indexAxis:'y',
+    responsive:true,
+    plugins:{
+      legend:{ display:false },
+      tooltip:{ callbacks:{
+        label: ctx => ` ${ctx.raw.toFixed(1)}%`
+      }}
+    },
+    scales:{
+      x:{
+        grid:{ color:'rgba(0,0,0,0.08)' },
+        ticks:{ callback:v=>v+'%' },
+        min:70, max:130,
+      },
+      y:{ grid:{ display:false }, ticks:{ font:{size:10} } }
+    }
+  }
+});
+
+// ── SCATTER (FF vs Chef) ──
+const chefStores = sortedStores.filter(s => s.hasChef && !s.isNewChef && s.chefRate !== null);
+const scatterColors = chefStores.map(s => {
+  if (s.ffRate >= 105 && s.chefRate >= 105) return '#d97706';
+  if (s.ffRate >= 100 && s.chefRate >= 100) return '#059669';
+  if (s.ffRate >= 100) return '#2563eb';
+  if (s.ffRate >= 95)  return '#ca8a04';
+  return '#ef4444';
+});
+
+new Chart(document.getElementById('scatterChart'), {
+  type: 'scatter',
+  data: {
+    datasets:[{
+      label:'厨房導入店',
+      data: chefStores.map(s => ({ x:s.ffRate, y:s.chefRate, name:s.short })),
+      backgroundColor: scatterColors,
+      pointRadius: 8,
+      pointHoverRadius: 10,
+    }]
+  },
+  options:{
+    responsive:true,
+    plugins:{
+      legend:{ display:false },
+      tooltip:{
+        callbacks:{
+          label: ctx => {
+            const d = ctx.raw;
+            return ` ${d.name}  FF:${d.x.toFixed(1)}%  厨房:${d.y.toFixed(1)}%`;
+          }
+        }
+      }
+    },
+    scales:{
+      x:{
+        title:{ display:true, text:'FF荒利益高 3月対比(%)', color:'#475569' },
+        grid:{ color:'rgba(0,0,0,0.08)' },
+        ticks:{ callback:v=>v+'%' }, min:70, max:130,
+      },
+      y:{
+        title:{ display:true, text:'厨房荒利益高 3月対比(%)', color:'#475569' },
+        grid:{ color:'rgba(0,0,0,0.08)' },
+        ticks:{ callback:v=>v+'%' }, min:60, max:150,
+      }
+    }
+  }
+});
+
+// ── 残り日数カウントダウン ──
+const today = new Date('2026-05-13');
+const end   = new Date('2026-05-31');
+const diff  = Math.ceil((end - today) / (1000*60*60*24));
+document.getElementById('daysLeft').textContent = diff;
+
+</script>
+</body>
+</html>
