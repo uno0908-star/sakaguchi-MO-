@@ -123,17 +123,17 @@ canvas{display:block;max-width:100%}
 
 /* 店舗カードリスト（数値検証タブ） */
 .v-cards{display:flex;flex-direction:column;gap:8px;margin-bottom:0}
-.vc{background:#fff;border-radius:12px;padding:10px 12px;box-shadow:0 2px 6px rgba(0,0,0,.07);border-left:4px solid #e2e8f0;display:flex;align-items:center;gap:12px}
+.vc{background:#fff;border-radius:12px;padding:10px 12px;box-shadow:0 2px 6px rgba(0,0,0,.07);border-left:4px solid #e2e8f0;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
 .vc.lead{border-left-color:#22c55e}.vc.ok{border-left-color:#94a3b8}.vc.lag{border-left-color:#ef4444}
-.vc-name{font-size:11px;font-weight:800;color:#1e2a3a;white-space:nowrap;width:90px;flex-shrink:0}
-.vc-kpis{display:grid;grid-template-columns:repeat(3,1fr);gap:4px 8px;flex-shrink:0}
+.vc-name{font-size:11px;font-weight:800;color:#1e2a3a;white-space:nowrap;width:80px;flex-shrink:0}
+.vc-kpis{display:grid;grid-template-columns:repeat(3,1fr);gap:4px 6px;flex:1;min-width:0}
 .vc-k{text-align:center;min-width:44px}
 .vc-kl{font-size:9px;color:#94a3b8;font-weight:700;margin-bottom:1px}
 .vc-kv{font-size:14px;font-weight:900;line-height:1.1}
 .vc-kv.up{color:#22c55e}.vc-kv.dn{color:#ef4444}.vc-kv.nt{color:#475569}
-.vc-charts{display:none}
+.vc-charts{display:grid;grid-template-columns:repeat(3,1fr);gap:4px;width:100%;flex-basis:100%;margin-top:4px}
 .vc-chart-lbl{font-size:8px;color:#94a3b8;text-align:center;font-weight:600;margin-bottom:1px}
-@media(min-width:520px){.vc-charts{display:grid;grid-template-columns:repeat(3,1fr);gap:4px;width:150px;flex-shrink:0}}
+@media(min-width:520px){.vc{flex-wrap:nowrap;gap:12px}.vc-name{width:90px}.vc-kpis{flex:none;flex-shrink:0}.vc-charts{width:150px;flex-basis:auto;flex-shrink:0;margin-top:0}}
 .tbl-toggle-row{cursor:pointer;display:flex;align-items:center;justify-content:space-between}
 .tgl-arrow{font-size:11px;color:#94a3b8;transition:transform .2s}
 .oc-scroll{display:flex;gap:8px;overflow-x:auto;margin-bottom:8px;-webkit-overflow-scrolling:touch;padding-bottom:4px}
@@ -584,11 +584,11 @@ function drawCards(){
     };
     function mkSp(elId,data,color){
       var el=document.getElementById(elId);
-      if(!el)return;
-      new Chart(el,{type:'line',data:{labels:['2','3','4','5'],datasets:[{
+      if(!el||!el.parentNode||el.parentNode.offsetParent===null)return;
+      try{new Chart(el,{type:'line',data:{labels:['2','3','4','5'],datasets:[{
         data:data,borderColor:color,backgroundColor:color.replace('1)','0.15)'),
         borderWidth:1.5,pointRadius:1.5,tension:.35,fill:true,spanGaps:true
-      }]},options:spOpt});
+      }]},options:spOpt});}catch(e){}
     }
     mkSp('cs_'+i,sData,'rgba(37,99,235,1)');
     mkSp('ch_'+i,hData,'rgba(34,197,94,1)');
