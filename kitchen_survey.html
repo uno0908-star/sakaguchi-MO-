@@ -1,0 +1,1522 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>厨房衛生管理アンケート | Kitchen Hygiene Survey</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <style>
+    /* =============================================
+       BASE
+    ============================================= */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --blue:        #1A5276;
+      --blue-mid:    #2E86C1;
+      --blue-light:  #AED6F1;
+      --orange:      #CA6F1E;
+      --orange-light:#F0B27A;
+      --red:         #C0392B;
+      --red-light:   #FADBD8;
+      --green:       #1E8449;
+      --green-light: #A9DFBF;
+      --amber:       #D4AC0D;
+      --bg:          #EEF2F7;
+      --card:        #FFFFFF;
+      --text:        #1C2833;
+      --muted:       #7F8C8D;
+      --border:      #D5D8DC;
+      --shadow:      0 2px 10px rgba(0,0,0,0.07);
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Hiragino Sans', 'Noto Sans JP', 'Yu Gothic', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      font-size: 16px;
+      line-height: 1.65;
+    }
+
+    /* =============================================
+       NAVIGATION
+    ============================================= */
+    .nav {
+      background: var(--blue);
+      position: sticky; top: 0; z-index: 100;
+      box-shadow: 0 3px 10px rgba(0,0,0,0.25);
+    }
+    .nav-inner {
+      max-width: 1100px; margin: 0 auto;
+      display: flex; align-items: stretch;
+    }
+    .nav-logo {
+      color: rgba(255,255,255,0.9);
+      font-size: 13px; font-weight: 700;
+      padding: 12px 16px;
+      flex: 1;
+      display: flex; align-items: center; gap: 8px;
+      white-space: nowrap; overflow: hidden;
+    }
+    .nav-logo span { font-size: 18px; }
+    .nav-tabs { display: flex; }
+    .nav-tab {
+      padding: 0 20px;
+      color: rgba(255,255,255,0.65);
+      font-size: 13px; font-weight: 600;
+      border: none; background: none;
+      cursor: pointer;
+      border-bottom: 3px solid transparent;
+      transition: all 0.2s;
+      white-space: nowrap;
+    }
+    .nav-tab:hover { color: white; background: rgba(255,255,255,0.08); }
+    .nav-tab.active {
+      color: white;
+      border-bottom-color: #F4D03F;
+      background: rgba(255,255,255,0.1);
+    }
+
+    /* =============================================
+       FORM VIEW
+    ============================================= */
+    .form-view {
+      max-width: 680px; margin: 0 auto; padding: 20px 16px;
+    }
+
+    /* Survey header */
+    .survey-header {
+      background: linear-gradient(140deg, var(--blue) 0%, var(--blue-mid) 100%);
+      color: white; border-radius: 18px;
+      padding: 28px 22px 24px; margin-bottom: 18px;
+      text-align: center;
+    }
+    .survey-header h1 { font-size: 19px; font-weight: 800; margin-bottom: 4px; }
+    .survey-header .h1en { font-size: 12px; opacity: 0.8; margin-bottom: 16px; }
+    .anon-badge {
+      display: inline-flex; align-items: center; gap: 6px;
+      background: rgba(255,255,255,0.18);
+      border: 1.5px solid rgba(255,255,255,0.45);
+      border-radius: 20px; padding: 6px 16px;
+      font-size: 12px; font-weight: 700; letter-spacing: 0.5px;
+    }
+    .progress-bar {
+      background: rgba(255,255,255,0.2); border-radius: 10px;
+      height: 5px; margin-top: 14px; overflow: hidden;
+    }
+    .progress-fill {
+      background: #F4D03F; height: 100%; border-radius: 10px;
+      transition: width 0.4s ease;
+    }
+    .progress-label { font-size: 11px; opacity: 0.75; margin-top: 6px; }
+
+    /* Notice box */
+    .notice-box {
+      background: #EBF5FB;
+      border-left: 5px solid var(--blue-mid);
+      border-radius: 10px; padding: 16px 18px;
+      margin-bottom: 18px; font-size: 14px;
+    }
+    .notice-box p { margin-bottom: 5px; }
+    .notice-box p:last-child { margin-bottom: 0; }
+    .notice-box .en { color: var(--muted); font-size: 11px; margin-top: 10px; border-top: 1px solid #D6EAF8; padding-top: 8px; }
+
+    /* Question card */
+    .q-card {
+      background: var(--card); border-radius: 14px;
+      padding: 20px; margin-bottom: 14px;
+      box-shadow: var(--shadow);
+      transition: box-shadow 0.2s;
+    }
+    .q-card:focus-within { box-shadow: 0 0 0 3px rgba(46,134,193,0.2), var(--shadow); }
+    .q-num {
+      font-size: 10px; font-weight: 800; color: var(--blue);
+      text-transform: uppercase; letter-spacing: 1px; margin-bottom: 5px;
+    }
+    .q-label { font-size: 16px; font-weight: 700; margin-bottom: 2px; }
+    .q-label-en { font-size: 11px; color: var(--muted); margin-bottom: 14px; }
+    .q-label .req { color: var(--red); margin-left: 3px; }
+
+    /* Select */
+    select {
+      width: 100%; padding: 13px 38px 13px 14px;
+      border: 2px solid var(--border); border-radius: 10px;
+      font-size: 16px; font-family: inherit;
+      background: white url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='7' viewBox='0 0 10 7'%3E%3Cpath fill='%237F8C8D' d='M5 7L0 0h10z'/%3E%3C/svg%3E") no-repeat right 14px center;
+      appearance: none; color: var(--text);
+      transition: border-color 0.15s;
+    }
+    select:focus { outline: none; border-color: var(--blue-mid); box-shadow: 0 0 0 3px rgba(46,134,193,0.15); }
+
+    /* Radio & Checkbox */
+    .choice-list { display: flex; flex-direction: column; gap: 8px; }
+    .choice-item {
+      display: flex; align-items: flex-start; gap: 12px;
+      padding: 12px 14px;
+      border: 2px solid var(--border); border-radius: 10px;
+      cursor: pointer; transition: all 0.15s; background: white;
+    }
+    .choice-item:hover { border-color: var(--blue-mid); background: #EBF5FB; }
+    .choice-item.checked { border-color: var(--blue); background: #EBF5FB; }
+    .choice-item input[type="radio"],
+    .choice-item input[type="checkbox"] {
+      width: 18px; height: 18px; margin-top: 2px;
+      accent-color: var(--blue); flex-shrink: 0;
+    }
+    .choice-text { font-size: 15px; line-height: 1.4; }
+    .choice-en { font-size: 11px; color: var(--muted); display: block; margin-top: 2px; }
+
+    /* Textarea */
+    textarea {
+      width: 100%; padding: 13px 14px;
+      border: 2px solid var(--border); border-radius: 10px;
+      font-size: 15px; font-family: inherit;
+      resize: vertical; min-height: 100px; color: var(--text);
+      transition: border-color 0.15s;
+    }
+    textarea:focus { outline: none; border-color: var(--blue-mid); box-shadow: 0 0 0 3px rgba(46,134,193,0.15); }
+    textarea::placeholder { color: #BDC3C7; font-size: 14px; }
+
+    /* Submit */
+    .submit-wrap { padding: 8px 0 24px; }
+    .submit-btn {
+      width: 100%; padding: 17px;
+      background: linear-gradient(135deg, var(--blue), var(--blue-mid));
+      color: white; border: none; border-radius: 13px;
+      font-size: 17px; font-weight: 800; cursor: pointer;
+      box-shadow: 0 5px 16px rgba(26,82,118,0.35);
+      transition: transform 0.1s, box-shadow 0.1s;
+    }
+    .submit-btn:active { transform: scale(0.98); box-shadow: 0 2px 8px rgba(26,82,118,0.25); }
+
+    /* Success */
+    .success-card {
+      background: var(--card); border-radius: 18px;
+      padding: 48px 24px; text-align: center;
+      box-shadow: var(--shadow); display: none;
+    }
+    .success-icon { font-size: 56px; margin-bottom: 18px; }
+    .success-card h2 { font-size: 22px; color: var(--green); margin-bottom: 8px; }
+    .success-card p { color: var(--muted); font-size: 14px; margin-bottom: 24px; }
+    .again-btn {
+      padding: 13px 30px; background: var(--blue);
+      color: white; border: none; border-radius: 10px;
+      font-size: 15px; font-weight: 700; cursor: pointer;
+    }
+
+    /* Error messages */
+    .error-msg { color: var(--red); font-size: 12px; margin-top: 6px; display: none; }
+    .q-card.has-error { box-shadow: 0 0 0 2px var(--red); }
+
+    /* =============================================
+       DASHBOARD VIEW
+    ============================================= */
+    .dash-view {
+      max-width: 1100px; margin: 0 auto; padding: 20px 16px;
+      display: none;
+    }
+
+    /* Header */
+    .dash-header {
+      background: linear-gradient(135deg, #152C45 0%, var(--blue) 100%);
+      color: white; border-radius: 16px;
+      padding: 20px 24px; margin-bottom: 18px;
+      display: flex; align-items: flex-start;
+      justify-content: space-between; flex-wrap: wrap; gap: 12px;
+    }
+    .dash-header h2 { font-size: 19px; font-weight: 800; }
+    .dash-header .desc { font-size: 12px; opacity: 0.75; margin-top: 4px; }
+    .dash-btns { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+    .dbtn {
+      padding: 8px 14px;
+      border: 1px solid rgba(255,255,255,0.35);
+      background: rgba(255,255,255,0.12);
+      color: white; border-radius: 8px;
+      font-size: 12px; font-weight: 600; cursor: pointer;
+      transition: background 0.15s;
+    }
+    .dbtn:hover { background: rgba(255,255,255,0.22); }
+    .dbtn.red { border-color: rgba(231,76,60,0.5); background: rgba(192,57,43,0.25); }
+    .dbtn.red:hover { background: rgba(192,57,43,0.4); }
+
+    /* Filter bar */
+    .filter-bar {
+      background: var(--card); border-radius: 12px;
+      padding: 14px 16px; margin-bottom: 18px;
+      box-shadow: var(--shadow);
+      display: flex; gap: 12px; flex-wrap: wrap; align-items: center;
+    }
+    .filter-bar label { font-size: 12px; font-weight: 700; color: var(--muted); white-space: nowrap; }
+    .filter-bar select { width: auto; min-width: 170px; padding: 8px 32px 8px 12px; font-size: 13px; border-width: 1.5px; }
+
+    /* Stats cards */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      gap: 12px; margin-bottom: 18px;
+    }
+    .stat-card {
+      background: var(--card); border-radius: 12px;
+      padding: 18px 14px; text-align: center;
+      box-shadow: var(--shadow); border-top: 4px solid var(--blue);
+    }
+    .stat-card.warn { border-top-color: var(--amber); }
+    .stat-card.danger { border-top-color: var(--red); }
+    .stat-card.ok { border-top-color: var(--green); }
+    .stat-num { font-size: 38px; font-weight: 800; line-height: 1; margin-bottom: 6px; color: var(--blue); }
+    .stat-card.warn .stat-num { color: var(--amber); }
+    .stat-card.danger .stat-num { color: var(--red); }
+    .stat-card.ok .stat-num { color: var(--green); }
+    .stat-label { font-size: 11px; font-weight: 700; color: var(--muted); line-height: 1.3; }
+
+    /* Charts grid */
+    .charts-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+      gap: 16px; margin-bottom: 18px;
+    }
+    .chart-card {
+      background: var(--card); border-radius: 14px;
+      padding: 20px; box-shadow: var(--shadow);
+    }
+    .chart-card.wide { grid-column: 1 / -1; }
+    .chart-title { font-size: 14px; font-weight: 800; margin-bottom: 2px; }
+    .chart-sub { font-size: 11px; color: var(--muted); margin-bottom: 16px; }
+    .chart-wrap { position: relative; height: 260px; }
+    .chart-wrap.tall { height: 340px; }
+    .chart-wrap.auto { height: auto; min-height: 200px; }
+
+    /* Cause analysis section */
+    .cause-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 10px; margin-top: 16px;
+    }
+    .cause-tag {
+      background: var(--bg); border-radius: 10px;
+      padding: 12px 14px; display: flex;
+      align-items: center; justify-content: space-between;
+      gap: 8px;
+    }
+    .cause-tag-label { font-size: 13px; font-weight: 600; }
+    .cause-tag-count { font-size: 18px; font-weight: 800; color: var(--blue); }
+    .cause-bar-bg { height: 5px; background: var(--border); border-radius: 5px; margin-top: 6px; }
+    .cause-bar-fill { height: 5px; background: var(--blue-mid); border-radius: 5px; transition: width 0.6s; }
+    .cause-tag.high .cause-bar-fill { background: var(--red); }
+    .cause-tag.high .cause-tag-count { color: var(--red); }
+
+    /* Danger section */
+    .danger-section {
+      background: var(--card); border-radius: 14px;
+      padding: 20px; margin-bottom: 18px;
+      box-shadow: var(--shadow);
+      border-left: 5px solid var(--red);
+    }
+    .danger-section h3 {
+      font-size: 15px; font-weight: 800; color: var(--red);
+      display: flex; align-items: center; gap: 8px; margin-bottom: 4px;
+    }
+    .danger-section .desc { font-size: 12px; color: var(--muted); margin-bottom: 14px; }
+    .danger-list { display: flex; flex-direction: column; gap: 10px; }
+    .danger-item {
+      background: #FDF2F8; border: 1px solid #F5B7B1;
+      border-radius: 10px; padding: 13px 16px; font-size: 14px;
+    }
+    .danger-item .di-meta {
+      display: flex; align-items: center; gap: 8px; margin-bottom: 6px;
+    }
+    .store-badge {
+      background: var(--red); color: white;
+      font-size: 10px; font-weight: 700;
+      padding: 2px 9px; border-radius: 12px;
+    }
+    .di-date { font-size: 10px; color: var(--muted); }
+    .danger-kw { background: #FADBD8; color: var(--red); font-weight: 700; border-radius: 3px; padding: 0 2px; }
+    .no-danger {
+      text-align: center; padding: 28px; color: var(--muted);
+      font-size: 14px;
+    }
+
+    /* Free text section */
+    .free-section {
+      background: var(--card); border-radius: 14px;
+      padding: 20px; margin-bottom: 18px;
+      box-shadow: var(--shadow);
+    }
+    .free-section h3 { font-size: 15px; font-weight: 800; margin-bottom: 14px; }
+    .free-tabs { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 14px; }
+    .free-tab {
+      padding: 7px 15px; border: 1.5px solid var(--border);
+      border-radius: 20px; font-size: 12px; font-weight: 600;
+      cursor: pointer; background: white; color: var(--muted);
+      transition: all 0.15s;
+    }
+    .free-tab.active { background: var(--blue); color: white; border-color: var(--blue); }
+    .free-list {
+      display: flex; flex-direction: column; gap: 8px;
+      max-height: 420px; overflow-y: auto;
+    }
+    .free-item {
+      background: #F8F9FA; border-radius: 9px;
+      padding: 12px 14px; font-size: 14px;
+      border-left: 3px solid var(--border);
+      line-height: 1.6;
+    }
+    .free-item .fi-meta {
+      font-size: 11px; color: var(--muted); margin-bottom: 5px;
+      display: flex; gap: 8px; align-items: center;
+    }
+    .empty-state {
+      text-align: center; padding: 40px; color: var(--muted);
+    }
+    .empty-state .e-icon { font-size: 40px; margin-bottom: 12px; }
+    .empty-state p { font-size: 14px; }
+
+    /* =============================================
+       PIN MODAL
+    ============================================= */
+    .modal-overlay {
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,0.55);
+      z-index: 300;
+      display: none; align-items: center; justify-content: center;
+      padding: 24px;
+    }
+    .modal-overlay.show { display: flex; }
+    .modal-card {
+      background: white; border-radius: 18px;
+      padding: 36px 28px; max-width: 360px; width: 100%;
+      text-align: center;
+      animation: slideUp 0.2s ease;
+    }
+    @keyframes slideUp {
+      from { transform: translateY(16px); opacity: 0; }
+      to   { transform: translateY(0); opacity: 1; }
+    }
+    .modal-icon { font-size: 44px; margin-bottom: 14px; }
+    .modal-card h3 { font-size: 20px; font-weight: 800; margin-bottom: 8px; }
+    .modal-card p { font-size: 13px; color: var(--muted); margin-bottom: 22px; }
+    .pin-input {
+      width: 100%; padding: 15px; font-size: 22px;
+      text-align: center; letter-spacing: 2px;
+      border: 2px solid var(--border); border-radius: 12px;
+      margin-bottom: 12px; font-family: monospace;
+      transition: border-color 0.15s;
+    }
+    .pin-input:focus { outline: none; border-color: var(--blue); }
+    .pin-submit {
+      width: 100%; padding: 15px; background: var(--blue);
+      color: white; border: none; border-radius: 12px;
+      font-size: 16px; font-weight: 800; cursor: pointer;
+      transition: background 0.15s;
+    }
+    .pin-submit:hover { background: var(--blue-mid); }
+    .pin-cancel {
+      width: 100%; padding: 12px; background: none;
+      color: var(--muted); border: 1.5px solid var(--border);
+      border-radius: 12px; font-size: 14px; cursor: pointer;
+      margin-top: 8px;
+    }
+    .pin-error { color: var(--red); font-size: 13px; margin-top: 8px; display: none; }
+
+    /* =============================================
+       RESPONSIVE
+    ============================================= */
+    @media (max-width: 640px) {
+      .nav-logo { font-size: 11px; padding: 10px 10px; }
+      .nav-tab { padding: 0 12px; font-size: 11px; }
+      .survey-header h1 { font-size: 16px; }
+      .stats-grid { grid-template-columns: repeat(2, 1fr); }
+      .charts-grid { grid-template-columns: 1fr; }
+      .dash-header { flex-direction: column; }
+      .cause-grid { grid-template-columns: 1fr 1fr; }
+    }
+    @media (max-width: 360px) {
+      .stats-grid { grid-template-columns: 1fr 1fr; }
+      .cause-grid { grid-template-columns: 1fr; }
+    }
+
+    /* Scrollbar */
+    .free-list::-webkit-scrollbar { width: 4px; }
+    .free-list::-webkit-scrollbar-track { background: var(--bg); }
+    .free-list::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+
+    /* Utility */
+    .hidden { display: none !important; }
+    .mt8 { margin-top: 8px; }
+    .tag {
+      display: inline-block; padding: 2px 9px; border-radius: 12px;
+      font-size: 10px; font-weight: 700;
+    }
+    .tag-blue { background: #D6EAF8; color: var(--blue); }
+    .tag-red  { background: var(--red-light); color: var(--red); }
+    .tag-green { background: var(--green-light); color: var(--green); }
+  </style>
+</head>
+<body>
+
+<!-- ============================================================
+     NAV
+============================================================ -->
+<nav class="nav">
+  <div class="nav-inner">
+    <div class="nav-logo">
+      <span>🍱</span>
+      <span>厨房衛生管理アンケート</span>
+    </div>
+    <div class="nav-tabs">
+      <button class="nav-tab active" id="tabForm" onclick="showView('form')">
+        📝 アンケート回答
+      </button>
+      <button class="nav-tab" id="tabDash" onclick="openDash()">
+        📊 管理ダッシュボード
+      </button>
+    </div>
+  </div>
+</nav>
+
+<!-- ============================================================
+     FORM VIEW
+============================================================ -->
+<div class="form-view" id="formView">
+
+  <!-- Header -->
+  <div class="survey-header">
+    <h1>厨房衛生管理アンケート</h1>
+    <div class="h1en">Kitchen Hygiene Management Survey</div>
+    <div class="anon-badge">🔒 匿名アンケート / Anonymous</div>
+    <div class="progress-bar">
+      <div class="progress-fill" id="progressFill" style="width:0%"></div>
+    </div>
+    <div class="progress-label" id="progressLabel">回答を始めてください / Please start answering</div>
+  </div>
+
+  <!-- Notice -->
+  <div class="notice-box">
+    <p>📢 <strong>このアンケートは、個人を責めるためのものではありません。</strong></p>
+    <p>厨房作成ルールを守れない原因を確認し、<strong>より安全で働きやすい環境に改善するため</strong>のアンケートです。</p>
+    <p>名前や社員番号は取得しません。所属店舗のみ入力してください。</p>
+    <p><strong>正直な回答をお願いします。</strong></p>
+    <div class="en">
+      This survey is NOT to blame individuals. It helps us understand why kitchen rules are difficult to follow,
+      so we can improve the working environment. No name or employee number is collected. Please answer honestly.
+    </div>
+  </div>
+
+  <!-- FORM -->
+  <form id="surveyForm" novalidate>
+
+    <!-- Q1: Store -->
+    <div class="q-card" id="qcard1">
+      <div class="q-num">Q1 / Question 1</div>
+      <div class="q-label">所属店舗<span class="req">★必須</span></div>
+      <div class="q-label-en">Your store / Required</div>
+      <select id="q1" onchange="updateProgress()">
+        <option value="">-- 店舗を選択してください / Select your store --</option>
+      </select>
+      <div class="error-msg" id="err1">店舗を選択してください。/ Please select your store.</div>
+    </div>
+
+    <!-- Q2: Experience -->
+    <div class="q-card" id="qcard2">
+      <div class="q-num">Q2 / Question 2</div>
+      <div class="q-label">厨房作成の経験</div>
+      <div class="q-label-en">How often do you prepare kitchen items?</div>
+      <div class="choice-list" id="q2">
+        <label class="choice-item">
+          <input type="radio" name="q2" value="毎日作成している" onchange="updateProgress()">
+          <span class="choice-text">毎日作成している<span class="choice-en">Every day</span></span>
+        </label>
+        <label class="choice-item">
+          <input type="radio" name="q2" value="週に数回作成している" onchange="updateProgress()">
+          <span class="choice-text">週に数回作成している<span class="choice-en">A few times a week</span></span>
+        </label>
+        <label class="choice-item">
+          <input type="radio" name="q2" value="たまに作成する" onchange="updateProgress()">
+          <span class="choice-text">たまに作成する<span class="choice-en">Occasionally</span></span>
+        </label>
+        <label class="choice-item">
+          <input type="radio" name="q2" value="ほとんど作成しない" onchange="updateProgress()">
+          <span class="choice-text">ほとんど作成しない<span class="choice-en">Rarely</span></span>
+        </label>
+      </div>
+      <div class="error-msg" id="err2">選択してください。/ Please select one.</div>
+    </div>
+
+    <!-- Q3: Understanding -->
+    <div class="q-card" id="qcard3">
+      <div class="q-num">Q3 / Question 3</div>
+      <div class="q-label">厨房作成マニュアルの理解度</div>
+      <div class="q-label-en">How well do you understand the kitchen manual?</div>
+      <div class="choice-list" id="q3">
+        <label class="choice-item">
+          <input type="radio" name="q3" value="理解している" onchange="updateProgress()">
+          <span class="choice-text">理解している<span class="choice-en">I understand it well</span></span>
+        </label>
+        <label class="choice-item">
+          <input type="radio" name="q3" value="だいたい理解している" onchange="updateProgress()">
+          <span class="choice-text">だいたい理解している<span class="choice-en">I mostly understand it</span></span>
+        </label>
+        <label class="choice-item">
+          <input type="radio" name="q3" value="少し不安がある" onchange="updateProgress()">
+          <span class="choice-text">少し不安がある<span class="choice-en">I'm a bit unsure</span></span>
+        </label>
+        <label class="choice-item">
+          <input type="radio" name="q3" value="よく分からない" onchange="updateProgress()">
+          <span class="choice-text">よく分からない<span class="choice-en">I don't really understand it</span></span>
+        </label>
+      </div>
+      <div class="error-msg" id="err3">選択してください。/ Please select one.</div>
+    </div>
+
+    <!-- Q4: Deviation -->
+    <div class="q-card" id="qcard4">
+      <div class="q-num">Q4 / Question 4</div>
+      <div class="q-label">マニュアルから逸脱してしまったことはありますか？</div>
+      <div class="q-label-en">Have you ever deviated from the manual?</div>
+      <div class="choice-list" id="q4">
+        <label class="choice-item">
+          <input type="radio" name="q4" value="よくある" onchange="updateProgress()">
+          <span class="choice-text">よくある<span class="choice-en">Yes, often</span></span>
+        </label>
+        <label class="choice-item">
+          <input type="radio" name="q4" value="たまにある" onchange="updateProgress()">
+          <span class="choice-text">たまにある<span class="choice-en">Sometimes</span></span>
+        </label>
+        <label class="choice-item">
+          <input type="radio" name="q4" value="ほとんどない" onchange="updateProgress()">
+          <span class="choice-text">ほとんどない<span class="choice-en">Rarely</span></span>
+        </label>
+        <label class="choice-item">
+          <input type="radio" name="q4" value="一度もない" onchange="updateProgress()">
+          <span class="choice-text">一度もない<span class="choice-en">Never</span></span>
+        </label>
+      </div>
+      <div class="error-msg" id="err4">選択してください。/ Please select one.</div>
+    </div>
+
+    <!-- Q5: Causes (checkbox) -->
+    <div class="q-card" id="qcard5">
+      <div class="q-num">Q5 / Question 5</div>
+      <div class="q-label">なぜ逸脱しましたか？</div>
+      <div class="q-label-en">Why did you deviate? (Choose all that apply)</div>
+      <div class="choice-list" id="q5">
+        <label class="choice-item">
+          <input type="checkbox" name="q5" value="時間が足りない" onchange="updateProgress()">
+          <span class="choice-text">時間が足りない<span class="choice-en">Not enough time</span></span>
+        </label>
+        <label class="choice-item">
+          <input type="checkbox" name="q5" value="人手不足" onchange="updateProgress()">
+          <span class="choice-text">人手不足<span class="choice-en">Short-staffed</span></span>
+        </label>
+        <label class="choice-item">
+          <input type="checkbox" name="q5" value="作業が間に合わない" onchange="updateProgress()">
+          <span class="choice-text">作業が間に合わない<span class="choice-en">Can't finish work in time</span></span>
+        </label>
+        <label class="choice-item">
+          <input type="checkbox" name="q5" value="早く終わらせたい" onchange="updateProgress()">
+          <span class="choice-text">早く終わらせたい<span class="choice-en">Want to finish quickly</span></span>
+        </label>
+        <label class="choice-item">
+          <input type="checkbox" name="q5" value="忙しい時間帯で余裕がない" onchange="updateProgress()">
+          <span class="choice-text">忙しい時間帯で余裕がない<span class="choice-en">Too busy during rush hours</span></span>
+        </label>
+        <label class="choice-item">
+          <input type="checkbox" name="q5" value="マニュアルが分かりづらい" onchange="updateProgress()">
+          <span class="choice-text">マニュアルが分かりづらい<span class="choice-en">The manual is hard to understand</span></span>
+        </label>
+        <label class="choice-item">
+          <input type="checkbox" name="q5" value="教えられた内容が人によって違う" onchange="updateProgress()">
+          <span class="choice-text">教えられた内容が人によって違う<span class="choice-en">Training was inconsistent</span></span>
+        </label>
+        <label class="choice-item">
+          <input type="checkbox" name="q5" value="周囲も同じようにやっている" onchange="updateProgress()">
+          <span class="choice-text">周囲も同じようにやっている<span class="choice-en">Others do it the same way</span></span>
+        </label>
+        <label class="choice-item">
+          <input type="checkbox" name="q5" value="問題ないと思っていた" onchange="updateProgress()">
+          <span class="choice-text">問題ないと思っていた<span class="choice-en">Thought it was okay</span></span>
+        </label>
+        <label class="choice-item">
+          <input type="checkbox" name="q5" value="指摘されなければ大丈夫と思った" onchange="updateProgress()">
+          <span class="choice-text">指摘されなければ大丈夫と思った<span class="choice-en">Thought it was fine if no one noticed</span></span>
+        </label>
+        <label class="choice-item">
+          <input type="checkbox" name="q5" value="衛生リスクの重大性が伝わっていない" onchange="updateProgress()">
+          <span class="choice-text">衛生リスクの重大性が伝わっていない<span class="choice-en">Didn't understand the hygiene risks</span></span>
+        </label>
+        <label class="choice-item">
+          <input type="checkbox" name="q5" value="その他" onchange="updateProgress()">
+          <span class="choice-text">その他<span class="choice-en">Other</span></span>
+        </label>
+      </div>
+    </div>
+
+    <!-- Q6: Free text - difficulties -->
+    <div class="q-card" id="qcard6">
+      <div class="q-num">Q6 / Question 6</div>
+      <div class="q-label">厨房作成で困っていること</div>
+      <div class="q-label-en">What are you having difficulty with? (Free text)</div>
+      <textarea id="q6" placeholder="例：〇〇の手順がよく分からない / Example: I'm not sure about the steps for ..." onchange="updateProgress()" oninput="updateProgress()"></textarea>
+    </div>
+
+    <!-- Q7: Free text - improvement ideas -->
+    <div class="q-card" id="qcard7">
+      <div class="q-num">Q7 / Question 7</div>
+      <div class="q-label">どうすればルールを守りやすくなりますか？</div>
+      <div class="q-label-en">What would help you follow the rules more easily? (Free text)</div>
+      <textarea id="q7" placeholder="例：チェックリストがあると助かる / Example: A checklist would help..." onchange="updateProgress()" oninput="updateProgress()"></textarea>
+    </div>
+
+    <!-- Q8: Free text - company requests -->
+    <div class="q-card" id="qcard8">
+      <div class="q-num">Q8 / Question 8</div>
+      <div class="q-label">店舗・会社に改善してほしいこと</div>
+      <div class="q-label-en">What would you like the store or company to improve? (Free text)</div>
+      <textarea id="q8" placeholder="例：人員を増やしてほしい / Example: Please hire more staff..." onchange="updateProgress()" oninput="updateProgress()"></textarea>
+    </div>
+
+    <!-- Submit -->
+    <div class="submit-wrap">
+      <button type="button" class="submit-btn" onclick="submitForm()">
+        回答を送信する ／ Submit
+      </button>
+    </div>
+
+  </form>
+
+  <!-- Success card -->
+  <div class="success-card" id="successCard">
+    <div class="success-icon">✅</div>
+    <h2>回答ありがとうございます！</h2>
+    <p>Thank you for your response!<br>あなたの回答は現場改善に活用されます。</p>
+    <button class="again-btn" onclick="resetForm()">もう一度回答する / Answer again</button>
+  </div>
+
+</div><!-- /form-view -->
+
+
+<!-- ============================================================
+     DASHBOARD VIEW
+============================================================ -->
+<div class="dash-view" id="dashView">
+
+  <div class="dash-header">
+    <div>
+      <h2>📊 厨房衛生管理 分析ダッシュボード</h2>
+      <div class="desc">Kitchen Hygiene Management · Analysis Dashboard · 管理職専用</div>
+    </div>
+    <div class="dash-btns">
+      <button class="dbtn" onclick="generateSampleData()">🧪 サンプルデータ生成</button>
+      <button class="dbtn" onclick="exportCSV()">📥 CSV出力</button>
+      <button class="dbtn red" onclick="clearData()">🗑 データ消去</button>
+    </div>
+  </div>
+
+  <!-- Filter bar -->
+  <div class="filter-bar">
+    <label>絞り込み / Filter:</label>
+    <div>
+      <label style="display:block;margin-bottom:4px">店舗</label>
+      <select id="filterStore" onchange="renderDashboard()">
+        <option value="">全店舗 / All Stores</option>
+      </select>
+    </div>
+    <div>
+      <label style="display:block;margin-bottom:4px">逸脱経験</label>
+      <select id="filterDeviation" onchange="renderDashboard()">
+        <option value="">全て / All</option>
+        <option value="よくある">よくある</option>
+        <option value="たまにある">たまにある</option>
+        <option value="ほとんどない">ほとんどない</option>
+        <option value="一度もない">一度もない</option>
+      </select>
+    </div>
+    <div>
+      <label style="display:block;margin-bottom:4px">理解度</label>
+      <select id="filterUnderstanding" onchange="renderDashboard()">
+        <option value="">全て / All</option>
+        <option value="理解している">理解している</option>
+        <option value="だいたい理解している">だいたい</option>
+        <option value="少し不安がある">少し不安</option>
+        <option value="よく分からない">よく分からない</option>
+      </select>
+    </div>
+    <button class="dbtn" style="margin-top:18px;border-color:var(--border);color:var(--muted)" onclick="resetFilters()">リセット</button>
+  </div>
+
+  <!-- Stats -->
+  <div class="stats-grid" id="statsGrid">
+    <div class="stat-card">
+      <div class="stat-num" id="statTotal">0</div>
+      <div class="stat-label">総回答数<br>Total Responses</div>
+    </div>
+    <div class="stat-card warn">
+      <div class="stat-num" id="statStores">0</div>
+      <div class="stat-label">回答店舗数<br>Stores Responded</div>
+    </div>
+    <div class="stat-card danger">
+      <div class="stat-num" id="statDevRate">0%</div>
+      <div class="stat-label">逸脱経験あり<br>Deviation Rate</div>
+    </div>
+    <div class="stat-card ok">
+      <div class="stat-num" id="statUnderRate">0%</div>
+      <div class="stat-label">理解度 良好<br>Good Understanding</div>
+    </div>
+  </div>
+
+  <!-- Charts grid row 1 -->
+  <div class="charts-grid">
+    <div class="chart-card">
+      <div class="chart-title">🏪 店舗別 回答数</div>
+      <div class="chart-sub">Responses by Store</div>
+      <div class="chart-wrap tall">
+        <canvas id="chartStore"></canvas>
+      </div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-title">⚠️ マニュアル逸脱経験</div>
+      <div class="chart-sub">Deviation Experience Distribution</div>
+      <div class="chart-wrap">
+        <canvas id="chartDeviation"></canvas>
+      </div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-title">📘 マニュアル理解度</div>
+      <div class="chart-sub">Manual Understanding Level</div>
+      <div class="chart-wrap">
+        <canvas id="chartUnderstanding"></canvas>
+      </div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-title">🔄 厨房作成 経験頻度</div>
+      <div class="chart-sub">Kitchen Preparation Frequency</div>
+      <div class="chart-wrap">
+        <canvas id="chartExperience"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <!-- Cause ranking -->
+  <div class="chart-card wide" style="margin-bottom:18px">
+    <div class="chart-title">🔍 逸脱原因 ランキング</div>
+    <div class="chart-sub">Cause Ranking — 現場改善の優先度把握に活用してください</div>
+    <div class="chart-wrap tall" style="height:320px">
+      <canvas id="chartCauses"></canvas>
+    </div>
+  </div>
+
+  <!-- Cause category tags -->
+  <div class="chart-card wide" style="margin-bottom:18px">
+    <div class="chart-title">📊 カテゴリ別 原因分析</div>
+    <div class="chart-sub">Category Analysis — 構造的課題の分類</div>
+    <div class="cause-grid" id="causeTagGrid"></div>
+  </div>
+
+  <!-- Store trend -->
+  <div class="chart-card wide" style="margin-bottom:18px">
+    <div class="chart-title">🏪 店舗別 逸脱状況</div>
+    <div class="chart-sub">Deviation Status by Store</div>
+    <div class="chart-wrap" style="height:280px">
+      <canvas id="chartStoreTrend"></canvas>
+    </div>
+  </div>
+
+  <!-- Danger alerts -->
+  <div class="danger-section">
+    <h3>🚨 危険傾向 ハイライト</h3>
+    <div class="desc">
+      以下のキーワードを含む回答を自動抽出しています。優先的に対応が必要な可能性があります。<br>
+      <span style="font-size:11px">Auto-detected high-risk keyword responses — may require priority action.</span>
+    </div>
+    <div class="danger-list" id="dangerList">
+      <div class="no-danger">データがありません / No data yet</div>
+    </div>
+  </div>
+
+  <!-- Free text responses -->
+  <div class="free-section">
+    <h3>📝 自由記述 一覧</h3>
+    <div class="free-tabs" id="freeTabs">
+      <button class="free-tab active" onclick="showFreeTab('q6', this)">Q6 困っていること</button>
+      <button class="free-tab" onclick="showFreeTab('q7', this)">Q7 改善アイデア</button>
+      <button class="free-tab" onclick="showFreeTab('q8', this)">Q8 会社への要望</button>
+    </div>
+    <div class="free-list" id="freeList"></div>
+  </div>
+
+</div><!-- /dash-view -->
+
+
+<!-- ============================================================
+     PIN MODAL
+============================================================ -->
+<div class="modal-overlay" id="pinModal">
+  <div class="modal-card">
+    <div class="modal-icon">🔐</div>
+    <h3>管理者認証</h3>
+    <p>ダッシュボードにアクセスするには<br>管理者PINを入力してください。<br><span style="font-size:11px">Enter the admin PIN to access the dashboard.</span></p>
+    <input type="password" class="pin-input" id="pinInput" maxlength="20" placeholder="PINを入力"
+           onkeyup="if(event.key==='Enter') verifyPin()">
+    <button class="pin-submit" onclick="verifyPin()">ログイン / Login</button>
+    <button class="pin-cancel" onclick="closePinModal()">キャンセル / Cancel</button>
+    <div class="pin-error" id="pinError">PINが正しくありません / Incorrect PIN</div>
+  </div>
+</div>
+
+
+<!-- ============================================================
+     SCRIPT
+============================================================ -->
+<script>
+/* ============================================================
+   CONFIG — ここを編集してください / Edit this section
+============================================================ */
+const CONFIG = {
+  // 管理者PIN (4桁を推奨) / Admin PIN (4 digits recommended)
+  ADMIN_PIN: 'Lawson3963',
+  // localStorage キー / Storage key
+  STORAGE_KEY: 'lawson_kitchen_survey_v1',
+};
+
+// 店舗リスト / Store list
+const STORES = [
+  'ローソン吹田垂水三丁目',
+  'ローソン江坂東',
+  'ローソン江坂駅南口',
+  'ローソン吹田警察署前',
+  'ローソン豊中原田南一丁目',
+  'ローソン南金田二丁目',
+  'ローソン吹田豊津中学校前',
+  'ローソン新御堂筋上新田',
+  'ローソン東淀川大道南',
+  'ローソン豊中服部西町三丁目',
+  'ローソン大道南一丁目',
+  'ローソン豊里六丁目',
+  'ローソン吹田青山台三丁目',
+  'ローソン豊中利倉東一丁目',
+  'ローソン五月ケ丘東',
+  'ローソン豊中服部元町一丁目',
+  'ローソン吹田朝日町',
+  'ローソン東淀川豊里五丁目',
+  'ローソン池田市役所前',
+  'ローソン箕面白島二丁目',
+];
+
+// 危険キーワード / Danger keywords
+const DANGER_KEYWORDS = [
+  { word: '見られていなければ', label: '監視がなければOK', severity: 'high' },
+  { word: '指摘されなければ大丈夫', label: '指摘なしはOK', severity: 'high' },
+  { word: 'バレない', label: 'バレなければOK', severity: 'high' },
+  { word: '周囲も同じ', label: '店舗文化的逸脱', severity: 'high' },
+  { word: 'みんなもやってい', label: '店舗文化的逸脱', severity: 'high' },
+  { word: '時間がない', label: '時間不足', severity: 'medium' },
+  { word: '時間が足りない', label: '時間不足', severity: 'medium' },
+  { word: '忙しすぎ', label: '忙しさによる逸脱', severity: 'medium' },
+  { word: '人が足りない', label: '人員不足', severity: 'medium' },
+  { word: '人手が足りない', label: '人員不足', severity: 'medium' },
+  { word: '教えられていない', label: '教育不足', severity: 'medium' },
+  { word: '教わっていない', label: '教育不足', severity: 'medium' },
+  { word: '分からない', label: '理解不足', severity: 'medium' },
+  { word: 'わからない', label: '理解不足', severity: 'medium' },
+  { word: '問題ないと思っ', label: 'リスク認識不足', severity: 'medium' },
+];
+
+// Cause category mapping (for category analysis)
+const CAUSE_CATEGORIES = {
+  '時間・業務過多': ['時間が足りない','作業が間に合わない','早く終わらせたい','忙しい時間帯で余裕がない'],
+  '人員不足':       ['人手不足'],
+  '教育・理解不足': ['マニュアルが分かりづらい','教えられた内容が人によって違う','衛生リスクの重大性が伝わっていない'],
+  '認識・意識':     ['問題ないと思っていた','指摘されなければ大丈夫と思った'],
+  '店舗文化':       ['周囲も同じようにやっている'],
+  'その他':         ['その他'],
+};
+
+/* ============================================================
+   INIT
+============================================================ */
+document.addEventListener('DOMContentLoaded', () => {
+  // Populate store dropdown
+  const sel = document.getElementById('q1');
+  STORES.forEach(s => {
+    const opt = document.createElement('option');
+    opt.value = s; opt.textContent = s;
+    sel.appendChild(opt);
+  });
+
+  // Update radio/checkbox highlight on change
+  document.querySelectorAll('.choice-list').forEach(list => {
+    list.addEventListener('change', () => {
+      list.querySelectorAll('.choice-item').forEach(item => {
+        const inp = item.querySelector('input');
+        item.classList.toggle('checked', inp.checked);
+      });
+    });
+  });
+
+  updateProgress();
+  showFreeTab('q6', document.querySelector('.free-tab'));
+});
+
+/* ============================================================
+   VIEW SWITCHING
+============================================================ */
+function showView(view) {
+  document.getElementById('formView').style.display  = view === 'form' ? '' : 'none';
+  document.getElementById('dashView').style.display  = view === 'dash' ? 'block' : 'none';
+  document.getElementById('tabForm').classList.toggle('active', view === 'form');
+  document.getElementById('tabDash').classList.toggle('active', view === 'dash');
+  if (view === 'dash') renderDashboard();
+}
+
+function openDash() {
+  if (sessionStorage.getItem('dash_auth') === '1') {
+    showView('dash');
+  } else {
+    document.getElementById('pinModal').classList.add('show');
+    document.getElementById('pinInput').value = '';
+    document.getElementById('pinError').style.display = 'none';
+    setTimeout(() => document.getElementById('pinInput').focus(), 200);
+  }
+}
+
+function closePinModal() {
+  document.getElementById('pinModal').classList.remove('show');
+}
+
+function verifyPin() {
+  const pin = document.getElementById('pinInput').value;
+  if (pin === CONFIG.ADMIN_PIN) {
+    sessionStorage.setItem('dash_auth', '1');
+    closePinModal();
+    showView('dash');
+  } else {
+    document.getElementById('pinError').style.display = 'block';
+    document.getElementById('pinInput').value = '';
+    document.getElementById('pinInput').focus();
+  }
+}
+
+/* ============================================================
+   PROGRESS BAR
+============================================================ */
+function updateProgress() {
+  const total = 8;
+  let filled = 0;
+  if (document.getElementById('q1').value) filled++;
+  if (document.querySelector('[name="q2"]:checked')) filled++;
+  if (document.querySelector('[name="q3"]:checked')) filled++;
+  if (document.querySelector('[name="q4"]:checked')) filled++;
+  if (document.querySelectorAll('[name="q5"]:checked').length > 0) filled++;
+  if (document.getElementById('q6').value.trim()) filled++;
+  if (document.getElementById('q7').value.trim()) filled++;
+  if (document.getElementById('q8').value.trim()) filled++;
+  const pct = Math.round((filled / total) * 100);
+  document.getElementById('progressFill').style.width = pct + '%';
+  document.getElementById('progressLabel').textContent =
+    `${pct}% 完了 / ${filled}/${total} 回答済み`;
+}
+
+/* ============================================================
+   FORM SUBMIT
+============================================================ */
+function submitForm() {
+  // Validate required fields
+  let valid = true;
+
+  // Q1
+  const store = document.getElementById('q1').value;
+  setError('err1', 'qcard1', !store);
+  if (!store) valid = false;
+
+  // Q2
+  const exp = document.querySelector('[name="q2"]:checked')?.value || '';
+  setError('err2', 'qcard2', !exp);
+  if (!exp) valid = false;
+
+  // Q3
+  const und = document.querySelector('[name="q3"]:checked')?.value || '';
+  setError('err3', 'qcard3', !und);
+  if (!und) valid = false;
+
+  // Q4
+  const dev = document.querySelector('[name="q4"]:checked')?.value || '';
+  setError('err4', 'qcard4', !dev);
+  if (!dev) valid = false;
+
+  if (!valid) {
+    document.querySelector('.has-error')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    return;
+  }
+
+  // Collect causes
+  const causes = [...document.querySelectorAll('[name="q5"]:checked')].map(c => c.value);
+
+  // Build response object
+  const response = {
+    id: Date.now().toString(36) + Math.random().toString(36).slice(2),
+    timestamp: new Date().toISOString(),
+    store,
+    experience:    exp,
+    understanding: und,
+    deviation:     dev,
+    causes,
+    difficulties:  document.getElementById('q6').value.trim(),
+    improvements:  document.getElementById('q7').value.trim(),
+    requests:      document.getElementById('q8').value.trim(),
+  };
+
+  // Save
+  const data = loadData();
+  data.push(response);
+  saveData(data);
+
+  // Show success
+  document.getElementById('surveyForm').style.display = 'none';
+  document.getElementById('successCard').style.display = 'block';
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function setError(errId, cardId, show) {
+  document.getElementById(errId).style.display = show ? 'block' : 'none';
+  document.getElementById(cardId).classList.toggle('has-error', show);
+}
+
+function resetForm() {
+  document.getElementById('surveyForm').reset();
+  document.querySelectorAll('.choice-item').forEach(i => i.classList.remove('checked'));
+  document.querySelectorAll('.error-msg').forEach(e => e.style.display = 'none');
+  document.querySelectorAll('.q-card').forEach(c => c.classList.remove('has-error'));
+  document.getElementById('surveyForm').style.display = '';
+  document.getElementById('successCard').style.display = 'none';
+  updateProgress();
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+/* ============================================================
+   DATA STORAGE
+============================================================ */
+function loadData() {
+  try { return JSON.parse(localStorage.getItem(CONFIG.STORAGE_KEY) || '[]'); }
+  catch { return []; }
+}
+function saveData(data) {
+  localStorage.setItem(CONFIG.STORAGE_KEY, JSON.stringify(data));
+}
+
+/* ============================================================
+   FILTERING
+============================================================ */
+function getFilteredData() {
+  let data = loadData();
+  const fStore = document.getElementById('filterStore')?.value || '';
+  const fDev   = document.getElementById('filterDeviation')?.value || '';
+  const fUnd   = document.getElementById('filterUnderstanding')?.value || '';
+  if (fStore) data = data.filter(r => r.store === fStore);
+  if (fDev)   data = data.filter(r => r.deviation === fDev);
+  if (fUnd)   data = data.filter(r => r.understanding === fUnd);
+  return data;
+}
+
+function resetFilters() {
+  document.getElementById('filterStore').value = '';
+  document.getElementById('filterDeviation').value = '';
+  document.getElementById('filterUnderstanding').value = '';
+  renderDashboard();
+}
+
+/* ============================================================
+   DASHBOARD RENDER
+============================================================ */
+let charts = {};
+
+function renderDashboard() {
+  const all  = loadData();
+  const data = getFilteredData();
+
+  // Populate store filter
+  const fStore = document.getElementById('filterStore');
+  const curVal = fStore.value;
+  fStore.innerHTML = '<option value="">全店舗 / All Stores</option>';
+  [...new Set(all.map(r => r.store))].sort().forEach(s => {
+    const o = document.createElement('option');
+    o.value = s; o.textContent = s;
+    fStore.appendChild(o);
+  });
+  fStore.value = curVal;
+
+  if (data.length === 0) {
+    renderEmptyDash();
+    return;
+  }
+
+  // --- Stats ---
+  const n = data.length;
+  const stores = [...new Set(data.map(r => r.store))];
+  const devYes = data.filter(r => r.deviation === 'よくある' || r.deviation === 'たまにある').length;
+  const underGood = data.filter(r => r.understanding === '理解している' || r.understanding === 'だいたい理解している').length;
+
+  document.getElementById('statTotal').textContent  = n;
+  document.getElementById('statStores').textContent = stores.length;
+  document.getElementById('statDevRate').textContent = Math.round(devYes / n * 100) + '%';
+  document.getElementById('statUnderRate').textContent = Math.round(underGood / n * 100) + '%';
+
+  // --- Chart: Store responses ---
+  const storeCounts = {};
+  data.forEach(r => { storeCounts[r.store] = (storeCounts[r.store] || 0) + 1; });
+  const storeLabels = Object.keys(storeCounts).sort((a,b) => storeCounts[b] - storeCounts[a]);
+  const storeVals   = storeLabels.map(s => storeCounts[s]);
+  renderBarH('chartStore', storeLabels, storeVals, '#2E86C1', '回答数');
+
+  // --- Chart: Deviation donut ---
+  const devLabels = ['よくある','たまにある','ほとんどない','一度もない'];
+  const devColors = ['#C0392B','#E67E22','#27AE60','#2ECC71'];
+  const devVals   = devLabels.map(l => data.filter(r => r.deviation === l).length);
+  renderDoughnut('chartDeviation', devLabels, devVals, devColors);
+
+  // --- Chart: Understanding donut ---
+  const undLabels = ['理解している','だいたい理解している','少し不安がある','よく分からない'];
+  const undColors = ['#1E8449','#27AE60','#F39C12','#C0392B'];
+  const undVals   = undLabels.map(l => data.filter(r => r.understanding === l).length);
+  renderDoughnut('chartUnderstanding', undLabels, undVals, undColors);
+
+  // --- Chart: Experience donut ---
+  const expLabels = ['毎日作成している','週に数回作成している','たまに作成する','ほとんど作成しない'];
+  const expColors = ['#1A5276','#2E86C1','#7FB3D3','#AED6F1'];
+  const expVals   = expLabels.map(l => data.filter(r => r.experience === l).length);
+  renderDoughnut('chartExperience', expLabels, expVals, expColors);
+
+  // --- Chart: Causes bar ---
+  const allCauses = [
+    '時間が足りない','人手不足','作業が間に合わない','早く終わらせたい',
+    '忙しい時間帯で余裕がない','マニュアルが分かりづらい','教えられた内容が人によって違う',
+    '周囲も同じようにやっている','問題ないと思っていた','指摘されなければ大丈夫と思った',
+    '衛生リスクの重大性が伝わっていない','その他'
+  ];
+  const causeCounts = {};
+  allCauses.forEach(c => { causeCounts[c] = 0; });
+  data.forEach(r => (r.causes || []).forEach(c => { if (causeCounts[c] !== undefined) causeCounts[c]++; }));
+  const causesSorted = allCauses.slice().sort((a,b) => causeCounts[b] - causeCounts[a]);
+  const causeColors = causesSorted.map(c => {
+    if (['周囲も同じようにやっている','指摘されなければ大丈夫と思った','問題ないと思っていた'].includes(c)) return '#C0392B';
+    if (['時間が足りない','人手不足','作業が間に合わない','忙しい時間帯で余裕がない'].includes(c)) return '#E67E22';
+    return '#2E86C1';
+  });
+  renderBarH('chartCauses', causesSorted, causesSorted.map(c => causeCounts[c]), causeColors, '回答人数');
+
+  // --- Cause category tags ---
+  const tagGrid = document.getElementById('causeTagGrid');
+  tagGrid.innerHTML = '';
+  const maxCat = Math.max(...Object.values(CAUSE_CATEGORIES).map(cats => cats.reduce((s,c) => s + (causeCounts[c]||0), 0)));
+  Object.entries(CAUSE_CATEGORIES).forEach(([cat, cats]) => {
+    const total = cats.reduce((s,c) => s + (causeCounts[c]||0), 0);
+    const isHigh = ['店舗文化','認識・意識'].includes(cat);
+    const div = document.createElement('div');
+    div.className = 'cause-tag' + (isHigh ? ' high' : '');
+    div.innerHTML = `
+      <div>
+        <div class="cause-tag-label">${cat}</div>
+        <div class="cause-bar-bg"><div class="cause-bar-fill" style="width:${maxCat ? Math.round(total/maxCat*100) : 0}%"></div></div>
+      </div>
+      <div class="cause-tag-count">${total}</div>
+    `;
+    tagGrid.appendChild(div);
+  });
+
+  // --- Chart: Store trend (stacked bar) ---
+  renderStoreTrend(data, stores.sort());
+
+  // --- Danger highlights ---
+  renderDangerList(data);
+
+  // --- Free text ---
+  showFreeTab(window._currentFreeTab || 'q6', null, data);
+}
+
+/* ============================================================
+   CHART HELPERS
+============================================================ */
+function destroyChart(id) {
+  if (charts[id]) { charts[id].destroy(); delete charts[id]; }
+}
+
+function renderBarH(canvasId, labels, values, colors, label) {
+  destroyChart(canvasId);
+  const ctx = document.getElementById(canvasId).getContext('2d');
+  const isArray = Array.isArray(colors);
+  charts[canvasId] = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels,
+      datasets: [{
+        label,
+        data: values,
+        backgroundColor: isArray ? colors : colors,
+        borderRadius: 6,
+        borderSkipped: false,
+      }]
+    },
+    options: {
+      indexAxis: 'y',
+      responsive: true, maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: { callbacks: { label: ctx => ` ${ctx.raw} 件` } }
+      },
+      scales: {
+        x: { beginAtZero: true, ticks: { precision: 0, font: { size: 11 } }, grid: { color: '#F0F4F8' } },
+        y: { ticks: { font: { size: 12 }, color: '#2C3E50' }, grid: { display: false } }
+      }
+    }
+  });
+}
+
+function renderDoughnut(canvasId, labels, values, colors) {
+  destroyChart(canvasId);
+  const ctx = document.getElementById(canvasId).getContext('2d');
+  charts[canvasId] = new Chart(ctx, {
+    type: 'doughnut',
+    data: { labels, datasets: [{ data: values, backgroundColor: colors, borderWidth: 2, borderColor: '#fff' }] },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      cutout: '62%',
+      plugins: {
+        legend: { position: 'right', labels: { font: { size: 11 }, boxWidth: 14, padding: 12 } },
+        tooltip: { callbacks: { label: ctx => ` ${ctx.label}: ${ctx.raw}件 (${Math.round(ctx.raw / ctx.dataset.data.reduce((a,b)=>a+b,0)*100)}%)` } }
+      }
+    }
+  });
+}
+
+function renderStoreTrend(data, stores) {
+  destroyChart('chartStoreTrend');
+  const devOptions = ['よくある','たまにある','ほとんどない','一度もない'];
+  const devColors  = ['#C0392B','#E67E22','#27AE60','#2ECC71'];
+
+  const datasets = devOptions.map((opt, i) => ({
+    label: opt,
+    data: stores.map(s => data.filter(r => r.store === s && r.deviation === opt).length),
+    backgroundColor: devColors[i],
+    borderRadius: 4,
+    borderSkipped: false,
+  }));
+
+  const ctx = document.getElementById('chartStoreTrend').getContext('2d');
+  charts['chartStoreTrend'] = new Chart(ctx, {
+    type: 'bar',
+    data: { labels: stores, datasets },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: {
+        legend: { position: 'bottom', labels: { font: { size: 11 }, boxWidth: 14, padding: 10 } },
+      },
+      scales: {
+        x: { stacked: true, ticks: { font: { size: 11 } }, grid: { display: false } },
+        y: { stacked: true, beginAtZero: true, ticks: { precision: 0, font: { size: 11 } }, grid: { color: '#F0F4F8' } }
+      }
+    }
+  });
+}
+
+function renderEmptyDash() {
+  ['chartStore','chartDeviation','chartUnderstanding','chartExperience','chartCauses','chartStoreTrend']
+    .forEach(id => destroyChart(id));
+  document.getElementById('statTotal').textContent  = '0';
+  document.getElementById('statStores').textContent = '0';
+  document.getElementById('statDevRate').textContent = '—';
+  document.getElementById('statUnderRate').textContent = '—';
+  document.getElementById('causeTagGrid').innerHTML = '<div class="no-danger">データがありません</div>';
+  document.getElementById('dangerList').innerHTML = '<div class="no-danger">データがありません / No data yet</div>';
+  document.getElementById('freeList').innerHTML = '<div class="empty-state"><div class="e-icon">📭</div><p>回答がまだありません</p></div>';
+}
+
+/* ============================================================
+   DANGER KEYWORDS
+============================================================ */
+function renderDangerList(data) {
+  const items = [];
+  const textFields = ['difficulties','improvements','requests'];
+  const checkCauses = ['周囲も同じようにやっている','指摘されなければ大丈夫と思った','問題ないと思っていた'];
+
+  data.forEach(r => {
+    // Check free text
+    textFields.forEach(field => {
+      const text = r[field] || '';
+      if (!text) return;
+      const matched = DANGER_KEYWORDS.filter(kw => text.includes(kw.word));
+      if (matched.length > 0) {
+        items.push({ r, text, matched, source: fieldLabel(field) });
+      }
+    });
+    // Check causes
+    const dangerCauses = (r.causes || []).filter(c => checkCauses.includes(c));
+    if (dangerCauses.length > 0) {
+      items.push({ r, text: dangerCauses.join('、'), matched: [], source: 'Q5 逸脱原因', isCause: true });
+    }
+  });
+
+  const list = document.getElementById('dangerList');
+  if (items.length === 0) {
+    list.innerHTML = '<div class="no-danger">⭕ 危険傾向の回答は検出されませんでした / No high-risk responses detected</div>';
+    return;
+  }
+
+  list.innerHTML = items.slice(0, 30).map(item => {
+    const highlighted = item.isCause
+      ? `<span class="danger-kw">${escHtml(item.text)}</span>`
+      : highlightKeywords(item.text, item.matched.map(m => m.word));
+    const date = new Date(item.r.timestamp).toLocaleDateString('ja-JP');
+    return `<div class="danger-item">
+      <div class="di-meta">
+        <span class="store-badge">${escHtml(item.r.store)}</span>
+        <span class="di-date">${date}</span>
+        <span class="tag ${item.isCause ? 'tag-red' : 'tag-blue'}">${escHtml(item.source)}</span>
+      </div>
+      <div>${highlighted}</div>
+    </div>`;
+  }).join('');
+}
+
+function fieldLabel(f) {
+  return { difficulties: 'Q6 困っていること', improvements: 'Q7 改善アイデア', requests: 'Q8 会社への要望' }[f] || f;
+}
+
+function highlightKeywords(text, words) {
+  let result = escHtml(text);
+  words.forEach(w => {
+    const safe = escHtml(w);
+    result = result.split(safe).join(`<span class="danger-kw">${safe}</span>`);
+  });
+  return result;
+}
+
+function escHtml(str) {
+  return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+/* ============================================================
+   FREE TEXT
+============================================================ */
+window._currentFreeTab = 'q6';
+
+function showFreeTab(field, btn, data) {
+  window._currentFreeTab = field;
+
+  // Update tab highlights
+  document.querySelectorAll('.free-tab').forEach(t => t.classList.remove('active'));
+  if (btn) btn.classList.add('active');
+
+  const rows = data || getFilteredData();
+  const list = document.getElementById('freeList');
+
+  const items = rows
+    .filter(r => r[field] && r[field].trim())
+    .map(r => {
+      const date = new Date(r.timestamp).toLocaleDateString('ja-JP');
+      const hasKw = DANGER_KEYWORDS.some(kw => (r[field]||'').includes(kw.word));
+      return `<div class="free-item" style="${hasKw ? 'border-left-color:var(--red)' : ''}">
+        <div class="fi-meta">
+          <strong>${escHtml(r.store)}</strong>
+          <span>${date}</span>
+          ${hasKw ? '<span class="tag tag-red">⚠️ 要注意</span>' : ''}
+        </div>
+        <div>${highlightKeywords(r[field], DANGER_KEYWORDS.map(k=>k.word))}</div>
+      </div>`;
+    });
+
+  list.innerHTML = items.length
+    ? items.join('')
+    : `<div class="empty-state"><div class="e-icon">📭</div><p>この項目の回答はありません</p></div>`;
+}
+
+/* ============================================================
+   SAMPLE DATA GENERATOR
+============================================================ */
+function generateSampleData() {
+  if (!confirm('テスト用サンプルデータ（30件）を追加しますか？\nAdd 30 sample responses for testing?')) return;
+
+  const sampleStores = STORES.slice(0, 8);
+  const experiences   = ['毎日作成している','週に数回作成している','たまに作成する','ほとんど作成しない'];
+  const understandings= ['理解している','だいたい理解している','少し不安がある','よく分からない'];
+  const deviations    = ['よくある','たまにある','ほとんどない','一度もない'];
+  const causePool     = ['時間が足りない','人手不足','作業が間に合わない','早く終わらせたい',
+                         '忙しい時間帯で余裕がない','マニュアルが分かりづらい','教えられた内容が人によって違う',
+                         '周囲も同じようにやっている','問題ないと思っていた','指摘されなければ大丈夫と思った',
+                         '衛生リスクの重大性が伝わっていない','その他'];
+  const diffSamples   = ['チェックリストが古くてどの手順が最新か分からない','忙しい時間帯は確認する余裕がない','チェックリストがどこにあるか分からないことがある','温度管理の記録用紙が見つからないことがある','人手が少なくてマニュアル通りにできないことが多い','みんな時間がないので早めに終わらせてしまうことがある'];
+  const improveSamples= ['もっとシンプルなチェックリストがほしい','定期的な研修をしてほしい','動画マニュアルがあると分かりやすい','忙しい時でも守れるくらいシンプルなルールにしてほしい','人員を増やしてほしい','先輩によって言うことが違うので統一してほしい'];
+  const reqSamples    = ['ピーク時間帯の人員補充をしてほしい','マニュアルを日本語と英語で用意してほしい','勉強会や練習の機会を増やしてほしい','チェックリストの内容を分かりやすくしてほしい','新人教育の時間をもっと確保してほしい'];
+
+  const rand = (arr) => arr[Math.floor(Math.random() * arr.length)];
+  const randPct = (arr, pcts) => {
+    const r = Math.random();
+    let cum = 0;
+    for (let i=0; i<pcts.length; i++) { cum += pcts[i]; if (r < cum) return arr[i]; }
+    return arr[arr.length-1];
+  };
+
+  const data = loadData();
+  for (let i = 0; i < 30; i++) {
+    const devOpt = randPct(deviations, [0.15, 0.45, 0.30, 0.10]);
+    const numCauses = Math.floor(Math.random() * 4);
+    const shuffled = [...causePool].sort(() => Math.random() - 0.5);
+    const causes = devOpt !== '一度もない' ? shuffled.slice(0, numCauses + 1) : [];
+    const ts = new Date(Date.now() - Math.random() * 30 * 86400000).toISOString();
+    data.push({
+      id: Date.now().toString(36) + Math.random().toString(36).slice(2),
+      timestamp: ts,
+      store: rand(sampleStores),
+      experience: randPct(experiences, [0.4, 0.35, 0.15, 0.1]),
+      understanding: randPct(understandings, [0.25, 0.45, 0.20, 0.10]),
+      deviation: devOpt,
+      causes,
+      difficulties: Math.random() > 0.3 ? rand(diffSamples) : '',
+      improvements: Math.random() > 0.4 ? rand(improveSamples) : '',
+      requests:     Math.random() > 0.5 ? rand(reqSamples) : '',
+    });
+  }
+  saveData(data);
+  renderDashboard();
+  alert('30件のサンプルデータを追加しました。');
+}
+
+/* ============================================================
+   CSV EXPORT
+============================================================ */
+function exportCSV() {
+  const data = getFilteredData();
+  if (data.length === 0) { alert('データがありません。'); return; }
+
+  const headers = ['日時','店舗','経験','理解度','逸脱経験','逸脱原因','困っていること','改善アイデア','会社への要望'];
+  const rows = data.map(r => [
+    r.timestamp, r.store, r.experience, r.understanding, r.deviation,
+    (r.causes || []).join('|'), r.difficulties || '', r.improvements || '', r.requests || ''
+  ]);
+
+  const csv = [headers, ...rows]
+    .map(row => row.map(cell => '"' + String(cell).replace(/"/g, '""') + '"').join(','))
+    .join('\r\n');
+
+  const bom = '\uFEFF';
+  const blob = new Blob([bom + csv], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `kitchen_survey_${new Date().toISOString().slice(0,10)}.csv`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+/* ============================================================
+   CLEAR DATA
+============================================================ */
+function clearData() {
+  if (!confirm('全データを消去しますか？この操作は元に戻せません。\nDelete all data? This cannot be undone.')) return;
+  localStorage.removeItem(CONFIG.STORAGE_KEY);
+  renderDashboard();
+  alert('データを消去しました。');
+}
+</script>
+</body>
+</html>
