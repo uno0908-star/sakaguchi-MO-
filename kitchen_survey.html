@@ -22,6 +22,8 @@
       --green:       #1E8449;
       --green-light: #A9DFBF;
       --amber:       #D4AC0D;
+      --purple:      #7D3C98;
+      --purple-light:#D7BDE2;
       --bg:          #EEF2F7;
       --card:        #FFFFFF;
       --text:        #1C2833;
@@ -122,6 +124,21 @@
     .notice-box p:last-child { margin-bottom: 0; }
     .notice-box .en { color: var(--muted); font-size: 11px; margin-top: 10px; border-top: 1px solid #D6EAF8; padding-top: 8px; }
 
+    /* Purpose notice */
+    .purpose-box {
+      background: linear-gradient(135deg, #EAF4FB 0%, #F4ECF7 100%);
+      border: 1.5px solid #AED6F1;
+      border-radius: 12px; padding: 16px 18px;
+      margin-bottom: 18px; font-size: 14px;
+    }
+    .purpose-box .purpose-title {
+      font-size: 13px; font-weight: 800; color: var(--blue);
+      margin-bottom: 8px; display: flex; align-items: center; gap: 6px;
+    }
+    .purpose-box ul { padding-left: 18px; }
+    .purpose-box ul li { margin-bottom: 3px; font-size: 13px; }
+    .purpose-box .en { color: var(--muted); font-size: 11px; margin-top: 10px; border-top: 1px solid #D6EAF8; padding-top: 8px; }
+
     /* Question card */
     .q-card {
       background: var(--card); border-radius: 14px;
@@ -137,6 +154,13 @@
     .q-label { font-size: 16px; font-weight: 700; margin-bottom: 2px; }
     .q-label-en { font-size: 11px; color: var(--muted); margin-bottom: 14px; }
     .q-label .req { color: var(--red); margin-left: 3px; }
+    .q-hint {
+      background: #FEF9E7; border: 1px solid #F9E79F;
+      border-radius: 8px; padding: 10px 14px;
+      font-size: 12px; color: #7D6608; margin-bottom: 14px;
+      display: flex; align-items: flex-start; gap: 8px;
+    }
+    .q-hint-en { font-size: 10px; color: #A9770E; margin-top: 4px; }
 
     /* Select */
     select {
@@ -159,6 +183,8 @@
     }
     .choice-item:hover { border-color: var(--blue-mid); background: #EBF5FB; }
     .choice-item.checked { border-color: var(--blue); background: #EBF5FB; }
+    .choice-item.safe-check { border-color: var(--green); background: #EAFAF1; }
+    .choice-item.safe-check.checked { border-color: var(--green); background: #D5F5E3; }
     .choice-item input[type="radio"],
     .choice-item input[type="checkbox"] {
       width: 18px; height: 18px; margin-top: 2px;
@@ -261,14 +287,59 @@
       padding: 18px 14px; text-align: center;
       box-shadow: var(--shadow); border-top: 4px solid var(--blue);
     }
-    .stat-card.warn { border-top-color: var(--amber); }
-    .stat-card.danger { border-top-color: var(--red); }
-    .stat-card.ok { border-top-color: var(--green); }
+    .stat-card.warn  { border-top-color: var(--amber); }
+    .stat-card.danger{ border-top-color: var(--red); }
+    .stat-card.ok    { border-top-color: var(--green); }
+    .stat-card.purple{ border-top-color: var(--purple); }
     .stat-num { font-size: 38px; font-weight: 800; line-height: 1; margin-bottom: 6px; color: var(--blue); }
-    .stat-card.warn .stat-num { color: var(--amber); }
+    .stat-card.warn   .stat-num { color: var(--amber); }
     .stat-card.danger .stat-num { color: var(--red); }
-    .stat-card.ok .stat-num { color: var(--green); }
+    .stat-card.ok     .stat-num { color: var(--green); }
+    .stat-card.purple .stat-num { color: var(--purple); }
     .stat-label { font-size: 11px; font-weight: 700; color: var(--muted); line-height: 1.3; }
+
+    /* Key indicator section */
+    .key-indicator-section {
+      background: var(--card); border-radius: 14px;
+      padding: 20px; margin-bottom: 18px;
+      box-shadow: var(--shadow);
+      border-left: 5px solid var(--purple);
+    }
+    .key-indicator-section h3 {
+      font-size: 15px; font-weight: 800; color: var(--purple);
+      display: flex; align-items: center; gap: 8px; margin-bottom: 4px;
+    }
+    .ki-desc { font-size: 12px; color: var(--muted); margin-bottom: 16px; }
+    .ki-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 12px;
+    }
+    .ki-card {
+      border-radius: 10px; padding: 14px 16px;
+      border: 1.5px solid var(--border);
+    }
+    .ki-card.critical { border-color: var(--red); background: #FDF2F2; }
+    .ki-card.warning  { border-color: var(--amber); background: #FFFDE7; }
+    .ki-card.info     { border-color: var(--blue-mid); background: #EBF5FB; }
+    .ki-card.safe     { border-color: var(--green); background: #EAFAF1; }
+    .ki-label { font-size: 12px; font-weight: 700; margin-bottom: 6px; }
+    .ki-card.critical .ki-label { color: var(--red); }
+    .ki-card.warning  .ki-label { color: #B7770D; }
+    .ki-card.info     .ki-label { color: var(--blue); }
+    .ki-card.safe     .ki-label { color: var(--green); }
+    .ki-num { font-size: 28px; font-weight: 800; line-height: 1; }
+    .ki-card.critical .ki-num { color: var(--red); }
+    .ki-card.warning  .ki-num  { color: var(--amber); }
+    .ki-card.info     .ki-num  { color: var(--blue); }
+    .ki-card.safe     .ki-num  { color: var(--green); }
+    .ki-sub { font-size: 11px; color: var(--muted); margin-top: 4px; }
+    .ki-bar-bg { height: 5px; background: var(--border); border-radius: 5px; margin-top: 8px; }
+    .ki-bar-fill { height: 5px; border-radius: 5px; transition: width 0.6s; }
+    .ki-card.critical .ki-bar-fill { background: var(--red); }
+    .ki-card.warning  .ki-bar-fill { background: var(--amber); }
+    .ki-card.info     .ki-bar-fill { background: var(--blue-mid); }
+    .ki-card.safe     .ki-bar-fill { background: var(--green); }
 
     /* Charts grid */
     .charts-grid {
@@ -306,33 +377,33 @@
     .cause-tag.high .cause-bar-fill { background: var(--red); }
     .cause-tag.high .cause-tag-count { color: var(--red); }
 
-    /* Danger section */
-    .danger-section {
+    /* Alert section */
+    .alert-section {
       background: var(--card); border-radius: 14px;
       padding: 20px; margin-bottom: 18px;
       box-shadow: var(--shadow);
-      border-left: 5px solid var(--red);
+      border-left: 5px solid var(--amber);
     }
-    .danger-section h3 {
-      font-size: 15px; font-weight: 800; color: var(--red);
+    .alert-section h3 {
+      font-size: 15px; font-weight: 800; color: #7D6608;
       display: flex; align-items: center; gap: 8px; margin-bottom: 4px;
     }
-    .danger-section .desc { font-size: 12px; color: var(--muted); margin-bottom: 14px; }
-    .danger-list { display: flex; flex-direction: column; gap: 10px; }
-    .danger-item {
-      background: #FDF2F8; border: 1px solid #F5B7B1;
+    .alert-section .desc { font-size: 12px; color: var(--muted); margin-bottom: 14px; }
+    .alert-list { display: flex; flex-direction: column; gap: 10px; }
+    .alert-item {
+      background: #FFFDE7; border: 1px solid #F9E79F;
       border-radius: 10px; padding: 13px 16px; font-size: 14px;
     }
-    .danger-item .di-meta {
+    .alert-item .di-meta {
       display: flex; align-items: center; gap: 8px; margin-bottom: 6px;
     }
     .store-badge {
-      background: var(--red); color: white;
+      background: var(--blue); color: white;
       font-size: 10px; font-weight: 700;
       padding: 2px 9px; border-radius: 12px;
     }
     .di-date { font-size: 10px; color: var(--muted); }
-    .danger-kw { background: #FADBD8; color: var(--red); font-weight: 700; border-radius: 3px; padding: 0 2px; }
+    .alert-kw { background: #FEF9E7; color: #7D6608; font-weight: 700; border-radius: 3px; padding: 0 2px; border: 1px solid #F9E79F; }
     .no-danger {
       text-align: center; padding: 28px; color: var(--muted);
       font-size: 14px;
@@ -431,10 +502,12 @@
       .charts-grid { grid-template-columns: 1fr; }
       .dash-header { flex-direction: column; }
       .cause-grid { grid-template-columns: 1fr 1fr; }
+      .ki-grid { grid-template-columns: 1fr 1fr; }
     }
     @media (max-width: 360px) {
       .stats-grid { grid-template-columns: 1fr 1fr; }
       .cause-grid { grid-template-columns: 1fr; }
+      .ki-grid { grid-template-columns: 1fr; }
     }
 
     /* Scrollbar */
@@ -449,9 +522,10 @@
       display: inline-block; padding: 2px 9px; border-radius: 12px;
       font-size: 10px; font-weight: 700;
     }
-    .tag-blue { background: #D6EAF8; color: var(--blue); }
-    .tag-red  { background: var(--red-light); color: var(--red); }
-    .tag-green { background: var(--green-light); color: var(--green); }
+    .tag-blue   { background: #D6EAF8; color: var(--blue); }
+    .tag-amber  { background: #FEF9E7; color: #7D6608; }
+    .tag-green  { background: var(--green-light); color: var(--green); }
+    .tag-purple { background: var(--purple-light); color: var(--purple); }
   </style>
 </head>
 <body>
@@ -495,12 +569,26 @@
   <!-- Notice -->
   <div class="notice-box">
     <p>📢 <strong>このアンケートは、個人を責めるためのものではありません。</strong></p>
-    <p>厨房作成ルールを守れない原因を確認し、<strong>より安全で働きやすい環境に改善するため</strong>のアンケートです。</p>
     <p>名前や社員番号は取得しません。所属店舗のみ入力してください。</p>
-    <p><strong>正直な回答をお願いします。</strong></p>
+    <p><strong>正直な回答が、現場をより良くします。</strong></p>
     <div class="en">
-      This survey is NOT to blame individuals. It helps us understand why kitchen rules are difficult to follow,
-      so we can improve the working environment. No name or employee number is collected. Please answer honestly.
+      This survey is NOT to blame anyone. No name or employee ID is collected.
+      Your honest answer helps us improve the workplace.
+    </div>
+  </div>
+
+  <!-- Purpose box -->
+  <div class="purpose-box">
+    <div class="purpose-title">🎯 このアンケートの目的 / Purpose of this survey</div>
+    <ul>
+      <li>現場でルールが変わっていないか確認する</li>
+      <li>教育内容にズレがないか把握する</li>
+      <li>ルールが守りにくい状況を改善する</li>
+    </ul>
+    <div class="en">
+      • Check if rules are applied consistently on-site<br>
+      • Understand gaps in training content<br>
+      • Improve situations that make it hard to follow rules
     </div>
   </div>
 
@@ -521,7 +609,7 @@
     <!-- Q2: Experience -->
     <div class="q-card" id="qcard2">
       <div class="q-num">Q2 / Question 2</div>
-      <div class="q-label">厨房作成の経験</div>
+      <div class="q-label">厨房作成の経験<span class="req">★必須</span></div>
       <div class="q-label-en">How often do you prepare kitchen items?</div>
       <div class="choice-list" id="q2">
         <label class="choice-item">
@@ -544,36 +632,59 @@
       <div class="error-msg" id="err2">選択してください。/ Please select one.</div>
     </div>
 
-    <!-- Q3: Understanding -->
+    <!-- Q3: Field Reality (NEW - replaces old Understanding question) -->
     <div class="q-card" id="qcard3">
       <div class="q-num">Q3 / Question 3</div>
-      <div class="q-label">厨房作成マニュアルの理解度</div>
-      <div class="q-label-en">How well do you understand the kitchen manual?</div>
+      <div class="q-label">現場での状況について<span class="req">★必須</span></div>
+      <div class="q-label-en">Regarding current kitchen preparation work</div>
+      <div class="q-hint">
+        <span style="font-size:16px;flex-shrink:0">💬</span>
+        <div>
+          現在の厨房作成方法について、下記のようなことはありますか？<strong>あてはまるものを全て選んでください。</strong>
+          <div class="q-hint-en">Have you experienced any of the following? Select all that apply.</div>
+        </div>
+      </div>
       <div class="choice-list" id="q3">
         <label class="choice-item">
-          <input type="radio" name="q3" value="理解している" onchange="updateProgress()">
-          <span class="choice-text">理解している<span class="choice-en">I understand it well</span></span>
+          <input type="checkbox" name="q3" value="教える人によってやり方が違う" onchange="updateProgress()">
+          <span class="choice-text">教える人によってやり方が違う<span class="choice-en">Different trainers teach different methods</span></span>
         </label>
         <label class="choice-item">
-          <input type="radio" name="q3" value="だいたい理解している" onchange="updateProgress()">
-          <span class="choice-text">だいたい理解している<span class="choice-en">I mostly understand it</span></span>
+          <input type="checkbox" name="q3" value="店舗によってやり方が違う" onchange="updateProgress()">
+          <span class="choice-text">店舗によってやり方が違う<span class="choice-en">Different stores use different methods</span></span>
         </label>
         <label class="choice-item">
-          <input type="radio" name="q3" value="少し不安がある" onchange="updateProgress()">
-          <span class="choice-text">少し不安がある<span class="choice-en">I'm a bit unsure</span></span>
+          <input type="checkbox" name="q3" value="マニュアル通りではない方法を教わったことがある" onchange="updateProgress()">
+          <span class="choice-text">マニュアル通りではない方法を教わったことがある<span class="choice-en">I was taught methods different from the manual</span></span>
         </label>
         <label class="choice-item">
-          <input type="radio" name="q3" value="よく分からない" onchange="updateProgress()">
-          <span class="choice-text">よく分からない<span class="choice-en">I don't really understand it</span></span>
+          <input type="checkbox" name="q3" value="自分では正しいやり方だと思っていたが後からマニュアルと違うと指摘されたことがある" onchange="updateProgress()">
+          <span class="choice-text">自分では正しいやり方だと思っていたが、後からマニュアルと違うと指摘されたことがある<span class="choice-en">I was later told that my method was different from the manual, even though I thought I was doing it correctly</span></span>
+        </label>
+        <label class="choice-item">
+          <input type="checkbox" name="q3" value="なぜそのルールが必要か説明を受けていない" onchange="updateProgress()">
+          <span class="choice-text">なぜそのルールが必要か説明を受けていない<span class="choice-en">I was not told why the rule is important</span></span>
+        </label>
+        <label class="choice-item">
+          <input type="checkbox" name="q3" value="忙しい時は現場判断でやり方を変えることがある" onchange="updateProgress()">
+          <span class="choice-text">忙しい時は現場判断でやり方を変えることがある<span class="choice-en">During busy times, methods are changed based on situation</span></span>
+        </label>
+        <label class="choice-item">
+          <input type="checkbox" name="q3" value="正しいやり方が分からなくなる時がある" onchange="updateProgress()">
+          <span class="choice-text">正しいやり方が分からなくなる時がある<span class="choice-en">Sometimes I am unsure which method is correct</span></span>
+        </label>
+        <label class="choice-item safe-check">
+          <input type="checkbox" name="q3" value="特に問題はない" onchange="updateProgress()">
+          <span class="choice-text">特に問題はない<span class="choice-en">No problems — things are working well</span></span>
         </label>
       </div>
-      <div class="error-msg" id="err3">選択してください。/ Please select one.</div>
+      <div class="error-msg" id="err3">1つ以上選択してください。/ Please select at least one.</div>
     </div>
 
     <!-- Q4: Deviation -->
     <div class="q-card" id="qcard4">
       <div class="q-num">Q4 / Question 4</div>
-      <div class="q-label">マニュアルから逸脱してしまったことはありますか？</div>
+      <div class="q-label">マニュアルから逸脱してしまったことはありますか？<span class="req">★必須</span></div>
       <div class="q-label-en">Have you ever deviated from the manual?</div>
       <div class="choice-list" id="q4">
         <label class="choice-item">
@@ -600,7 +711,7 @@
     <div class="q-card" id="qcard5">
       <div class="q-num">Q5 / Question 5</div>
       <div class="q-label">なぜ逸脱しましたか？</div>
-      <div class="q-label-en">Why did you deviate? (Choose all that apply)</div>
+      <div class="q-label-en">Why did you deviate? (Choose all that apply — optional)</div>
       <div class="choice-list" id="q5">
         <label class="choice-item">
           <input type="checkbox" name="q5" value="時間が足りない" onchange="updateProgress()">
@@ -639,10 +750,6 @@
           <span class="choice-text">問題ないと思っていた<span class="choice-en">Thought it was okay</span></span>
         </label>
         <label class="choice-item">
-          <input type="checkbox" name="q5" value="指摘されなければ大丈夫と思った" onchange="updateProgress()">
-          <span class="choice-text">指摘されなければ大丈夫と思った<span class="choice-en">Thought it was fine if no one noticed</span></span>
-        </label>
-        <label class="choice-item">
           <input type="checkbox" name="q5" value="衛生リスクの重大性が伝わっていない" onchange="updateProgress()">
           <span class="choice-text">衛生リスクの重大性が伝わっていない<span class="choice-en">Didn't understand the hygiene risks</span></span>
         </label>
@@ -658,7 +765,7 @@
       <div class="q-num">Q6 / Question 6</div>
       <div class="q-label">厨房作成で困っていること</div>
       <div class="q-label-en">What are you having difficulty with? (Free text)</div>
-      <textarea id="q6" placeholder="例：〇〇の手順がよく分からない / Example: I'm not sure about the steps for ..." onchange="updateProgress()" oninput="updateProgress()"></textarea>
+      <textarea id="q6" placeholder="例：〇〇の手順がよく分からない。先輩によって言うことが違う / Example: I'm unsure about certain steps. Different supervisors say different things." onchange="updateProgress()" oninput="updateProgress()"></textarea>
     </div>
 
     <!-- Q7: Free text - improvement ideas -->
@@ -666,7 +773,7 @@
       <div class="q-num">Q7 / Question 7</div>
       <div class="q-label">どうすればルールを守りやすくなりますか？</div>
       <div class="q-label-en">What would help you follow the rules more easily? (Free text)</div>
-      <textarea id="q7" placeholder="例：チェックリストがあると助かる / Example: A checklist would help..." onchange="updateProgress()" oninput="updateProgress()"></textarea>
+      <textarea id="q7" placeholder="例：チェックリストがあると助かる。研修を増やしてほしい / Example: A checklist would help. More training opportunities." onchange="updateProgress()" oninput="updateProgress()"></textarea>
     </div>
 
     <!-- Q8: Free text - company requests -->
@@ -674,7 +781,7 @@
       <div class="q-num">Q8 / Question 8</div>
       <div class="q-label">店舗・会社に改善してほしいこと</div>
       <div class="q-label-en">What would you like the store or company to improve? (Free text)</div>
-      <textarea id="q8" placeholder="例：人員を増やしてほしい / Example: Please hire more staff..." onchange="updateProgress()" oninput="updateProgress()"></textarea>
+      <textarea id="q8" placeholder="例：人員を増やしてほしい。教育の仕方を統一してほしい / Example: Please hire more staff. Unify training methods." onchange="updateProgress()" oninput="updateProgress()"></textarea>
     </div>
 
     <!-- Submit -->
@@ -690,7 +797,7 @@
   <div class="success-card" id="successCard">
     <div class="success-icon">✅</div>
     <h2>回答ありがとうございます！</h2>
-    <p>Thank you for your response!<br>あなたの回答は現場改善に活用されます。</p>
+    <p>Thank you for your response!<br>あなたの回答は現場改善に活用されます。<br><span style="font-size:12px">Your answer will be used to improve the workplace.</span></p>
     <button class="again-btn" onclick="resetForm()">もう一度回答する / Answer again</button>
   </div>
 
@@ -734,13 +841,13 @@
       </select>
     </div>
     <div>
-      <label style="display:block;margin-bottom:4px">理解度</label>
-      <select id="filterUnderstanding" onchange="renderDashboard()">
+      <label style="display:block;margin-bottom:4px">現場課題</label>
+      <select id="filterFieldReality" onchange="renderDashboard()">
         <option value="">全て / All</option>
-        <option value="理解している">理解している</option>
-        <option value="だいたい理解している">だいたい</option>
-        <option value="少し不安がある">少し不安</option>
-        <option value="よく分からない">よく分からない</option>
+        <option value="教える人によってやり方が違う">指導バラつき</option>
+        <option value="忙しい時は現場判断でやり方を変えることがある">忙しさ逸脱</option>
+        <option value="正しいやり方が分からなくなる時がある">理解不安</option>
+        <option value="特に問題はない">問題なし</option>
       </select>
     </div>
     <button class="dbtn" style="margin-top:18px;border-color:var(--border);color:var(--muted)" onclick="resetFilters()">リセット</button>
@@ -760,9 +867,29 @@
       <div class="stat-num" id="statDevRate">0%</div>
       <div class="stat-label">逸脱経験あり<br>Deviation Rate</div>
     </div>
+    <div class="stat-card purple">
+      <div class="stat-num" id="statTrainerInconsist">0%</div>
+      <div class="stat-label">指導バラつき報告<br>Trainer Inconsistency</div>
+    </div>
+    <div class="stat-card warn">
+      <div class="stat-num" id="statBusyDeviation">0%</div>
+      <div class="stat-label">忙しさ逸脱傾向<br>Busy-Time Deviation</div>
+    </div>
     <div class="stat-card ok">
-      <div class="stat-num" id="statUnderRate">0%</div>
-      <div class="stat-label">理解度 良好<br>Good Understanding</div>
+      <div class="stat-num" id="statNoIssue">0%</div>
+      <div class="stat-label">特に問題なし<br>No Issues Reported</div>
+    </div>
+  </div>
+
+  <!-- KEY INDICATORS — Q3 Analysis -->
+  <div class="key-indicator-section">
+    <h3>🔬 現場実態 重要指標 / Field Reality Key Indicators</h3>
+    <div class="ki-desc">
+      Q3「現場での状況」の回答を分析した重要指標です。数値が高いほど改善が必要な領域を示します。<br>
+      <span style="font-size:10px">Key indicators from Q3 "Field Situation" — higher values indicate areas needing improvement.</span>
+    </div>
+    <div class="ki-grid" id="kiGrid">
+      <!-- filled by JS -->
     </div>
   </div>
 
@@ -782,11 +909,11 @@
         <canvas id="chartDeviation"></canvas>
       </div>
     </div>
-    <div class="chart-card">
-      <div class="chart-title">📘 マニュアル理解度</div>
-      <div class="chart-sub">Manual Understanding Level</div>
-      <div class="chart-wrap">
-        <canvas id="chartUnderstanding"></canvas>
+    <div class="chart-card wide">
+      <div class="chart-title">🔍 Q3 現場実態 — 選択項目の分布</div>
+      <div class="chart-sub">Field Reality — Distribution of reported issues (multiple answers allowed)</div>
+      <div class="chart-wrap" style="height:300px">
+        <canvas id="chartFieldReality"></canvas>
       </div>
     </div>
     <div class="chart-card">
@@ -823,14 +950,14 @@
     </div>
   </div>
 
-  <!-- Danger alerts -->
-  <div class="danger-section">
-    <h3>🚨 危険傾向 ハイライト</h3>
+  <!-- Alert section (renamed from danger - less blaming) -->
+  <div class="alert-section">
+    <h3>📌 注目コメント ハイライト</h3>
     <div class="desc">
-      以下のキーワードを含む回答を自動抽出しています。優先的に対応が必要な可能性があります。<br>
-      <span style="font-size:11px">Auto-detected high-risk keyword responses — may require priority action.</span>
+      改善検討に役立つキーワードを含む自由記述を抽出しています。個人を特定する情報は含みません。<br>
+      <span style="font-size:11px">Free-text responses containing improvement-related keywords — no personal information included.</span>
     </div>
-    <div class="danger-list" id="dangerList">
+    <div class="alert-list" id="dangerList">
       <div class="no-danger">データがありません / No data yet</div>
     </div>
   </div>
@@ -874,10 +1001,8 @@
    CONFIG — ここを編集してください / Edit this section
 ============================================================ */
 const CONFIG = {
-  // 管理者PIN (4桁を推奨) / Admin PIN (4 digits recommended)
   ADMIN_PIN: 'Lawson3963',
-  // localStorage キー / Storage key
-  STORAGE_KEY: 'lawson_kitchen_survey_v1',
+  STORAGE_KEY: 'lawson_kitchen_survey_v2',
 };
 
 // 店舗リスト / Store list
@@ -904,31 +1029,43 @@ const STORES = [
   'ローソン箕面白島二丁目',
 ];
 
-// 危険キーワード / Danger keywords
-const DANGER_KEYWORDS = [
-  { word: '見られていなければ', label: '監視がなければOK', severity: 'high' },
-  { word: '指摘されなければ大丈夫', label: '指摘なしはOK', severity: 'high' },
-  { word: 'バレない', label: 'バレなければOK', severity: 'high' },
-  { word: '周囲も同じ', label: '店舗文化的逸脱', severity: 'high' },
-  { word: 'みんなもやってい', label: '店舗文化的逸脱', severity: 'high' },
-  { word: '時間がない', label: '時間不足', severity: 'medium' },
-  { word: '時間が足りない', label: '時間不足', severity: 'medium' },
-  { word: '忙しすぎ', label: '忙しさによる逸脱', severity: 'medium' },
-  { word: '人が足りない', label: '人員不足', severity: 'medium' },
-  { word: '人手が足りない', label: '人員不足', severity: 'medium' },
-  { word: '教えられていない', label: '教育不足', severity: 'medium' },
-  { word: '教わっていない', label: '教育不足', severity: 'medium' },
-  { word: '分からない', label: '理解不足', severity: 'medium' },
-  { word: 'わからない', label: '理解不足', severity: 'medium' },
-  { word: '問題ないと思っ', label: 'リスク認識不足', severity: 'medium' },
+// Q3 選択肢 / Q3 field reality options
+const Q3_OPTIONS = [
+  '教える人によってやり方が違う',
+  '店舗によってやり方が違う',
+  'マニュアル通りではない方法を教わったことがある',
+  '自分では正しいやり方だと思っていたが後からマニュアルと違うと指摘されたことがある',
+  'なぜそのルールが必要か説明を受けていない',
+  '忙しい時は現場判断でやり方を変えることがある',
+  '正しいやり方が分からなくなる時がある',
+  '特に問題はない',
 ];
 
-// Cause category mapping (for category analysis)
+// 注目キーワード / Keyword highlights
+const ALERT_KEYWORDS = [
+  { word: '時間がない', label: '時間不足' },
+  { word: '時間が足りない', label: '時間不足' },
+  { word: '忙しすぎ', label: '忙しさ' },
+  { word: '人が足りない', label: '人員不足' },
+  { word: '人手が足りない', label: '人員不足' },
+  { word: '教えられていない', label: '教育不足' },
+  { word: '教わっていない', label: '教育不足' },
+  { word: '人によって', label: '指導バラつき' },
+  { word: '分からない', label: '不明確' },
+  { word: 'わからない', label: '不明確' },
+  { word: '統一してほしい', label: '統一要望' },
+  { word: 'バラバラ', label: '不統一' },
+  { word: '昔のやり方', label: '旧習' },
+  { word: '店独自', label: '店舗独自ルール' },
+  { word: '覚えられない', label: '習得困難' },
+];
+
+// Cause category mapping
 const CAUSE_CATEGORIES = {
   '時間・業務過多': ['時間が足りない','作業が間に合わない','早く終わらせたい','忙しい時間帯で余裕がない'],
   '人員不足':       ['人手不足'],
-  '教育・理解不足': ['マニュアルが分かりづらい','教えられた内容が人によって違う','衛生リスクの重大性が伝わっていない'],
-  '認識・意識':     ['問題ないと思っていた','指摘されなければ大丈夫と思った'],
+  '教育・指導バラつき': ['マニュアルが分かりづらい','教えられた内容が人によって違う','衛生リスクの重大性が伝わっていない'],
+  '認識・意識':     ['問題ないと思っていた'],
   '店舗文化':       ['周囲も同じようにやっている'],
   'その他':         ['その他'],
 };
@@ -937,7 +1074,6 @@ const CAUSE_CATEGORIES = {
    INIT
 ============================================================ */
 document.addEventListener('DOMContentLoaded', () => {
-  // Populate store dropdown
   const sel = document.getElementById('q1');
   STORES.forEach(s => {
     const opt = document.createElement('option');
@@ -945,7 +1081,6 @@ document.addEventListener('DOMContentLoaded', () => {
     sel.appendChild(opt);
   });
 
-  // Update radio/checkbox highlight on change
   document.querySelectorAll('.choice-list').forEach(list => {
     list.addEventListener('change', () => {
       list.querySelectorAll('.choice-item').forEach(item => {
@@ -1006,7 +1141,7 @@ function updateProgress() {
   let filled = 0;
   if (document.getElementById('q1').value) filled++;
   if (document.querySelector('[name="q2"]:checked')) filled++;
-  if (document.querySelector('[name="q3"]:checked')) filled++;
+  if (document.querySelectorAll('[name="q3"]:checked').length > 0) filled++;
   if (document.querySelector('[name="q4"]:checked')) filled++;
   if (document.querySelectorAll('[name="q5"]:checked').length > 0) filled++;
   if (document.getElementById('q6').value.trim()) filled++;
@@ -1022,7 +1157,6 @@ function updateProgress() {
    FORM SUBMIT
 ============================================================ */
 function submitForm() {
-  // Validate required fields
   let valid = true;
 
   // Q1
@@ -1035,10 +1169,10 @@ function submitForm() {
   setError('err2', 'qcard2', !exp);
   if (!exp) valid = false;
 
-  // Q3
-  const und = document.querySelector('[name="q3"]:checked')?.value || '';
-  setError('err3', 'qcard3', !und);
-  if (!und) valid = false;
+  // Q3 — at least one checkbox required
+  const fieldReality = [...document.querySelectorAll('[name="q3"]:checked')].map(c => c.value);
+  setError('err3', 'qcard3', fieldReality.length === 0);
+  if (fieldReality.length === 0) valid = false;
 
   // Q4
   const dev = document.querySelector('[name="q4"]:checked')?.value || '';
@@ -1050,29 +1184,25 @@ function submitForm() {
     return;
   }
 
-  // Collect causes
   const causes = [...document.querySelectorAll('[name="q5"]:checked')].map(c => c.value);
 
-  // Build response object
   const response = {
     id: Date.now().toString(36) + Math.random().toString(36).slice(2),
     timestamp: new Date().toISOString(),
     store,
-    experience:    exp,
-    understanding: und,
-    deviation:     dev,
+    experience:   exp,
+    fieldReality,         // NEW: Q3 checkbox array
+    deviation:    dev,
     causes,
-    difficulties:  document.getElementById('q6').value.trim(),
-    improvements:  document.getElementById('q7').value.trim(),
-    requests:      document.getElementById('q8').value.trim(),
+    difficulties: document.getElementById('q6').value.trim(),
+    improvements: document.getElementById('q7').value.trim(),
+    requests:     document.getElementById('q8').value.trim(),
   };
 
-  // Save
   const data = loadData();
   data.push(response);
   saveData(data);
 
-  // Show success
   document.getElementById('surveyForm').style.display = 'none';
   document.getElementById('successCard').style.display = 'block';
   window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -1112,17 +1242,17 @@ function getFilteredData() {
   let data = loadData();
   const fStore = document.getElementById('filterStore')?.value || '';
   const fDev   = document.getElementById('filterDeviation')?.value || '';
-  const fUnd   = document.getElementById('filterUnderstanding')?.value || '';
+  const fFR    = document.getElementById('filterFieldReality')?.value || '';
   if (fStore) data = data.filter(r => r.store === fStore);
   if (fDev)   data = data.filter(r => r.deviation === fDev);
-  if (fUnd)   data = data.filter(r => r.understanding === fUnd);
+  if (fFR)    data = data.filter(r => (r.fieldReality || []).includes(fFR));
   return data;
 }
 
 function resetFilters() {
   document.getElementById('filterStore').value = '';
   document.getElementById('filterDeviation').value = '';
-  document.getElementById('filterUnderstanding').value = '';
+  document.getElementById('filterFieldReality').value = '';
   renderDashboard();
 }
 
@@ -1151,47 +1281,51 @@ function renderDashboard() {
     return;
   }
 
-  // --- Stats ---
   const n = data.length;
   const stores = [...new Set(data.map(r => r.store))];
   const devYes = data.filter(r => r.deviation === 'よくある' || r.deviation === 'たまにある').length;
-  const underGood = data.filter(r => r.understanding === '理解している' || r.understanding === 'だいたい理解している').length;
 
-  document.getElementById('statTotal').textContent  = n;
-  document.getElementById('statStores').textContent = stores.length;
-  document.getElementById('statDevRate').textContent = Math.round(devYes / n * 100) + '%';
-  document.getElementById('statUnderRate').textContent = Math.round(underGood / n * 100) + '%';
+  // Q3 counts
+  const frCount = (key) => data.filter(r => (r.fieldReality || []).includes(key)).length;
+  const trainerInconsist = frCount('教える人によってやり方が違う');
+  const busyDeviation    = frCount('忙しい時は現場判断でやり方を変えることがある');
+  const noIssue          = frCount('特に問題はない');
+
+  // Stats
+  document.getElementById('statTotal').textContent          = n;
+  document.getElementById('statStores').textContent         = stores.length;
+  document.getElementById('statDevRate').textContent        = Math.round(devYes / n * 100) + '%';
+  document.getElementById('statTrainerInconsist').textContent = Math.round(trainerInconsist / n * 100) + '%';
+  document.getElementById('statBusyDeviation').textContent  = Math.round(busyDeviation / n * 100) + '%';
+  document.getElementById('statNoIssue').textContent        = Math.round(noIssue / n * 100) + '%';
+
+  // --- Key Indicators ---
+  renderKeyIndicators(data, n);
 
   // --- Chart: Store responses ---
   const storeCounts = {};
   data.forEach(r => { storeCounts[r.store] = (storeCounts[r.store] || 0) + 1; });
   const storeLabels = Object.keys(storeCounts).sort((a,b) => storeCounts[b] - storeCounts[a]);
-  const storeVals   = storeLabels.map(s => storeCounts[s]);
-  renderBarH('chartStore', storeLabels, storeVals, '#2E86C1', '回答数');
+  renderBarH('chartStore', storeLabels, storeLabels.map(s => storeCounts[s]), '#2E86C1', '回答数');
 
   // --- Chart: Deviation donut ---
   const devLabels = ['よくある','たまにある','ほとんどない','一度もない'];
   const devColors = ['#C0392B','#E67E22','#27AE60','#2ECC71'];
-  const devVals   = devLabels.map(l => data.filter(r => r.deviation === l).length);
-  renderDoughnut('chartDeviation', devLabels, devVals, devColors);
+  renderDoughnut('chartDeviation', devLabels, devLabels.map(l => data.filter(r => r.deviation === l).length), devColors);
 
-  // --- Chart: Understanding donut ---
-  const undLabels = ['理解している','だいたい理解している','少し不安がある','よく分からない'];
-  const undColors = ['#1E8449','#27AE60','#F39C12','#C0392B'];
-  const undVals   = undLabels.map(l => data.filter(r => r.understanding === l).length);
-  renderDoughnut('chartUnderstanding', undLabels, undVals, undColors);
+  // --- Chart: Q3 Field Reality bar ---
+  renderFieldRealityChart(data, n);
 
   // --- Chart: Experience donut ---
   const expLabels = ['毎日作成している','週に数回作成している','たまに作成する','ほとんど作成しない'];
   const expColors = ['#1A5276','#2E86C1','#7FB3D3','#AED6F1'];
-  const expVals   = expLabels.map(l => data.filter(r => r.experience === l).length);
-  renderDoughnut('chartExperience', expLabels, expVals, expColors);
+  renderDoughnut('chartExperience', expLabels, expLabels.map(l => data.filter(r => r.experience === l).length), expColors);
 
   // --- Chart: Causes bar ---
   const allCauses = [
     '時間が足りない','人手不足','作業が間に合わない','早く終わらせたい',
     '忙しい時間帯で余裕がない','マニュアルが分かりづらい','教えられた内容が人によって違う',
-    '周囲も同じようにやっている','問題ないと思っていた','指摘されなければ大丈夫と思った',
+    '周囲も同じようにやっている','問題ないと思っていた',
     '衛生リスクの重大性が伝わっていない','その他'
   ];
   const causeCounts = {};
@@ -1199,7 +1333,7 @@ function renderDashboard() {
   data.forEach(r => (r.causes || []).forEach(c => { if (causeCounts[c] !== undefined) causeCounts[c]++; }));
   const causesSorted = allCauses.slice().sort((a,b) => causeCounts[b] - causeCounts[a]);
   const causeColors = causesSorted.map(c => {
-    if (['周囲も同じようにやっている','指摘されなければ大丈夫と思った','問題ないと思っていた'].includes(c)) return '#C0392B';
+    if (['周囲も同じようにやっている','問題ないと思っていた'].includes(c)) return '#C0392B';
     if (['時間が足りない','人手不足','作業が間に合わない','忙しい時間帯で余裕がない'].includes(c)) return '#E67E22';
     return '#2E86C1';
   });
@@ -1215,7 +1349,7 @@ function renderDashboard() {
     const div = document.createElement('div');
     div.className = 'cause-tag' + (isHigh ? ' high' : '');
     div.innerHTML = `
-      <div>
+      <div style="flex:1">
         <div class="cause-tag-label">${cat}</div>
         <div class="cause-bar-bg"><div class="cause-bar-fill" style="width:${maxCat ? Math.round(total/maxCat*100) : 0}%"></div></div>
       </div>
@@ -1224,14 +1358,149 @@ function renderDashboard() {
     tagGrid.appendChild(div);
   });
 
-  // --- Chart: Store trend (stacked bar) ---
+  // --- Chart: Store trend ---
   renderStoreTrend(data, stores.sort());
 
-  // --- Danger highlights ---
-  renderDangerList(data);
+  // --- Alert highlights ---
+  renderAlertList(data);
 
   // --- Free text ---
   showFreeTab(window._currentFreeTab || 'q6', null, data);
+}
+
+/* ============================================================
+   KEY INDICATORS
+============================================================ */
+function renderKeyIndicators(data, n) {
+  const frCount = (key) => data.filter(r => (r.fieldReality || []).includes(key)).length;
+
+  const indicators = [
+    {
+      label: '教育バラつき率',
+      sublabel: 'Training Inconsistency Rate',
+      detail: '「教える人が違う」「店舗で違う」「マニュアル外を教わった」「気づかず逸脱」の合算',
+      keys: ['教える人によってやり方が違う','店舗によってやり方が違う','マニュアル通りではない方法を教わったことがある','自分では正しいやり方だと思っていたが後からマニュアルと違うと指摘されたことがある'],
+      type: 'critical',
+      unique: true, // count respondents who selected ANY of these
+    },
+    {
+      label: '指導統一不足傾向',
+      sublabel: 'Instruction Unification Gap',
+      detail: '「教える人によって違う」回答割合',
+      keys: ['教える人によってやり方が違う'],
+      type: 'critical',
+      unique: false,
+    },
+    {
+      label: '忙しさによる逸脱傾向',
+      sublabel: 'Busy-Time Deviation Tendency',
+      detail: '「忙しい時は現場判断で変える」回答割合',
+      keys: ['忙しい時は現場判断でやり方を変えることがある'],
+      type: 'warning',
+      unique: false,
+    },
+    {
+      label: 'マニュアル理解不安傾向',
+      sublabel: 'Method Uncertainty Tendency',
+      detail: '「正しいやり方が分からなくなる」回答割合',
+      keys: ['正しいやり方が分からなくなる時がある'],
+      type: 'warning',
+      unique: false,
+    },
+    {
+      label: '店舗独自ルール傾向',
+      sublabel: 'Store-Specific Rule Tendency',
+      detail: '「店舗によってやり方が違う」回答割合',
+      keys: ['店舗によってやり方が違う'],
+      type: 'info',
+      unique: false,
+    },
+    {
+      label: '問題なし報告率',
+      sublabel: 'No-Issue Rate',
+      detail: '「特に問題はない」回答割合',
+      keys: ['特に問題はない'],
+      type: 'safe',
+      unique: false,
+    },
+  ];
+
+  const grid = document.getElementById('kiGrid');
+  grid.innerHTML = '';
+
+  indicators.forEach(ind => {
+    let count;
+    if (ind.unique) {
+      count = data.filter(r => ind.keys.some(k => (r.fieldReality || []).includes(k))).length;
+    } else {
+      count = data.filter(r => (r.fieldReality || []).includes(ind.keys[0])).length;
+    }
+    const pct = n ? Math.round(count / n * 100) : 0;
+
+    const card = document.createElement('div');
+    card.className = `ki-card ${ind.type}`;
+    card.innerHTML = `
+      <div class="ki-label">${ind.label}</div>
+      <div class="ki-num">${pct}%</div>
+      <div class="ki-sub">${count}/${n}人 · ${ind.detail}</div>
+      <div class="ki-bar-bg"><div class="ki-bar-fill" style="width:${pct}%"></div></div>
+    `;
+    grid.appendChild(card);
+  });
+}
+
+/* ============================================================
+   Q3 FIELD REALITY CHART
+============================================================ */
+function renderFieldRealityChart(data, n) {
+  destroyChart('chartFieldReality');
+
+  const labels = Q3_OPTIONS;
+  const counts = labels.map(opt => data.filter(r => (r.fieldReality || []).includes(opt)).length);
+
+  // Color by type
+  const colors = [
+    '#C0392B', // 教える人によって違う — critical
+    '#E67E22', // 店舗によって違う — warning
+    '#E67E22', // マニュアル外を教わった — warning
+    '#9B59B6', // 正しいと思っていたが指摘された — purple (逸脱認識なし)
+    '#2E86C1', // なぜか説明なし — info
+    '#C0392B', // 忙しい時は変える — critical (key indicator)
+    '#9B59B6', // 正しいやり方が分からない — purple
+    '#1E8449', // 特に問題はない — green
+  ];
+
+  const ctx = document.getElementById('chartFieldReality').getContext('2d');
+  charts['chartFieldReality'] = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: labels.map(l => l.length > 18 ? l.slice(0, 18) + '…' : l),
+      datasets: [{
+        label: '回答人数',
+        data: counts,
+        backgroundColor: colors,
+        borderRadius: 6,
+        borderSkipped: false,
+      }]
+    },
+    options: {
+      indexAxis: 'y',
+      responsive: true, maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          callbacks: {
+            title: (items) => labels[items[0].dataIndex],
+            label: (ctx) => ` ${ctx.raw}人 (${n ? Math.round(ctx.raw/n*100) : 0}%)`
+          }
+        }
+      },
+      scales: {
+        x: { beginAtZero: true, ticks: { precision: 0, font: { size: 11 } }, grid: { color: '#F0F4F8' } },
+        y: { ticks: { font: { size: 11 }, color: '#2C3E50' }, grid: { display: false } }
+      }
+    }
+  });
 }
 
 /* ============================================================
@@ -1320,58 +1589,52 @@ function renderStoreTrend(data, stores) {
 }
 
 function renderEmptyDash() {
-  ['chartStore','chartDeviation','chartUnderstanding','chartExperience','chartCauses','chartStoreTrend']
+  ['chartStore','chartDeviation','chartFieldReality','chartExperience','chartCauses','chartStoreTrend']
     .forEach(id => destroyChart(id));
-  document.getElementById('statTotal').textContent  = '0';
-  document.getElementById('statStores').textContent = '0';
-  document.getElementById('statDevRate').textContent = '—';
-  document.getElementById('statUnderRate').textContent = '—';
+  document.getElementById('statTotal').textContent          = '0';
+  document.getElementById('statStores').textContent         = '0';
+  document.getElementById('statDevRate').textContent        = '—';
+  document.getElementById('statTrainerInconsist').textContent = '—';
+  document.getElementById('statBusyDeviation').textContent  = '—';
+  document.getElementById('statNoIssue').textContent        = '—';
+  document.getElementById('kiGrid').innerHTML = '<div class="no-danger">データがありません</div>';
   document.getElementById('causeTagGrid').innerHTML = '<div class="no-danger">データがありません</div>';
   document.getElementById('dangerList').innerHTML = '<div class="no-danger">データがありません / No data yet</div>';
   document.getElementById('freeList').innerHTML = '<div class="empty-state"><div class="e-icon">📭</div><p>回答がまだありません</p></div>';
 }
 
 /* ============================================================
-   DANGER KEYWORDS
+   ALERT HIGHLIGHTS
 ============================================================ */
-function renderDangerList(data) {
+function renderAlertList(data) {
   const items = [];
   const textFields = ['difficulties','improvements','requests'];
-  const checkCauses = ['周囲も同じようにやっている','指摘されなければ大丈夫と思った','問題ないと思っていた'];
 
   data.forEach(r => {
-    // Check free text
     textFields.forEach(field => {
       const text = r[field] || '';
       if (!text) return;
-      const matched = DANGER_KEYWORDS.filter(kw => text.includes(kw.word));
+      const matched = ALERT_KEYWORDS.filter(kw => text.includes(kw.word));
       if (matched.length > 0) {
         items.push({ r, text, matched, source: fieldLabel(field) });
       }
     });
-    // Check causes
-    const dangerCauses = (r.causes || []).filter(c => checkCauses.includes(c));
-    if (dangerCauses.length > 0) {
-      items.push({ r, text: dangerCauses.join('、'), matched: [], source: 'Q5 逸脱原因', isCause: true });
-    }
   });
 
   const list = document.getElementById('dangerList');
   if (items.length === 0) {
-    list.innerHTML = '<div class="no-danger">⭕ 危険傾向の回答は検出されませんでした / No high-risk responses detected</div>';
+    list.innerHTML = '<div class="no-danger">⭕ 注目コメントは検出されませんでした / No highlighted comments detected</div>';
     return;
   }
 
   list.innerHTML = items.slice(0, 30).map(item => {
-    const highlighted = item.isCause
-      ? `<span class="danger-kw">${escHtml(item.text)}</span>`
-      : highlightKeywords(item.text, item.matched.map(m => m.word));
+    const highlighted = highlightKeywords(item.text, item.matched.map(m => m.word));
     const date = new Date(item.r.timestamp).toLocaleDateString('ja-JP');
-    return `<div class="danger-item">
+    return `<div class="alert-item">
       <div class="di-meta">
         <span class="store-badge">${escHtml(item.r.store)}</span>
         <span class="di-date">${date}</span>
-        <span class="tag ${item.isCause ? 'tag-red' : 'tag-blue'}">${escHtml(item.source)}</span>
+        <span class="tag tag-amber">${escHtml(item.source)}</span>
       </div>
       <div>${highlighted}</div>
     </div>`;
@@ -1386,7 +1649,7 @@ function highlightKeywords(text, words) {
   let result = escHtml(text);
   words.forEach(w => {
     const safe = escHtml(w);
-    result = result.split(safe).join(`<span class="danger-kw">${safe}</span>`);
+    result = result.split(safe).join(`<span class="alert-kw">${safe}</span>`);
   });
   return result;
 }
@@ -1402,8 +1665,6 @@ window._currentFreeTab = 'q6';
 
 function showFreeTab(field, btn, data) {
   window._currentFreeTab = field;
-
-  // Update tab highlights
   document.querySelectorAll('.free-tab').forEach(t => t.classList.remove('active'));
   if (btn) btn.classList.add('active');
 
@@ -1414,14 +1675,14 @@ function showFreeTab(field, btn, data) {
     .filter(r => r[field] && r[field].trim())
     .map(r => {
       const date = new Date(r.timestamp).toLocaleDateString('ja-JP');
-      const hasKw = DANGER_KEYWORDS.some(kw => (r[field]||'').includes(kw.word));
-      return `<div class="free-item" style="${hasKw ? 'border-left-color:var(--red)' : ''}">
+      const hasKw = ALERT_KEYWORDS.some(kw => (r[field]||'').includes(kw.word));
+      return `<div class="free-item" style="${hasKw ? 'border-left-color:var(--amber)' : ''}">
         <div class="fi-meta">
           <strong>${escHtml(r.store)}</strong>
           <span>${date}</span>
-          ${hasKw ? '<span class="tag tag-red">⚠️ 要注意</span>' : ''}
+          ${hasKw ? '<span class="tag tag-amber">💬 注目</span>' : ''}
         </div>
-        <div>${highlightKeywords(r[field], DANGER_KEYWORDS.map(k=>k.word))}</div>
+        <div>${highlightKeywords(r[field], ALERT_KEYWORDS.map(k=>k.word))}</div>
       </div>`;
     });
 
@@ -1436,17 +1697,40 @@ function showFreeTab(field, btn, data) {
 function generateSampleData() {
   if (!confirm('テスト用サンプルデータ（30件）を追加しますか？\nAdd 30 sample responses for testing?')) return;
 
-  const sampleStores = STORES.slice(0, 8);
+  const sampleStores  = STORES.slice(0, 8);
   const experiences   = ['毎日作成している','週に数回作成している','たまに作成する','ほとんど作成しない'];
-  const understandings= ['理解している','だいたい理解している','少し不安がある','よく分からない'];
   const deviations    = ['よくある','たまにある','ほとんどない','一度もない'];
-  const causePool     = ['時間が足りない','人手不足','作業が間に合わない','早く終わらせたい',
-                         '忙しい時間帯で余裕がない','マニュアルが分かりづらい','教えられた内容が人によって違う',
-                         '周囲も同じようにやっている','問題ないと思っていた','指摘されなければ大丈夫と思った',
-                         '衛生リスクの重大性が伝わっていない','その他'];
-  const diffSamples   = ['チェックリストが古くてどの手順が最新か分からない','忙しい時間帯は確認する余裕がない','チェックリストがどこにあるか分からないことがある','温度管理の記録用紙が見つからないことがある','人手が少なくてマニュアル通りにできないことが多い','みんな時間がないので早めに終わらせてしまうことがある'];
-  const improveSamples= ['もっとシンプルなチェックリストがほしい','定期的な研修をしてほしい','動画マニュアルがあると分かりやすい','忙しい時でも守れるくらいシンプルなルールにしてほしい','人員を増やしてほしい','先輩によって言うことが違うので統一してほしい'];
-  const reqSamples    = ['ピーク時間帯の人員補充をしてほしい','マニュアルを日本語と英語で用意してほしい','勉強会や練習の機会を増やしてほしい','チェックリストの内容を分かりやすくしてほしい','新人教育の時間をもっと確保してほしい'];
+  const causePool     = [
+    '時間が足りない','人手不足','作業が間に合わない','早く終わらせたい',
+    '忙しい時間帯で余裕がない','マニュアルが分かりづらい','教えられた内容が人によって違う',
+    '周囲も同じようにやっている','問題ないと思っていた',
+    '衛生リスクの重大性が伝わっていない','その他'
+  ];
+  const fieldRealityPool = Q3_OPTIONS;
+
+  const diffSamples  = [
+    'チェックリストが古くてどの手順が最新か分からない',
+    '忙しい時間帯は確認する余裕がない',
+    '人によって言っていることが違うのでどれが正しいか分からない',
+    '温度管理の記録用紙が見つからないことがある',
+    '昔のやり方を覚えたままで新しい手順と混同することがある',
+    '先輩が「これで大丈夫」と言っていてマニュアルと違っていた',
+  ];
+  const improveSamples = [
+    'もっとシンプルなチェックリストがほしい',
+    '定期的な研修をしてほしい',
+    '動画マニュアルがあると分かりやすい',
+    '指導する人によって教え方が統一してほしい',
+    '人員を増やしてほしい',
+    'なぜそのルールが必要かも一緒に教えてほしい',
+  ];
+  const reqSamples = [
+    'ピーク時間帯の人員補充をしてほしい',
+    'マニュアルを日本語と英語で用意してほしい',
+    '勉強会や練習の機会を増やしてほしい',
+    'チェックリストの内容を分かりやすくしてほしい',
+    '新人教育の時間をもっと確保してほしい',
+  ];
 
   const rand = (arr) => arr[Math.floor(Math.random() * arr.length)];
   const randPct = (arr, pcts) => {
@@ -1460,15 +1744,23 @@ function generateSampleData() {
   for (let i = 0; i < 30; i++) {
     const devOpt = randPct(deviations, [0.15, 0.45, 0.30, 0.10]);
     const numCauses = Math.floor(Math.random() * 4);
-    const shuffled = [...causePool].sort(() => Math.random() - 0.5);
-    const causes = devOpt !== '一度もない' ? shuffled.slice(0, numCauses + 1) : [];
+    const shuffledCauses = [...causePool].sort(() => Math.random() - 0.5);
+    const causes = devOpt !== '一度もない' ? shuffledCauses.slice(0, numCauses + 1) : [];
+
+    // Generate Q3 field reality selections
+    const numFR = Math.floor(Math.random() * 4) + 1;
+    const shuffledFR = [...fieldRealityPool.slice(0,7)].sort(() => Math.random() - 0.5);
+    let fieldReality = shuffledFR.slice(0, numFR);
+    // 30% chance of "特に問題はない" only
+    if (Math.random() < 0.15) fieldReality = ['特に問題はない'];
+
     const ts = new Date(Date.now() - Math.random() * 30 * 86400000).toISOString();
     data.push({
       id: Date.now().toString(36) + Math.random().toString(36).slice(2),
       timestamp: ts,
       store: rand(sampleStores),
       experience: randPct(experiences, [0.4, 0.35, 0.15, 0.1]),
-      understanding: randPct(understandings, [0.25, 0.45, 0.20, 0.10]),
+      fieldReality,
       deviation: devOpt,
       causes,
       difficulties: Math.random() > 0.3 ? rand(diffSamples) : '',
@@ -1488,10 +1780,21 @@ function exportCSV() {
   const data = getFilteredData();
   if (data.length === 0) { alert('データがありません。'); return; }
 
-  const headers = ['日時','店舗','経験','理解度','逸脱経験','逸脱原因','困っていること','改善アイデア','会社への要望'];
+  const headers = [
+    '日時','店舗','経験頻度',
+    '現場実態(Q3)','逸脱経験','逸脱原因',
+    '困っていること','改善アイデア','会社への要望'
+  ];
   const rows = data.map(r => [
-    r.timestamp, r.store, r.experience, r.understanding, r.deviation,
-    (r.causes || []).join('|'), r.difficulties || '', r.improvements || '', r.requests || ''
+    r.timestamp,
+    r.store,
+    r.experience,
+    (r.fieldReality || []).join('|'),
+    r.deviation,
+    (r.causes || []).join('|'),
+    r.difficulties || '',
+    r.improvements || '',
+    r.requests || ''
   ]);
 
   const csv = [headers, ...rows]
