@@ -190,19 +190,17 @@ tbody td:nth-child(2){text-align:center}
     <div class="table-wrap"><table><thead>
       <tr>
         <th>店名</th><th>契約</th><th>担当SC</th>
-        <th>平均日販<br>(千円)</th><th>前年比<br>(%)</th>
-        <th>本部支援着地<br>/月(千円)</th>
-        <th>まちかど厨房売上<br>/日(千円)<br><span style="font-size:9px;font-weight:400;opacity:.8">※GR除く</span></th>
+        <th>平均日販<br>(千円)</th>
+        <th>前年比実績<br>(%)<br><span style="font-size:9px;font-weight:400;opacity:.8">予算差(%Pt)</span></th>
+        <th>ジー収入<br>実績(千円)<br><span style="font-size:9px;font-weight:400;opacity:.8">差異(実績−予算)</span></th>
+        <th>本部支援<br>/月(千円)</th>
+        <th>厨房売上<br>/日(千円)</th>
         <th>厨房支援<br>/月(千円)</th>
-        <th>雑益追加分<br>(千円)</th>
-        <th>見切処分<br>実績(千円)</th><th>見切処分<br>予算(千円)</th>
+        <th>雑益追加<br>(千円)<br><span style="font-size:9px;font-weight:400;opacity:.8">CN/TS+最低保証</span></th>
+        <th>見切差異<br>(千円)<br><span style="font-size:9px;font-weight:400;opacity:.8">実績−予算</span></th>
+        <th style="background:#1b5e20">総荒利<br>差異(千円)</th>
         <th>店利益着地<br>(千円)</th><th>予算<br>(千円)</th>
         <th>差異<br>(千円)</th>
-        <th style="background:#1b5e20">総荒利<br>差異(千円)</th>
-        <th style="background:#0d47a1">収入加算<br>合計(千円)</th>
-        <th style="background:#b71c1c">廃棄<br>影響(千円)</th>
-        <th style="background:#e65100">値引金額<br>PSA/D(千円)</th>
-        <th>利益要因</th>
       </tr>
     </thead><tbody id="profitBody"></tbody></table></div>
   </div>
@@ -289,26 +287,26 @@ const SC_LIST = [...new Set(Object.values(SC_MAP))];
 // kitchenSupportMonth=厨房支援金/月, kitchenSupportRate=厨房支援金率
 // miscExtra=雑益追加分(CN/TS店舗)
 const PROFIT = [
-  {name:'吹田警察署前', type:'CN', nisshu:436.5, yoy:105.59, sales:13532, fjIncome:2092, miscBudget:209, laborBudget:981, otherExp:498, markdownActual:707, markdownBudget:418, hqSupport:60, kitchenSalesDay:16.707, kitchenSupportMonth:36.254, kitchenSupportRate:0.07, miscExtra:145, miscExtraMin:0, landing:462, budget:467, diff:-5, markdownAmount:11.788},
-  {name:'吹田朝日町', type:'CN', nisshu:595.6, yoy:108.09, sales:18463, fjIncome:3057, miscBudget:257, laborBudget:727, otherExp:735, markdownActual:990, markdownBudget:527, hqSupport:144, kitchenSalesDay:31.61, kitchenSupportMonth:97.991, kitchenSupportRate:0.1, miscExtra:232, miscExtraMin:0, landing:1461, budget:1286, diff:175, markdownAmount:30.127},
-  {name:'池田市役所前', type:'TS', nisshu:336.2, yoy:99.47, sales:10424, fjIncome:2104, miscBudget:247, laborBudget:984, otherExp:426, markdownActual:501, markdownBudget:338, hqSupport:70, kitchenSalesDay:0.0, kitchenSupportMonth:0, kitchenSupportRate:0.0, miscExtra:-4, miscExtraMin:0, landing:592, budget:711, diff:-119, markdownAmount:5.386},
-  {name:'吹田青山台三丁目', type:'CN', nisshu:603.5, yoy:97.25, sales:18708, fjIncome:2923, miscBudget:246, laborBudget:1604, otherExp:769, markdownActual:853, markdownBudget:577, hqSupport:89, kitchenSalesDay:21.064, kitchenSupportMonth:52.239, kitchenSupportRate:0.08, miscExtra:138, miscExtraMin:0, landing:224, budget:355, diff:-131, markdownAmount:15.552},
-  {name:'五月ケ丘東', type:'CN', nisshu:372.7, yoy:92.22, sales:11553, fjIncome:1821, miscBudget:799, laborBudget:914, otherExp:415, markdownActual:396, markdownBudget:388, hqSupport:37, kitchenSalesDay:0.0, kitchenSupportMonth:0, kitchenSupportRate:0.0, miscExtra:4, miscExtraMin:79, landing:1071, budget:1069, diff:2, markdownAmount:4.241},
-  {name:'江坂東', type:'CN', nisshu:567.4, yoy:104.04, sales:17588, fjIncome:2677, miscBudget:235, laborBudget:1377, otherExp:588, markdownActual:892, markdownBudget:534, hqSupport:84, kitchenSalesDay:29.852, kitchenSupportMonth:74.033, kitchenSupportRate:0.08, miscExtra:179, miscExtraMin:0, landing:528, budget:498, diff:30, markdownAmount:24.157},
-  {name:'吹田豊津中学校前', type:'CN', nisshu:474.3, yoy:94.48, sales:14704, fjIncome:2659, miscBudget:229, laborBudget:876, otherExp:680, markdownActual:732, markdownBudget:499, hqSupport:88, kitchenSalesDay:23.901, kitchenSupportMonth:59.274, kitchenSupportRate:0.08, miscExtra:117, miscExtraMin:0, landing:1013, budget:1198, diff:-185, markdownAmount:12.866},
-  {name:'豊中利倉東一丁目', type:'CN', nisshu:579.2, yoy:99.11, sales:17956, fjIncome:2646, miscBudget:247, laborBudget:1105, otherExp:698, markdownActual:937, markdownBudget:556, hqSupport:104, kitchenSalesDay:18.912, kitchenSupportMonth:41.039, kitchenSupportRate:0.07, miscExtra:191, miscExtraMin:0, landing:537, budget:657, diff:-120, markdownAmount:17.024},
-  {name:'豊中服部元町一丁目', type:'CN', nisshu:591.9, yoy:103.98, sales:18350, fjIncome:2785, miscBudget:231, laborBudget:742, otherExp:554, markdownActual:866, markdownBudget:546, hqSupport:98, kitchenSalesDay:23.709, kitchenSupportMonth:58.798, kitchenSupportRate:0.08, miscExtra:160, miscExtraMin:0, landing:1252, budget:1205, diff:47, markdownAmount:21.236},
-  {name:'東淀川大道南', type:'CN', nisshu:533.3, yoy:105.24, sales:16531, fjIncome:2451, miscBudget:234, laborBudget:1137, otherExp:535, markdownActual:979, markdownBudget:474, hqSupport:113, kitchenSalesDay:14.007, kitchenSupportMonth:30.395, kitchenSupportRate:0.07, miscExtra:253, miscExtraMin:0, landing:449, budget:488, diff:-39, markdownAmount:33.206},
-  {name:'大道南一丁目', type:'TS', nisshu:483.8, yoy:101.49, sales:14998, fjIncome:2315, miscBudget:266, laborBudget:1177, otherExp:547, markdownActual:778, markdownBudget:442, hqSupport:99, kitchenSalesDay:12.368, kitchenSupportMonth:26.839, kitchenSupportRate:0.07, miscExtra:-1, miscExtraMin:0, landing:196, budget:413, diff:-217, markdownAmount:23.189},
-  {name:'豊里六丁目', type:'TS', nisshu:404.5, yoy:103.01, sales:12540, fjIncome:2124, miscBudget:233, laborBudget:858, otherExp:399, markdownActual:520, markdownBudget:368, hqSupport:60, kitchenSalesDay:0.0, kitchenSupportMonth:0, kitchenSupportRate:0.0, miscExtra:2, miscExtraMin:0, landing:662, budget:743, diff:-81, markdownAmount:17.578},
-  {name:'東淀川豊里五丁目', type:'CN', nisshu:669.3, yoy:105.67, sales:20747, fjIncome:2938, miscBudget:237, laborBudget:1120, otherExp:551, markdownActual:1049, markdownBudget:591, hqSupport:126, kitchenSalesDay:21.613, kitchenSupportMonth:53.600, kitchenSupportRate:0.08, miscExtra:229, miscExtraMin:0, landing:860, budget:811, diff:49, markdownAmount:32.118},
-  {name:'豊中原田南一丁目', type:'CN', nisshu:458.3, yoy:101.32, sales:14208, fjIncome:2368, miscBudget:220, laborBudget:940, otherExp:506, markdownActual:769, markdownBudget:430, hqSupport:63, kitchenSalesDay:22.923, kitchenSupportMonth:56.849, kitchenSupportRate:0.08, miscExtra:169, miscExtraMin:0, landing:660, budget:722, diff:-62, markdownAmount:16.927},
-  {name:'南金田二丁目', type:'CN', nisshu:706.5, yoy:101.78, sales:21902, fjIncome:3291, miscBudget:280, laborBudget:1149, otherExp:734, markdownActual:937, markdownBudget:669, hqSupport:94, kitchenSalesDay:20.961, kitchenSupportMonth:51.983, kitchenSupportRate:0.08, miscExtra:134, miscExtraMin:0, landing:1138, budget:1132, diff:6, markdownAmount:16.757},
-  {name:'豊中服部西町三丁目', type:'TS', nisshu:409.6, yoy:104.42, sales:12698, fjIncome:2170, miscBudget:241, laborBudget:913, otherExp:403, markdownActual:467, markdownBudget:373, hqSupport:9, kitchenSalesDay:0.0, kitchenSupportMonth:0, kitchenSupportRate:0.0, miscExtra:4, miscExtraMin:0, landing:670, budget:729, diff:-59, markdownAmount:9.590},
-  {name:'箕面白島二丁目', type:'CN', nisshu:554.4, yoy:null, sales:17186, fjIncome:2541, miscBudget:547, laborBudget:1141, otherExp:594, markdownActual:617, markdownBudget:753, hqSupport:0, kitchenSalesDay:24.694, kitchenSupportMonth:61.241, kitchenSupportRate:0.08, miscExtra:-68, miscExtraMin:0, landing:771, budget:580, diff:191, markdownAmount:14.141},
-  {name:'吹田垂水三丁目', type:'CN', nisshu:282.8, yoy:96.04, sales:8767, fjIncome:1511, miscBudget:331, laborBudget:863, otherExp:521, markdownActual:214, markdownBudget:298, hqSupport:0, kitchenSalesDay:0.0, kitchenSupportMonth:0, kitchenSupportRate:0.0, miscExtra:-42, miscExtraMin:389, landing:800, budget:463, diff:337, markdownAmount:3.141},
-  {name:'新御堂筋上新田', type:'CN', nisshu:694.4, yoy:99.75, sales:21526, fjIncome:3139, miscBudget:255, laborBudget:1159, otherExp:702, markdownActual:924, markdownBudget:661, hqSupport:112, kitchenSalesDay:19.728, kitchenSupportMonth:42.810, kitchenSupportRate:0.07, miscExtra:131, miscExtraMin:0, landing:956, budget:1001, diff:-45, markdownAmount:23.410},
-  {name:'江坂駅南口', type:'CN', nisshu:987.1, yoy:92.06, sales:30601, fjIncome:4665, miscBudget:325, laborBudget:2188, otherExp:875, markdownActual:1367, markdownBudget:1057, hqSupport:151, kitchenSalesDay:37.819, kitchenSupportMonth:117.239, kitchenSupportRate:0.1, miscExtra:155, miscExtraMin:0, landing:1266, budget:1657, diff:-391, markdownAmount:23.431},
+  {name:'吹田警察署前', type:'CN', nisshu:436.5, yoy:105.59, yoyBudget:102.05, sales:13532, fjIncome:2092, fjBudget:2048, miscBudget:209, laborBudget:981, otherExp:498, markdownActual:707, markdownBudget:418, hqSupport:60, kitchenSalesDay:16.707, kitchenSupportMonth:36.254, kitchenSupportRate:0.07, miscExtra:145, miscExtraMin:0, landing:462, budget:467, diff:-5, markdownAmount:11.788},
+  {name:'吹田朝日町', type:'CN', nisshu:595.6, yoy:108.09, yoyBudget:101.99, sales:18463, fjIncome:3057, fjBudget:2893, miscBudget:257, laborBudget:727, otherExp:735, markdownActual:990, markdownBudget:527, hqSupport:144, kitchenSalesDay:31.61, kitchenSupportMonth:97.991, kitchenSupportRate:0.1, miscExtra:232, miscExtraMin:0, landing:1461, budget:1286, diff:175, markdownAmount:30.127},
+  {name:'池田市役所前', type:'TS', nisshu:336.2, yoy:99.47, yoyBudget:101.88, sales:10424, fjIncome:2104, fjBudget:2126, miscBudget:247, laborBudget:984, otherExp:426, markdownActual:501, markdownBudget:338, hqSupport:70, kitchenSalesDay:0.0, kitchenSupportMonth:0, kitchenSupportRate:0.0, miscExtra:-4, miscExtraMin:0, landing:592, budget:711, diff:-119, markdownAmount:5.386},
+  {name:'吹田青山台三丁目', type:'CN', nisshu:603.5, yoy:97.25, yoyBudget:101.94, sales:18708, fjIncome:2923, fjBudget:3056, miscBudget:246, laborBudget:1604, otherExp:769, markdownActual:853, markdownBudget:577, hqSupport:89, kitchenSalesDay:21.064, kitchenSupportMonth:52.239, kitchenSupportRate:0.08, miscExtra:138, miscExtraMin:0, landing:224, budget:355, diff:-131, markdownAmount:15.552},
+  {name:'五月ケ丘東', type:'CN', nisshu:372.7, yoy:92.22, yoyBudget:102.04, sales:11553, fjIncome:1821, fjBudget:1932, miscBudget:799, laborBudget:914, otherExp:415, markdownActual:396, markdownBudget:388, hqSupport:37, kitchenSalesDay:0.0, kitchenSupportMonth:0, kitchenSupportRate:0.0, miscExtra:4, miscExtraMin:79, landing:1071, budget:1069, diff:2, markdownAmount:4.241},
+  {name:'江坂東', type:'CN', nisshu:567.4, yoy:104.04, yoyBudget:102.08, sales:17588, fjIncome:2677, fjBudget:2626, miscBudget:235, laborBudget:1377, otherExp:588, markdownActual:892, markdownBudget:534, hqSupport:84, kitchenSalesDay:29.852, kitchenSupportMonth:74.033, kitchenSupportRate:0.08, miscExtra:179, miscExtraMin:0, landing:528, budget:498, diff:30, markdownAmount:24.157},
+  {name:'吹田豊津中学校前', type:'CN', nisshu:474.3, yoy:94.48, yoyBudget:102.06, sales:14704, fjIncome:2659, fjBudget:2875, miscBudget:229, laborBudget:876, otherExp:680, markdownActual:732, markdownBudget:499, hqSupport:88, kitchenSalesDay:23.901, kitchenSupportMonth:59.274, kitchenSupportRate:0.08, miscExtra:117, miscExtraMin:0, landing:1013, budget:1198, diff:-185, markdownAmount:12.866},
+  {name:'豊中利倉東一丁目', type:'CN', nisshu:579.2, yoy:99.11, yoyBudget:102.08, sales:17956, fjIncome:2646, fjBudget:2721, miscBudget:247, laborBudget:1105, otherExp:698, markdownActual:937, markdownBudget:556, hqSupport:104, kitchenSalesDay:18.912, kitchenSupportMonth:41.039, kitchenSupportRate:0.07, miscExtra:191, miscExtraMin:0, landing:537, budget:657, diff:-120, markdownAmount:17.024},
+  {name:'豊中服部元町一丁目', type:'CN', nisshu:591.9, yoy:103.98, yoyBudget:101.97, sales:18350, fjIncome:2785, fjBudget:2734, miscBudget:231, laborBudget:742, otherExp:554, markdownActual:866, markdownBudget:546, hqSupport:98, kitchenSalesDay:23.709, kitchenSupportMonth:58.798, kitchenSupportRate:0.08, miscExtra:160, miscExtraMin:0, landing:1252, budget:1205, diff:47, markdownAmount:21.236},
+  {name:'東淀川大道南', type:'CN', nisshu:533.3, yoy:105.24, yoyBudget:102.03, sales:16531, fjIncome:2451, fjBudget:2381, miscBudget:234, laborBudget:1137, otherExp:535, markdownActual:979, markdownBudget:474, hqSupport:113, kitchenSalesDay:14.007, kitchenSupportMonth:30.395, kitchenSupportRate:0.07, miscExtra:253, miscExtraMin:0, landing:449, budget:488, diff:-39, markdownAmount:33.206},
+  {name:'大道南一丁目', type:'TS', nisshu:483.8, yoy:101.49, yoyBudget:101.98, sales:14998, fjIncome:2315, fjBudget:2321, miscBudget:266, laborBudget:1177, otherExp:547, markdownActual:778, markdownBudget:442, hqSupport:99, kitchenSalesDay:12.368, kitchenSupportMonth:26.839, kitchenSupportRate:0.07, miscExtra:-1, miscExtraMin:0, landing:196, budget:413, diff:-217, markdownAmount:23.189},
+  {name:'豊里六丁目', type:'TS', nisshu:404.5, yoy:103.01, yoyBudget:102.07, sales:12540, fjIncome:2124, fjBudget:2115, miscBudget:233, laborBudget:858, otherExp:399, markdownActual:520, markdownBudget:368, hqSupport:60, kitchenSalesDay:0.0, kitchenSupportMonth:0, kitchenSupportRate:0.0, miscExtra:2, miscExtraMin:0, landing:662, budget:743, diff:-81, markdownAmount:17.578},
+  {name:'東淀川豊里五丁目', type:'CN', nisshu:669.3, yoy:105.67, yoyBudget:101.93, sales:20747, fjIncome:2938, fjBudget:2839, miscBudget:237, laborBudget:1120, otherExp:551, markdownActual:1049, markdownBudget:591, hqSupport:126, kitchenSalesDay:21.613, kitchenSupportMonth:53.600, kitchenSupportRate:0.08, miscExtra:229, miscExtraMin:0, landing:860, budget:811, diff:49, markdownAmount:32.118},
+  {name:'豊中原田南一丁目', type:'CN', nisshu:458.3, yoy:101.32, yoyBudget:102.06, sales:14208, fjIncome:2368, fjBudget:2381, miscBudget:220, laborBudget:940, otherExp:506, markdownActual:769, markdownBudget:430, hqSupport:63, kitchenSalesDay:22.923, kitchenSupportMonth:56.849, kitchenSupportRate:0.08, miscExtra:169, miscExtraMin:0, landing:660, budget:722, diff:-62, markdownAmount:16.927},
+  {name:'南金田二丁目', type:'CN', nisshu:706.5, yoy:101.78, yoyBudget:101.96, sales:21902, fjIncome:3291, fjBudget:3297, miscBudget:280, laborBudget:1149, otherExp:734, markdownActual:937, markdownBudget:669, hqSupport:94, kitchenSalesDay:20.961, kitchenSupportMonth:51.983, kitchenSupportRate:0.08, miscExtra:134, miscExtraMin:0, landing:1138, budget:1132, diff:6, markdownAmount:16.757},
+  {name:'豊中服部西町三丁目', type:'TS', nisshu:409.6, yoy:104.42, yoyBudget:102.04, sales:12698, fjIncome:2170, fjBudget:2147, miscBudget:241, laborBudget:913, otherExp:403, markdownActual:467, markdownBudget:373, hqSupport:9, kitchenSalesDay:0.0, kitchenSupportMonth:0, kitchenSupportRate:0.0, miscExtra:4, miscExtraMin:0, landing:670, budget:729, diff:-59, markdownAmount:9.590},
+  {name:'箕面白島二丁目', type:'CN', nisshu:554.4, yoy:null, yoyBudget:null, sales:17186, fjIncome:2541, fjBudget:2479, miscBudget:547, laborBudget:1141, otherExp:594, markdownActual:617, markdownBudget:753, hqSupport:0, kitchenSalesDay:24.694, kitchenSupportMonth:61.241, kitchenSupportRate:0.08, miscExtra:-68, miscExtraMin:0, landing:771, budget:580, diff:191, markdownAmount:14.141},
+  {name:'吹田垂水三丁目', type:'CN', nisshu:282.8, yoy:96.04, yoyBudget:102.00, sales:8767, fjIncome:1511, fjBudget:1605, miscBudget:331, laborBudget:863, otherExp:521, markdownActual:214, markdownBudget:298, hqSupport:0, kitchenSalesDay:0.0, kitchenSupportMonth:0, kitchenSupportRate:0.0, miscExtra:-42, miscExtraMin:389, landing:800, budget:463, diff:337, markdownAmount:3.141},
+  {name:'新御堂筋上新田', type:'CN', nisshu:694.4, yoy:99.75, yoyBudget:102.03, sales:21526, fjIncome:3139, fjBudget:3208, miscBudget:255, laborBudget:1159, otherExp:702, markdownActual:924, markdownBudget:661, hqSupport:112, kitchenSalesDay:19.728, kitchenSupportMonth:42.810, kitchenSupportRate:0.07, miscExtra:131, miscExtraMin:0, landing:956, budget:1001, diff:-45, markdownAmount:23.410},
+  {name:'江坂駅南口', type:'CN', nisshu:987.1, yoy:92.06, yoyBudget:101.99, sales:30601, fjIncome:4665, fjBudget:5170, miscBudget:325, laborBudget:2188, otherExp:875, markdownActual:1367, markdownBudget:1057, hqSupport:151, kitchenSalesDay:37.819, kitchenSupportMonth:117.239, kitchenSupportRate:0.1, miscExtra:155, miscExtraMin:0, landing:1266, budget:1657, diff:-391, markdownAmount:23.431},
 ];
 
 // 総荒利益高 実績・予算（Excelから取得）
@@ -629,34 +627,45 @@ function renderProfit() {
   let html = '';
   fp.forEach(s => {
     const sc = SC_MAP[s.name] || '';
-    const yoyStr = s.yoy ? s.yoy.toFixed(2)+'%' : '—';
+    // 前年比
+    const yoyStr  = s.yoy != null ? s.yoy.toFixed(2)+'%' : '—';
+    const yoyDiff = (s.yoy != null && s.yoyBudget != null) ? +(s.yoy - s.yoyBudget).toFixed(2) : null;
+    const yoyDiffStr = yoyDiff != null ? (yoyDiff>=0?'+':'')+yoyDiff.toFixed(2)+'%Pt' : '';
+    const yoyDiffCls = yoyDiff != null ? (yoyDiff>=0?'pos':'neg') : '';
+    // ジー収入差異
+    const fjDiff    = s.fjIncome != null && s.fjBudget != null ? s.fjIncome - s.fjBudget : null;
+    const fjDiffStr = fjDiff != null ? (fjDiff>=0?'+':'')+fjDiff.toLocaleString() : '—';
+    const fjDiffCls = fjDiff != null ? (fjDiff>=0?'pos':'neg') : '';
+    const fjMinGuarantee = s.fjIncome != null && s.fjIncome < 1900;
+    // 見切差異
+    const mdDiff    = s.markdownActual - s.markdownBudget;
+    const mdDiffStr = (mdDiff>0?'+':'')+mdDiff.toLocaleString();
+    const mdDiffCls = mdDiff > 0 ? 'neg' : mdDiff < 0 ? 'pos' : '';
+    // 雑益追加（CN+TS+最低保証）
+    const miscTotal = (s.miscExtra||0) + (s.miscExtraMin||0);
+    const miscStr   = miscTotal > 0 ? '+'+miscTotal.toLocaleString() : miscTotal != 0 ? miscTotal.toLocaleString() : '—';
+    // 総荒利差異
+    const gpDiff    = s.profitDiff;
+    const gpDiffStr = gpDiff != null ? (gpDiff>=0?'+':'')+gpDiff.toLocaleString() : '—';
+    const gpDiffCls = gpDiff == null ? '' : gpDiff>=0 ? 'pos' : 'neg';
+    // 着地差異
     const dc = s.diff>0?'pos':s.diff<0?'neg':'';
     const ds = s.diff>0?'+'+s.diff.toLocaleString():s.diff.toLocaleString();
-    const mdOver = s.markdownActual - s.markdownBudget;
-    const gpDiff    = s.profitDiff;
-    const gpDiffStr = gpDiff!=null ? (gpDiff>=0?'+':'')+gpDiff.toLocaleString() : '—';
-    const incSum    = s.hqSupport + s.kitchenSupportMonth + (s.miscExtra||0) + (s.miscExtraMin||0);
-    const wasteImp  = mdOver;
-    const wasteStr  = (wasteImp>0?'+':'')+wasteImp.toLocaleString();
-    const cause     = getCause(s);
     html += `<tr onclick="showStoreDetail('${s.name}')">
       <td>${s.name}</td>
       <td><span class="tag tag-${s.type.toLowerCase()}">${s.type}</span></td>
       <td><span class="sc-chip">${sc}</span></td>
-      <td>${s.nisshu.toFixed(1)}</td><td>${yoyStr}</td>
+      <td>${s.nisshu.toFixed(1)}</td>
+      <td class="${yoyDiffCls}">${yoyStr}${yoyDiffStr ? '<br><span style="font-size:10px">'+yoyDiffStr+'</span>' : ''}</td>
+      <td class="${fjDiffCls}" style="font-weight:700">${s.fjIncome != null ? s.fjIncome.toLocaleString() : '—'}${fjMinGuarantee ? '<span style="margin-left:3px;font-size:9px;background:#b71c1c;color:#fff;padding:1px 4px;border-radius:3px;font-weight:700">最低保証</span>' : ''}<br><span style="font-size:10px">${fjDiffStr}</span></td>
       <td>${s.hqSupport>0?s.hqSupport.toLocaleString():'—'}</td>
       <td>${s.kitchenSalesDay>0?s.kitchenSalesDay.toFixed(1):'—'}</td>
       <td>${s.kitchenSupportMonth>0?s.kitchenSupportMonth.toLocaleString():'—'}</td>
-      <td>${s.miscExtra!=null?s.miscExtra.toLocaleString():'—'}</td>
-      <td class="${mdOver>0?'neg':''}">${s.markdownActual.toLocaleString()}</td>
-      <td>${s.markdownBudget.toLocaleString()}</td>
+      <td style="color:#2e7d32;font-weight:700">${miscStr}</td>
+      <td class="${mdDiffCls}" style="font-weight:700">${mdDiffStr}</td>
+      <td class="${gpDiffCls}" style="font-weight:700">${gpDiffStr}</td>
       <td><strong>${s.landing.toLocaleString()}</strong></td><td>${s.budget.toLocaleString()}</td>
       <td class="${dc}"><strong>${ds}</strong></td>
-      <td class="${gpDiff==null?'':gpDiff>=0?'pos':'neg'}" style="font-weight:700">${gpDiffStr}</td>
-      <td style="color:#1565c0;font-weight:700">+${incSum.toLocaleString()}</td>
-      <td class="${wasteImp>0?'neg':'pos'}">${wasteStr}</td>
-      <td style="color:#e65100;font-weight:700">${s.markdownAmount!=null?s.markdownAmount.toFixed(2):'—'}</td>
-      <td><span class="cause ${cause.cls}">${cause.text}</span></td>
     </tr>`;
   });
   document.getElementById('profitBody').innerHTML = html;
