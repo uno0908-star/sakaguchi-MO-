@@ -809,6 +809,13 @@
 ============================================================ -->
 <div class="dash-view" id="dashView">
 
+  <!-- Loading indicator -->
+  <div id="dashLoading" style="display:none;text-align:center;padding:56px 16px">
+    <div style="font-size:36px;margin-bottom:14px">⏳</div>
+    <div style="font-size:15px;font-weight:700;color:var(--blue);margin-bottom:4px">データを読み込み中...</div>
+    <div style="font-size:12px;color:var(--muted)">Loading data from Google Sheets...</div>
+  </div>
+
   <div class="dash-header">
     <div>
       <h2>📊 厨房衛生管理 分析ダッシュボード</h2>
@@ -1003,6 +1010,7 @@
 const CONFIG = {
   ADMIN_PIN: 'Lawson3963',
   STORAGE_KEY: 'lawson_kitchen_survey_v2',
+  GAS_URL: '', // ← GASデプロイ後のURLをここに貼り付け / Paste your Web App URL here
 };
 
 // 店舗リスト / Store list
@@ -1156,7 +1164,7 @@ function updateProgress() {
 /* ============================================================
    FORM SUBMIT
 ============================================================ */
-function submitForm() {
+async function submitForm() {
   let valid = true;
 
   // Q1
@@ -1191,7 +1199,7 @@ function submitForm() {
     timestamp: new Date().toISOString(),
     store,
     experience:   exp,
-    fieldReality,         // NEW: Q3 checkbox array
+    fieldReality,
     deviation:    dev,
     causes,
     difficulties: document.getElementById('q6').value.trim(),
@@ -1199,9 +1207,29 @@ function submitForm() {
     requests:     document.getElementById('q8').value.trim(),
   };
 
+  // localStorageにバックアップ保存
   const data = loadData();
   data.push(response);
   saveData(data);
+
+  // GASに送信
+  if (CONFIG.GAS_URL) {
+    const btn = document.querySelector('.submit-btn');
+    btn.textContent = '送信中... / Sending...';
+    btn.disabled = true;
+    try {
+      await fetch(CONFIG.GAS_URL, {
+        method: 'POST',
+        mode: 'no-cors',
+        headers: { 'Content-Type': 'text/plain' },
+        body: JSON.stringify(response),
+      });
+    } catch(e) {
+      console.warn('GAS POST failed (data saved locally):', e);
+    }
+    btn.textContent = '回答を送信する ／ Submit';
+    btn.disabled = false;
+  }
 
   document.getElementById('surveyForm').style.display = 'none';
   document.getElementById('successCard').style.display = 'block';
@@ -1227,12 +1255,34 @@ function resetForm() {
 /* ============================================================
    DATA STORAGE
 ============================================================ */
+let _gasCache = null; // GASから取得したデータのキャッシュ
+
 function loadData() {
+  if (_gasCache !== null) return _gasCache;
   try { return JSON.parse(localStorage.getItem(CONFIG.STORAGE_KEY) || '[]'); }
   catch { return []; }
 }
 function saveData(data) {
   localStorage.setItem(CONFIG.STORAGE_KEY, JSON.stringify(data));
+}
+
+async function loadDataFromGAS() {
+  if (!CONFIG.GAS_URL) return loadData();
+  try {
+    const res = await fetch(CONFIG.GAS_URL + '?action=get', { cache: 'no-store' });
+    const json = await res.json();
+    if (Array.isArray(json)) {
+      _gasCache = json;
+      return json;
+    }
+  } catch(e) {
+    console.warn('GAS fetch failed, falling back to localStorage:', e);
+  }
+  return loadData();
+}
+
+function setDashLoading(show) {
+  document.getElementById('dashLoading').style.display = show ? 'block' : 'none';
 }
 
 /* ============================================================
@@ -1261,7 +1311,16 @@ function resetFilters() {
 ============================================================ */
 let charts = {};
 
-function renderDashboard() {
+async function renderDashboard(preloadedData = null) {
+  if (preloadedData !== null) {
+    _gasCache = preloadedData;
+  } else {
+    setDashLoading(true);
+    _gasCache = null;
+    await loadDataFromGAS();
+    setDashLoading(false);
+  }
+
   const all  = loadData();
   const data = getFilteredData();
 
@@ -1769,7 +1828,20 @@ function generateSampleData() {
     });
   }
   saveData(data);
-  renderDashboard();
+
+  // GASにも送信（fire and forget）
+  if (CONFIG.GAS_URL) {
+    data.slice(-30).forEach(record => {
+      fetch(CONFIG.GAS_URL, {
+        method: 'POST',
+        mode: 'no-cors',
+        headers: { 'Content-Type': 'text/plain' },
+        body: JSON.stringify(record),
+      }).catch(() => {});
+    });
+  }
+
+  renderDashboard(data); // 生成したデータをそのまま渡して即座に表示
   alert('30件のサンプルデータを追加しました。');
 }
 
@@ -1814,9 +1886,19 @@ function exportCSV() {
 /* ============================================================
    CLEAR DATA
 ============================================================ */
-function clearData() {
+async function clearData() {
   if (!confirm('全データを消去しますか？この操作は元に戻せません。\nDelete all data? This cannot be undone.')) return;
+
+  if (CONFIG.GAS_URL) {
+    try {
+      await fetch(CONFIG.GAS_URL + '?action=clear', { cache: 'no-store' });
+    } catch(e) {
+      console.warn('GAS clear failed:', e);
+    }
+  }
+
   localStorage.removeItem(CONFIG.STORAGE_KEY);
+  _gasCache = null;
   renderDashboard();
   alert('データを消去しました。');
 }
