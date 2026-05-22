@@ -4,7 +4,219 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>業務習得チェック｜有限会社阪口商店</title>
-  <link rel="stylesheet" href="sbc-education-style.css">
+<style>
+:root {
+  --blue:#1a56db;--blue-d:#1e429f;--blue-l:#e1effe;
+  --green:#057a55;--green-l:#def7ec;
+  --amber:#b45309;--amber-l:#fef3c7;
+  --red:#c81e1e;--red-l:#fde8e8;
+  --g50:#f9fafb;--g100:#f3f4f6;--g200:#e5e7eb;
+  --g300:#d1d5db;--g400:#9ca3af;--g500:#6b7280;
+  --g600:#4b5563;--g700:#374151;--g800:#1f2937;
+  --white:#fff;--r:12px;--rs:8px;
+  --sh:0 1px 3px rgba(0,0,0,.08);
+  --shm:0 4px 12px rgba(0,0,0,.10);
+  --font:-apple-system,BlinkMacSystemFont,'Segoe UI','Hiragino Sans','Yu Gothic UI',sans-serif;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{font-size:16px;-webkit-text-size-adjust:100%}
+body{font-family:var(--font);background:var(--g100);color:var(--g800);line-height:1.6;min-height:100vh}
+button{cursor:pointer;border:none;background:none;font-family:inherit}
+input,select,textarea{font-family:inherit;font-size:1rem;width:100%;border:1.5px solid var(--g300);border-radius:var(--rs);padding:.65rem .9rem;background:var(--white);outline:none;transition:border-color .15s;color:var(--g800)}
+input:focus,select:focus,textarea:focus{border-color:var(--blue);box-shadow:0 0 0 3px rgba(26,86,219,.1)}
+textarea{resize:vertical} ul{list-style:none}
+.hidden{display:none!important}
+.card{background:var(--white);border-radius:var(--r);box-shadow:var(--sh)}
+.sec{display:none;min-height:100vh}
+.sec.show{display:block}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:.4rem;padding:.65rem 1.3rem;border-radius:var(--rs);font-size:.9rem;font-weight:600;transition:all .15s;}
+.btn-primary{background:var(--blue);color:var(--white)}
+.btn-primary:hover{background:var(--blue-d)}
+.btn-primary:disabled{background:var(--g300);color:var(--g500);cursor:not-allowed}
+.btn-outline{background:var(--white);color:var(--blue);border:1.5px solid var(--blue)}
+.btn-outline:hover{background:var(--blue-l)}
+.w-full{width:100%;justify-content:center}
+.err{background:var(--red-l);color:var(--red);border-radius:var(--rs);padding:.6rem .9rem;font-size:.875rem;margin-bottom:.75rem}
+.spinner{width:32px;height:32px;border:3px solid var(--g200);border-top-color:var(--blue);border-radius:50%;animation:spin .7s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+/* TOP */
+.top-bg{min-height:100vh;background:linear-gradient(160deg,#1e3a8a 0%,#1a56db 55%,#2563eb 100%);display:flex;align-items:center;justify-content:center;padding:1.5rem}
+.top-inner{width:100%;max-width:440px}
+.top-logo{text-align:center;color:var(--white);margin-bottom:1.2rem}
+.top-icon{font-size:3rem;margin-bottom:.4rem}
+.top-logo h1{font-size:1.25rem;font-weight:800}
+.top-sub{font-size:.8rem;opacity:.8;margin-top:.3rem}
+.top-card{padding:1rem 1.1rem;margin-bottom:1rem;border-left:4px solid var(--blue)}
+.top-card h2{font-size:.9rem;font-weight:700;margin-bottom:.6rem;color:var(--g700)}
+.top-list li{font-size:.82rem;color:var(--g600);padding:.25rem 0;border-bottom:1px solid var(--g100);display:flex;align-items:baseline;gap:.4rem}
+.top-list li:last-child{border-bottom:none}
+.top-legend{display:flex;align-items:center;gap:.5rem;margin-top:.7rem;padding-top:.7rem;border-top:1px solid var(--g100);flex-wrap:wrap;}
+.lbl{font-size:.78rem;font-weight:700;padding:.15rem .5rem;border-radius:999px}
+.lbl.notyet{background:var(--g100);color:var(--g500)}
+.lbl.wip{background:var(--amber-l);color:var(--amber)}
+.lbl.done{background:var(--green-l);color:var(--green)}
+.arr{font-size:.8rem;color:var(--g400)}
+.top-btns{display:flex;flex-direction:column;gap:.7rem}
+.btn-top{display:flex;flex-direction:column;align-items:flex-start;padding:1rem 1.2rem;border-radius:var(--r);box-shadow:var(--shm);transition:transform .15s,box-shadow .15s;}
+.btn-top:hover{transform:translateY(-2px);box-shadow:0 8px 20px rgba(0,0,0,.18)}
+.btn-top:active{transform:translateY(0)}
+.btn-mgr{background:var(--white)}
+.btn-stf{background:rgba(255,255,255,.14);border:2px solid rgba(255,255,255,.3)}
+.bti{font-size:1.5rem;margin-bottom:.2rem}
+.btl{font-size:.95rem;font-weight:800;color:var(--g800);display:block}
+.btn-stf .btl{color:var(--white)}
+.bts{font-size:.72rem;color:var(--g500);margin-top:.1rem;display:block}
+.btn-stf .bts{color:rgba(255,255,255,.65)}
+/* CENTER WRAP */
+.center-wrap{min-height:100vh;background:linear-gradient(160deg,#1e3a8a 0%,#1a56db 55%,#2563eb 100%);display:flex;align-items:center;justify-content:center;padding:1.5rem}
+.form-card{width:100%;max-width:360px;padding:1.5rem}
+.back-lnk{font-size:.8rem;color:var(--blue);font-weight:600;margin-bottom:1rem;display:block}
+.fc-icon{font-size:2.2rem;text-align:center;margin-bottom:.4rem}
+.form-card h2{font-size:1.05rem;font-weight:800;text-align:center;margin-bottom:.4rem}
+.fc-sub{font-size:.8rem;color:var(--g500);text-align:center;margin-bottom:1rem}
+.form-group{margin-bottom:.9rem}
+.form-group label{display:block;font-size:.8rem;font-weight:600;color:var(--g600);margin-bottom:.3rem}
+.form-group label .hint{font-weight:400;color:var(--g400);margin-left:.4rem;font-size:.72rem}
+/* TOPBAR */
+.topbar{display:flex;align-items:center;justify-content:space-between;padding:.7rem 1rem;background:var(--white);box-shadow:var(--sh);position:sticky;top:0;z-index:50}
+.topbar h1{font-size:.9rem;font-weight:700}
+.tbk{font-size:.8rem;font-weight:600;color:var(--blue);padding:.3rem 0}
+.tbi{font-size:1.2rem;width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center}
+.tbi:hover{background:var(--g100)}
+/* SUMMARY */
+.summary-row{display:flex;gap:.5rem;padding:.7rem .8rem;max-width:900px;margin:0 auto}
+.sbox{flex:1;background:var(--white);border-radius:var(--rs);padding:.65rem .4rem;text-align:center;box-shadow:var(--sh)}
+.sbox.warn .sn{color:var(--amber)}
+.sn{display:block;font-size:1.4rem;font-weight:800;color:var(--blue)}
+.sl{font-size:.62rem;color:var(--g500)}
+/* GROUP HEADERS */
+.group-header{padding:.4rem .8rem 0;max-width:900px;margin:0 auto}
+.group-tag{display:inline-block;padding:.35rem .8rem;border-radius:999px;font-size:.78rem;font-weight:700;margin-bottom:.4rem}
+.tag-a{background:#fee2e2;color:#991b1b}
+.tag-b{background:#dbeafe;color:#1e3a8a}
+/* CARD GRID */
+.card-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:.6rem;padding:0 .8rem .6rem;max-width:900px;margin:0 auto}
+@media(min-width:560px){.card-grid{grid-template-columns:repeat(4,1fr)}}
+.emp-card{background:var(--white);border-radius:var(--r);box-shadow:var(--sh);padding:.85rem .65rem;cursor:pointer;position:relative;overflow:hidden;transition:transform .15s,box-shadow .15s;border-top:3px solid var(--blue);}
+.emp-card.grp-b{border-top-color:var(--blue)}
+.emp-card.grp-a{border-top-color:var(--red)}
+.emp-card.overdue{border-top-color:#ef4444;background:#fff8f8}
+.emp-card:hover{transform:translateY(-2px);box-shadow:var(--shm)}
+.emp-card:active{transform:translateY(0)}
+.ec-av{width:40px;height:40px;border-radius:50%;background:var(--blue-l);color:var(--blue);display:flex;align-items:center;justify-content:center;font-size:1rem;font-weight:800;margin:0 auto .3rem}
+.emp-card.grp-a .ec-av{background:#fee2e2;color:#991b1b}
+.emp-card.overdue .ec-av{background:#fca5a5;color:#7f1d1d}
+.ec-nm{font-size:.9rem;font-weight:700;text-align:center;margin-bottom:.1rem}
+.ec-tag{font-size:.6rem;text-align:center;margin-bottom:.4rem;color:var(--g500)}
+.ec-pct{text-align:right;font-size:.72rem;font-weight:700;color:var(--blue);margin-bottom:.1rem}
+.emp-card.grp-a .ec-pct{color:var(--red)}
+.bg-bar{background:var(--g200);border-radius:999px;height:6px;overflow:hidden;margin-bottom:.45rem}
+.fill-bar{height:100%;border-radius:999px;background:var(--blue);transition:width .5s ease}
+.emp-card.grp-a .fill-bar{background:var(--red)}
+.emp-card.overdue .fill-bar{background:#ef4444}
+.ec-stats{display:flex;justify-content:space-between;font-size:.6rem;color:var(--g500)}
+.ec-stats .n{display:block;font-size:.8rem;font-weight:700;color:var(--g700)}
+.ec-badge{position:absolute;top:5px;right:5px;background:var(--amber);color:var(--white);font-size:.58rem;font-weight:700;padding:.1rem .35rem;border-radius:999px}
+.ec-deadline{font-size:.6rem;color:var(--g400);text-align:center;margin-top:.35rem}
+.ec-deadline.over{color:var(--red);font-weight:700}
+.load-state{grid-column:1/-1;display:flex;flex-direction:column;align-items:center;padding:2.5rem;gap:.7rem;color:var(--g400)}
+/* PROGRESS RING */
+.progress-card{display:flex;align-items:center;gap:1rem;margin:.7rem;padding:.9rem}
+.ring-w{position:relative;width:80px;height:80px;flex-shrink:0}
+.ring-svg{width:80px;height:80px;transform:rotate(-90deg)}
+.ring-bg{fill:none;stroke:var(--g200);stroke-width:10}
+.ring-fill{fill:none;stroke:var(--blue);stroke-width:10;stroke-linecap:round;stroke-dasharray:264;stroke-dashoffset:264;transition:stroke-dashoffset .6s ease}
+.ring-ctr{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:.95rem;font-weight:800;color:var(--blue)}
+.ring-stats{flex:1;display:grid;grid-template-columns:repeat(3,1fr);gap:.4rem}
+.rs-i{text-align:center}
+.rs-n{display:block;font-size:1.2rem;font-weight:800}
+.rs-n.done{color:var(--green)} .rs-n.wip{color:var(--amber)} .rs-n.ny{color:var(--g400)}
+.rs-l{font-size:.62rem;color:var(--g500)}
+.deadline-bar{margin:.3rem .7rem .5rem;padding:.5rem .9rem;border-radius:var(--rs);font-size:.8rem;font-weight:600;display:flex;align-items:center;gap:.4rem}
+.deadline-bar.ok{background:var(--blue-l);color:var(--blue-d)}
+.deadline-bar.over{background:var(--red-l);color:var(--red)}
+/* COMMENT PANEL */
+.comment-panel{margin:0 .7rem .5rem;padding:.8rem 1rem}
+.cp-head{font-size:.8rem;font-weight:700;margin-bottom:.5rem}
+.cp-row{padding:.4rem 0;border-bottom:1px solid var(--g100)}
+.cp-row:last-child{border-bottom:none}
+.cp-skill{font-size:.72rem;font-weight:600;color:var(--g500);margin-bottom:.1rem}
+.cp-text{font-size:.85rem}
+.cp-date{font-size:.68rem;color:var(--g400);margin-top:.1rem}
+/* FILTER BAR */
+.filter-bar{display:flex;gap:.4rem;padding:0 .7rem .5rem;overflow-x:auto}
+.fb{padding:.32rem .8rem;border-radius:999px;font-size:.78rem;font-weight:600;white-space:nowrap;border:1.5px solid var(--g200);color:var(--g600);background:var(--white);transition:all .15s}
+.fb.active,.fb:hover{background:var(--blue);border-color:var(--blue);color:var(--white)}
+/* SKILL LIST */
+.skill-sec{margin:0 .7rem .7rem}
+.cat-hd{display:flex;align-items:center;justify-content:space-between;padding:.6rem .9rem;background:var(--g700);color:var(--white);border-radius:var(--rs) var(--rs) 0 0;cursor:pointer}
+.cat-hd h3{font-size:.83rem}
+.cat-pct{font-size:.72rem;opacity:.75}
+.cat-bd{background:var(--white);border-radius:0 0 var(--rs) var(--rs);overflow:hidden;box-shadow:var(--sh)}
+.sub-hd{padding:.35rem .9rem;background:var(--g50);font-size:.7rem;font-weight:600;color:var(--g500);border-bottom:1px solid var(--g200);letter-spacing:.03em}
+.sk-row{display:flex;align-items:center;gap:.6rem;padding:.6rem .9rem;border-bottom:1px solid var(--g100);transition:background .1s;}
+.sk-row:last-child{border-bottom:none}
+.sk-row:hover{background:var(--g50)}
+.sk-row.hide{display:none}
+.st-btn{width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.85rem;font-weight:800;flex-shrink:0;border:2px solid transparent;transition:transform .1s}
+.st-btn:active{transform:scale(.88)}
+.st-btn.notyet{background:var(--g100);color:var(--g500);border-color:var(--g300)}
+.st-btn.wip{background:var(--amber-l);color:var(--amber);border-color:var(--amber)}
+.st-btn.done{background:var(--green-l);color:var(--green);border-color:var(--green)}
+.st-dot{width:12px;height:12px;border-radius:50%;flex-shrink:0;margin:0 4px}
+.st-dot.notyet{background:var(--g300)}
+.st-dot.wip{background:var(--amber)}
+.st-dot.done{background:var(--green)}
+.sk-info{flex:1;min-width:0}
+.sk-nm{font-size:.83rem;font-weight:600;color:var(--g800)}
+.sk-sub{font-size:.7rem;color:var(--g400);margin-top:.08rem}
+.ic{font-size:.7rem;font-style:italic;margin-top:.08rem}
+.ic.admin{color:var(--g500)}
+.ic.self{color:var(--amber)}
+.cmt-btn{font-size:.68rem;padding:.18rem .45rem;border-radius:var(--rs);border:1.5px solid var(--amber-l);background:var(--amber-l);color:var(--amber);white-space:nowrap;flex-shrink:0;font-weight:600;transition:all .15s}
+.cmt-btn.has{background:var(--amber);color:var(--white);border-color:var(--amber)}
+/* MODAL */
+.modal{position:fixed;inset:0;z-index:200;display:none;align-items:flex-end}
+.modal.open{display:flex}
+.mbg{position:absolute;inset:0;background:rgba(0,0,0,.5)}
+.msheet{position:relative;background:var(--white);border-radius:var(--r) var(--r) 0 0;width:100%;max-height:90vh;overflow-y:auto;animation:slideUp .25s ease}
+@keyframes slideUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
+@media(min-width:600px){.modal{align-items:center}.msheet{border-radius:var(--r);width:90%;max-width:500px;margin:0 auto}}
+.mdrag{width:34px;height:4px;background:var(--g200);border-radius:2px;margin:.55rem auto 0}
+.mhead{padding:.75rem 1rem .4rem;border-bottom:1px solid var(--g100)}
+.mcat{font-size:.68rem;font-weight:700;color:var(--blue);letter-spacing:.05em;margin-bottom:.2rem}
+.mhead h3{font-size:.95rem;font-weight:700}
+.mbody{padding:.9rem 1rem}
+.mfoot{display:flex;gap:.5rem;padding:.7rem 1rem;border-top:1px solid var(--g100)}
+.mfoot .btn{flex:1}
+.last-upd{font-size:.7rem;color:var(--g400);margin-top:.4rem}
+.explain-box{background:var(--g50);border-left:3px solid var(--blue);margin:0 1rem;border-radius:0 var(--rs) var(--rs) 0;padding:.75rem .9rem}
+.ex-row{display:flex;gap:.5rem;margin-bottom:.35rem;font-size:.82rem;line-height:1.5}
+.ex-row:last-child{margin-bottom:0}
+.ex-lbl{color:var(--blue);font-weight:700;white-space:nowrap}
+.sp-label{font-size:.78rem;font-weight:600;color:var(--g600);margin-bottom:.45rem}
+.sp-row{display:flex;gap:.45rem;margin-bottom:.9rem}
+.spb{flex:1;padding:.65rem .35rem;border-radius:var(--rs);text-align:center;border:2px solid transparent;transition:all .15s}
+.spb.notyet{background:var(--g100)}
+.spb.wip{background:var(--amber-l)}
+.spb.done{background:var(--green-l)}
+.spb.notyet.picked{border-color:var(--g500)}
+.spb.wip.picked{border-color:var(--amber);box-shadow:0 0 0 2px rgba(180,83,9,.2)}
+.spb.done.picked{border-color:var(--green);box-shadow:0 0 0 2px rgba(5,122,85,.2)}
+.spi{font-size:1.1rem;display:block;margin-bottom:.15rem}
+.spn{font-size:.78rem;font-weight:700;color:var(--g700);display:block}
+.spd{font-size:.64rem;color:var(--g500);display:block;margin-top:.1rem}
+.cguide{font-size:.85rem;color:var(--g600);margin-bottom:.7rem;line-height:1.6}
+.cex{background:var(--g50);border-radius:var(--rs);padding:.6rem .8rem;margin-bottom:.9rem}
+.cex p{font-size:.72rem;font-weight:600;color:var(--g500);margin-bottom:.3rem}
+.cex li{font-size:.78rem;color:var(--g600);padding:.15rem 0}
+.cex li::before{content:"・"}
+/* TOAST */
+.toast{position:fixed;bottom:1.5rem;left:50%;transform:translateX(-50%);background:var(--g800);color:var(--white);padding:.6rem 1.3rem;border-radius:999px;font-size:.85rem;font-weight:600;z-index:500;white-space:nowrap;animation:fadeUp .2s ease;pointer-events:none}
+.toast.ok{background:var(--green)}
+.toast.err{background:var(--red)}
+@keyframes fadeUp{from{opacity:0;transform:translateX(-50%) translateY(6px)}to{opacity:1;transform:translateX(-50%) translateY(0)}}
+</style>
 </head>
 <body>
 
@@ -17,7 +229,6 @@
         <h1>有限会社阪口商店</h1>
         <p class="top-sub">業務習得チェックシステム</p>
       </div>
-
       <div class="top-card card">
         <h2>このシステムについて</h2>
         <ul class="top-list">
@@ -35,7 +246,6 @@
           <span class="lbl done">✓ 習得済</span>
         </div>
       </div>
-
       <div class="top-btns">
         <button class="btn-top btn-mgr" onclick="UI.go('sec-admin-login')">
           <span class="bti">🔑</span>
@@ -76,22 +286,14 @@
     <h1>業務習得ダッシュボード</h1>
     <button class="tbi" onclick="Dashboard.load()" title="更新">🔄</button>
   </div>
-
   <div class="summary-row">
     <div class="sbox"><span class="sn" id="s-total">-</span><span class="sl">対象者</span></div>
     <div class="sbox"><span class="sn" id="s-avg">-%</span><span class="sl">平均習得率</span></div>
     <div class="sbox warn"><span class="sn" id="s-comment">-</span><span class="sl">コメントあり</span></div>
   </div>
-
-  <!-- グループ別ヘッダー -->
-  <div class="group-header">
-    <div class="group-tag tag-a">🔴 期限：2026/03/15（店長候補4名）</div>
-  </div>
+  <div class="group-header"><div class="group-tag tag-a">🔴 期限：2026/03/15（店長候補4名）</div></div>
   <div class="card-grid" id="grid-A"></div>
-
-  <div class="group-header">
-    <div class="group-tag tag-b">🔵 期限：2026/09/15（育成中4名）</div>
-  </div>
+  <div class="group-header"><div class="group-tag tag-b">🔵 期限：2026/09/15（育成中4名）</div></div>
   <div class="card-grid" id="grid-B"></div>
 </section>
 
@@ -102,23 +304,17 @@
     <h1 id="detail-title">詳細</h1>
     <span></span>
   </div>
-
   <div class="progress-card card" id="progress-ring-card"></div>
-
-  <!-- 本人コメント（あれば） -->
   <div id="comment-panel" class="comment-panel hidden card">
     <div class="cp-head">💬 スタッフからのコメント</div>
     <div id="comment-list"></div>
   </div>
-
-  <!-- フィルター -->
   <div class="filter-bar">
     <button class="fb active" data-f="all"    onclick="Detail.filter(this, false)">すべて</button>
     <button class="fb"        data-f="notyet" onclick="Detail.filter(this, false)">未習得</button>
     <button class="fb"        data-f="wip"    onclick="Detail.filter(this, false)">練習中</button>
     <button class="fb"        data-f="done"   onclick="Detail.filter(this, false)">習得済</button>
   </div>
-
   <div id="skill-list"></div>
 </section>
 
@@ -147,20 +343,17 @@
     <h1 id="self-title">習得状況</h1>
     <span></span>
   </div>
-
   <div class="progress-card card" id="self-ring-card"></div>
-
   <div class="filter-bar">
     <button class="fb active" data-f="all"    onclick="Detail.filter(this, true)">すべて</button>
     <button class="fb"        data-f="notyet" onclick="Detail.filter(this, true)">未習得</button>
     <button class="fb"        data-f="wip"    onclick="Detail.filter(this, true)">練習中</button>
     <button class="fb"        data-f="done"   onclick="Detail.filter(this, true)">習得済</button>
   </div>
-
   <div id="self-skill-list"></div>
 </section>
 
-<!-- ============ ステータス更新モーダル（管理者） ============ -->
+<!-- ============ ステータス更新モーダル ============ -->
 <div id="modal-update" class="modal hidden">
   <div class="mbg" onclick="Modal.close('modal-update')"></div>
   <div class="msheet">
@@ -169,33 +362,23 @@
       <div class="mcat" id="mu-cat"></div>
       <h3 id="mu-name"></h3>
     </div>
-
-    <!-- タスクの説明ボックス -->
-    <div class="explain-box" id="mu-explain">
+    <div class="explain-box">
       <div class="ex-row"><span class="ex-lbl">📌 タスク内容</span><span id="mu-desc"></span></div>
       <div class="ex-row"><span class="ex-lbl">⏰ 実施タイミング</span><span id="mu-timing"></span></div>
     </div>
-
     <div class="mbody">
       <div class="sp-label">このスタッフの習得状況を選んでください</div>
       <div class="sp-row">
         <button class="spb notyet" data-s="notyet" onclick="Modal.pick(this)">
-          <span class="spi">○</span>
-          <span class="spn">未習得</span>
-          <span class="spd">まだ教わっていない・できない</span>
+          <span class="spi">○</span><span class="spn">未習得</span><span class="spd">まだ教わっていない・できない</span>
         </button>
         <button class="spb wip" data-s="wip" onclick="Modal.pick(this)">
-          <span class="spi">△</span>
-          <span class="spn">練習中</span>
-          <span class="spd">教わったが一人では不安</span>
+          <span class="spi">△</span><span class="spn">練習中</span><span class="spd">教わったが一人では不安</span>
         </button>
         <button class="spb done" data-s="done" onclick="Modal.pick(this)">
-          <span class="spi">✓</span>
-          <span class="spn">習得済</span>
-          <span class="spd">一人で確実にできる</span>
+          <span class="spi">✓</span><span class="spn">習得済</span><span class="spd">一人で確実にできる</span>
         </button>
       </div>
-
       <div class="form-group">
         <label>メモ・指導コメント（任意）<span class="hint">指導日・注意点など</span></label>
         <textarea id="mu-comment" rows="3" placeholder="例：2026/05/22 発注操作を一緒に確認済。次回一人でやらせる。"></textarea>
@@ -219,10 +402,7 @@
       <h3 id="mc-name">コメントを送る</h3>
     </div>
     <div class="mbody">
-      <p class="cguide">
-        このタスクについて<strong>不安なこと・分からないこと</strong>を書いてください。<br>
-        管理者に届きます。
-      </p>
+      <p class="cguide">このタスクについて<strong>不安なこと・分からないこと</strong>を書いてください。<br>管理者に届きます。</p>
       <div class="cex">
         <p>例：</p>
         <ul>
@@ -243,6 +423,312 @@
 </div>
 
 <div id="toast" class="toast hidden"></div>
-<script src="sbc-education-app.js"></script>
+
+<script>
+// ★ GASデプロイURLをここに貼り付けてください ★
+const GAS_URL = 'https://script.google.com/macros/s/YOUR_SCRIPT_ID/exec';
+
+// 管理者パスワード
+const ADMIN_PASS = 'Lawson3963';
+
+// 対象スタッフ（増やす場合はここに追加）
+const STAFF = [
+  { id:'S01', name:'マヘンドラ', group:'A', deadline:'2026/03/15' },
+  { id:'S02', name:'ラジト',     group:'A', deadline:'2026/03/15' },
+  { id:'S03', name:'グルン',     group:'A', deadline:'2026/03/15' },
+  { id:'S04', name:'ネパリ',     group:'A', deadline:'2026/03/15' },
+  { id:'S05', name:'カマル',     group:'B', deadline:'2026/09/15' },
+  { id:'S06', name:'ビシャル',   group:'B', deadline:'2026/09/15' },
+  { id:'S07', name:'マノズ',     group:'B', deadline:'2026/09/15' },
+  { id:'S08', name:'ゴクル',     group:'B', deadline:'2026/09/15' },
+];
+
+// 業務タスク一覧
+const SKILLS = [
+  // 日次業務
+  {id:'D01',category:'日次業務',sub:'AI.CO発注',name:'AI.CO 発注推奨数確認',desc:'AI.COシステムで日次発注の推奨数を確認し、状況に合わせて修正する。',timing:'毎日 6時・9時・14時・21時に確認'},
+  {id:'D02',category:'日次業務',sub:'AI.CO発注',name:'AI.CO 発注数修正・確定',desc:'推奨数を確認後、実際の在庫・売れ行きに合わせて発注数を修正し確定する。',timing:'2便：毎日10時締め　3便：毎日12時締め'},
+  {id:'D03',category:'日次業務',sub:'AI.CO発注',name:'AI.CO 単品在庫ドライバ設定',desc:'単品ごとの在庫基準値（ドライバ）を設定・調整する。',timing:'毎日9時に商品リスト更新 ～ 前日24時まで設定可能'},
+  {id:'D04',category:'日次業務',sub:'AI.CO発注',name:'AI.CO 便寄せドライバ設定',desc:'便（配送回）を絞り込むためのドライバを過去実績をもとに設定する。',timing:'毎日9時に過去実績更新 ～ 前日24時まで'},
+  {id:'D05',category:'日次業務',sub:'AI.CO発注',name:'AI.CO 気温対応発注設定',desc:'気温変動に応じた発注数の増減設定を行う。',timing:'毎日9時に過去実績更新'},
+  {id:'D06',category:'日次業務',sub:'AI.CO発注',name:'AI.CO 値引推奨カテゴリ・時間設定',desc:'値引対象カテゴリと実施時間帯の設定を行う。',timing:'前日24時までに設定'},
+  {id:'D07',category:'日次業務',sub:'発注作業',name:'日配品 一括発注',desc:'牛乳・パン・チルド惣菜等の日配品をシステムで一括発注する。',timing:'毎日10時締め'},
+  {id:'D08',category:'日次業務',sub:'発注作業',name:'ドライ品 一括発注',desc:'常温加工食品・雑貨等のドライ品をシステムで一括発注する。',timing:'毎日12時締め'},
+  {id:'D09',category:'日次業務',sub:'発注作業',name:'FF・厨房商品 発注',desc:'揚げ物・サンドイッチ等のファストフード・厨房商品を発注する。',timing:'毎日12時締め（一部10時締めあり）'},
+  {id:'D10',category:'日次業務',sub:'発注作業',name:'OB（オリジナルブランド）発注',desc:'OB商品を発注する。曜日制限があるため注意が必要。',timing:'毎日12時締め　※水曜・土曜は発注不可'},
+  {id:'D11',category:'日次業務',sub:'精算業務',name:'コピー機売上登録',desc:'コピー機の売上をシステムに登録する（精算前に必ず実施）。',timing:'毎日精算前に必ず実施'},
+  {id:'D12',category:'日次業務',sub:'精算業務',name:'費用出金確認',desc:'精算時に費用出金（外部支払い等）の内容を確認する。',timing:'精算時に確認'},
+  {id:'D13',category:'日次業務',sub:'精算業務',name:'返品・返金確認',desc:'精算時に返品・返金の処理内容を確認する。',timing:'精算時に確認'},
+  {id:'D14',category:'日次業務',sub:'精算業務',name:'値引クーポン確認',desc:'値引きクーポンの処理内容を精算時に確認する。',timing:'精算時に確認'},
+  {id:'D15',category:'日次業務',sub:'精算業務',name:'お買物券確認',desc:'お買物券（金券）の処理内容を精算時に確認する。',timing:'精算時に確認'},
+  {id:'D16',category:'日次業務',sub:'精算業務',name:'現金過不足確認・報告',desc:'レジ現金の過不足をチェックし、許容範囲を超えた場合は報告する。',timing:'精算時　※±1,000円以上は必ず店長・SCへ報告'},
+  {id:'D17',category:'日次業務',sub:'精算業務',name:'送金業務',desc:'前日精算分の売上金をATMから送金する。',timing:'毎日15時までに送金実施'},
+  {id:'D18',category:'日次業務',sub:'精算業務',name:'伝票整理',desc:'納品伝票等を日次で整理・保管する。',timing:'毎日3便納品完了後 ～ 0時までに実施'},
+  // 週次業務
+  {id:'W01',category:'週次業務',sub:'AI.CO週次',name:'AI.CO 週次品揃え',desc:'週単位で品揃えの見直しをAI.COシステム上で行う。',timing:'毎週水曜日9時 ～ 日曜日9時まで（毎日更新）'},
+  {id:'W02',category:'週次業務',sub:'AI.CO週次',name:'AI.CO 新商品推奨数意思入',desc:'新商品の推奨発注数をAI.CO上で入力・調整する。',timing:'火曜日9時 ～ 土曜日24時'},
+  {id:'W03',category:'週次業務',sub:'AI.CO週次',name:'AI.CO カテゴリ在庫ドライバ設定',desc:'カテゴリ単位での在庫基準値を設定する。',timing:'週次スケジュールに沿って実施'},
+  {id:'W04',category:'週次業務',sub:'AI.CO週次',name:'AI.CO 客数変化先付発注',desc:'翌週の客数変化を予測した先行発注をAI.CO上で設定する。',timing:'火曜日9時 ～ 納品週前週土曜日24時'},
+  {id:'W05',category:'週次業務',sub:'AI.CO週次',name:'AI.CO 週次計画業務',desc:'週単位の発注・品揃え計画をAI.COで立案・確認する。',timing:'毎週火曜日9時から使用可能'},
+  {id:'W06',category:'週次業務',sub:'AI.CO週次',name:'AI.CO ドライバ検証',desc:'設定したドライバ（在庫基準値）の精度を検証し必要に応じ修正する。',timing:'毎週火曜日12時から検証可能'},
+  {id:'W07',category:'週次業務',sub:'AI.CO週次',name:'AI.CO 週次検証業務',desc:'週次発注・品揃えの結果を検証し、翌週への改善点を整理する。',timing:'週次スケジュールに沿って実施'},
+  {id:'W08',category:'週次業務',sub:'AI.CO週次',name:'AI.CO 機会ロス分析',desc:'欠品による機会損失を曜日・時間帯・単品別に分析する。',timing:'チェック確定後即時分析可能'},
+  {id:'W09',category:'週次業務',sub:'AI.CO週次',name:'AI.CO モジュール登録業務',desc:'新商品・変更商品のモジュール（棚割り）をAI.COに登録する。',timing:'毎週土曜日24時まで'},
+  {id:'W10',category:'週次業務',sub:'発注・仕入',name:'ドライ系新商品発注',desc:'その週の新商品（ドライ）を漏れなく発注する。修正も含む。',timing:'毎週金曜24時までに実施'},
+  {id:'W11',category:'週次業務',sub:'発注・仕入',name:'特別発注',desc:'イベント・販促に合わせた通常発注以外の特別な発注を行う。',timing:'毎週月曜日に確認後、必要な商品を発注'},
+  {id:'W12',category:'週次業務',sub:'発注・仕入',name:'事前予約発注（在庫抽選発注）',desc:'限定商品・予約商品の事前発注を行う。',timing:'毎週月曜日に実施'},
+  {id:'W13',category:'週次業務',sub:'本部対応',name:'本部からのご案内確認',desc:'本部から送付される案内・指示事項を確認し、店舗で対応する。',timing:'毎週月曜日までに確認'},
+  {id:'W14',category:'週次業務',sub:'本部対応',name:'返品商品のご案内確認・返品登録',desc:'本部からの返品指示商品を確認し、返品登録を行う。',timing:'毎週月曜日までに返品登録実施'},
+  {id:'W15',category:'週次業務',sub:'本部対応',name:'推奨取消商品の整理',desc:'本部から推奨取消の案内が来た商品をカット（削除）する。',timing:'毎週月曜日までに不要商品のカット実施'},
+  {id:'W16',category:'週次業務',sub:'売場・POP',name:'各種メニューキー登録・整理',desc:'レジのメニューキー（FFメニュー等）を登録・整理する。',timing:'毎週月曜日の夕方までに実施'},
+  {id:'W17',category:'週次業務',sub:'売場・POP',name:'新商品売場づくり',desc:'週替わりの新商品の陳列スペースを確保し、売場を作る。',timing:'新商品入荷日に合わせて実施'},
+  {id:'W18',category:'週次業務',sub:'売場・POP',name:'新商品POP切替・整理',desc:'週替わりの新商品POPを切り替え、古いPOPを撤去・整理する。',timing:'毎週月曜日の夕方までに実施'},
+  {id:'W19',category:'週次業務',sub:'売場・POP',name:'棚登録（必要時）',desc:'棚割り変更が必要な場合にシステムへ棚登録を行う。',timing:'棚変更が必要な場合のみ'},
+  {id:'W20',category:'週次業務',sub:'売場・POP',name:'PC（プライスカード）印刷・取付',desc:'PCのない商品を確認し、PCを印刷して取り付ける。',timing:'毎週火曜日に実施：不備があれば即日取付'},
+  {id:'W21',category:'週次業務',sub:'清掃・保守',name:'フィルター清掃',desc:'業務用冷蔵・冷凍庫、デザートケース、冷凍平台、アイスケース、栄養ドリンクコーナーのフィルターを清掃する。',timing:'週次スケジュールに沿って実施'},
+  {id:'W22',category:'週次業務',sub:'清掃・保守',name:'換気扇清掃',desc:'トイレ・カウンター上・バックルームの換気扇を清掃する。',timing:'週次スケジュールに沿って実施'},
+  {id:'W23',category:'週次業務',sub:'清掃・保守',name:'空気通気口清掃',desc:'オープンケース・ウォークイン・栄養ドリンク・デザートケースの通気口を清掃する。',timing:'週次スケジュールに沿って実施'},
+  {id:'W24',category:'週次業務',sub:'清掃・保守',name:'ゴミ箱本体の清掃',desc:'店内ゴミ箱の本体（外側・内側）を洗浄・清掃する。',timing:'週次スケジュールに沿って実施'},
+  {id:'W25',category:'週次業務',sub:'清掃・保守',name:'トイレ大清掃',desc:'便器分解、壁・床を酸性洗剤で清掃する大掃除を行う。',timing:'週次スケジュールに沿って実施'},
+  {id:'W26',category:'週次業務',sub:'清掃・保守',name:'店外ガラス面清掃',desc:'店舗外側のガラス面を清掃する。',timing:'週次スケジュールに沿って実施'},
+  // 月次業務
+  {id:'M01',category:'月次業務',sub:'AI.CO月次',name:'AI.CO 月次経営計画',desc:'月次の経営計画をAI.COシステムに入力・設定する。',timing:'毎月1日 ～ 第3月曜日24時まで'},
+  {id:'M02',category:'月次業務',sub:'AI.CO月次',name:'AI.CO 月次販売計画',desc:'月次の販売計画を第1週の週次計画画面に反映する。',timing:'第1週の週次計画画面へ即時入力'},
+  {id:'M03',category:'月次業務',sub:'AI.CO月次',name:'AI.CO 客数変化ポイント設定',desc:'翌月の客数変動に合わせた発注ポイントをAI.COに設定する。',timing:'毎月1日9時 ～ 納品週2週前の土曜日24時'},
+  {id:'M04',category:'月次業務',sub:'AI.CO月次',name:'ドライ仕入計画（月次）',desc:'翌月のドライ商品仕入れ計画を作成・発注する。',timing:'毎月第4週水曜日14時 ～ 月末最終月曜12時'},
+  {id:'M05',category:'月次業務',sub:'棚卸・ロス',name:'定期棚卸ロス分析',desc:'定期棚卸の結果を受けてロス（廃棄・不明ロス）を分析し改善策を検討する。',timing:'定期棚卸終了3日後 ～ 月末'},
+  {id:'M06',category:'月次業務',sub:'棚卸・ロス',name:'たばこ・切手類の簡易棚卸',desc:'たばこ・切手類の在庫数を実際に数えてシステムと照合する。',timing:'毎月20日 ～ 27日の間に実施'},
+  {id:'M07',category:'月次業務',sub:'棚卸・ロス',name:'切手類購入（現金仕入）',desc:'切手・レターパック等を現金で購入・補充する。',timing:'在庫状況を確認のうえ随時（月次で確認）'},
+  {id:'M08',category:'月次業務',sub:'棚卸・ロス',name:'酒棚卸',desc:'酒類の在庫を棚卸しデータをシステムに送信する。',timing:'3・6・9・12月末 ～ 翌月2日20時までに送信完了'},
+  {id:'M09',category:'月次業務',sub:'棚卸・ロス',name:'FF厨房原材料棚卸',desc:'ファストフード・厨房で使用する原材料の棚卸しを実施してデータ送信する。',timing:'毎月月末 ～ 翌月2日20時までに送信完了'},
+  {id:'M10',category:'月次業務',sub:'コンプライアンス',name:'未成年販売・SNS注意点・誓約書サイン',desc:'未成年への酒・たばこ販売禁止、SNSマナー等に関する誓約書に毎月サインする。',timing:'毎月15日までにサイン完了し担当SCへ提出'},
+  {id:'M11',category:'月次業務',sub:'各種登録',name:'緑の募金 売上登録',desc:'緑の募金の売上をシステムに登録する。',timing:'毎月1営業日 ～ 4営業日までに売上登録実施'},
+  {id:'M12',category:'月次業務',sub:'各種登録',name:'個人情報破棄書類処理',desc:'廃棄対象の個人情報書類を専用袋に入れメールバックで返却する。',timing:'毎月月末精算時に実施（3か月分は店舗保管）'},
+  {id:'M13',category:'月次業務',sub:'各種登録',name:'衛生セルフチェック',desc:'食品衛生に関するセルフチェックをタブレットで実施・登録する。',timing:'毎月1日 ～ 7日までにタブレットにて実施'},
+  {id:'M14',category:'月次業務',sub:'各種登録',name:'店舗健康診断セルフチェック',desc:'店舗の衛生・安全環境についてのセルフチェックを実施する。',timing:'毎月指定期間内に実施'},
+  {id:'M15',category:'月次業務',sub:'人材管理',name:'契約更新面談',desc:'スタッフの契約更新に向けた面談を実施し、必要書類を準備する。',timing:'奇数月（1・3・5・7・9・11月）の15日までに実施'},
+  // 月初月末・人事
+  {id:'P01',category:'月初月末・人事',sub:'勤怠管理',name:'出退勤データ修正・確認',desc:'前月分の出退勤データに誤りやエラーがないか確認し修正する。社員の休憩登録も必ず確認する。',timing:'毎月16日 ～ 17日までに実施（最終期限：19日）'},
+  {id:'P02',category:'月初月末・人事',sub:'人事手続き',name:'退職処理',desc:'退職するスタッフのシステム上の退職手続きを行う。',timing:'退職1か月前までに実施（毎月18日が提出期限）'},
+  {id:'P03',category:'月初月末・人事',sub:'人事手続き',name:'外国人スタッフ新規雇用報告・在留カード送付',desc:'外国人スタッフを新規採用した場合、在留カードの表裏を担当SCへ送付する。',timing:'採用後すみやかに（毎月18日が提出期限）'},
+  // 伝票処理
+  {id:'T01',category:'伝票処理',sub:'月末伝票',name:'未計上伝票チェック',desc:'月末時点で計上漏れの伝票がないか確認し、処理する。本部控えは必ずメールバックで送付。',timing:'毎月月末・月初に実施'},
+  {id:'T02',category:'伝票処理',sub:'月末伝票',name:'アイスあたり棒 返品処理',desc:'アイスのあたり棒（当たり付き）を毎月まとめて返品処理する。',timing:'毎月月末・月初に実施'},
+  {id:'T03',category:'伝票処理',sub:'月末伝票',name:'破損切手処理',desc:'破損した切手を等価交換または廃棄処理する。',timing:'毎月月末・月初に実施'},
+];
+
+const State = {
+  progress:{},currentStaffId:null,editingSkillId:null,
+  editingStatus:null,detailFilter:'all',selfFilter:'all',gasReady:false,
+};
+
+async function callGAS(action,params={}){
+  if(!State.gasReady) throw new Error('GAS未設定');
+  const res=await fetch(GAS_URL,{method:'POST',headers:{'Content-Type':'text/plain'},body:JSON.stringify({action,...params})});
+  const json=await res.json();
+  if(!json.success) throw new Error(json.message||'エラー');
+  return json.data;
+}
+
+const UI={
+  go(id){document.querySelectorAll('.sec').forEach(s=>s.classList.remove('show'));document.getElementById(id).classList.add('show');window.scrollTo(0,0);},
+  onSelChange(){const v=document.getElementById('self-sel').value;document.getElementById('go-btn').disabled=!v;},
+  toast(msg,type=''){const el=document.getElementById('toast');el.textContent=msg;el.className=`toast ${type}`;el.classList.remove('hidden');clearTimeout(UI._tt);UI._tt=setTimeout(()=>el.classList.add('hidden'),2400);},
+};
+
+const Auth={
+  login(){
+    const pass=document.getElementById('admin-pass').value;
+    const err=document.getElementById('login-err');
+    if(pass===ADMIN_PASS){err.classList.add('hidden');UI.go('sec-dashboard');Dashboard.load();}
+    else{err.classList.remove('hidden');document.getElementById('admin-pass').select();}
+  },
+};
+
+const Dashboard={
+  async load(){
+    ['grid-A','grid-B'].forEach(id=>{document.getElementById(id).innerHTML='<div class="load-state"><div class="spinner"></div><p>読み込み中...</p></div>';});
+    try{const all=await callGAS('getAllProgress');State.progress=all;}
+    catch{STAFF.forEach(s=>{if(!State.progress[s.id])State.progress[s.id]={};});}
+    this.render();
+  },
+  render(){
+    let totalPct=0,commentCount=0;const grids={A:'',B:''};
+    STAFF.forEach(s=>{const stats=calcStats(s.id);totalPct+=stats.pct;const hasCmt=hasAnyComment(s.id);if(hasCmt)commentCount++;grids[s.group]+=this.card(s,stats,hasCmt);});
+    document.getElementById('grid-A').innerHTML=grids.A;
+    document.getElementById('grid-B').innerHTML=grids.B;
+    document.getElementById('s-total').textContent=STAFF.length;
+    document.getElementById('s-avg').textContent=Math.round(totalPct/STAFF.length)+'%';
+    document.getElementById('s-comment').textContent=commentCount;
+  },
+  card(s,stats,hasCmt){
+    const now=new Date();const dl=new Date(s.deadline.replace(/\//g,'-'));const over=now>dl&&stats.pct<100;
+    return`<div class="emp-card grp-${s.group}${over?' overdue':''}" onclick="Detail.open('${s.id}')">
+      ${hasCmt?'<span class="ec-badge">💬 コメント</span>':''}
+      <div class="ec-av">${s.name.charAt(0)}</div>
+      <div class="ec-nm">${s.name}</div>
+      <div class="ec-tag">${s.group==='A'?'店長候補':'育成中'}</div>
+      <div class="ec-pct">${stats.pct}%</div>
+      <div class="bg-bar"><div class="fill-bar" style="width:${stats.pct}%"></div></div>
+      <div class="ec-stats">
+        <span><span class="n" style="color:var(--green)">${stats.done}</span>習得済</span>
+        <span><span class="n" style="color:var(--amber)">${stats.wip}</span>練習中</span>
+        <span><span class="n">${stats.notyet}</span>未習得</span>
+      </div>
+      <div class="ec-deadline${over?' over':''}">${over?'⚠️ 期限超過 ':'期限：'}${s.deadline}</div>
+    </div>`;
+  },
+};
+
+const Detail={
+  async open(staffId){
+    State.currentStaffId=staffId;State.detailFilter='all';
+    const s=STAFF.find(x=>x.id===staffId);
+    document.getElementById('detail-title').textContent=s.name+' さんの習得状況';
+    UI.go('sec-detail');
+    document.querySelectorAll('#sec-detail .fb').forEach(b=>b.classList.remove('active'));
+    document.querySelector('#sec-detail .fb[data-f="all"]').classList.add('active');
+    try{State.progress[staffId]=await callGAS('getProgress',{staffId});}catch{}
+    this.renderRing('progress-ring-card',staffId);
+    this.renderDeadlineBar(staffId);
+    this.renderCommentPanel(staffId);
+    renderList('skill-list',staffId,false);
+  },
+  renderRing(elId,staffId){
+    const stats=calcStats(staffId);const off=264-(264*stats.pct/100);
+    document.getElementById(elId).innerHTML=`<div class="ring-w"><svg class="ring-svg" viewBox="0 0 100 100"><circle class="ring-bg" cx="50" cy="50" r="42"/><circle class="ring-fill" cx="50" cy="50" r="42" style="stroke-dashoffset:${off}"/></svg><div class="ring-ctr">${stats.pct}%</div></div><div class="ring-stats"><div class="rs-i"><span class="rs-n done">${stats.done}</span><span class="rs-l">習得済</span></div><div class="rs-i"><span class="rs-n wip">${stats.wip}</span><span class="rs-l">練習中</span></div><div class="rs-i"><span class="rs-n ny">${stats.notyet}</span><span class="rs-l">未習得</span></div></div>`;
+  },
+  renderDeadlineBar(staffId){
+    const s=STAFF.find(x=>x.id===staffId);const now=new Date();const dl=new Date(s.deadline.replace(/\//g,'-'));const stats=calcStats(staffId);const over=now>dl&&stats.pct<100;
+    document.querySelectorAll('.deadline-bar').forEach(e=>e.remove());
+    const bar=document.createElement('div');bar.className=`deadline-bar ${over?'over':'ok'}`;
+    bar.textContent=over?`⚠️ 期限（${s.deadline}）を超過しています　残り未習得：${stats.notyet}件`:`📅 習得期限：${s.deadline}　残り未習得：${stats.notyet}件`;
+    document.getElementById('progress-ring-card').after(bar);
+  },
+  renderCommentPanel(staffId){
+    const prog=State.progress[staffId]||{};
+    const rows=SKILLS.filter(sk=>{const p=prog[sk.id];return p&&p.selfComment&&p.selfComment.trim();});
+    const panel=document.getElementById('comment-panel');
+    if(!rows.length){panel.classList.add('hidden');return;}
+    panel.classList.remove('hidden');
+    document.getElementById('comment-list').innerHTML=rows.map(sk=>{const p=prog[sk.id];return`<div class="cp-row"><div class="cp-skill">${sk.category} / ${sk.name}</div><div class="cp-text">${esc(p.selfComment)}</div>${p.selfCommentAt?`<div class="cp-date">${p.selfCommentAt}</div>`:''}</div>`;}).join('');
+  },
+  filter(btn,isSelf){
+    const sec=isSelf?'#sec-self-view':'#sec-detail';
+    document.querySelectorAll(sec+' .fb').forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active');
+    if(isSelf)State.selfFilter=btn.dataset.f;else State.detailFilter=btn.dataset.f;
+    renderList(isSelf?'self-skill-list':'skill-list',State.currentStaffId,isSelf);
+  },
+};
+
+const Self={
+  async go(){
+    const staffId=document.getElementById('self-sel').value;if(!staffId)return;
+    State.currentStaffId=staffId;State.selfFilter='all';
+    const s=STAFF.find(x=>x.id===staffId);
+    document.getElementById('self-title').textContent=s.name+' さんの習得状況';
+    UI.go('sec-self-view');
+    document.querySelectorAll('#sec-self-view .fb').forEach(b=>b.classList.remove('active'));
+    document.querySelector('#sec-self-view .fb[data-f="all"]').classList.add('active');
+    try{State.progress[staffId]=await callGAS('getProgress',{staffId});}catch{}
+    Detail.renderRing('self-ring-card',staffId);
+    renderList('self-skill-list',staffId,true);
+  },
+};
+
+function renderList(containerId,staffId,isSelf){
+  const prog=State.progress[staffId]||{};const filter=isSelf?State.selfFilter:State.detailFilter;
+  const cats={};
+  SKILLS.forEach(sk=>{if(!cats[sk.category])cats[sk.category]={};if(!cats[sk.category][sk.sub])cats[sk.category][sk.sub]=[];cats[sk.category][sk.sub].push(sk);});
+  let html='';
+  Object.entries(cats).forEach(([cat,subs])=>{
+    const allItems=Object.values(subs).flat();
+    const catDone=allItems.filter(sk=>(prog[sk.id]?.status||'notyet')==='done').length;
+    const catPct=Math.round(catDone/allItems.length*100);
+    let rows='';
+    Object.entries(subs).forEach(([sub,skills])=>{
+      rows+=`<div class="sub-hd">${sub}</div>`;
+      skills.forEach(sk=>{
+        const p=prog[sk.id]||{};const status=p.status||'notyet';
+        const icons={notyet:'○',wip:'△',done:'✓'};
+        const hide=(filter!=='all'&&filter!==status)?' hide':'';
+        if(isSelf){
+          const hasCmt=p.selfComment&&p.selfComment.trim();
+          rows+=`<div class="sk-row${hide}" data-s="${status}"><span class="st-dot ${status}"></span><div class="sk-info"><div class="sk-nm">${esc(sk.name)}</div><div class="sk-sub">${esc(sk.timing)}</div>${p.adminComment?`<div class="ic admin">💼 ${esc(p.adminComment)}</div>`:''}</div><button class="cmt-btn${hasCmt?' has':''}" onclick="Modal.openComment('${staffId}','${sk.id}')">${hasCmt?'💬 編集':'💬 メモ'}</button></div>`;
+        }else{
+          rows+=`<div class="sk-row${hide}" data-s="${status}"><button class="st-btn ${status}" onclick="Modal.openUpdate('${staffId}','${sk.id}')" title="タップして更新">${icons[status]}</button><div class="sk-info"><div class="sk-nm">${esc(sk.name)}</div><div class="sk-sub">${esc(sk.timing)}</div>${p.adminComment?`<div class="ic admin">💼 ${esc(p.adminComment)}</div>`:''}${(p.selfComment&&p.selfComment.trim())?`<div class="ic self">💬 ${esc(p.selfComment)}</div>`:''}</div></div>`;
+        }
+      });
+    });
+    html+=`<div class="skill-sec"><div class="cat-hd" onclick="this.nextElementSibling.style.display=this.nextElementSibling.style.display==='none'?'':''"><h3>${cat}</h3><span class="cat-pct">${catDone}/${allItems.length}（${catPct}%）</span></div><div class="cat-bd">${rows}</div></div>`;
+  });
+  document.getElementById(containerId).innerHTML=html||'<p style="padding:2rem;color:#6b7280;text-align:center">表示できる項目がありません</p>';
+}
+
+const Modal={
+  openUpdate(staffId,skillId){
+    State.currentStaffId=staffId;State.editingSkillId=skillId;
+    const sk=SKILLS.find(s=>s.id===skillId);const p=(State.progress[staffId]||{})[skillId]||{};
+    document.getElementById('mu-cat').textContent=sk.category+' › '+sk.sub;
+    document.getElementById('mu-name').textContent=sk.name;
+    document.getElementById('mu-desc').textContent=sk.desc;
+    document.getElementById('mu-timing').textContent=sk.timing;
+    document.getElementById('mu-comment').value=p.adminComment||'';
+    document.getElementById('mu-last').textContent=p.updatedBy?`最終更新: ${p.updatedBy}  ${p.updatedAt||''}`:'';
+    const cur=p.status||'notyet';State.editingStatus=cur;
+    document.querySelectorAll('.spb').forEach(b=>{b.classList.remove('picked');if(b.dataset.s===cur)b.classList.add('picked');});
+    this._open('modal-update');
+  },
+  pick(btn){document.querySelectorAll('.spb').forEach(b=>b.classList.remove('picked'));btn.classList.add('picked');State.editingStatus=btn.dataset.s;},
+  async saveUpdate(){
+    const staffId=State.currentStaffId;const skillId=State.editingSkillId;const status=State.editingStatus;
+    const comment=document.getElementById('mu-comment').value.trim();const now=new Date().toLocaleString('ja-JP');
+    try{await callGAS('updateProgress',{staffId,skillId,status,adminComment:comment,updatedBy:'管理者'});}catch{}
+    if(!State.progress[staffId])State.progress[staffId]={};
+    if(!State.progress[staffId][skillId])State.progress[staffId][skillId]={};
+    Object.assign(State.progress[staffId][skillId],{status,adminComment:comment,updatedBy:'管理者',updatedAt:now});
+    this.close('modal-update');UI.toast('保存しました','ok');
+    Detail.renderRing('progress-ring-card',staffId);Detail.renderDeadlineBar(staffId);Detail.renderCommentPanel(staffId);renderList('skill-list',staffId,false);
+  },
+  openComment(staffId,skillId){
+    State.currentStaffId=staffId;State.editingSkillId=skillId;
+    const sk=SKILLS.find(s=>s.id===skillId);const p=(State.progress[staffId]||{})[skillId]||{};
+    document.getElementById('mc-cat').textContent=sk.category+' › '+sk.sub;
+    document.getElementById('mc-name').textContent=sk.name;
+    document.getElementById('mc-text').value=p.selfComment||'';
+    this._open('modal-comment');
+  },
+  async saveComment(){
+    const staffId=State.currentStaffId;const skillId=State.editingSkillId;
+    const comment=document.getElementById('mc-text').value.trim();const s=STAFF.find(x=>x.id===staffId);const now=new Date().toLocaleString('ja-JP');
+    try{await callGAS('saveSelfComment',{staffId,skillId,selfComment:comment,staffName:s?.name||''});}catch{}
+    if(!State.progress[staffId])State.progress[staffId]={};
+    if(!State.progress[staffId][skillId])State.progress[staffId][skillId]={};
+    Object.assign(State.progress[staffId][skillId],{selfComment:comment,selfCommentAt:comment?now:''});
+    this.close('modal-comment');UI.toast(comment?'コメントを送信しました':'コメントを削除しました','ok');
+    renderList('self-skill-list',staffId,true);
+  },
+  close(id){const m=document.getElementById(id);m.classList.add('hidden');m.classList.remove('open');},
+  _open(id){const m=document.getElementById(id);m.classList.remove('hidden');m.classList.add('open');},
+};
+
+function calcStats(staffId){
+  const prog=State.progress[staffId]||{};let done=0,wip=0;
+  SKILLS.forEach(sk=>{const s=(prog[sk.id]||{}).status||'notyet';if(s==='done')done++;else if(s==='wip')wip++;});
+  const total=SKILLS.length;const notyet=total-done-wip;const pct=Math.round(done/total*100);
+  return{done,wip,notyet,total,pct};
+}
+function hasAnyComment(staffId){return Object.values(State.progress[staffId]||{}).some(p=>p.selfComment&&p.selfComment.trim());}
+function getLastUpdate(staffId){let latest='';Object.values(State.progress[staffId]||{}).forEach(p=>{if(p.updatedAt&&p.updatedAt>latest)latest=p.updatedAt;});return latest?latest.substring(0,10):'';}
+function esc(s){if(!s)return'';return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+
+document.addEventListener('DOMContentLoaded',()=>{
+  State.gasReady=GAS_URL.includes('script.google.com')&&!GAS_URL.includes('YOUR_SCRIPT_ID');
+  const sel=document.getElementById('self-sel');
+  STAFF.forEach(s=>{const o=document.createElement('option');o.value=s.id;o.textContent=s.name+'（期限：'+s.deadline+'）';sel.appendChild(o);});
+  document.getElementById('admin-pass').addEventListener('keydown',e=>{if(e.key==='Enter')Auth.login();});
+});
+</script>
 </body>
 </html>
