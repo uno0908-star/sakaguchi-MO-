@@ -1,0 +1,1039 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>BBQ CLUB | 阪口商店</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    /* ========== CSS変数 ========== */
+    :root {
+      --primary:       #E65100;
+      --primary-light: #FF8F00;
+      --primary-dark:  #BF360C;
+      --bg:            #FFF8F0;
+      --bg-admin:      #F5F5F5;
+      --card:          #FFFFFF;
+      --text:          #3E2723;
+      --text-sub:      #6D4C41;
+      --border:        #D7CCC8;
+      --success:       #2E7D32;
+      --danger:        #C62828;
+      --yes:           #2E7D32;
+      --no:            #C62828;
+      --maybe:         #E65100;
+      --shadow:        0 2px 12px rgba(80,30,0,.08);
+      --shadow-admin:  0 2px 10px rgba(0,0,0,.08);
+    }
+
+    body {
+      font-family: 'Hiragino Kaku Gothic ProN','Hiragino Sans','Meiryo',sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      transition: background .3s;
+    }
+    body.admin-mode { background: var(--bg-admin); color: #212121; }
+
+    /* ========== ビュー切り替え ========== */
+    .view { display: none; }
+    .view.active { display: block; }
+
+    /* ========== アンケート用ヘッダー ========== */
+    .header-survey {
+      background: linear-gradient(145deg, #BF360C 0%, #E65100 45%, #FF8F00 100%);
+      padding: 36px 20px 52px;
+      text-align: center;
+      position: relative; overflow: hidden;
+    }
+    .header-survey::after {
+      content: ''; position: absolute;
+      bottom: -1px; left: 0; right: 0; height: 28px;
+      background: var(--bg);
+      clip-path: ellipse(60% 100% at 50% 100%);
+    }
+    .header-survey .hicon { font-size: 56px; display: block; margin-bottom: 10px; line-height: 1; }
+    .header-survey h1 {
+      color: #fff; font-size: 26px; font-weight: 800;
+      text-shadow: 0 2px 6px rgba(0,0,0,.35);
+      letter-spacing: 2px; margin-bottom: 6px;
+    }
+    .header-survey .sub { color: rgba(255,255,255,.88); font-size: 13px; line-height: 1.6; }
+
+    /* ========== 管理者用ヘッダー ========== */
+    .header-admin {
+      background: linear-gradient(135deg, #1A1A1A 0%, #3E2723 100%);
+      padding: 16px 20px;
+      display: flex; align-items: center; gap: 12px;
+      position: sticky; top: 0; z-index: 100;
+      box-shadow: 0 2px 8px rgba(0,0,0,.3);
+    }
+    .header-admin .hicon { font-size: 26px; }
+    .header-admin .htitle { color: #fff; font-size: 17px; font-weight: 700; }
+    .header-admin .hsub { color: rgba(255,255,255,.55); font-size: 11px; margin-top: 1px; }
+    .back-btn, .logout-btn {
+      background: rgba(255,255,255,.12); color: #fff;
+      border: 1px solid rgba(255,255,255,.2);
+      padding: 8px 14px; border-radius: 8px;
+      font-size: 13px; cursor: pointer;
+      font-family: inherit; transition: background .2s;
+      white-space: nowrap;
+    }
+    .back-btn:hover, .logout-btn:hover { background: rgba(255,255,255,.22); }
+    .header-admin .back-btn { margin-left: auto; }
+
+    /* ========== コンテナ ========== */
+    .container { max-width: 640px; margin: 0 auto; padding: 20px 16px 48px; }
+    .container.wide { max-width: 960px; }
+
+    /* ========== お知らせカード ========== */
+    .info-card {
+      background: linear-gradient(135deg, #FFF3E0, #FFFDE7);
+      border: 1px solid #FFCC80; border-left: 5px solid var(--primary);
+      border-radius: 14px; padding: 18px 16px; margin-bottom: 20px;
+    }
+    .info-card h2 { font-size: 14px; font-weight: 700; color: var(--primary-dark); margin-bottom: 10px; }
+    .info-list { list-style: none; }
+    .info-list li {
+      font-size: 13px; color: var(--text-sub);
+      padding: 4px 0 4px 20px; position: relative; line-height: 1.5;
+    }
+    .info-list li::before { content: '🔥'; position: absolute; left: 0; font-size: 11px; top: 5px; }
+    .info-list li strong { color: var(--text); }
+    .deadline {
+      display: inline-block; background: var(--primary); color: #fff;
+      padding: 6px 16px; border-radius: 20px;
+      font-size: 13px; font-weight: 700; margin-top: 10px;
+    }
+
+    /* ========== フォームカード ========== */
+    .card {
+      background: var(--card); border-radius: 16px;
+      padding: 20px 18px; margin-bottom: 14px;
+      box-shadow: var(--shadow); border: 1px solid rgba(230,81,0,.1);
+    }
+    .field-label {
+      display: flex; align-items: center; gap: 8px;
+      font-size: 15px; font-weight: 700; color: var(--text); margin-bottom: 4px;
+    }
+    .badge-req { background: var(--danger); color: #fff; font-size: 10px; padding: 2px 7px; border-radius: 4px; font-weight: 600; }
+    .badge-opt { background: #9E9E9E; color: #fff; font-size: 10px; padding: 2px 7px; border-radius: 4px; font-weight: 600; }
+    .hint { font-size: 12px; color: #9E9E9E; margin-bottom: 10px; line-height: 1.5; }
+
+    /* ========== 入力フィールド ========== */
+    input[type="text"], input[type="password"], select, textarea {
+      width: 100%; padding: 14px 16px;
+      border: 2px solid var(--border); border-radius: 10px;
+      font-size: 16px; color: var(--text); background: #fff;
+      transition: border-color .2s, box-shadow .2s;
+      -webkit-appearance: none; appearance: none; font-family: inherit;
+    }
+    input[type="text"]:focus, input[type="password"]:focus,
+    select:focus, textarea:focus {
+      outline: none; border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(230,81,0,.15);
+    }
+    select {
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='10' viewBox='0 0 14 10'%3E%3Cpath fill='%23E65100' d='M7 10L0 0h14z'/%3E%3C/svg%3E");
+      background-repeat: no-repeat; background-position: right 16px center; padding-right: 44px;
+    }
+    textarea { resize: vertical; min-height: 100px; }
+
+    /* ========== ラジオ ========== */
+    .radio-group { display: flex; flex-direction: column; gap: 10px; }
+    .radio-item {
+      display: flex; align-items: center; gap: 14px;
+      padding: 15px 16px; border: 2px solid var(--border);
+      border-radius: 12px; cursor: pointer;
+      transition: all .2s; background: #fff;
+      user-select: none; -webkit-tap-highlight-color: transparent;
+    }
+    .radio-item:hover { border-color: var(--primary-light); background: #FFF8F0; }
+    .radio-item.selected { border-color: var(--primary); background: #FFF3E0; }
+    .radio-item input[type="radio"] { width: 20px; height: 20px; accent-color: var(--primary); flex-shrink: 0; }
+    .radio-item .radio-text { font-size: 15px; font-weight: 500; }
+
+    /* ========== 曜日チェックボックス ========== */
+    .days-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+    .day-item {
+      display: flex; flex-direction: column; align-items: center;
+      justify-content: center; padding: 14px 6px; gap: 6px;
+      border: 2px solid var(--border); border-radius: 12px;
+      cursor: pointer; transition: all .2s; background: #fff;
+      user-select: none; -webkit-tap-highlight-color: transparent;
+    }
+    .day-item:hover { border-color: var(--primary-light); background: #FFF8F0; }
+    .day-item.selected { border-color: var(--primary); background: #FFF3E0; }
+    .day-item input[type="checkbox"] { width: 18px; height: 18px; accent-color: var(--primary); }
+    .day-item .day-text { font-size: 17px; font-weight: 700; color: var(--text); }
+    .day-item.selected .day-text { color: var(--primary); }
+
+    /* ========== 送信ボタン ========== */
+    .submit-btn {
+      width: 100%; padding: 18px;
+      background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
+      color: #fff; border: none; border-radius: 14px;
+      font-size: 18px; font-weight: 800; cursor: pointer;
+      transition: all .25s; box-shadow: 0 5px 18px rgba(230,81,0,.35);
+      display: flex; align-items: center; justify-content: center;
+      gap: 8px; font-family: inherit; letter-spacing: 1px;
+    }
+    .submit-btn:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(230,81,0,.45); }
+    .submit-btn:active:not(:disabled) { transform: translateY(0); box-shadow: 0 3px 10px rgba(230,81,0,.3); }
+    .submit-btn:disabled { background: #BDBDBD; box-shadow: none; transform: none; cursor: not-allowed; }
+
+    /* ========== エラー表示 ========== */
+    .error-box {
+      background: #FFEBEE; border: 1px solid #EF9A9A;
+      border-radius: 10px; padding: 12px 16px;
+      font-size: 14px; color: var(--danger);
+      margin-bottom: 14px; display: none; line-height: 1.5;
+    }
+
+    /* ========== 送信完了 ========== */
+    .success-wrap {
+      text-align: center; padding: 56px 20px;
+      animation: fadeUp .5s ease;
+    }
+    .success-wrap .big-emoji { font-size: 80px; display: block; margin-bottom: 20px; }
+    .success-wrap h2 { font-size: 24px; color: var(--success); margin-bottom: 12px; font-weight: 800; }
+    .success-wrap p { font-size: 15px; color: var(--text-sub); line-height: 1.9; }
+
+    /* ========== 管理者リンク ========== */
+    .admin-link {
+      text-align: center; margin-top: 24px;
+      padding-top: 20px; border-top: 1px solid var(--border);
+    }
+    .admin-link button {
+      background: none; border: none; color: #BDBDBD;
+      font-size: 12px; cursor: pointer; font-family: inherit;
+      padding: 4px 8px; transition: color .2s;
+    }
+    .admin-link button:hover { color: var(--text-sub); }
+
+    /* ========== 管理者ログイン ========== */
+    .login-wrap {
+      display: flex; align-items: center; justify-content: center;
+      padding: 40px 16px;
+    }
+    .login-card {
+      background: var(--card); border-radius: 20px;
+      padding: 40px 32px; width: 100%; max-width: 380px;
+      box-shadow: 0 4px 24px rgba(0,0,0,.12); text-align: center;
+    }
+    .login-icon { font-size: 52px; margin-bottom: 12px; display: block; }
+    .login-card h2 { font-size: 20px; margin-bottom: 6px; color: #212121; }
+    .login-card p { font-size: 13px; color: #757575; margin-bottom: 24px; }
+    .login-card input { margin-bottom: 14px; color: #212121; }
+    .login-btn {
+      width: 100%; padding: 15px;
+      background: var(--primary); color: #fff;
+      border: none; border-radius: 10px;
+      font-size: 16px; font-weight: 700;
+      cursor: pointer; font-family: inherit; transition: background .2s;
+    }
+    .login-btn:hover { background: var(--primary-dark); }
+    .login-error {
+      background: #FFEBEE; border: 1px solid #EF9A9A;
+      border-radius: 8px; padding: 10px 14px;
+      font-size: 13px; color: var(--no);
+      margin-top: 12px; display: none;
+    }
+
+    /* ========== 管理ダッシュボード ========== */
+    .refresh-bar {
+      display: flex; align-items: center; justify-content: space-between;
+      margin-bottom: 18px; flex-wrap: wrap; gap: 10px;
+    }
+    .refresh-bar .updated { font-size: 12px; color: #9E9E9E; }
+    .refresh-btn {
+      background: var(--primary); color: #fff;
+      border: none; padding: 8px 18px; border-radius: 8px;
+      font-size: 13px; font-weight: 600; cursor: pointer;
+      font-family: inherit; transition: background .2s;
+    }
+    .refresh-btn:hover { background: var(--primary-dark); }
+
+    /* サマリーカード */
+    .summary-grid {
+      display: grid; grid-template-columns: repeat(2, 1fr);
+      gap: 12px; margin-bottom: 20px;
+    }
+    @media (min-width: 500px) { .summary-grid { grid-template-columns: repeat(4, 1fr); } }
+    .summary-card {
+      background: var(--card); border-radius: 14px;
+      padding: 18px 12px; text-align: center;
+      box-shadow: var(--shadow-admin);
+    }
+    .summary-card .sc-icon { font-size: 26px; margin-bottom: 6px; display: block; }
+    .summary-card .sc-num { font-size: 36px; font-weight: 800; line-height: 1; margin-bottom: 4px; }
+    .summary-card .sc-label { font-size: 11px; color: #757575; }
+    .summary-card.s-total  { border-top: 4px solid #1565C0; }
+    .summary-card.s-total  .sc-num { color: #1565C0; }
+    .summary-card.s-yes    { border-top: 4px solid var(--yes); }
+    .summary-card.s-yes    .sc-num { color: var(--yes); }
+    .summary-card.s-no     { border-top: 4px solid var(--no); }
+    .summary-card.s-no     .sc-num { color: var(--no); }
+    .summary-card.s-maybe  { border-top: 4px solid var(--maybe); }
+    .summary-card.s-maybe  .sc-num { color: var(--maybe); }
+
+    /* セクションタイトル */
+    .section-title {
+      font-size: 15px; font-weight: 700; color: #212121;
+      margin-bottom: 12px; display: flex; align-items: center; gap: 6px;
+    }
+
+    /* テーブル */
+    .table-wrap {
+      background: var(--card); border-radius: 14px;
+      box-shadow: var(--shadow-admin); overflow: hidden; margin-bottom: 20px;
+    }
+    .table-scroll { overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    thead { background: #EFEBE9; }
+    th { padding: 12px 14px; text-align: left; font-weight: 700; color: #212121; white-space: nowrap; }
+    td { padding: 11px 14px; border-top: 1px solid #EEEEEE; vertical-align: top; }
+    tr:hover td { background: #FAFAFA; }
+    .badge-yes   { color: var(--yes);   font-weight: 700; }
+    .badge-no    { color: var(--no);    font-weight: 700; }
+    .badge-maybe { color: var(--maybe); font-weight: 700; }
+    .pill { display: inline-block; padding: 3px 10px; border-radius: 12px; font-size: 12px; font-weight: 600; white-space: nowrap; }
+    .pill.yes   { background: #E8F5E9; color: var(--yes); }
+    .pill.no    { background: #FFEBEE; color: var(--no); }
+    .pill.maybe { background: #FFF3E0; color: var(--maybe); }
+    .resp-name  { font-weight: 600; white-space: nowrap; }
+    .resp-store { font-size: 12px; color: #9E9E9E; white-space: nowrap; }
+    .resp-dt    { font-size: 11px; color: #9E9E9E; white-space: nowrap; }
+    .resp-text  { font-size: 12px; color: #757575; max-width: 140px; word-break: break-all; }
+
+    /* CSVボタン */
+    .csv-btn {
+      display: inline-flex; align-items: center; gap: 6px;
+      background: #37474F; color: #fff; border: none;
+      padding: 10px 20px; border-radius: 10px;
+      font-size: 14px; font-weight: 600; cursor: pointer;
+      font-family: inherit; transition: background .2s; margin-bottom: 14px;
+    }
+    .csv-btn:hover { background: #263238; }
+
+    /* ローディング・空状態 */
+    .empty-state { text-align: center; padding: 48px 20px; color: #9E9E9E; font-size: 14px; }
+    .empty-state .icon { font-size: 40px; display: block; margin-bottom: 10px; }
+    .loading-state { text-align: center; padding: 32px; color: #9E9E9E; font-size: 14px; }
+
+    /* ページング */
+    .pager { display: flex; align-items: center; justify-content: center; gap: 8px; padding: 14px; flex-wrap: wrap; }
+    .page-btn {
+      padding: 6px 12px; border: 1px solid #E0E0E0;
+      border-radius: 6px; font-size: 13px; cursor: pointer;
+      background: #fff; font-family: inherit; transition: all .2s;
+    }
+    .page-btn:hover { border-color: var(--primary); color: var(--primary); }
+    .page-btn.active { background: var(--primary); color: #fff; border-color: var(--primary); }
+
+    /* スピナー（アンケート用） */
+    .spinner-survey {
+      display: inline-block; width: 20px; height: 20px;
+      border: 3px solid rgba(255,255,255,.35); border-radius: 50%;
+      border-top-color: #fff; animation: spin .7s linear infinite;
+    }
+    /* スピナー（管理者用） */
+    .spinner-admin {
+      display: inline-block; width: 22px; height: 22px;
+      border: 3px solid #E0E0E0; border-radius: 50%;
+      border-top-color: var(--primary); animation: spin .7s linear infinite;
+      margin-right: 8px; vertical-align: middle;
+    }
+
+    /* ========== アニメーション ========== */
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(24px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ========== レスポンシブ ========== */
+    @media (max-width: 360px) {
+      .header-survey h1 { font-size: 22px; }
+      .days-grid { gap: 6px; }
+      .day-item { padding: 12px 4px; }
+      .day-item .day-text { font-size: 15px; }
+      .login-card { padding: 32px 20px; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ================================================================
+     VIEW 1: アンケートフォーム
+================================================================ -->
+<div id="viewSurvey" class="view active">
+
+  <!-- ヘッダー -->
+  <header class="header-survey">
+    <span class="hicon">🔥🍖</span>
+    <h1>BBQ CLUB</h1>
+    <p class="sub">阪口商店 正社員レクリエーション<br>参加意思アンケート</p>
+  </header>
+
+  <div class="container">
+    <!-- お知らせ -->
+    <div class="info-card">
+      <h2>📋 このアンケートについて</h2>
+      <ul class="info-list">
+        <li>内容：<strong>BBQ</strong> を予定しています</li>
+        <li>日時・場所：<strong>未定</strong>（今後みなさんの意見をもとに調整）</li>
+        <li>参加費：<strong>1,000円予定</strong>（不足分はオーナー負担）</li>
+        <li>このアンケートは「<strong>シフト関係なく</strong>、参加したい気持ちがあるか」を把握するためのものです。シフトの都合は気にせず、正直にお答えください。</li>
+      </ul>
+      <span class="deadline">⏰ 回答締切：2026年5月24日（日）21:00</span>
+    </div>
+
+    <!-- フォーム -->
+    <form novalidate>
+
+      <!-- 1. 氏名 -->
+      <div class="card">
+        <div class="field-label"><span>1. 氏名</span><span class="badge-req">必須</span></div>
+        <p class="hint">フルネームで入力してください</p>
+        <input type="text" id="name" placeholder="例：山田 太郎">
+      </div>
+
+      <!-- 2. 所属店舗 -->
+      <div class="card">
+        <div class="field-label"><span>2. 所属店舗</span><span class="badge-req">必須</span></div>
+        <p class="hint">ご自身のメイン店舗を選択してください</p>
+        <select id="store">
+          <option value="">-- 選択してください --</option>
+          <option>吹田垂水三丁目</option>
+          <option>江坂東</option>
+          <option>江坂駅南口</option>
+          <option>吹田警察署前</option>
+          <option>豊中原田南一丁目</option>
+          <option>南金田二丁目</option>
+          <option>吹田豊津中学校前</option>
+          <option>新御堂筋上新田</option>
+          <option>東淀川大道南</option>
+          <option>豊中服部西町三丁目</option>
+          <option>大道南一丁目</option>
+          <option>豊里六丁目</option>
+          <option>吹田青山台三丁目</option>
+          <option>豊中利倉東一丁目</option>
+          <option>五月ケ丘東</option>
+          <option>豊中服部元町一丁目</option>
+          <option>吹田朝日町</option>
+          <option>東淀川豊里五丁目</option>
+          <option>池田市役所前</option>
+          <option>箕面白島二丁目</option>
+        </select>
+      </div>
+
+      <!-- 3. 参加意思 -->
+      <div class="card">
+        <div class="field-label"><span>3. 参加意思</span><span class="badge-req">必須</span></div>
+        <p class="hint">※シフト関係なく、参加したい気持ちがあるかお答えください</p>
+        <div class="radio-group">
+          <label class="radio-item">
+            <input type="radio" name="intention" value="参加したい">
+            <span class="radio-text">🙋 参加したい</span>
+          </label>
+          <label class="radio-item">
+            <input type="radio" name="intention" value="参加したくない">
+            <span class="radio-text">🙅 参加したくない</span>
+          </label>
+          <label class="radio-item">
+            <input type="radio" name="intention" value="どちらとも言えない">
+            <span class="radio-text">🤔 どちらとも言えない</span>
+          </label>
+        </div>
+      </div>
+
+      <!-- 4. 希望曜日 -->
+      <div class="card">
+        <div class="field-label"><span>4. 希望曜日</span><span class="badge-opt">任意</span></div>
+        <p class="hint">※複数選択できます。希望する曜日をタップしてください</p>
+        <div class="days-grid">
+          <label class="day-item"><input type="checkbox" name="days" value="月"><span class="day-text">月</span></label>
+          <label class="day-item"><input type="checkbox" name="days" value="火"><span class="day-text">火</span></label>
+          <label class="day-item"><input type="checkbox" name="days" value="水"><span class="day-text">水</span></label>
+          <label class="day-item"><input type="checkbox" name="days" value="木"><span class="day-text">木</span></label>
+          <label class="day-item"><input type="checkbox" name="days" value="金"><span class="day-text">金</span></label>
+          <label class="day-item"><input type="checkbox" name="days" value="土"><span class="day-text">土</span></label>
+          <label class="day-item"><input type="checkbox" name="days" value="日"><span class="day-text">日</span></label>
+        </div>
+      </div>
+
+      <!-- 5. 希望時間帯 -->
+      <div class="card">
+        <div class="field-label"><span>5. 希望時間帯</span><span class="badge-opt">任意</span></div>
+        <p class="hint">※複数選択できます。参加しやすい時間帯をタップしてください</p>
+        <div class="radio-group">
+          <label class="radio-item">
+            <input type="checkbox" name="timeSlot" value="10:00〜16:00">
+            <span class="radio-text">☀️ 10:00〜16:00（フルタイム）</span>
+          </label>
+          <label class="radio-item">
+            <input type="checkbox" name="timeSlot" value="10:00〜13:00">
+            <span class="radio-text">🌅 10:00〜13:00（午前）</span>
+          </label>
+          <label class="radio-item">
+            <input type="checkbox" name="timeSlot" value="13:00〜16:00">
+            <span class="radio-text">🌤️ 13:00〜16:00（午後）</span>
+          </label>
+          <label class="radio-item">
+            <input type="checkbox" name="timeSlot" value="18:00〜21:00">
+            <span class="radio-text">🌙 18:00〜21:00（夜）</span>
+          </label>
+        </div>
+      </div>
+
+      <!-- 6. BBQ以外 -->
+      <div class="card">
+        <div class="field-label"><span>6. BBQ以外でやってみたいこと</span><span class="badge-opt">任意</span></div>
+        <p class="hint">例：フットサル、キャンプ、スポーツ大会、ボードゲーム大会、ボーリング大会など</p>
+        <textarea id="otherActivities" placeholder="自由に記入してください（複数OK）"></textarea>
+      </div>
+
+      <!-- 7. コメント -->
+      <div class="card">
+        <div class="field-label"><span>7. その他コメント</span><span class="badge-opt">任意</span></div>
+        <p class="hint">ご意見・ご要望があればお気軽にどうぞ</p>
+        <textarea id="comment" placeholder="何でもどうぞ！"></textarea>
+      </div>
+
+      <!-- エラー -->
+      <div class="error-box" id="surveyError"></div>
+
+      <!-- 送信ボタン -->
+      <button type="button" class="submit-btn" id="submitBtn" onclick="submitForm()">
+        <span id="submitLabel">🍖 アンケートを送信する</span>
+      </button>
+
+      <!-- 管理者リンク -->
+      <div class="admin-link">
+        <button type="button" onclick="showView('adminLogin')">管理者画面</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- ================================================================
+     VIEW 2: 送信完了
+================================================================ -->
+<div id="viewSuccess" class="view">
+  <header class="header-survey">
+    <span class="hicon">🔥🍖</span>
+    <h1>BBQ CLUB</h1>
+    <p class="sub">阪口商店 正社員レクリエーション</p>
+  </header>
+  <div class="container">
+    <div class="success-wrap">
+      <span class="big-emoji">🎉</span>
+      <h2>回答ありがとうございました！</h2>
+      <p>
+        ご回答いただきありがとうございます。<br>
+        BBQ CLUBの詳細が決まりましたら、<br>
+        改めてご連絡いたします。<br><br>
+        みんなで楽しい時間を過ごしましょう！🔥🍖
+      </p>
+    </div>
+  </div>
+</div>
+
+<!-- ================================================================
+     VIEW 3: 管理者ログイン
+================================================================ -->
+<div id="viewAdminLogin" class="view">
+  <header class="header-admin">
+    <span class="hicon">🔥</span>
+    <div>
+      <div class="htitle">管理者画面</div>
+      <div class="hsub">阪口商店 BBQ CLUB</div>
+    </div>
+    <button class="back-btn" onclick="showView('survey')">← アンケートに戻る</button>
+  </header>
+  <div class="login-wrap">
+    <div class="login-card">
+      <span class="login-icon">🔒</span>
+      <h2>管理者ログイン</h2>
+      <p>管理者パスワードを入力してください</p>
+      <input type="password" id="pwInput" placeholder="パスワード"
+             onkeydown="if(event.key==='Enter') adminLogin()">
+      <button class="login-btn" onclick="adminLogin()">ログイン</button>
+      <div class="login-error" id="loginError">パスワードが正しくありません。</div>
+    </div>
+  </div>
+</div>
+
+<!-- ================================================================
+     VIEW 4: 管理者ダッシュボード
+================================================================ -->
+<div id="viewAdminDashboard" class="view">
+  <header class="header-admin">
+    <span class="hicon">🔥</span>
+    <div>
+      <div class="htitle">BBQ CLUB 管理者画面</div>
+      <div class="hsub">阪口商店 正社員レクリエーション</div>
+    </div>
+    <button class="back-btn logout-btn" onclick="adminLogout()">ログアウト</button>
+  </header>
+
+  <div class="container wide">
+
+    <div class="refresh-bar">
+      <span class="updated" id="updatedAt"></span>
+      <button class="refresh-btn" onclick="loadAdminData()">🔄 最新データを取得</button>
+    </div>
+
+    <!-- サマリー -->
+    <div class="section-title">📊 参加意思 サマリー</div>
+    <div class="summary-grid" id="summaryGrid">
+      <div class="loading-state" style="grid-column:1/-1">
+        <span class="spinner-admin"></span>読み込み中...
+      </div>
+    </div>
+
+    <!-- 店舗別 -->
+    <div class="section-title">🏪 店舗別 回答状況</div>
+    <div class="table-wrap" id="storeTableWrap">
+      <div class="loading-state"><span class="spinner-admin"></span>読み込み中...</div>
+    </div>
+
+    <!-- 回答一覧 -->
+    <div class="section-title" style="margin-top:8px">📋 回答一覧</div>
+    <button class="csv-btn" onclick="downloadCSV()">⬇️ CSVダウンロード</button>
+    <div class="table-wrap" id="respTableWrap">
+      <div class="loading-state"><span class="spinner-admin"></span>読み込み中...</div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ================================================================
+     JavaScript
+================================================================ -->
+<script>
+
+// ============================================================
+//  ビュー管理
+// ============================================================
+var _currentView = 'survey';
+
+function showView(name) {
+  // 全ビューを非表示
+  ['survey', 'success', 'adminLogin', 'adminDashboard'].forEach(function(v) {
+    var el = document.getElementById('view' + capitalize(v));
+    if (el) el.classList.remove('active');
+  });
+
+  // 対象ビューを表示
+  var target = document.getElementById('view' + capitalize(name));
+  if (target) target.classList.add('active');
+
+  _currentView = name;
+
+  // ボディの背景色を切り替え
+  if (name === 'adminLogin' || name === 'adminDashboard') {
+    document.body.classList.add('admin-mode');
+  } else {
+    document.body.classList.remove('admin-mode');
+  }
+
+  // 先頭にスクロール
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function capitalize(str) {
+  return str.charAt(0).toUpperCase() + str.slice(1);
+}
+
+
+// ============================================================
+//  ラジオ・チェックボックスのビジュアル
+// ============================================================
+// ラジオボタン（参加意思）
+document.querySelectorAll('.radio-item input[type="radio"]').forEach(function(radio) {
+  radio.addEventListener('change', function() {
+    var name = this.name;
+    document.querySelectorAll('input[name="' + name + '"]').forEach(function(r) {
+      r.closest('.radio-item').classList.toggle('selected', r.checked);
+    });
+  });
+});
+
+// チェックボックス（時間帯）
+document.querySelectorAll('.radio-item input[type="checkbox"]').forEach(function(cb) {
+  cb.addEventListener('change', function() {
+    this.closest('.radio-item').classList.toggle('selected', this.checked);
+  });
+});
+
+// チェックボックス（曜日）
+document.querySelectorAll('.day-item input[type="checkbox"]').forEach(function(cb) {
+  cb.addEventListener('change', function() {
+    this.closest('.day-item').classList.toggle('selected', this.checked);
+  });
+});
+
+
+// ============================================================
+//  アンケート送信
+// ============================================================
+function submitForm() {
+  // バリデーション
+  var name      = document.getElementById('name').value.trim();
+  var store     = document.getElementById('store').value;
+  var intention = document.querySelector('input[name="intention"]:checked');
+
+  if (!name) {
+    showSurveyError('⚠️ 氏名を入力してください。');
+    document.getElementById('name').focus();
+    return;
+  }
+  if (!store) {
+    showSurveyError('⚠️ 所属店舗を選択してください。');
+    document.getElementById('store').focus();
+    return;
+  }
+  if (!intention) {
+    showSurveyError('⚠️ 参加意思を選択してください。');
+    return;
+  }
+  hideSurveyError();
+
+  var days     = Array.from(document.querySelectorAll('input[name="days"]:checked')).map(function(el) { return el.value; }).join('、');
+  var timeSlots = Array.from(document.querySelectorAll('input[name="timeSlot"]:checked')).map(function(el) { return el.value; }).join('、');
+
+  var formData = {
+    name:            name,
+    store:           store,
+    intention:       intention.value,
+    days:            days,
+    timeSlot:        timeSlots,
+    otherActivities: document.getElementById('otherActivities').value.trim(),
+    comment:         document.getElementById('comment').value.trim()
+  };
+
+  setSurveyLoading(true);
+
+  // GAS環境チェック
+  if (typeof google === 'undefined' || !google.script) {
+    setSurveyLoading(false);
+    showSurveyError('⚠️ このフォームはGASのWebアプリURLで開く必要があります。デプロイ後のURLでアクセスしてください。');
+    return;
+  }
+
+  // タイムアウト安全網（30秒）
+  var _submitTimer = setTimeout(function() {
+    setSurveyLoading(false);
+    showSurveyError('⚠️ タイムアウトしました。GASが正しくデプロイされているか確認してください。');
+  }, 30000);
+
+  try {
+    google.script.run
+      .withSuccessHandler(function(r) { clearTimeout(_submitTimer); onSubmitSuccess(r); })
+      .withFailureHandler(function(e) { clearTimeout(_submitTimer); onSubmitFailure(e); })
+      .submitResponse(formData);
+  } catch(e) {
+    clearTimeout(_submitTimer);
+    onSubmitFailure(e);
+  }
+}
+
+function onSubmitSuccess(result) {
+  setSurveyLoading(false);
+  if (result && result.success) {
+    showView('success');
+  } else {
+    showSurveyError('⚠️ 送信に失敗しました。' + (result ? result.message : ''));
+  }
+}
+
+function onSubmitFailure(err) {
+  setSurveyLoading(false);
+  showSurveyError('⚠️ 通信エラーが発生しました。もう一度お試しください。');
+}
+
+function setSurveyLoading(flag) {
+  var btn   = document.getElementById('submitBtn');
+  var label = document.getElementById('submitLabel');
+  btn.disabled = flag;
+  label.innerHTML = flag
+    ? '<span class="spinner-survey"></span> 送信中...'
+    : '🍖 アンケートを送信する';
+}
+
+function showSurveyError(msg) {
+  var box = document.getElementById('surveyError');
+  box.textContent = msg;
+  box.style.display = 'block';
+  box.scrollIntoView({ behavior: 'smooth', block: 'center' });
+}
+
+function hideSurveyError() {
+  document.getElementById('surveyError').style.display = 'none';
+}
+
+
+// ============================================================
+//  管理者ログイン / ログアウト
+// ============================================================
+var _adminPassword = '';
+var _allResponses  = [];
+var _currentPage   = 1;
+var PAGE_SIZE      = 30;
+
+function adminLogin() {
+  var pw = document.getElementById('pwInput').value;
+  if (!pw) return;
+  _adminPassword = pw;
+  document.getElementById('loginError').style.display = 'none';
+  // 先にダッシュボードに切り替えてからデータ取得
+  showView('adminDashboard');
+  loadAdminData();
+}
+
+function adminLogout() {
+  _adminPassword = '';
+  _allResponses  = [];
+  document.getElementById('pwInput').value = '';
+  showView('adminLogin');
+}
+
+
+// ============================================================
+//  管理者データ取得
+// ============================================================
+function loadAdminData() {
+  setSectionsLoading();
+
+  // GAS環境チェック
+  if (typeof google === 'undefined' || !google.script) {
+    showAdminDataError('GASのWebアプリURLで開いてください。ローカルファイルでは動作しません。');
+    return;
+  }
+
+  // タイムアウト安全網（30秒）
+  var _adminTimer = setTimeout(function() {
+    showAdminDataError('タイムアウトしました。GASが正しくデプロイ・承認されているか確認してください。');
+  }, 30000);
+
+  try {
+    google.script.run
+      .withSuccessHandler(function(r) { clearTimeout(_adminTimer); onAdminDataLoaded(r); })
+      .withFailureHandler(function(e) { clearTimeout(_adminTimer); onAdminDataError(e); })
+      .getAdminData(_adminPassword);
+  } catch(e) {
+    clearTimeout(_adminTimer);
+    onAdminDataError(e);
+  }
+}
+
+function setSectionsLoading() {
+  var loadHtml = '<div class="loading-state"><span class="spinner-admin"></span>読み込み中...</div>';
+  document.getElementById('summaryGrid').innerHTML =
+    '<div class="loading-state" style="grid-column:1/-1"><span class="spinner-admin"></span>読み込み中...</div>';
+  document.getElementById('storeTableWrap').innerHTML  = loadHtml;
+  document.getElementById('respTableWrap').innerHTML   = loadHtml;
+}
+
+function onAdminDataLoaded(result) {
+  if (!result || !result.success) {
+    if (result && result.message === 'INVALID_PASSWORD') {
+      // パスワード誤り → ログイン画面に戻す
+      showView('adminLogin');
+      document.getElementById('loginError').style.display = 'block';
+      return;
+    }
+    showAdminDataError(result ? result.message : '不明なエラー');
+    return;
+  }
+
+  _allResponses = result.responses || [];
+  _currentPage  = 1;
+
+  renderSummary(result.summary);
+  renderStoreTable(result.storeStats);
+  renderResponseTable();
+
+  document.getElementById('updatedAt').textContent = '最終更新: ' + formatDate(new Date());
+}
+
+function onAdminDataError(err) {
+  showAdminDataError(err ? err.message : '通信エラー');
+}
+
+function showAdminDataError(msg) {
+  var html = '<div class="empty-state"><span class="icon">⚠️</span>' + (msg || 'エラーが発生しました') + '</div>';
+  document.getElementById('summaryGrid').innerHTML    = html;
+  document.getElementById('storeTableWrap').innerHTML = html;
+  document.getElementById('respTableWrap').innerHTML  = html;
+}
+
+
+// ============================================================
+//  サマリーカード描画
+// ============================================================
+function renderSummary(s) {
+  if (!s) s = { total: 0, yes: 0, no: 0, maybe: 0 };
+  document.getElementById('summaryGrid').innerHTML = [
+    summaryCard('s-total', '📊', s.total,  '回答総数'),
+    summaryCard('s-yes',   '🙋', s.yes,    '参加したい'),
+    summaryCard('s-no',    '🙅', s.no,     '参加したくない'),
+    summaryCard('s-maybe', '🤔', s.maybe,  'どちらとも言えない'),
+  ].join('');
+}
+
+function summaryCard(cls, icon, num, label) {
+  return '<div class="summary-card ' + cls + '">' +
+    '<span class="sc-icon">' + icon + '</span>' +
+    '<div class="sc-num">' + num + '</div>' +
+    '<div class="sc-label">' + label + '</div>' +
+  '</div>';
+}
+
+
+// ============================================================
+//  店舗別テーブル描画
+// ============================================================
+function renderStoreTable(storeStats) {
+  if (!storeStats || Object.keys(storeStats).length === 0) {
+    document.getElementById('storeTableWrap').innerHTML =
+      '<div class="empty-state"><span class="icon">🏪</span>回答データがありません</div>';
+    return;
+  }
+  var rows = Object.entries(storeStats)
+    .sort(function(a, b) { return b[1].total - a[1].total; })
+    .map(function(entry) {
+      var name = entry[0], s = entry[1];
+      var rate = s.total > 0 ? Math.round(s.yes / s.total * 100) : 0;
+      return '<tr>' +
+        '<td>' + esc(name) + '</td>' +
+        '<td style="text-align:center;font-weight:700">' + s.total + '</td>' +
+        '<td style="text-align:center"><span class="badge-yes">' + s.yes + '</span></td>' +
+        '<td style="text-align:center"><span class="badge-no">' + s.no + '</span></td>' +
+        '<td style="text-align:center"><span class="badge-maybe">' + s.maybe + '</span></td>' +
+        '<td style="text-align:center">' + rate + '%</td>' +
+      '</tr>';
+    }).join('');
+
+  document.getElementById('storeTableWrap').innerHTML =
+    '<div class="table-scroll"><table>' +
+      '<thead><tr><th>店舗名</th><th>回答数</th><th>参加したい</th><th>参加したくない</th><th>どちらとも</th><th>参加率</th></tr></thead>' +
+      '<tbody>' + rows + '</tbody>' +
+    '</table></div>';
+}
+
+
+// ============================================================
+//  回答一覧テーブル描画
+// ============================================================
+function renderResponseTable() {
+  if (!_allResponses || _allResponses.length === 0) {
+    document.getElementById('respTableWrap').innerHTML =
+      '<div class="empty-state"><span class="icon">📋</span>まだ回答がありません</div>';
+    return;
+  }
+
+  var totalPages = Math.ceil(_allResponses.length / PAGE_SIZE);
+  var start      = (_currentPage - 1) * PAGE_SIZE;
+  var pageItems  = _allResponses.slice(start, start + PAGE_SIZE);
+
+  var rows = pageItems.map(function(r) {
+    var pillCls = r.intention === '参加したい' ? 'yes' :
+                  r.intention === '参加したくない' ? 'no' : 'maybe';
+    return '<tr>' +
+      '<td class="resp-dt">' + esc(r.datetime) + '</td>' +
+      '<td><div class="resp-name">' + esc(r.name) + '</div><div class="resp-store">' + esc(r.store) + '</div></td>' +
+      '<td><span class="pill ' + pillCls + '">' + esc(r.intention) + '</span></td>' +
+      '<td class="resp-text">' + esc(r.days || '—') + '</td>' +
+      '<td class="resp-text">' + esc(r.timeSlot || '—') + '</td>' +
+      '<td class="resp-text">' + esc(r.otherActivities || '—') + '</td>' +
+      '<td class="resp-text">' + esc(r.comment || '—') + '</td>' +
+    '</tr>';
+  }).join('');
+
+  // ページング
+  var pager = '';
+  if (totalPages > 1) {
+    var btns = '';
+    if (_currentPage > 1) btns += '<button class="page-btn" onclick="goPage(' + (_currentPage - 1) + ')">＜ 前へ</button>';
+    for (var i = 1; i <= totalPages; i++) {
+      btns += '<button class="page-btn' + (i === _currentPage ? ' active' : '') + '" onclick="goPage(' + i + ')">' + i + '</button>';
+    }
+    if (_currentPage < totalPages) btns += '<button class="page-btn" onclick="goPage(' + (_currentPage + 1) + ')">次へ ＞</button>';
+    pager = '<div class="pager">' + btns + '</div>';
+  }
+
+  document.getElementById('respTableWrap').innerHTML =
+    '<div class="table-scroll"><table>' +
+      '<thead><tr>' +
+        '<th>回答日時</th><th>氏名 / 店舗</th><th>参加意思</th>' +
+        '<th>希望曜日</th><th>希望時間帯</th><th>BBQ以外</th><th>コメント</th>' +
+      '</tr></thead>' +
+      '<tbody>' + rows + '</tbody>' +
+    '</table></div>' + pager;
+}
+
+function goPage(p) {
+  _currentPage = p;
+  renderResponseTable();
+  document.getElementById('respTableWrap').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+
+// ============================================================
+//  CSVダウンロード
+// ============================================================
+function downloadCSV() {
+  if (!_allResponses || _allResponses.length === 0) {
+    alert('ダウンロードできる回答データがありません。');
+    return;
+  }
+  var headers = ['回答日時','氏名','所属店舗','参加意思','希望曜日','希望時間帯','BBQ以外でやってみたいこと','その他コメント'];
+  var rows = [headers.map(csvCell).join(',')];
+  _allResponses.forEach(function(r) {
+    rows.push([r.datetime, r.name, r.store, r.intention, r.days, r.timeSlot, r.otherActivities, r.comment].map(csvCell).join(','));
+  });
+  var blob = new Blob(['\uFEFF' + rows.join('\r\n')], { type: 'text/csv;charset=utf-8;' });
+  var url  = URL.createObjectURL(blob);
+  var a    = document.createElement('a');
+  a.href     = url;
+  a.download = 'BBQ_CLUB_回答_' + formatDateShort(new Date()) + '.csv';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+function csvCell(v) {
+  v = (v == null ? '' : String(v));
+  return (v.indexOf(',') >= 0 || v.indexOf('"') >= 0 || v.indexOf('\n') >= 0)
+    ? '"' + v.replace(/"/g, '""') + '"'
+    : v;
+}
+
+
+// ============================================================
+//  ユーティリティ
+// ============================================================
+function esc(str) {
+  if (!str) return '';
+  return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function formatDate(d) {
+  return d.getFullYear() + '/' + pad(d.getMonth()+1) + '/' + pad(d.getDate()) + ' ' +
+         pad(d.getHours()) + ':' + pad(d.getMinutes()) + ':' + pad(d.getSeconds());
+}
+
+function formatDateShort(d) {
+  return d.getFullYear() + pad(d.getMonth()+1) + pad(d.getDate()) + pad(d.getHours()) + pad(d.getMinutes());
+}
+
+function pad(n) { return n < 10 ? '0' + n : String(n); }
+
+</script>
+</body>
+</html>
