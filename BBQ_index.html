@@ -618,6 +618,12 @@
 // ============================================================
 //  ビュー管理
 // ============================================================
+// ============================================================
+//  ★ここにGASのWebアプリURLを貼り付けてください★
+//  例: 'https://script.google.com/macros/s/AKfycb.../exec'
+// ============================================================
+var GAS_URL = 'ここにGASのWebアプリURLを貼り付け';
+
 var _currentView = 'survey';
 
 function showView(name) {
@@ -720,19 +726,17 @@ function submitForm() {
   // タイムアウト安全網（30秒）
   var _submitTimer = setTimeout(function() {
     setSurveyLoading(false);
-    showSurveyError('⚠️ タイムアウトしました。GASが正しくデプロイ・承認されているか確認してください。');
+    showSurveyError('⚠️ タイムアウトしました。GASのURLとデプロイ設定を確認してください。');
   }, 30000);
 
-  try {
-    google.script.run
-      .withSuccessHandler(function(r) { clearTimeout(_submitTimer); onSubmitSuccess(r); })
-      .withFailureHandler(function(e) { clearTimeout(_submitTimer); onSubmitFailure(e); })
-      .submitResponse(formData);
-  } catch(e) {
-    clearTimeout(_submitTimer);
-    setSurveyLoading(false);
-    showSurveyError('⚠️ 送信に失敗しました。GASのWebアプリURLで開いているか確認してください。');
-  }
+  fetch(GAS_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+    body: JSON.stringify(formData)
+  })
+  .then(function(res) { return res.json(); })
+  .then(function(r)   { clearTimeout(_submitTimer); onSubmitSuccess(r); })
+  .catch(function(err){ clearTimeout(_submitTimer); onSubmitFailure(err); });
 }
 
 function onSubmitSuccess(result) {
@@ -804,18 +808,17 @@ function loadAdminData() {
 
   // タイムアウト安全網（30秒）
   var _adminTimer = setTimeout(function() {
-    showAdminDataError('タイムアウトしました。GASが正しくデプロイ・承認されているか確認してください。');
+    showAdminDataError('タイムアウトしました。GASのURLとデプロイ設定を確認してください。');
   }, 30000);
 
-  try {
-    google.script.run
-      .withSuccessHandler(function(r) { clearTimeout(_adminTimer); onAdminDataLoaded(r); })
-      .withFailureHandler(function(e) { clearTimeout(_adminTimer); onAdminDataError(e); })
-      .getAdminData(_adminPassword);
-  } catch(e) {
-    clearTimeout(_adminTimer);
-    onAdminDataError(e);
-  }
+  fetch(GAS_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+    body: JSON.stringify({ action: 'getAdminData', password: _adminPassword })
+  })
+  .then(function(res) { return res.json(); })
+  .then(function(r)   { clearTimeout(_adminTimer); onAdminDataLoaded(r); })
+  .catch(function(err){ clearTimeout(_adminTimer); onAdminDataError(err); });
 }
 
 function setSectionsLoading() {
