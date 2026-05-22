@@ -307,6 +307,72 @@
     .resp-dt    { font-size: 11px; color: #9E9E9E; white-space: nowrap; }
     .resp-text  { font-size: 12px; color: #757575; max-width: 140px; word-break: break-all; }
 
+    /* ========== レスポンシブ テーブル（カードレイアウト） ========== */
+    @media (max-width: 700px) {
+      .table-scroll { overflow-x: visible; }
+      .resp-table thead { display: none; }
+      .resp-table tbody tr {
+        display: block;
+        padding: 14px 16px;
+        border-top: 2px solid #EEEEEE;
+      }
+      .resp-table tbody tr:first-child { border-top: none; }
+      .resp-table tbody tr:hover { background: #FAFAFA; }
+      .resp-table td {
+        display: flex; align-items: flex-start; gap: 8px;
+        padding: 4px 0; border-top: none;
+        font-size: 13px; line-height: 1.5;
+      }
+      .resp-table td::before {
+        content: attr(data-label);
+        font-weight: 700; color: #9E9E9E; font-size: 11px;
+        min-width: 80px; flex-shrink: 0; padding-top: 2px;
+      }
+      .resp-table td.td-name { align-items: center; }
+      .resp-table .resp-dt { font-size: 13px; }
+      .resp-table .resp-name { white-space: normal; }
+      .resp-table .resp-store { white-space: normal; }
+      .resp-table .resp-text { max-width: none; }
+
+      /* 店舗別テーブル */
+      .store-table thead { display: none; }
+      .store-table tbody tr {
+        display: grid;
+        grid-template-columns: 1fr 1fr 1fr;
+        grid-template-rows: auto auto;
+        gap: 4px 12px;
+        padding: 14px 16px;
+        border-top: 2px solid #EEEEEE;
+        align-items: center;
+      }
+      .store-table tbody tr:first-child { border-top: none; }
+      .store-table tbody tr:hover { background: #FAFAFA; }
+      .store-table td { display: block; padding: 0; border-top: none; }
+      .store-table td.td-store-name {
+        grid-column: 1 / -1;
+        font-weight: 700; font-size: 13px; padding-bottom: 6px;
+      }
+      .store-table td.td-store-num::before,
+      .store-table td.td-store-yes::before,
+      .store-table td.td-store-no::before,
+      .store-table td.td-store-maybe::before,
+      .store-table td.td-store-rate::before {
+        display: block; font-size: 10px; color: #9E9E9E; font-weight: 600; margin-bottom: 2px;
+      }
+      .store-table td.td-store-num::before   { content: '回答数'; }
+      .store-table td.td-store-yes::before   { content: '参加したい'; }
+      .store-table td.td-store-no::before    { content: '参加しない'; }
+      .store-table td.td-store-maybe::before { content: 'どちらとも'; }
+      .store-table td.td-store-rate::before  { content: '参加率'; }
+      .store-table td.td-store-num,
+      .store-table td.td-store-yes,
+      .store-table td.td-store-no,
+      .store-table td.td-store-maybe,
+      .store-table td.td-store-rate {
+        text-align: center; font-size: 15px; font-weight: 700;
+      }
+    }
+
     /* CSVボタン */
     .csv-btn {
       display: inline-flex; align-items: center; gap: 6px;
@@ -900,17 +966,17 @@ function renderStoreTable(storeStats) {
       var name = entry[0], s = entry[1];
       var rate = s.total > 0 ? Math.round(s.yes / s.total * 100) : 0;
       return '<tr>' +
-        '<td>' + esc(name) + '</td>' +
-        '<td style="text-align:center;font-weight:700">' + s.total + '</td>' +
-        '<td style="text-align:center"><span class="badge-yes">' + s.yes + '</span></td>' +
-        '<td style="text-align:center"><span class="badge-no">' + s.no + '</span></td>' +
-        '<td style="text-align:center"><span class="badge-maybe">' + s.maybe + '</span></td>' +
-        '<td style="text-align:center">' + rate + '%</td>' +
+        '<td class="td-store-name">' + esc(name) + '</td>' +
+        '<td class="td-store-num" style="text-align:center;font-weight:700">' + s.total + '</td>' +
+        '<td class="td-store-yes" style="text-align:center"><span class="badge-yes">' + s.yes + '</span></td>' +
+        '<td class="td-store-no" style="text-align:center"><span class="badge-no">' + s.no + '</span></td>' +
+        '<td class="td-store-maybe" style="text-align:center"><span class="badge-maybe">' + s.maybe + '</span></td>' +
+        '<td class="td-store-rate" style="text-align:center">' + rate + '%</td>' +
       '</tr>';
     }).join('');
 
   document.getElementById('storeTableWrap').innerHTML =
-    '<div class="table-scroll"><table>' +
+    '<div class="table-scroll"><table class="store-table">' +
       '<thead><tr><th>店舗名</th><th>回答数</th><th>参加したい</th><th>参加したくない</th><th>どちらとも</th><th>参加率</th></tr></thead>' +
       '<tbody>' + rows + '</tbody>' +
     '</table></div>';
@@ -935,13 +1001,13 @@ function renderResponseTable() {
     var pillCls = r.intention === '参加したい' ? 'yes' :
                   r.intention === '参加したくない' ? 'no' : 'maybe';
     return '<tr>' +
-      '<td class="resp-dt">' + esc(r.datetime) + '</td>' +
-      '<td><div class="resp-name">' + esc(r.name) + '</div><div class="resp-store">' + esc(r.store) + '</div></td>' +
-      '<td><span class="pill ' + pillCls + '">' + esc(r.intention) + '</span></td>' +
-      '<td class="resp-text">' + esc(r.days || '—') + '</td>' +
-      '<td class="resp-text">' + esc(r.timeSlot || '—') + '</td>' +
-      '<td class="resp-text">' + esc(r.otherActivities || '—') + '</td>' +
-      '<td class="resp-text">' + esc(r.comment || '—') + '</td>' +
+      '<td class="resp-dt" data-label="回答日時">' + esc(r.datetime) + '</td>' +
+      '<td class="td-name" data-label="氏名/店舗"><div class="resp-name">' + esc(r.name) + '</div><div class="resp-store">' + esc(r.store) + '</div></td>' +
+      '<td data-label="参加意思"><span class="pill ' + pillCls + '">' + esc(r.intention) + '</span></td>' +
+      '<td class="resp-text" data-label="希望曜日">' + esc(r.days || '—') + '</td>' +
+      '<td class="resp-text" data-label="希望時間帯">' + esc(r.timeSlot || '—') + '</td>' +
+      '<td class="resp-text" data-label="BBQ以外">' + esc(r.otherActivities || '—') + '</td>' +
+      '<td class="resp-text" data-label="コメント">' + esc(r.comment || '—') + '</td>' +
     '</tr>';
   }).join('');
 
@@ -958,7 +1024,7 @@ function renderResponseTable() {
   }
 
   document.getElementById('respTableWrap').innerHTML =
-    '<div class="table-scroll"><table>' +
+    '<div class="table-scroll"><table class="resp-table">' +
       '<thead><tr>' +
         '<th>回答日時</th><th>氏名 / 店舗</th><th>参加意思</th>' +
         '<th>希望曜日</th><th>希望時間帯</th><th>BBQ以外</th><th>コメント</th>' +
