@@ -1,995 +1,871 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>BBQ CLUB | 阪口商店</title>
-  <style>
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FF・厨房販売ダッシュボード｜阪口商店 4月イベント結果</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+  :root {
+    --blue: #1a6fc4; --blue-light: #e8f0fb;
+    --green: #1a8a4a; --green-light: #e6f4ec; --green-mid: #2ecc71;
+    --red: #c0392b; --red-light: #fdecea;
+    --orange: #e67e22; --orange-light: #fef3e2;
+    --gray: #6c757d; --gray-light: #f8f9fa; --gray-border: #dee2e6;
+    --lawson-blue: #005bac; --lawson-pink: #e60033;
+    --shadow: 0 2px 8px rgba(0,0,0,0.10);
+    --radius: 10px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Hiragino Sans', 'Yu Gothic UI', Meiryo, sans-serif; background: #f0f4f8; color: #222; font-size: 14px; }
 
-    /* ========== CSS変数 ========== */
-    :root {
-      --primary:       #E65100;
-      --primary-light: #FF8F00;
-      --primary-dark:  #BF360C;
-      --bg:            #FFF8F0;
-      --bg-admin:      #F5F5F5;
-      --card:          #FFFFFF;
-      --text:          #3E2723;
-      --text-sub:      #6D4C41;
-      --border:        #D7CCC8;
-      --success:       #2E7D32;
-      --danger:        #C62828;
-      --yes:           #2E7D32;
-      --no:            #C62828;
-      --maybe:         #E65100;
-      --shadow:        0 2px 12px rgba(80,30,0,.08);
-      --shadow-admin:  0 2px 10px rgba(0,0,0,.08);
-    }
+  /* ── Header ── */
+  .header { background: linear-gradient(135deg, var(--lawson-blue) 0%, #0080d0 100%); color: #fff; padding: 18px 20px 14px; }
+  .header h1 { font-size: 1.3rem; font-weight: 700; margin-bottom: 6px; }
+  .header .desc { font-size: 0.82rem; opacity: 0.88; line-height: 1.55; }
+  .header .date-badge { display: inline-block; background: rgba(255,255,255,0.2); border-radius: 20px; padding: 2px 12px; font-size: 0.75rem; margin-top: 8px; }
 
-    body {
-      font-family: 'Hiragino Kaku Gothic ProN','Hiragino Sans','Meiryo',sans-serif;
-      background: var(--bg);
-      color: var(--text);
-      min-height: 100vh;
-      transition: background .3s;
-    }
-    body.admin-mode { background: var(--bg-admin); color: #212121; }
+  /* ── Tab Nav ── */
+  .tab-nav { display: flex; background: #fff; border-bottom: 2px solid var(--gray-border); overflow-x: auto; }
+  .tab-btn { flex: 1; min-width: 90px; padding: 12px 8px; border: none; background: none; cursor: pointer; font-size: 0.82rem; font-weight: 600; color: var(--gray); border-bottom: 3px solid transparent; margin-bottom: -2px; white-space: nowrap; transition: all .2s; }
+  .tab-btn.active { color: var(--lawson-blue); border-bottom-color: var(--lawson-blue); background: var(--blue-light); }
+  .tab-btn:hover:not(.active) { background: var(--gray-light); }
 
-    /* ========== ビュー切り替え ========== */
-    .view { display: none; }
-    .view.active { display: block; }
+  /* ── Main Layout ── */
+  .main { padding: 14px; max-width: 1200px; margin: 0 auto; }
+  .tab-panel { display: none; }
+  .tab-panel.active { display: block; }
 
-    /* ========== アンケート用ヘッダー ========== */
-    .header-survey {
-      background: linear-gradient(145deg, #BF360C 0%, #E65100 45%, #FF8F00 100%);
-      padding: 36px 20px 52px;
-      text-align: center;
-      position: relative; overflow: hidden;
-    }
-    .header-survey::after {
-      content: ''; position: absolute;
-      bottom: -1px; left: 0; right: 0; height: 28px;
-      background: var(--bg);
-      clip-path: ellipse(60% 100% at 50% 100%);
-    }
-    .header-survey .hicon { font-size: 56px; display: block; margin-bottom: 10px; line-height: 1; }
-    .header-survey h1 {
-      color: #fff; font-size: 26px; font-weight: 800;
-      text-shadow: 0 2px 6px rgba(0,0,0,.35);
-      letter-spacing: 2px; margin-bottom: 6px;
-    }
-    .header-survey .sub { color: rgba(255,255,255,.88); font-size: 13px; line-height: 1.6; }
+  /* ── Cards ── */
+  .card { background: #fff; border-radius: var(--radius); box-shadow: var(--shadow); padding: 16px; margin-bottom: 14px; }
+  .card-title { font-size: 0.95rem; font-weight: 700; color: var(--lawson-blue); margin-bottom: 12px; padding-bottom: 8px; border-bottom: 2px solid var(--blue-light); display: flex; align-items: center; gap: 6px; }
 
-    /* ========== 管理者用ヘッダー ========== */
-    .header-admin {
-      background: linear-gradient(135deg, #1A1A1A 0%, #3E2723 100%);
-      padding: 16px 20px;
-      display: flex; align-items: center; gap: 12px;
-      position: sticky; top: 0; z-index: 100;
-      box-shadow: 0 2px 8px rgba(0,0,0,.3);
-    }
-    .header-admin .hicon { font-size: 26px; }
-    .header-admin .htitle { color: #fff; font-size: 17px; font-weight: 700; }
-    .header-admin .hsub { color: rgba(255,255,255,.55); font-size: 11px; margin-top: 1px; }
-    .back-btn, .logout-btn {
-      background: rgba(255,255,255,.12); color: #fff;
-      border: 1px solid rgba(255,255,255,.2);
-      padding: 8px 14px; border-radius: 8px;
-      font-size: 13px; cursor: pointer;
-      font-family: inherit; transition: background .2s;
-      white-space: nowrap;
-    }
-    .back-btn:hover, .logout-btn:hover { background: rgba(255,255,255,.22); }
-    .header-admin .back-btn { margin-left: auto; }
+  /* ── Verdict ── */
+  .verdict-card { background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%); color: #fff; border-radius: 14px; padding: 20px; margin-bottom: 14px; text-align: center; }
+  .verdict-mark { font-size: 5rem; line-height: 1; margin: 8px 0; }
+  .verdict-mark.maru { color: #2ecc71; text-shadow: 0 0 30px rgba(46,204,113,0.6); }
+  .verdict-mark.batsu { color: #e74c3c; text-shadow: 0 0 30px rgba(231,76,60,0.6); }
+  .verdict-label { font-size: 1.1rem; font-weight: 700; margin-top: 6px; }
+  .verdict-label.maru { color: #2ecc71; }
+  .verdict-label.batsu { color: #e74c3c; }
+  .verdict-comment { font-size: 0.9rem; opacity: 0.85; margin-top: 8px; }
 
-    /* ========== コンテナ ========== */
-    .container { max-width: 640px; margin: 0 auto; padding: 20px 16px 48px; }
-    .container.wide { max-width: 960px; }
+  /* ── KPI Grid ── */
+  .kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; margin-bottom: 14px; }
+  .kpi-box { background: #fff; border-radius: var(--radius); box-shadow: var(--shadow); padding: 14px 12px; text-align: center; border-top: 4px solid var(--blue); }
+  .kpi-box.green { border-top-color: var(--green); }
+  .kpi-box.red { border-top-color: var(--red); }
+  .kpi-box.orange { border-top-color: var(--orange); }
+  .kpi-label { font-size: 0.72rem; color: var(--gray); margin-bottom: 6px; font-weight: 600; }
+  .kpi-value { font-size: 1.6rem; font-weight: 700; line-height: 1; }
+  .kpi-sub { font-size: 0.72rem; color: var(--gray); margin-top: 4px; }
 
-    /* ========== お知らせカード ========== */
-    .info-card {
-      background: linear-gradient(135deg, #FFF3E0, #FFFDE7);
-      border: 1px solid #FFCC80; border-left: 5px solid var(--primary);
-      border-radius: 14px; padding: 18px 16px; margin-bottom: 20px;
-    }
-    .info-card h2 { font-size: 14px; font-weight: 700; color: var(--primary-dark); margin-bottom: 10px; }
-    .info-list { list-style: none; }
-    .info-list li {
-      font-size: 13px; color: var(--text-sub);
-      padding: 4px 0 4px 20px; position: relative; line-height: 1.5;
-    }
-    .info-list li::before { content: '🔥'; position: absolute; left: 0; font-size: 11px; top: 5px; }
-    .info-list li strong { color: var(--text); }
-    .deadline {
-      display: inline-block; background: var(--primary); color: #fff;
-      padding: 6px 16px; border-radius: 20px;
-      font-size: 13px; font-weight: 700; margin-top: 10px;
-    }
+  /* ── Growth Bar ── */
+  .growth-compare { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 14px; }
+  .growth-box { background: #fff; border-radius: var(--radius); padding: 14px; box-shadow: var(--shadow); }
+  .growth-box .org-name { font-size: 0.8rem; font-weight: 700; margin-bottom: 10px; }
+  .growth-box .rate-val { font-size: 2rem; font-weight: 700; margin-bottom: 8px; }
+  .growth-box .rate-bar-wrap { background: var(--gray-light); border-radius: 4px; height: 10px; overflow: hidden; }
+  .growth-box .rate-bar { height: 100%; border-radius: 4px; transition: width 1s; }
 
-    /* ========== フォームカード ========== */
-    .card {
-      background: var(--card); border-radius: 16px;
-      padding: 20px 18px; margin-bottom: 14px;
-      box-shadow: var(--shadow); border: 1px solid rgba(230,81,0,.1);
-    }
-    .field-label {
-      display: flex; align-items: center; gap: 8px;
-      font-size: 15px; font-weight: 700; color: var(--text); margin-bottom: 4px;
-    }
-    .badge-req { background: var(--danger); color: #fff; font-size: 10px; padding: 2px 7px; border-radius: 4px; font-weight: 600; }
-    .badge-opt { background: #9E9E9E; color: #fff; font-size: 10px; padding: 2px 7px; border-radius: 4px; font-weight: 600; }
-    .hint { font-size: 12px; color: #9E9E9E; margin-bottom: 10px; line-height: 1.5; }
+  /* ── Tables ── */
+  .table-controls { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 10px; align-items: center; }
+  .search-box { padding: 6px 12px; border: 1px solid var(--gray-border); border-radius: 6px; font-size: 0.82rem; flex: 1; min-width: 150px; }
+  .filter-btn { padding: 5px 12px; border: 1px solid var(--gray-border); border-radius: 6px; font-size: 0.78rem; background: #fff; cursor: pointer; }
+  .filter-btn.active { background: var(--lawson-blue); color: #fff; border-color: var(--lawson-blue); }
 
-    /* ========== 入力フィールド ========== */
-    input[type="text"], input[type="password"], select, textarea {
-      width: 100%; padding: 14px 16px;
-      border: 2px solid var(--border); border-radius: 10px;
-      font-size: 16px; color: var(--text); background: #fff;
-      transition: border-color .2s, box-shadow .2s;
-      -webkit-appearance: none; appearance: none; font-family: inherit;
-    }
-    input[type="text"]:focus, input[type="password"]:focus,
-    select:focus, textarea:focus {
-      outline: none; border-color: var(--primary);
-      box-shadow: 0 0 0 3px rgba(230,81,0,.15);
-    }
-    select {
-      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='10' viewBox='0 0 14 10'%3E%3Cpath fill='%23E65100' d='M7 10L0 0h14z'/%3E%3C/svg%3E");
-      background-repeat: no-repeat; background-position: right 16px center; padding-right: 44px;
-    }
-    textarea { resize: vertical; min-height: 100px; }
+  .data-table { width: 100%; border-collapse: collapse; font-size: 0.8rem; }
+  .data-table th { background: var(--lawson-blue); color: #fff; padding: 8px 6px; text-align: center; cursor: pointer; white-space: nowrap; user-select: none; position: sticky; top: 0; }
+  .data-table th:hover { background: #0080d0; }
+  .data-table th .sort-icon { font-size: 0.7rem; margin-left: 3px; opacity: 0.7; }
+  .data-table td { padding: 7px 6px; border-bottom: 1px solid #f0f0f0; text-align: center; }
+  .data-table tr:hover td { background: var(--blue-light); }
+  .data-table .store-name { text-align: left; font-weight: 600; }
+  .data-table .mo-row td { background: #fffde7; font-weight: 700; border-top: 2px solid #f9a825; }
+  .data-table .branch-row td { background: #e8f5e9; font-weight: 700; border-top: 2px solid #43a047; }
 
-    /* ========== ラジオ ========== */
-    .radio-group { display: flex; flex-direction: column; gap: 10px; }
-    .radio-item {
-      display: flex; align-items: center; gap: 14px;
-      padding: 15px 16px; border: 2px solid var(--border);
-      border-radius: 12px; cursor: pointer;
-      transition: all .2s; background: #fff;
-      user-select: none; -webkit-tap-highlight-color: transparent;
-    }
-    .radio-item:hover { border-color: var(--primary-light); background: #FFF8F0; }
-    .radio-item.selected { border-color: var(--primary); background: #FFF3E0; }
-    .radio-item input[type="radio"] { width: 20px; height: 20px; accent-color: var(--primary); flex-shrink: 0; }
-    .radio-item .radio-text { font-size: 15px; font-weight: 500; }
+  .badge { display: inline-block; padding: 2px 7px; border-radius: 10px; font-size: 0.72rem; font-weight: 700; }
+  .badge-green { background: var(--green-light); color: var(--green); }
+  .badge-red { background: var(--red-light); color: var(--red); }
+  .badge-orange { background: var(--orange-light); color: var(--orange); }
+  .badge-gray { background: var(--gray-light); color: var(--gray); }
 
-    /* ========== 曜日チェックボックス ========== */
-    .days-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
-    .day-item {
-      display: flex; flex-direction: column; align-items: center;
-      justify-content: center; padding: 14px 6px; gap: 6px;
-      border: 2px solid var(--border); border-radius: 12px;
-      cursor: pointer; transition: all .2s; background: #fff;
-      user-select: none; -webkit-tap-highlight-color: transparent;
-    }
-    .day-item:hover { border-color: var(--primary-light); background: #FFF8F0; }
-    .day-item.selected { border-color: var(--primary); background: #FFF3E0; }
-    .day-item input[type="checkbox"] { width: 18px; height: 18px; accent-color: var(--primary); }
-    .day-item .day-text { font-size: 17px; font-weight: 700; color: var(--text); }
-    .day-item.selected .day-text { color: var(--primary); }
+  .table-wrap { overflow-x: auto; border-radius: 8px; border: 1px solid var(--gray-border); }
 
-    /* ========== 送信ボタン ========== */
-    .submit-btn {
-      width: 100%; padding: 18px;
-      background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
-      color: #fff; border: none; border-radius: 14px;
-      font-size: 18px; font-weight: 800; cursor: pointer;
-      transition: all .25s; box-shadow: 0 5px 18px rgba(230,81,0,.35);
-      display: flex; align-items: center; justify-content: center;
-      gap: 8px; font-family: inherit; letter-spacing: 1px;
-    }
-    .submit-btn:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(230,81,0,.45); }
-    .submit-btn:active:not(:disabled) { transform: translateY(0); box-shadow: 0 3px 10px rgba(230,81,0,.3); }
-    .submit-btn:disabled { background: #BDBDBD; box-shadow: none; transform: none; cursor: not-allowed; }
+  /* ── Ranking ── */
+  .ranking-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px; margin-bottom: 14px; }
+  .ranking-card { background: #fff; border-radius: var(--radius); box-shadow: var(--shadow); padding: 14px; }
+  .ranking-card .rank-title { font-size: 0.82rem; font-weight: 700; margin-bottom: 10px; }
+  .rank-item { display: flex; align-items: center; gap: 8px; padding: 6px 0; border-bottom: 1px solid #f5f5f5; }
+  .rank-item:last-child { border-bottom: none; }
+  .rank-num { width: 22px; height: 22px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.72rem; font-weight: 700; flex-shrink: 0; }
+  .rank-num.gold { background: #f9a825; color: #fff; }
+  .rank-num.silver { background: #9e9e9e; color: #fff; }
+  .rank-num.bronze { background: #bf8650; color: #fff; }
+  .rank-num.normal { background: var(--gray-light); color: var(--gray); font-size: 0.68rem; }
+  .rank-name { flex: 1; font-size: 0.78rem; font-weight: 600; }
+  .rank-val { font-size: 0.8rem; font-weight: 700; }
 
-    /* ========== エラー表示 ========== */
-    .error-box {
-      background: #FFEBEE; border: 1px solid #EF9A9A;
-      border-radius: 10px; padding: 12px 16px;
-      font-size: 14px; color: var(--danger);
-      margin-bottom: 14px; display: none; line-height: 1.5;
-    }
+  /* ── Charts ── */
+  .chart-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 14px; margin-bottom: 14px; }
+  .chart-wrap { background: #fff; border-radius: var(--radius); box-shadow: var(--shadow); padding: 14px; }
+  .chart-wrap canvas { max-height: 280px; }
 
-    /* ========== 送信完了 ========== */
-    .success-wrap {
-      text-align: center; padding: 56px 20px;
-      animation: fadeUp .5s ease;
-    }
-    .success-wrap .big-emoji { font-size: 80px; display: block; margin-bottom: 20px; }
-    .success-wrap h2 { font-size: 24px; color: var(--success); margin-bottom: 12px; font-weight: 800; }
-    .success-wrap p { font-size: 15px; color: var(--text-sub); line-height: 1.9; }
+  /* ── Status Indicators ── */
+  .status-tag { display: inline-flex; align-items: center; gap: 4px; padding: 2px 8px; border-radius: 10px; font-size: 0.72rem; font-weight: 700; }
+  .status-good { background: #e6f4ec; color: #1a8a4a; }
+  .status-bad { background: #fdecea; color: #c0392b; }
+  .status-warn { background: #fef3e2; color: #e67e22; }
+  .status-neutral { background: #f0f0f0; color: #666; }
 
-    /* ========== 管理者リンク ========== */
-    .admin-link {
-      text-align: center; margin-top: 24px;
-      padding-top: 20px; border-top: 1px solid var(--border);
-    }
-    .admin-link button {
-      background: none; border: none; color: #BDBDBD;
-      font-size: 12px; cursor: pointer; font-family: inherit;
-      padding: 4px 8px; transition: color .2s;
-    }
-    .admin-link button:hover { color: var(--text-sub); }
+  /* ── Diff Cell Colors ── */
+  .pos { color: var(--green); font-weight: 700; }
+  .neg { color: var(--red); font-weight: 700; }
+  .zero { color: var(--gray); }
 
-    /* ========== 管理者ログイン ========== */
-    .login-wrap {
-      display: flex; align-items: center; justify-content: center;
-      padding: 40px 16px;
-    }
-    .login-card {
-      background: var(--card); border-radius: 20px;
-      padding: 40px 32px; width: 100%; max-width: 380px;
-      box-shadow: 0 4px 24px rgba(0,0,0,.12); text-align: center;
-    }
-    .login-icon { font-size: 52px; margin-bottom: 12px; display: block; }
-    .login-card h2 { font-size: 20px; margin-bottom: 6px; color: #212121; }
-    .login-card p { font-size: 13px; color: #757575; margin-bottom: 24px; }
-    .login-card input { margin-bottom: 14px; color: #212121; }
-    .login-btn {
-      width: 100%; padding: 15px;
-      background: var(--primary); color: #fff;
-      border: none; border-radius: 10px;
-      font-size: 16px; font-weight: 700;
-      cursor: pointer; font-family: inherit; transition: background .2s;
-    }
-    .login-btn:hover { background: var(--primary-dark); }
-    .login-error {
-      background: #FFEBEE; border: 1px solid #EF9A9A;
-      border-radius: 8px; padding: 10px 14px;
-      font-size: 13px; color: var(--no);
-      margin-top: 12px; display: none;
-    }
-
-    /* ========== 管理ダッシュボード ========== */
-    .refresh-bar {
-      display: flex; align-items: center; justify-content: space-between;
-      margin-bottom: 18px; flex-wrap: wrap; gap: 10px;
-    }
-    .refresh-bar .updated { font-size: 12px; color: #9E9E9E; }
-    .refresh-btn {
-      background: var(--primary); color: #fff;
-      border: none; padding: 8px 18px; border-radius: 8px;
-      font-size: 13px; font-weight: 600; cursor: pointer;
-      font-family: inherit; transition: background .2s;
-    }
-    .refresh-btn:hover { background: var(--primary-dark); }
-
-    /* サマリーカード */
-    .summary-grid {
-      display: grid; grid-template-columns: repeat(2, 1fr);
-      gap: 12px; margin-bottom: 20px;
-    }
-    @media (min-width: 500px) { .summary-grid { grid-template-columns: repeat(4, 1fr); } }
-    .summary-card {
-      background: var(--card); border-radius: 14px;
-      padding: 18px 12px; text-align: center;
-      box-shadow: var(--shadow-admin);
-    }
-    .summary-card .sc-icon { font-size: 26px; margin-bottom: 6px; display: block; }
-    .summary-card .sc-num { font-size: 36px; font-weight: 800; line-height: 1; margin-bottom: 4px; }
-    .summary-card .sc-label { font-size: 11px; color: #757575; }
-    .summary-card.s-total  { border-top: 4px solid #1565C0; }
-    .summary-card.s-total  .sc-num { color: #1565C0; }
-    .summary-card.s-yes    { border-top: 4px solid var(--yes); }
-    .summary-card.s-yes    .sc-num { color: var(--yes); }
-    .summary-card.s-no     { border-top: 4px solid var(--no); }
-    .summary-card.s-no     .sc-num { color: var(--no); }
-    .summary-card.s-maybe  { border-top: 4px solid var(--maybe); }
-    .summary-card.s-maybe  .sc-num { color: var(--maybe); }
-
-    /* セクションタイトル */
-    .section-title {
-      font-size: 15px; font-weight: 700; color: #212121;
-      margin-bottom: 12px; display: flex; align-items: center; gap: 6px;
-    }
-
-    /* テーブル */
-    .table-wrap {
-      background: var(--card); border-radius: 14px;
-      box-shadow: var(--shadow-admin); overflow: hidden; margin-bottom: 20px;
-    }
-    .table-scroll { overflow-x: auto; }
-    table { width: 100%; border-collapse: collapse; font-size: 13px; }
-    thead { background: #EFEBE9; }
-    th { padding: 12px 14px; text-align: left; font-weight: 700; color: #212121; white-space: nowrap; }
-    td { padding: 11px 14px; border-top: 1px solid #EEEEEE; vertical-align: top; }
-    tr:hover td { background: #FAFAFA; }
-    .badge-yes   { color: var(--yes);   font-weight: 700; }
-    .badge-no    { color: var(--no);    font-weight: 700; }
-    .badge-maybe { color: var(--maybe); font-weight: 700; }
-    .pill { display: inline-block; padding: 3px 10px; border-radius: 12px; font-size: 12px; font-weight: 600; white-space: nowrap; }
-    .pill.yes   { background: #E8F5E9; color: var(--yes); }
-    .pill.no    { background: #FFEBEE; color: var(--no); }
-    .pill.maybe { background: #FFF3E0; color: var(--maybe); }
-    .resp-name  { font-weight: 600; white-space: nowrap; }
-    .resp-store { font-size: 12px; color: #9E9E9E; white-space: nowrap; }
-    .resp-dt    { font-size: 11px; color: #9E9E9E; white-space: nowrap; }
-    .resp-text  { font-size: 12px; color: #757575; max-width: 140px; word-break: break-all; }
-
-    /* CSVボタン */
-    .csv-btn {
-      display: inline-flex; align-items: center; gap: 6px;
-      background: #37474F; color: #fff; border: none;
-      padding: 10px 20px; border-radius: 10px;
-      font-size: 14px; font-weight: 600; cursor: pointer;
-      font-family: inherit; transition: background .2s; margin-bottom: 14px;
-    }
-    .csv-btn:hover { background: #263238; }
-
-    /* ローディング・空状態 */
-    .empty-state { text-align: center; padding: 48px 20px; color: #9E9E9E; font-size: 14px; }
-    .empty-state .icon { font-size: 40px; display: block; margin-bottom: 10px; }
-    .loading-state { text-align: center; padding: 32px; color: #9E9E9E; font-size: 14px; }
-
-    /* ページング */
-    .pager { display: flex; align-items: center; justify-content: center; gap: 8px; padding: 14px; flex-wrap: wrap; }
-    .page-btn {
-      padding: 6px 12px; border: 1px solid #E0E0E0;
-      border-radius: 6px; font-size: 13px; cursor: pointer;
-      background: #fff; font-family: inherit; transition: all .2s;
-    }
-    .page-btn:hover { border-color: var(--primary); color: var(--primary); }
-    .page-btn.active { background: var(--primary); color: #fff; border-color: var(--primary); }
-
-    /* スピナー（アンケート用） */
-    .spinner-survey {
-      display: inline-block; width: 20px; height: 20px;
-      border: 3px solid rgba(255,255,255,.35); border-radius: 50%;
-      border-top-color: #fff; animation: spin .7s linear infinite;
-    }
-    /* スピナー（管理者用） */
-    .spinner-admin {
-      display: inline-block; width: 22px; height: 22px;
-      border: 3px solid #E0E0E0; border-radius: 50%;
-      border-top-color: var(--primary); animation: spin .7s linear infinite;
-      margin-right: 8px; vertical-align: middle;
-    }
-
-    /* ========== アニメーション ========== */
-    @keyframes fadeUp {
-      from { opacity: 0; transform: translateY(24px); }
-      to   { opacity: 1; transform: translateY(0); }
-    }
-    @keyframes spin { to { transform: rotate(360deg); } }
-
-    /* ========== レスポンシブ ========== */
-    @media (max-width: 360px) {
-      .header-survey h1 { font-size: 22px; }
-      .days-grid { gap: 6px; }
-      .day-item { padding: 12px 4px; }
-      .day-item .day-text { font-size: 15px; }
-      .login-card { padding: 32px 20px; }
-    }
-  </style>
+  @media (max-width: 600px) {
+    .header h1 { font-size: 1.1rem; }
+    .kpi-value { font-size: 1.3rem; }
+    .verdict-mark { font-size: 4rem; }
+    .growth-compare { grid-template-columns: 1fr; }
+    .main { padding: 10px; }
+  }
+</style>
 </head>
 <body>
 
-<!-- ================================================================
-     VIEW 1: アンケートフォーム
-================================================================ -->
-<div id="viewSurvey" class="view active">
-
-  <!-- ヘッダー -->
-  <header class="header-survey">
-    <span class="hicon">🔥🍖</span>
-    <h1>BBQ CLUB</h1>
-    <p class="sub">阪口商店 正社員レクリエーション<br>参加意思アンケート</p>
-  </header>
-
-  <div class="container">
-    <!-- お知らせ -->
-    <div class="info-card">
-      <h2>📋 このアンケートについて</h2>
-      <ul class="info-list">
-        <li>内容：<strong>BBQ</strong> を予定しています</li>
-        <li>日時・場所：<strong>未定</strong>（今後みなさんの意見をもとに調整）</li>
-        <li>参加費：<strong>1,000円予定</strong>（不足分はオーナー負担）</li>
-        <li>このアンケートは「<strong>シフト関係なく</strong>、参加したい気持ちがあるか」を把握するためのものです。シフトの都合は気にせず、正直にお答えください。</li>
-      </ul>
-      <span class="deadline">⏰ 回答締切：2026年5月24日（日）21:00</span>
-    </div>
-
-    <!-- フォーム -->
-    <form novalidate>
-
-      <!-- 1. 氏名 -->
-      <div class="card">
-        <div class="field-label"><span>1. 氏名</span><span class="badge-req">必須</span></div>
-        <p class="hint">フルネームで入力してください</p>
-        <input type="text" id="name" placeholder="例：山田 太郎">
-      </div>
-
-      <!-- 2. 所属店舗 -->
-      <div class="card">
-        <div class="field-label"><span>2. 所属店舗</span><span class="badge-req">必須</span></div>
-        <p class="hint">ご自身のメイン店舗を選択してください</p>
-        <select id="store">
-          <option value="">-- 選択してください --</option>
-          <option>吹田垂水三丁目</option>
-          <option>江坂東</option>
-          <option>江坂駅南口</option>
-          <option>吹田警察署前</option>
-          <option>豊中原田南一丁目</option>
-          <option>南金田二丁目</option>
-          <option>吹田豊津中学校前</option>
-          <option>新御堂筋上新田</option>
-          <option>東淀川大道南</option>
-          <option>豊中服部西町三丁目</option>
-          <option>大道南一丁目</option>
-          <option>豊里六丁目</option>
-          <option>吹田青山台三丁目</option>
-          <option>豊中利倉東一丁目</option>
-          <option>五月ケ丘東</option>
-          <option>豊中服部元町一丁目</option>
-          <option>吹田朝日町</option>
-          <option>東淀川豊里五丁目</option>
-          <option>池田市役所前</option>
-          <option>箕面白島二丁目</option>
-        </select>
-      </div>
-
-      <!-- 3. 参加意思 -->
-      <div class="card">
-        <div class="field-label"><span>3. 参加意思</span><span class="badge-req">必須</span></div>
-        <p class="hint">※シフト関係なく、参加したい気持ちがあるかお答えください</p>
-        <div class="radio-group">
-          <label class="radio-item">
-            <input type="radio" name="intention" value="参加したい">
-            <span class="radio-text">🙋 参加したい</span>
-          </label>
-          <label class="radio-item">
-            <input type="radio" name="intention" value="参加したくない">
-            <span class="radio-text">🙅 参加したくない</span>
-          </label>
-          <label class="radio-item">
-            <input type="radio" name="intention" value="どちらとも言えない">
-            <span class="radio-text">🤔 どちらとも言えない</span>
-          </label>
-        </div>
-      </div>
-
-      <!-- 4. 希望曜日 -->
-      <div class="card">
-        <div class="field-label"><span>4. 希望曜日</span><span class="badge-opt">任意</span></div>
-        <p class="hint">※複数選択できます。希望する曜日をタップしてください</p>
-        <div class="days-grid">
-          <label class="day-item"><input type="checkbox" name="days" value="月"><span class="day-text">月</span></label>
-          <label class="day-item"><input type="checkbox" name="days" value="火"><span class="day-text">火</span></label>
-          <label class="day-item"><input type="checkbox" name="days" value="水"><span class="day-text">水</span></label>
-          <label class="day-item"><input type="checkbox" name="days" value="木"><span class="day-text">木</span></label>
-          <label class="day-item"><input type="checkbox" name="days" value="金"><span class="day-text">金</span></label>
-          <label class="day-item"><input type="checkbox" name="days" value="土"><span class="day-text">土</span></label>
-          <label class="day-item"><input type="checkbox" name="days" value="日"><span class="day-text">日</span></label>
-        </div>
-      </div>
-
-      <!-- 5. 希望時間帯 -->
-      <div class="card">
-        <div class="field-label"><span>5. 希望時間帯</span><span class="badge-opt">任意</span></div>
-        <p class="hint">参加しやすい時間帯を1つ選んでください</p>
-        <div class="radio-group">
-          <label class="radio-item">
-            <input type="radio" name="timeSlot" value="10:00〜16:00">
-            <span class="radio-text">☀️ 10:00〜16:00（フルタイム）</span>
-          </label>
-          <label class="radio-item">
-            <input type="radio" name="timeSlot" value="10:00〜13:00">
-            <span class="radio-text">🌅 10:00〜13:00（午前）</span>
-          </label>
-          <label class="radio-item">
-            <input type="radio" name="timeSlot" value="13:00〜16:00">
-            <span class="radio-text">🌤️ 13:00〜16:00（午後）</span>
-          </label>
-          <label class="radio-item">
-            <input type="radio" name="timeSlot" value="18:00〜21:00">
-            <span class="radio-text">🌙 18:00〜21:00（夜）</span>
-          </label>
-        </div>
-      </div>
-
-      <!-- 6. BBQ以外 -->
-      <div class="card">
-        <div class="field-label"><span>6. BBQ以外でやってみたいこと</span><span class="badge-opt">任意</span></div>
-        <p class="hint">例：フットサル、キャンプ、スポーツ大会、ボードゲーム大会、ボーリング大会など</p>
-        <textarea id="otherActivities" placeholder="自由に記入してください（複数OK）"></textarea>
-      </div>
-
-      <!-- 7. コメント -->
-      <div class="card">
-        <div class="field-label"><span>7. その他コメント</span><span class="badge-opt">任意</span></div>
-        <p class="hint">ご意見・ご要望があればお気軽にどうぞ</p>
-        <textarea id="comment" placeholder="何でもどうぞ！"></textarea>
-      </div>
-
-      <!-- エラー -->
-      <div class="error-box" id="surveyError"></div>
-
-      <!-- 送信ボタン -->
-      <button type="button" class="submit-btn" id="submitBtn" onclick="submitForm()">
-        <span id="submitLabel">🍖 アンケートを送信する</span>
-      </button>
-
-      <!-- 管理者リンク -->
-      <div class="admin-link">
-        <button type="button" onclick="showView('adminLogin')">管理者画面</button>
-      </div>
-    </form>
-  </div>
+<div class="header">
+  <h1>📊 FF・厨房販売ダッシュボード｜阪口商店 4月イベント結果</h1>
+  <p class="desc">4月イベントにおけるFF販売高の2月対比伸長率を確認し、阪口商店が吹田支店の伸長率を上回って牽引できたかを判定します。あわせて、評価対象外ではありますが、まちかど厨房販売についても販売高・荒利益高の伸長を検証します。</p>
+  <span class="date-badge">集計期間：26年2月〜26年4月</span>
 </div>
 
-<!-- ================================================================
-     VIEW 2: 送信完了
-================================================================ -->
-<div id="viewSuccess" class="view">
-  <header class="header-survey">
-    <span class="hicon">🔥🍖</span>
-    <h1>BBQ CLUB</h1>
-    <p class="sub">阪口商店 正社員レクリエーション</p>
-  </header>
-  <div class="container">
-    <div class="success-wrap">
-      <span class="big-emoji">🎉</span>
-      <h2>回答ありがとうございました！</h2>
-      <p>
-        ご回答いただきありがとうございます。<br>
-        BBQ CLUBの詳細が決まりましたら、<br>
-        改めてご連絡いたします。<br><br>
-        みんなで楽しい時間を過ごしましょう！🔥🍖
-      </p>
+<div class="tab-nav">
+  <button class="tab-btn active" onclick="switchTab('summary')">🎯 総合判定</button>
+  <button class="tab-btn" onclick="switchTab('ff')">🍗 FF分析</button>
+  <button class="tab-btn" onclick="switchTab('kitchen')">🍱 厨房分析</button>
+  <button class="tab-btn" onclick="switchTab('charts')">📈 グラフ</button>
+</div>
+
+<div class="main">
+
+<!-- ═══════════════════════════════════════ TAB: SUMMARY ═══════════════ -->
+<div class="tab-panel active" id="tab-summary">
+
+  <div class="verdict-card">
+    <div style="font-size:0.85rem;opacity:0.7;">4月イベント FF販売高伸長率 評価判定</div>
+    <div class="verdict-mark batsu" id="verdict-mark">×</div>
+    <div class="verdict-label batsu" id="verdict-label">吹田支店を下回り、牽引には届かなかった</div>
+    <div class="verdict-comment" id="verdict-comment">阪口商店の伸長率が吹田支店の伸長率を下回りました</div>
+  </div>
+
+  <div class="growth-compare">
+    <div class="growth-box" style="border-left:4px solid #e74c3c;">
+      <div class="org-name">🏪 阪口商店（阪口清治MO）</div>
+      <div class="rate-val neg" id="hanaguchi-rate">—</div>
+      <div style="font-size:0.72rem;color:var(--gray);margin-bottom:8px;">FF販売高 2月対比伸長率</div>
+      <div class="rate-bar-wrap"><div class="rate-bar" id="hanaguchi-bar" style="background:#e74c3c;width:0%"></div></div>
+      <div style="font-size:0.72rem;color:var(--gray);margin-top:6px;">2月: <span id="h-feb">—</span> → 4月: <span id="h-apr">—</span></div>
+    </div>
+    <div class="growth-box" style="border-left:4px solid #2ecc71;">
+      <div class="org-name">🏢 吹田支店（ベンチマーク）</div>
+      <div class="rate-val pos" id="suita-rate">—</div>
+      <div style="font-size:0.72rem;color:var(--gray);margin-bottom:8px;">FF販売高 2月対比伸長率</div>
+      <div class="rate-bar-wrap"><div class="rate-bar" id="suita-bar" style="background:#2ecc71;width:0%"></div></div>
+      <div style="font-size:0.72rem;color:var(--gray);margin-top:6px;">2月: <span id="s-feb">—</span> → 4月: <span id="s-apr">—</span></div>
+    </div>
+  </div>
+
+  <div class="kpi-grid">
+    <div class="kpi-box">
+      <div class="kpi-label">阪口商店 伸長率</div>
+      <div class="kpi-value" id="kpi-h-rate" style="font-size:1.3rem;">—</div>
+      <div class="kpi-sub">4月÷2月</div>
+    </div>
+    <div class="kpi-box green">
+      <div class="kpi-label">吹田支店 伸長率</div>
+      <div class="kpi-value" id="kpi-s-rate" style="font-size:1.3rem;">—</div>
+      <div class="kpi-sub">4月÷2月（基準）</div>
+    </div>
+    <div class="kpi-box orange">
+      <div class="kpi-label">差分ポイント</div>
+      <div class="kpi-value" id="kpi-diff" style="font-size:1.3rem;">—</div>
+      <div class="kpi-sub">阪口商店 − 吹田支店</div>
+    </div>
+    <div class="kpi-box">
+      <div class="kpi-label">阪口商店 4月FF販売高</div>
+      <div class="kpi-value" id="kpi-h-apr" style="font-size:1.1rem;">—</div>
+      <div class="kpi-sub">PSA/D (円)</div>
+    </div>
+    <div class="kpi-box">
+      <div class="kpi-label">阪口商店 2月FF販売高</div>
+      <div class="kpi-value" id="kpi-h-feb" style="font-size:1.1rem;">—</div>
+      <div class="kpi-sub">PSA/D (円)</div>
+    </div>
+    <div class="kpi-box">
+      <div class="kpi-label">所属店舗数</div>
+      <div class="kpi-value" id="kpi-store-count">—</div>
+      <div class="kpi-sub">阪口商店</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">📋 評価基準</div>
+    <table style="width:100%;font-size:0.82rem;">
+      <tr>
+        <td style="padding:6px 4px;width:50%;border-right:1px solid #eee;">阪口商店の伸長率 <strong>&gt;</strong> 吹田支店の伸長率</td>
+        <td style="padding:6px 8px;color:var(--green);font-weight:700;font-size:1.1rem;">→ ○（上回り牽引）</td>
+      </tr>
+      <tr>
+        <td style="padding:6px 4px;border-right:1px solid #eee;">阪口商店の伸長率 <strong>≦</strong> 吹田支店の伸長率</td>
+        <td style="padding:6px 8px;color:var(--red);font-weight:700;font-size:1.1rem;">→ ×（下回り牽引届かず）</td>
+      </tr>
+      <tr>
+        <td colspan="2" style="padding:8px 4px;font-size:0.75rem;color:var(--gray);">
+          伸長率 = 26年4月 FF販売高PSA/D ÷ 26年2月 FF販売高PSA/D<br>
+          ※PSA/D = 一日当たりの販売高・荒利益高
+        </td>
+      </tr>
+    </table>
+  </div>
+
+  <div class="card">
+    <div class="card-title">📊 店舗別 FF販売高伸長率サマリー（2月→4月）</div>
+    <div class="table-controls">
+      <input class="search-box" id="summary-search" placeholder="店舗名で絞り込み..." oninput="filterSummaryTable()">
+      <span style="font-size:0.75rem;color:var(--gray);">吹田支店比: <span class="badge badge-green">↑上回り</span> <span class="badge badge-red">↓下回り</span></span>
+    </div>
+    <div class="table-wrap">
+      <table class="data-table" id="summary-table">
+        <thead>
+          <tr>
+            <th onclick="sortTable('summary-table',0)">店舗名<span class="sort-icon">⇅</span></th>
+            <th onclick="sortTable('summary-table',1)">2月販売高<br>PSA/D<span class="sort-icon">⇅</span></th>
+            <th onclick="sortTable('summary-table',2)">4月販売高<br>PSA/D<span class="sort-icon">⇅</span></th>
+            <th onclick="sortTable('summary-table',3)">伸長率<span class="sort-icon">⇅</span></th>
+            <th onclick="sortTable('summary-table',4)">吹田支店比<span class="sort-icon">⇅</span></th>
+            <th onclick="sortTable('summary-table',5)">判定<span class="sort-icon">⇅</span></th>
+          </tr>
+        </thead>
+        <tbody id="summary-tbody"></tbody>
+      </table>
     </div>
   </div>
 </div>
 
-<!-- ================================================================
-     VIEW 3: 管理者ログイン
-================================================================ -->
-<div id="viewAdminLogin" class="view">
-  <header class="header-admin">
-    <span class="hicon">🔥</span>
-    <div>
-      <div class="htitle">管理者画面</div>
-      <div class="hsub">阪口商店 BBQ CLUB</div>
+<!-- ═══════════════════════════════════════ TAB: FF ═══════════════════ -->
+<div class="tab-panel" id="tab-ff">
+  <div class="card">
+    <div class="card-title">🍗 FF（ファストフーズ）個店別詳細データ</div>
+    <div class="table-controls">
+      <input class="search-box" id="ff-search" placeholder="店舗名で絞り込み..." oninput="filterFFTable()">
+      <button class="filter-btn active" onclick="setFFFilter('all',this)">全店</button>
+      <button class="filter-btn" onclick="setFFFilter('above',this)">支店超え</button>
+      <button class="filter-btn" onclick="setFFFilter('below',this)">支店未満</button>
     </div>
-    <button class="back-btn" onclick="showView('survey')">← アンケートに戻る</button>
-  </header>
-  <div class="login-wrap">
-    <div class="login-card">
-      <span class="login-icon">🔒</span>
-      <h2>管理者ログイン</h2>
-      <p>管理者パスワードを入力してください</p>
-      <input type="password" id="pwInput" placeholder="パスワード"
-             onkeydown="if(event.key==='Enter') adminLogin()">
-      <button class="login-btn" onclick="adminLogin()">ログイン</button>
-      <div class="login-error" id="loginError">パスワードが正しくありません。</div>
+    <div class="table-wrap">
+      <table class="data-table" id="ff-table">
+        <thead>
+          <tr>
+            <th rowspan="2" onclick="sortTable('ff-table',0)">店舗名<span class="sort-icon">⇅</span></th>
+            <th colspan="3" style="background:#2c5282;">FF販売高PSA/D（円）</th>
+            <th colspan="3" style="background:#276749;">FF荒利益高PSA/D（円）</th>
+            <th colspan="3" style="background:#44337a;">FF販売高前年比（%）</th>
+            <th colspan="3" style="background:#744210;">FF荒利益高前年比（%）</th>
+            <th onclick="sortTable('ff-table',14)">販売高<br>伸長率<span class="sort-icon">⇅</span></th>
+            <th onclick="sortTable('ff-table',15)">荒利益高<br>伸長率<span class="sort-icon">⇅</span></th>
+            <th onclick="sortTable('ff-table',16)">吹田支店比<br>（伸長率差）<span class="sort-icon">⇅</span></th>
+            <th onclick="sortTable('ff-table',17)">MO平均比<br>（伸長率差）<span class="sort-icon">⇅</span></th>
+          </tr>
+          <tr>
+            <th style="background:#2c5282;">2月</th><th style="background:#2c5282;">3月</th><th style="background:#2c5282;">4月</th>
+            <th style="background:#276749;">2月</th><th style="background:#276749;">3月</th><th style="background:#276749;">4月</th>
+            <th style="background:#44337a;">2月</th><th style="background:#44337a;">3月</th><th style="background:#44337a;">4月</th>
+            <th style="background:#744210;">2月</th><th style="background:#744210;">3月</th><th style="background:#744210;">4月</th>
+            <th style="background:#1a6fc4;">(4月÷2月)</th>
+            <th style="background:#1a6fc4;">(4月÷2月)</th>
+            <th style="background:#555;">差Pt</th>
+            <th style="background:#555;">差Pt</th>
+          </tr>
+        </thead>
+        <tbody id="ff-tbody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="ranking-grid" id="ff-ranking"></div>
+</div>
+
+<!-- ═══════════════════════════════════════ TAB: KITCHEN ══════════════ -->
+<div class="tab-panel" id="tab-kitchen">
+  <div class="card">
+    <div class="card-title">🍱 まちかど厨房販売 個店別詳細データ</div>
+    <div class="table-controls">
+      <input class="search-box" id="k-search" placeholder="店舗名で絞り込み..." oninput="filterKitchenTable()">
+      <button class="filter-btn active" onclick="setKFilter('all',this)">全店</button>
+      <button class="filter-btn" onclick="setKFilter('both-up',this)">販売高・荒利益両方伸びた</button>
+      <button class="filter-btn" onclick="setKFilter('sales-only',this)">販売高のみ伸びた</button>
+      <button class="filter-btn" onclick="setKFilter('margin-only',this)">荒利益のみ伸びた</button>
+    </div>
+    <div class="table-wrap">
+      <table class="data-table" id="k-table">
+        <thead>
+          <tr>
+            <th rowspan="2" onclick="sortTable('k-table',0)">店舗名<span class="sort-icon">⇅</span></th>
+            <th colspan="3" style="background:#2c5282;">厨房販売高PSA/D（円）</th>
+            <th colspan="3" style="background:#276749;">厨房荒利益高PSA/D（円）</th>
+            <th colspan="3" style="background:#44337a;">厨房販売高前年比（%）</th>
+            <th colspan="3" style="background:#744210;">厨房荒利益高前年比（%）</th>
+            <th onclick="sortTable('k-table',14)">販売高<br>伸長率<span class="sort-icon">⇅</span></th>
+            <th onclick="sortTable('k-table',15)">荒利益高<br>伸長率<span class="sort-icon">⇅</span></th>
+            <th>分類</th>
+          </tr>
+          <tr>
+            <th style="background:#2c5282;">2月</th><th style="background:#2c5282;">3月</th><th style="background:#2c5282;">4月</th>
+            <th style="background:#276749;">2月</th><th style="background:#276749;">3月</th><th style="background:#276749;">4月</th>
+            <th style="background:#44337a;">2月</th><th style="background:#44337a;">3月</th><th style="background:#44337a;">4月</th>
+            <th style="background:#744210;">2月</th><th style="background:#744210;">3月</th><th style="background:#744210;">4月</th>
+            <th style="background:#1a6fc4;">(4月÷2月)</th>
+            <th style="background:#1a6fc4;">(4月÷2月)</th>
+            <th style="background:#555;"></th>
+          </tr>
+        </thead>
+        <tbody id="k-tbody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="ranking-grid" id="k-ranking"></div>
+</div>
+
+<!-- ═══════════════════════════════════════ TAB: CHARTS ══════════════ -->
+<div class="tab-panel" id="tab-charts">
+  <div class="chart-grid">
+    <div class="chart-wrap">
+      <div class="card-title" style="border:none;padding-bottom:4px;">📈 FF販売高推移：阪口商店 vs 吹田支店</div>
+      <canvas id="chart-trend"></canvas>
+    </div>
+    <div class="chart-wrap">
+      <div class="card-title" style="border:none;padding-bottom:4px;">📊 FF販売高 2月対比伸長率（全店）</div>
+      <canvas id="chart-growth"></canvas>
+    </div>
+  </div>
+  <div class="chart-grid">
+    <div class="chart-wrap">
+      <div class="card-title" style="border:none;padding-bottom:4px;">🍱 厨房 販売高・荒利益高 伸長率比較</div>
+      <canvas id="chart-kitchen-growth"></canvas>
+    </div>
+    <div class="chart-wrap">
+      <div class="card-title" style="border:none;padding-bottom:4px;">🏆 FF 4月販売高PSA/D ランキング（上位10店）</div>
+      <canvas id="chart-ranking"></canvas>
     </div>
   </div>
 </div>
 
-<!-- ================================================================
-     VIEW 4: 管理者ダッシュボード
-================================================================ -->
-<div id="viewAdminDashboard" class="view">
-  <header class="header-admin">
-    <span class="hicon">🔥</span>
-    <div>
-      <div class="htitle">BBQ CLUB 管理者画面</div>
-      <div class="hsub">阪口商店 正社員レクリエーション</div>
-    </div>
-    <button class="back-btn logout-btn" onclick="adminLogout()">ログアウト</button>
-  </header>
+</div><!-- /main -->
 
-  <div class="container wide">
-
-    <div class="refresh-bar">
-      <span class="updated" id="updatedAt"></span>
-      <button class="refresh-btn" onclick="loadAdminData()">🔄 最新データを取得</button>
-    </div>
-
-    <!-- サマリー -->
-    <div class="section-title">📊 参加意思 サマリー</div>
-    <div class="summary-grid" id="summaryGrid">
-      <div class="loading-state" style="grid-column:1/-1">
-        <span class="spinner-admin"></span>読み込み中...
-      </div>
-    </div>
-
-    <!-- 店舗別 -->
-    <div class="section-title">🏪 店舗別 回答状況</div>
-    <div class="table-wrap" id="storeTableWrap">
-      <div class="loading-state"><span class="spinner-admin"></span>読み込み中...</div>
-    </div>
-
-    <!-- 回答一覧 -->
-    <div class="section-title" style="margin-top:8px">📋 回答一覧</div>
-    <button class="csv-btn" onclick="downloadCSV()">⬇️ CSVダウンロード</button>
-    <div class="table-wrap" id="respTableWrap">
-      <div class="loading-state"><span class="spinner-admin"></span>読み込み中...</div>
-    </div>
-
-  </div>
-</div>
-
-<!-- ================================================================
-     JavaScript
-================================================================ -->
 <script>
+// ═══════════════════════════════════════════════════════════
+// ■ DATA LAYER
+// ═══════════════════════════════════════════════════════════
 
-// ============================================================
-//  ビュー管理
-// ============================================================
-var _currentView = 'survey';
+// FF（ファストフーズ）個店データ
+const FF_STORES = [
+  { name:'池田市役所前',     sales:[25182.18,25263.65,28302.03], margin:[12811.50,12828.47,12882.74], salesYY:[112.13,109.57,119.00], marginYY:[116.55,111.21,111.34] },
+  { name:'江坂駅南口',       sales:[74390.86,73688.90,75138.30], margin:[36600.20,34825.47,35778.31], salesYY:[107.80,112.99,111.63], marginYY:[101.47,100.32,101.13] },
+  { name:'江坂東',           sales:[48006.11,47889.74,46013.50], margin:[24515.12,23917.60,22654.43], salesYY:[115.26,128.25,124.59], marginYY:[122.40,124.62,119.65] },
+  { name:'五月ケ丘東',       sales:[24859.82,23070.26,25803.40], margin:[11177.25,10107.75,10806.67], salesYY:[108.93,113.71,130.08], marginYY:[117.72,104.36,119.43] },
+  { name:'新御堂筋上新田',   sales:[51237.71,49173.45,54010.93], margin:[25935.76,24174.25,27487.37], salesYY:[101.27,105.51,118.20], marginYY:[99.49,95.01,109.69] },
+  { name:'吹田青山台三丁目', sales:[45980.89,49787.84,51506.03], margin:[24321.82,25063.59,24556.98], salesYY:[98.58,114.80,118.89], marginYY:[103.99,105.69,106.53] },
+  { name:'吹田朝日町',       sales:[50450.82,48952.42,53295.60], margin:[25731.26,24260.58,26156.71], salesYY:[112.63,124.77,133.45], marginYY:[116.87,117.13,123.80] },
+  { name:'吹田警察署前',     sales:[35476.54,33658.97,34997.27], margin:[18522.39,17411.37,16399.64], salesYY:[104.11,117.09,119.10], marginYY:[110.71,115.26,106.74] },
+  { name:'吹田垂水三丁目',   sales:[21120.32,21754.29,21999.33], margin:[10842.87,10891.56,11203.59], salesYY:[103.22,127.01,126.02], marginYY:[105.66,121.72,121.11] },
+  { name:'吹田豊津中学校前', sales:[37566.61,40400.71,40913.37], margin:[18587.44,20202.49,20289.91], salesYY:[99.45,110.45,112.64], marginYY:[99.80,101.71,104.12] },
+  { name:'大道南一丁目',     sales:[35517.71,36800.94,35004.50], margin:[18154.87,18811.09,17438.07], salesYY:[109.02,111.62,117.96], marginYY:[114.39,107.90,113.86] },
+  { name:'豊里六丁目',       sales:[20897.25,19769.10,22424.90], margin:[10025.85,9333.57,11193.68], salesYY:[117.01,128.77,144.59], marginYY:[119.02,120.08,147.29] },
+  { name:'豊中利倉東一丁目', sales:[52615.43,51146.81,51800.10], margin:[27667.25,26702.87,26527.73], salesYY:[109.83,111.56,118.13], marginYY:[113.30,105.71,112.92] },
+  { name:'豊中服部西町三丁目',sales:[32265.25,31979.97,34745.77],margin:[15178.26,14998.45,16676.00], salesYY:[99.36,108.41,122.02], marginYY:[98.38,100.94,116.95] },
+  { name:'豊中服部元町一丁目',sales:[47815.93,43748.48,45856.67],margin:[23347.43,20764.36,21801.88], salesYY:[115.47,118.93,132.61], marginYY:[118.54,109.77,124.66] },
+  { name:'豊中原田南一丁目', sales:[41990.00,40891.29,45334.50], margin:[21256.32,20474.28,22409.47], salesYY:[124.81,122.01,145.26], marginYY:[124.22,110.86,132.16] },
+  { name:'東淀川大道南',     sales:[39751.07,39419.58,39838.77], margin:[18629.99,18542.21,18746.39], salesYY:[102.12,112.15,113.23], marginYY:[99.85,102.62,105.30] },
+  { name:'東淀川豊里五丁目', sales:[48089.86,47667.19,46870.70], margin:[23817.49,23198.44,22938.30], salesYY:[108.61,113.38,121.04], marginYY:[108.93,105.26,114.18] },
+  { name:'南金田二丁目',     sales:[59806.00,61480.35,60423.03], margin:[30100.79,32090.95,30850.08], salesYY:[104.87,111.42,116.98], marginYY:[107.75,109.35,115.87] },
+  { name:'箕面白島二丁目',   sales:[48987.61,50709.03,52523.80], margin:[24411.68,24911.12,25461.03], salesYY:[null,null,null],     marginYY:[null,null,null] },
+];
 
-function showView(name) {
-  // 全ビューを非表示
-  ['survey', 'success', 'adminLogin', 'adminDashboard'].forEach(function(v) {
-    var el = document.getElementById('view' + capitalize(v));
-    if (el) el.classList.remove('active');
-  });
+// FF 集計行
+const FF_MO    = { name:'阪口清治 MO（阪口商店）', sales:[42100.40,41862.65,43340.13], margin:[21081.78,20675.52,21112.95], salesYY:[108.02,116.30,123.12], marginYY:[108.79,107.62,114.05] };
+const FF_SUITA = { name:'吹田支店（ベンチマーク）', sales:[41135.17,40641.20,42881.93], margin:[null,null,null], salesYY:[105.40,114.84,121.52], marginYY:[null,null,null] };
 
-  // 対象ビューを表示
-  var target = document.getElementById('view' + capitalize(name));
-  if (target) target.classList.add('active');
+// まちかど厨房販売 個店データ
+const KT_STORES = [
+  { name:'江坂駅南口',       sales:[30176.96,33497.42,30888.73], margin:[12391.78,10241.56,8736.11],  salesYY:[106.60,123.96,113.66], marginYY:[103.35,98.78,100.10] },
+  { name:'江坂東',           sales:[20572.75,20685.65,22705.87], margin:[9305.78,8480.32,8793.08],    salesYY:[120.90,117.96,112.57], marginYY:[110.47,109.53,103.19] },
+  { name:'五月ケ丘東',       sales:[0,393.13,1334.90],           margin:[-11.29,158.51,331.48],       salesYY:[0,28.36,88.09],        marginYY:[-1.73,143.87,144.61] },
+  { name:'新御堂筋上新田',   sales:[16818.00,19387.45,20045.73], margin:[6159.50,5502.13,5842.82],    salesYY:[109.56,143.59,147.19], marginYY:[98.57,98.35,125.29] },
+  { name:'吹田青山台三丁目', sales:[21620.96,20412.26,21754.90], margin:[7602.93,7597.84,8877.74],    salesYY:[93.33,94.52,105.07],   marginYY:[80.61,82.96,105.76] },
+  { name:'吹田朝日町',       sales:[22276.79,22479.06,23479.30], margin:[9399.21,7845.45,8742.67],    salesYY:[174.97,194.32,183.70], marginYY:[177.97,179.94,198.56] },
+  { name:'吹田警察署前',     sales:[11163.29,12082.35,13585.83], margin:[4814.89,4699.36,4624.86],    salesYY:[172.21,194.06,183.38], marginYY:[152.21,162.11,146.30] },
+  { name:'吹田豊津中学校前', sales:[16446.21,18698.13,19205.23], margin:[7954.17,8648.59,8911.77],    salesYY:[105.87,138.69,134.62], marginYY:[101.95,134.31,132.20] },
+  { name:'大道南一丁目',     sales:[12816.39,11238.03,11868.03], margin:[4741.52,3849.08,4353.96],    salesYY:[136.17,139.78,157.85], marginYY:[131.87,145.34,183.84] },
+  { name:'豊中利倉東一丁目', sales:[14907.14,14350.68,16366.80], margin:[5730.71,4866.15,5651.38],    salesYY:[119.02,129.41,128.81], marginYY:[95.98,105.76,115.23] },
+  { name:'豊中服部元町一丁目',sales:[16272.07,15004.29,19676.67],margin:[6782.32,5662.91,7073.08],    salesYY:[101.95,119.31,162.59], marginYY:[98.79,107.14,150.11] },
+  { name:'豊中原田南一丁目', sales:[14698.75,17500.29,17687.77], margin:[5651.25,5562.97,6285.77],    salesYY:[139.75,154.49,150.63], marginYY:[127.33,116.76,127.98] },
+  { name:'東淀川大道南',     sales:[16215.96,14692.77,14550.30], margin:[5967.28,5397.99,5361.38],    salesYY:[128.56,131.62,133.22], marginYY:[118.81,139.33,150.18] },
+  { name:'東淀川豊里五丁目', sales:[23454.79,21466.94,21381.40], margin:[9504.93,8273.63,8451.56],    salesYY:[151.08,133.19,132.49], marginYY:[134.53,115.74,131.74] },
+  { name:'南金田二丁目',     sales:[19402.11,16386.74,21104.43], margin:[7890.75,6316.23,6933.14],    salesYY:[120.23,97.08,124.84],  marginYY:[110.03,92.58,113.59] },
+  { name:'箕面白島二丁目',   sales:[23161.11,19406.35,20418.70], margin:[10329.57,7548.89,8843.80],   salesYY:[null,null,null],       marginYY:[null,null,null] },
+];
 
-  _currentView = name;
+const KT_MO    = { name:'阪口清治 MO（阪口商店）', sales:[14000.16,13884.08,14802.73], margin:[5710.76,5032.58,5390.73], salesYY:[123.31,132.22,136.74], marginYY:[110.09,113.79,127.17] };
+const KT_SUITA = { name:'吹田支店（ベンチマーク）', sales:[10330.29,9632.23,9941.19],   margin:[null,null,null],         salesYY:[112.89,113.66,116.69], marginYY:[null,null,null] };
 
-  // ボディの背景色を切り替え
-  if (name === 'adminLogin' || name === 'adminDashboard') {
-    document.body.classList.add('admin-mode');
+// ═══════════════════════════════════════════════════════════
+// ■ CALCULATION HELPERS
+// ═══════════════════════════════════════════════════════════
+
+const fmt = (v, d=0) => (v == null || isNaN(v)) ? '—' : v.toLocaleString('ja-JP', {minimumFractionDigits:d, maximumFractionDigits:d});
+const fmtY = (v) => (v == null || isNaN(v)) ? '—' : v.toFixed(1) + '%';
+const fmtPt = (v) => (v == null || isNaN(v)) ? '—' : (v >= 0 ? '+' : '') + v.toFixed(2) + 'pt';
+const fmtRate = (v) => (v == null || isNaN(v)) ? '—' : v.toFixed(2) + '%';
+
+function calcGrowth(feb, apr) {
+  if (!feb || feb === 0 || apr == null) return null;
+  return (apr / feb) * 100;
+}
+
+function diffClass(v) {
+  if (v == null || isNaN(v)) return 'zero';
+  return v > 0 ? 'pos' : v < 0 ? 'neg' : 'zero';
+}
+
+// ═══════════════════════════════════════════════════════════
+// ■ COMPUTED VALUES
+// ═══════════════════════════════════════════════════════════
+
+const hGrowth = calcGrowth(FF_MO.sales[0], FF_MO.sales[2]);
+const sGrowth = calcGrowth(FF_SUITA.sales[0], FF_SUITA.sales[2]);
+const diffPt  = (hGrowth != null && sGrowth != null) ? hGrowth - sGrowth : null;
+const verdict = (hGrowth != null && sGrowth != null) ? (hGrowth > sGrowth ? 'maru' : 'batsu') : null;
+
+// Per-store FF growth
+const ffStoreGrowths = FF_STORES.map(s => ({ ...s, salesGrowth: calcGrowth(s.sales[0], s.sales[2]), marginGrowth: calcGrowth(s.margin[0], s.margin[2]) }));
+const ffMoGrowth   = calcGrowth(FF_MO.sales[0], FF_MO.sales[2]);
+const ffSuitaGrowth = calcGrowth(FF_SUITA.sales[0], FF_SUITA.sales[2]);
+
+// Per-store Kitchen growth
+const ktStoreGrowths = KT_STORES.map(s => ({
+  ...s,
+  salesGrowth:  calcGrowth(s.sales[0]  > 0 ? s.sales[0]  : null, s.sales[2]),
+  marginGrowth: calcGrowth(s.margin[0] > 0 ? s.margin[0] : null, s.margin[2])
+}));
+const ktMoSalesGrowth   = calcGrowth(KT_MO.sales[0], KT_MO.sales[2]);
+const ktMoMarginGrowth  = calcGrowth(KT_MO.margin[0], KT_MO.margin[2]);
+
+// ═══════════════════════════════════════════════════════════
+// ■ RENDER SUMMARY TAB
+// ═══════════════════════════════════════════════════════════
+
+function renderSummary() {
+  // Verdict
+  const vm = document.getElementById('verdict-mark');
+  const vl = document.getElementById('verdict-label');
+  const vc = document.getElementById('verdict-comment');
+  if (verdict === 'maru') {
+    vm.textContent = '○'; vm.className = 'verdict-mark maru';
+    vl.textContent = '吹田支店を上回り、イベントで牽引できた'; vl.className = 'verdict-label maru';
+    vc.textContent = `阪口商店の伸長率 (${fmtRate(hGrowth)}) が吹田支店 (${fmtRate(sGrowth)}) を上回りました`;
   } else {
-    document.body.classList.remove('admin-mode');
+    vm.textContent = '×'; vm.className = 'verdict-mark batsu';
+    vl.textContent = '吹田支店を下回り、牽引には届かなかった'; vl.className = 'verdict-label batsu';
+    vc.textContent = `阪口商店の伸長率 (${fmtRate(hGrowth)}) が吹田支店 (${fmtRate(sGrowth)}) を下回りました`;
   }
 
-  // 先頭にスクロール
-  window.scrollTo({ top: 0, behavior: 'smooth' });
+  // Growth boxes
+  document.getElementById('hanaguchi-rate').textContent = fmtRate(hGrowth);
+  document.getElementById('suita-rate').textContent = fmtRate(sGrowth);
+  document.getElementById('h-feb').textContent = fmt(FF_MO.sales[0]);
+  document.getElementById('h-apr').textContent = fmt(FF_MO.sales[2]);
+  document.getElementById('s-feb').textContent = fmt(FF_SUITA.sales[0]);
+  document.getElementById('s-apr').textContent = fmt(FF_SUITA.sales[2]);
+
+  const base = Math.max(hGrowth || 0, sGrowth || 0, 110);
+  const hPct = Math.min(100, ((hGrowth || 0) / base) * 100);
+  const sPct = Math.min(100, ((sGrowth || 0) / base) * 100);
+  setTimeout(() => {
+    document.getElementById('hanaguchi-bar').style.width = hPct + '%';
+    document.getElementById('suita-bar').style.width = sPct + '%';
+  }, 100);
+
+  // KPIs
+  document.getElementById('kpi-h-rate').textContent = fmtRate(hGrowth);
+  document.getElementById('kpi-s-rate').textContent = fmtRate(sGrowth);
+  const diffEl = document.getElementById('kpi-diff');
+  diffEl.textContent = fmtPt(diffPt);
+  diffEl.className = 'kpi-value ' + diffClass(diffPt);
+  document.getElementById('kpi-h-apr').textContent = fmt(FF_MO.sales[2]);
+  document.getElementById('kpi-h-feb').textContent = fmt(FF_MO.sales[0]);
+  document.getElementById('kpi-store-count').textContent = FF_STORES.length + '店';
+
+  // Summary table
+  renderSummaryTable(ffStoreGrowths);
 }
 
-function capitalize(str) {
-  return str.charAt(0).toUpperCase() + str.slice(1);
+let summaryFilterText = '';
+function filterSummaryTable() {
+  summaryFilterText = document.getElementById('summary-search').value;
+  renderSummaryTable(ffStoreGrowths);
 }
 
-
-// ============================================================
-//  ラジオ・チェックボックスのビジュアル
-// ============================================================
-document.querySelectorAll('.radio-item input[type="radio"]').forEach(function(radio) {
-  radio.addEventListener('change', function() {
-    var name = this.name;
-    document.querySelectorAll('input[name="' + name + '"]').forEach(function(r) {
-      r.closest('.radio-item').classList.toggle('selected', r.checked);
-    });
-  });
-});
-
-document.querySelectorAll('.day-item input[type="checkbox"]').forEach(function(cb) {
-  cb.addEventListener('change', function() {
-    this.closest('.day-item').classList.toggle('selected', this.checked);
-  });
-});
-
-
-// ============================================================
-//  アンケート送信
-// ============================================================
-function submitForm() {
-  // バリデーション
-  var name      = document.getElementById('name').value.trim();
-  var store     = document.getElementById('store').value;
-  var intention = document.querySelector('input[name="intention"]:checked');
-
-  if (!name) {
-    showSurveyError('⚠️ 氏名を入力してください。');
-    document.getElementById('name').focus();
-    return;
-  }
-  if (!store) {
-    showSurveyError('⚠️ 所属店舗を選択してください。');
-    document.getElementById('store').focus();
-    return;
-  }
-  if (!intention) {
-    showSurveyError('⚠️ 参加意思を選択してください。');
-    return;
-  }
-  hideSurveyError();
-
-  var days     = Array.from(document.querySelectorAll('input[name="days"]:checked')).map(function(el) { return el.value; }).join('、');
-  var timeSlot = document.querySelector('input[name="timeSlot"]:checked');
-
-  var formData = {
-    name:            name,
-    store:           store,
-    intention:       intention.value,
-    days:            days,
-    timeSlot:        timeSlot ? timeSlot.value : '',
-    otherActivities: document.getElementById('otherActivities').value.trim(),
-    comment:         document.getElementById('comment').value.trim()
-  };
-
-  setSurveyLoading(true);
-
-  google.script.run
-    .withSuccessHandler(onSubmitSuccess)
-    .withFailureHandler(onSubmitFailure)
-    .submitResponse(formData);
-}
-
-function onSubmitSuccess(result) {
-  setSurveyLoading(false);
-  if (result && result.success) {
-    showView('success');
-  } else {
-    showSurveyError('⚠️ 送信に失敗しました。' + (result ? result.message : ''));
-  }
-}
-
-function onSubmitFailure(err) {
-  setSurveyLoading(false);
-  showSurveyError('⚠️ 通信エラーが発生しました。もう一度お試しください。');
-}
-
-function setSurveyLoading(flag) {
-  var btn   = document.getElementById('submitBtn');
-  var label = document.getElementById('submitLabel');
-  btn.disabled = flag;
-  label.innerHTML = flag
-    ? '<span class="spinner-survey"></span> 送信中...'
-    : '🍖 アンケートを送信する';
-}
-
-function showSurveyError(msg) {
-  var box = document.getElementById('surveyError');
-  box.textContent = msg;
-  box.style.display = 'block';
-  box.scrollIntoView({ behavior: 'smooth', block: 'center' });
-}
-
-function hideSurveyError() {
-  document.getElementById('surveyError').style.display = 'none';
-}
-
-
-// ============================================================
-//  管理者ログイン / ログアウト
-// ============================================================
-var _adminPassword = '';
-var _allResponses  = [];
-var _currentPage   = 1;
-var PAGE_SIZE      = 30;
-
-function adminLogin() {
-  var pw = document.getElementById('pwInput').value;
-  if (!pw) return;
-  _adminPassword = pw;
-  document.getElementById('loginError').style.display = 'none';
-  // 先にダッシュボードに切り替えてからデータ取得
-  showView('adminDashboard');
-  loadAdminData();
-}
-
-function adminLogout() {
-  _adminPassword = '';
-  _allResponses  = [];
-  document.getElementById('pwInput').value = '';
-  showView('adminLogin');
-}
-
-
-// ============================================================
-//  管理者データ取得
-// ============================================================
-function loadAdminData() {
-  setSectionsLoading();
-  google.script.run
-    .withSuccessHandler(onAdminDataLoaded)
-    .withFailureHandler(onAdminDataError)
-    .getAdminData(_adminPassword);
-}
-
-function setSectionsLoading() {
-  var loadHtml = '<div class="loading-state"><span class="spinner-admin"></span>読み込み中...</div>';
-  document.getElementById('summaryGrid').innerHTML =
-    '<div class="loading-state" style="grid-column:1/-1"><span class="spinner-admin"></span>読み込み中...</div>';
-  document.getElementById('storeTableWrap').innerHTML  = loadHtml;
-  document.getElementById('respTableWrap').innerHTML   = loadHtml;
-}
-
-function onAdminDataLoaded(result) {
-  if (!result || !result.success) {
-    if (result && result.message === 'INVALID_PASSWORD') {
-      // パスワード誤り → ログイン画面に戻す
-      showView('adminLogin');
-      document.getElementById('loginError').style.display = 'block';
-      return;
-    }
-    showAdminDataError(result ? result.message : '不明なエラー');
-    return;
-  }
-
-  _allResponses = result.responses || [];
-  _currentPage  = 1;
-
-  renderSummary(result.summary);
-  renderStoreTable(result.storeStats);
-  renderResponseTable();
-
-  document.getElementById('updatedAt').textContent = '最終更新: ' + formatDate(new Date());
-}
-
-function onAdminDataError(err) {
-  showAdminDataError(err ? err.message : '通信エラー');
-}
-
-function showAdminDataError(msg) {
-  var html = '<div class="empty-state"><span class="icon">⚠️</span>' + (msg || 'エラーが発生しました') + '</div>';
-  document.getElementById('summaryGrid').innerHTML    = html;
-  document.getElementById('storeTableWrap').innerHTML = html;
-  document.getElementById('respTableWrap').innerHTML  = html;
-}
-
-
-// ============================================================
-//  サマリーカード描画
-// ============================================================
-function renderSummary(s) {
-  if (!s) s = { total: 0, yes: 0, no: 0, maybe: 0 };
-  document.getElementById('summaryGrid').innerHTML = [
-    summaryCard('s-total', '📊', s.total,  '回答総数'),
-    summaryCard('s-yes',   '🙋', s.yes,    '参加したい'),
-    summaryCard('s-no',    '🙅', s.no,     '参加したくない'),
-    summaryCard('s-maybe', '🤔', s.maybe,  'どちらとも言えない'),
-  ].join('');
-}
-
-function summaryCard(cls, icon, num, label) {
-  return '<div class="summary-card ' + cls + '">' +
-    '<span class="sc-icon">' + icon + '</span>' +
-    '<div class="sc-num">' + num + '</div>' +
-    '<div class="sc-label">' + label + '</div>' +
-  '</div>';
-}
-
-
-// ============================================================
-//  店舗別テーブル描画
-// ============================================================
-function renderStoreTable(storeStats) {
-  if (!storeStats || Object.keys(storeStats).length === 0) {
-    document.getElementById('storeTableWrap').innerHTML =
-      '<div class="empty-state"><span class="icon">🏪</span>回答データがありません</div>';
-    return;
-  }
-  var rows = Object.entries(storeStats)
-    .sort(function(a, b) { return b[1].total - a[1].total; })
-    .map(function(entry) {
-      var name = entry[0], s = entry[1];
-      var rate = s.total > 0 ? Math.round(s.yes / s.total * 100) : 0;
-      return '<tr>' +
-        '<td>' + esc(name) + '</td>' +
-        '<td style="text-align:center;font-weight:700">' + s.total + '</td>' +
-        '<td style="text-align:center"><span class="badge-yes">' + s.yes + '</span></td>' +
-        '<td style="text-align:center"><span class="badge-no">' + s.no + '</span></td>' +
-        '<td style="text-align:center"><span class="badge-maybe">' + s.maybe + '</span></td>' +
-        '<td style="text-align:center">' + rate + '%</td>' +
-      '</tr>';
-    }).join('');
-
-  document.getElementById('storeTableWrap').innerHTML =
-    '<div class="table-scroll"><table>' +
-      '<thead><tr><th>店舗名</th><th>回答数</th><th>参加したい</th><th>参加したくない</th><th>どちらとも</th><th>参加率</th></tr></thead>' +
-      '<tbody>' + rows + '</tbody>' +
-    '</table></div>';
-}
-
-
-// ============================================================
-//  回答一覧テーブル描画
-// ============================================================
-function renderResponseTable() {
-  if (!_allResponses || _allResponses.length === 0) {
-    document.getElementById('respTableWrap').innerHTML =
-      '<div class="empty-state"><span class="icon">📋</span>まだ回答がありません</div>';
-    return;
-  }
-
-  var totalPages = Math.ceil(_allResponses.length / PAGE_SIZE);
-  var start      = (_currentPage - 1) * PAGE_SIZE;
-  var pageItems  = _allResponses.slice(start, start + PAGE_SIZE);
-
-  var rows = pageItems.map(function(r) {
-    var pillCls = r.intention === '参加したい' ? 'yes' :
-                  r.intention === '参加したくない' ? 'no' : 'maybe';
-    return '<tr>' +
-      '<td class="resp-dt">' + esc(r.datetime) + '</td>' +
-      '<td><div class="resp-name">' + esc(r.name) + '</div><div class="resp-store">' + esc(r.store) + '</div></td>' +
-      '<td><span class="pill ' + pillCls + '">' + esc(r.intention) + '</span></td>' +
-      '<td class="resp-text">' + esc(r.days || '—') + '</td>' +
-      '<td class="resp-text">' + esc(r.timeSlot || '—') + '</td>' +
-      '<td class="resp-text">' + esc(r.otherActivities || '—') + '</td>' +
-      '<td class="resp-text">' + esc(r.comment || '—') + '</td>' +
-    '</tr>';
+function renderSummaryTable(stores) {
+  const tbody = document.getElementById('summary-tbody');
+  const sGr = ffSuitaGrowth;
+  let rows = stores.filter(s => s.name.includes(summaryFilterText));
+  tbody.innerHTML = rows.map(s => {
+    const gr = s.salesGrowth;
+    const diff = (gr != null && sGr != null) ? gr - sGr : null;
+    const judge = (gr != null && sGr != null) ? (gr > sGr ? '<span class="badge badge-green">↑上回り</span>' : '<span class="badge badge-red">↓下回り</span>') : '—';
+    return `<tr>
+      <td class="store-name">${s.name}</td>
+      <td>${fmt(s.sales[0])}</td>
+      <td>${fmt(s.sales[2])}</td>
+      <td class="${gr >= sGr ? 'pos' : 'neg'}">${fmtRate(gr)}</td>
+      <td class="${diffClass(diff)}">${fmtPt(diff)}</td>
+      <td>${judge}</td>
+    </tr>`;
   }).join('');
-
-  // ページング
-  var pager = '';
-  if (totalPages > 1) {
-    var btns = '';
-    if (_currentPage > 1) btns += '<button class="page-btn" onclick="goPage(' + (_currentPage - 1) + ')">＜ 前へ</button>';
-    for (var i = 1; i <= totalPages; i++) {
-      btns += '<button class="page-btn' + (i === _currentPage ? ' active' : '') + '" onclick="goPage(' + i + ')">' + i + '</button>';
-    }
-    if (_currentPage < totalPages) btns += '<button class="page-btn" onclick="goPage(' + (_currentPage + 1) + ')">次へ ＞</button>';
-    pager = '<div class="pager">' + btns + '</div>';
-  }
-
-  document.getElementById('respTableWrap').innerHTML =
-    '<div class="table-scroll"><table>' +
-      '<thead><tr>' +
-        '<th>回答日時</th><th>氏名 / 店舗</th><th>参加意思</th>' +
-        '<th>希望曜日</th><th>希望時間帯</th><th>BBQ以外</th><th>コメント</th>' +
-      '</tr></thead>' +
-      '<tbody>' + rows + '</tbody>' +
-    '</table></div>' + pager;
+  // Append MO and Suita rows
+  tbody.innerHTML += `
+    <tr class="mo-row">
+      <td class="store-name">★ ${FF_MO.name}</td>
+      <td>${fmt(FF_MO.sales[0])}</td>
+      <td>${fmt(FF_MO.sales[2])}</td>
+      <td class="${diffClass(diffPt)}">${fmtRate(hGrowth)}</td>
+      <td class="${diffClass(diffPt)}">${fmtPt(diffPt)}</td>
+      <td>${verdict === 'maru' ? '<span class="badge badge-green">○ 上回り</span>' : '<span class="badge badge-red">× 下回り</span>'}</td>
+    </tr>
+    <tr class="branch-row">
+      <td class="store-name">【基準】${FF_SUITA.name}</td>
+      <td>${fmt(FF_SUITA.sales[0])}</td>
+      <td>${fmt(FF_SUITA.sales[2])}</td>
+      <td>${fmtRate(sGrowth)}</td>
+      <td>—</td>
+      <td><span class="badge badge-gray">基準値</span></td>
+    </tr>`;
 }
 
-function goPage(p) {
-  _currentPage = p;
-  renderResponseTable();
-  document.getElementById('respTableWrap').scrollIntoView({ behavior: 'smooth', block: 'start' });
+// ═══════════════════════════════════════════════════════════
+// ■ RENDER FF TABLE
+// ═══════════════════════════════════════════════════════════
+
+let ffSearchText = '', ffFilterMode = 'all';
+
+function setFFFilter(mode, btn) {
+  ffFilterMode = mode;
+  document.querySelectorAll('#tab-ff .filter-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  renderFFTable();
+}
+function filterFFTable() {
+  ffSearchText = document.getElementById('ff-search').value;
+  renderFFTable();
 }
 
+function renderFFTable() {
+  const sGr = ffSuitaGrowth;
+  const moGr = ffMoGrowth;
+  let stores = ffStoreGrowths.filter(s => s.name.includes(ffSearchText));
+  if (ffFilterMode === 'above') stores = stores.filter(s => s.salesGrowth != null && s.salesGrowth > sGr);
+  if (ffFilterMode === 'below') stores = stores.filter(s => s.salesGrowth != null && s.salesGrowth <= sGr);
 
-// ============================================================
-//  CSVダウンロード
-// ============================================================
-function downloadCSV() {
-  if (!_allResponses || _allResponses.length === 0) {
-    alert('ダウンロードできる回答データがありません。');
-    return;
-  }
-  var headers = ['回答日時','氏名','所属店舗','参加意思','希望曜日','希望時間帯','BBQ以外でやってみたいこと','その他コメント'];
-  var rows = [headers.map(csvCell).join(',')];
-  _allResponses.forEach(function(r) {
-    rows.push([r.datetime, r.name, r.store, r.intention, r.days, r.timeSlot, r.otherActivities, r.comment].map(csvCell).join(','));
+  const tbody = document.getElementById('ff-tbody');
+  tbody.innerHTML = stores.map(s => {
+    const sGrDiff = (s.salesGrowth != null && sGr != null) ? s.salesGrowth - sGr : null;
+    const moGrDiff = (s.salesGrowth != null && moGr != null) ? s.salesGrowth - moGr : null;
+    const n = v => fmt(v);
+    const y = v => v == null ? '—' : v.toFixed(1);
+    return `<tr>
+      <td class="store-name">${s.name}</td>
+      <td>${n(s.sales[0])}</td><td>${n(s.sales[1])}</td><td>${n(s.sales[2])}</td>
+      <td>${n(s.margin[0])}</td><td>${n(s.margin[1])}</td><td>${n(s.margin[2])}</td>
+      <td>${y(s.salesYY[0])}</td><td>${y(s.salesYY[1])}</td><td>${y(s.salesYY[2])}</td>
+      <td>${y(s.marginYY[0])}</td><td>${y(s.marginYY[1])}</td><td>${y(s.marginYY[2])}</td>
+      <td class="${s.salesGrowth >= sGr ? 'pos' : 'neg'}">${fmtRate(s.salesGrowth)}</td>
+      <td class="${s.marginGrowth != null && s.marginGrowth >= 100 ? 'pos' : 'neg'}">${fmtRate(s.marginGrowth)}</td>
+      <td class="${diffClass(sGrDiff)}">${fmtPt(sGrDiff)}</td>
+      <td class="${diffClass(moGrDiff)}">${fmtPt(moGrDiff)}</td>
+    </tr>`;
+  }).join('');
+  tbody.innerHTML += `
+    <tr class="mo-row">
+      <td class="store-name">★ ${FF_MO.name}</td>
+      <td>${fmt(FF_MO.sales[0])}</td><td>${fmt(FF_MO.sales[1])}</td><td>${fmt(FF_MO.sales[2])}</td>
+      <td>${fmt(FF_MO.margin[0])}</td><td>${fmt(FF_MO.margin[1])}</td><td>${fmt(FF_MO.margin[2])}</td>
+      <td>${FF_MO.salesYY[0]}</td><td>${FF_MO.salesYY[1]}</td><td>${FF_MO.salesYY[2]}</td>
+      <td>${FF_MO.marginYY[0]}</td><td>${FF_MO.marginYY[1]}</td><td>${FF_MO.marginYY[2]}</td>
+      <td class="${diffClass(diffPt)}">${fmtRate(hGrowth)}</td>
+      <td class="pos">${fmtRate(calcGrowth(FF_MO.margin[0], FF_MO.margin[2]))}</td>
+      <td class="${diffClass(diffPt)}">${fmtPt(diffPt)}</td>
+      <td>—</td>
+    </tr>
+    <tr class="branch-row">
+      <td class="store-name">【基準】${FF_SUITA.name}</td>
+      <td>${fmt(FF_SUITA.sales[0])}</td><td>${fmt(FF_SUITA.sales[1])}</td><td>${fmt(FF_SUITA.sales[2])}</td>
+      <td>—</td><td>—</td><td>—</td>
+      <td>${FF_SUITA.salesYY[0]}</td><td>${FF_SUITA.salesYY[1]}</td><td>${FF_SUITA.salesYY[2]}</td>
+      <td>—</td><td>—</td><td>—</td>
+      <td>${fmtRate(sGrowth)}</td><td>—</td><td>—</td><td>—</td>
+    </tr>`;
+
+  renderFFRanking();
+}
+
+function renderFFRanking() {
+  const sGr = ffSuitaGrowth;
+  const sorted_growth = [...ffStoreGrowths].filter(s => s.salesGrowth != null).sort((a,b) => b.salesGrowth - a.salesGrowth);
+  const sorted_apr = [...ffStoreGrowths].sort((a,b) => b.sales[2] - a.sales[2]);
+  const sorted_growth_asc = [...sorted_growth].reverse();
+
+  const container = document.getElementById('ff-ranking');
+  container.innerHTML = `
+    ${rankingCard('🏆 FF伸長率が高い店舗 TOP5', sorted_growth.slice(0,5), s => fmtRate(s.salesGrowth), 'pos')}
+    ${rankingCard('⚠️ FF伸長率が低い店舗 BOTTOM5', sorted_growth_asc.slice(0,5), s => fmtRate(s.salesGrowth), 'neg')}
+    ${rankingCard('💰 FF4月販売高TOP5', sorted_apr.slice(0,5), s => fmt(s.sales[2])+'円', 'pos')}
+  `;
+}
+
+// ═══════════════════════════════════════════════════════════
+// ■ RENDER KITCHEN TABLE
+// ═══════════════════════════════════════════════════════════
+
+let kSearchText = '', kFilterMode = 'all';
+
+function setKFilter(mode, btn) {
+  kFilterMode = mode;
+  document.querySelectorAll('#tab-kitchen .filter-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  renderKitchenTable();
+}
+function filterKitchenTable() {
+  kSearchText = document.getElementById('k-search').value;
+  renderKitchenTable();
+}
+
+function getKitchenCategory(s) {
+  const sg = s.salesGrowth;
+  const mg = s.marginGrowth;
+  const salesUp   = sg != null && sg > 100;
+  const marginUp  = mg != null && mg > 100;
+  if (salesUp && marginUp) return 'both-up';
+  if (salesUp && !marginUp) return 'sales-only';
+  if (!salesUp && marginUp) return 'margin-only';
+  return 'neither';
+}
+
+function getCategoryBadge(cat) {
+  const map = {
+    'both-up':    '<span class="status-tag status-good">✓ 両方伸長</span>',
+    'sales-only': '<span class="status-tag status-warn">△ 販売高のみ</span>',
+    'margin-only':'<span class="status-tag status-warn">△ 荒利益のみ</span>',
+    'neither':    '<span class="status-tag status-bad">✗ 要改善</span>',
+  };
+  return map[cat] || '—';
+}
+
+function renderKitchenTable() {
+  let stores = ktStoreGrowths.filter(s => s.name.includes(kSearchText));
+  if (kFilterMode !== 'all') stores = stores.filter(s => getKitchenCategory(s) === kFilterMode);
+
+  const tbody = document.getElementById('k-tbody');
+  tbody.innerHTML = stores.map(s => {
+    const cat = getKitchenCategory(s);
+    const n = v => (v == null) ? '—' : fmt(v);
+    const y = v => v == null ? '—' : v.toFixed(1);
+    const rateClass = (v) => v != null ? (v > 100 ? 'pos' : 'neg') : '';
+    return `<tr>
+      <td class="store-name">${s.name}</td>
+      <td>${n(s.sales[0])}</td><td>${n(s.sales[1])}</td><td>${n(s.sales[2])}</td>
+      <td>${n(s.margin[0])}</td><td>${n(s.margin[1])}</td><td>${n(s.margin[2])}</td>
+      <td>${y(s.salesYY[0])}</td><td>${y(s.salesYY[1])}</td><td>${y(s.salesYY[2])}</td>
+      <td>${y(s.marginYY[0])}</td><td>${y(s.marginYY[1])}</td><td>${y(s.marginYY[2])}</td>
+      <td class="${rateClass(s.salesGrowth)}">${fmtRate(s.salesGrowth)}</td>
+      <td class="${rateClass(s.marginGrowth)}">${fmtRate(s.marginGrowth)}</td>
+      <td>${getCategoryBadge(cat)}</td>
+    </tr>`;
+  }).join('');
+  tbody.innerHTML += `
+    <tr class="mo-row">
+      <td class="store-name">★ ${KT_MO.name}</td>
+      <td>${fmt(KT_MO.sales[0])}</td><td>${fmt(KT_MO.sales[1])}</td><td>${fmt(KT_MO.sales[2])}</td>
+      <td>${fmt(KT_MO.margin[0])}</td><td>${fmt(KT_MO.margin[1])}</td><td>${fmt(KT_MO.margin[2])}</td>
+      <td>${KT_MO.salesYY[0]}</td><td>${KT_MO.salesYY[1]}</td><td>${KT_MO.salesYY[2]}</td>
+      <td>${KT_MO.marginYY[0]}</td><td>${KT_MO.marginYY[1]}</td><td>${KT_MO.marginYY[2]}</td>
+      <td class="pos">${fmtRate(ktMoSalesGrowth)}</td>
+      <td class="${ktMoMarginGrowth >= 100 ? 'pos' : 'neg'}">${fmtRate(ktMoMarginGrowth)}</td>
+      <td><span class="status-tag status-good">MO集計</span></td>
+    </tr>
+    <tr class="branch-row">
+      <td class="store-name">【参考】${KT_SUITA.name}</td>
+      <td>${fmt(KT_SUITA.sales[0])}</td><td>${fmt(KT_SUITA.sales[1])}</td><td>${fmt(KT_SUITA.sales[2])}</td>
+      <td>—</td><td>—</td><td>—</td>
+      <td>${KT_SUITA.salesYY[0]}</td><td>${KT_SUITA.salesYY[1]}</td><td>${KT_SUITA.salesYY[2]}</td>
+      <td>—</td><td>—</td><td>—</td>
+      <td>${fmtRate(calcGrowth(KT_SUITA.sales[0], KT_SUITA.sales[2]))}</td>
+      <td>—</td>
+      <td><span class="status-tag status-neutral">支店参考</span></td>
+    </tr>`;
+
+  renderKitchenRanking();
+}
+
+function renderKitchenRanking() {
+  const sorted_both = ktStoreGrowths
+    .filter(s => s.salesGrowth != null && s.marginGrowth != null)
+    .sort((a,b) => (b.salesGrowth + b.marginGrowth) - (a.salesGrowth + a.marginGrowth));
+  const sorted_sales = ktStoreGrowths.filter(s => s.salesGrowth != null).sort((a,b) => b.salesGrowth - a.salesGrowth);
+  const need_improve = ktStoreGrowths
+    .filter(s => s.salesGrowth != null && s.marginGrowth != null)
+    .sort((a,b) => (a.salesGrowth + a.marginGrowth) - (b.salesGrowth + b.marginGrowth));
+  const sales_only = ktStoreGrowths.filter(s => getKitchenCategory(s) === 'sales-only');
+
+  document.getElementById('k-ranking').innerHTML = `
+    ${rankingCard('🏆 厨房拡販成功店舗（販売高+荒利益高 両伸長）', sorted_both.filter(s => getKitchenCategory(s) === 'both-up').slice(0,5), s => `販売 ${fmtRate(s.salesGrowth)} / 荒利 ${fmtRate(s.marginGrowth)}`, 'pos')}
+    ${rankingCard('⚠️ 改善が必要な店舗（要注意）', need_improve.slice(0,5), s => `販売 ${fmtRate(s.salesGrowth)} / 荒利 ${fmtRate(s.marginGrowth)}`, 'neg')}
+    ${rankingCard('△ 販売高は伸びたが荒利益は未達', sales_only.slice(0,5), s => `販売 ${fmtRate(s.salesGrowth)} / 荒利 ${fmtRate(s.marginGrowth)}`, 'orange')}
+  `;
+}
+
+function rankingCard(title, stores, valFn, cls) {
+  const colors = ['gold','silver','bronze','normal','normal'];
+  return `<div class="ranking-card">
+    <div class="rank-title">${title}</div>
+    ${stores.length === 0 ? '<div style="color:var(--gray);font-size:0.78rem;">該当なし</div>' :
+    stores.map((s,i) => `<div class="rank-item">
+      <div class="rank-num ${colors[i] || 'normal'}">${i+1}</div>
+      <div class="rank-name">${s.name}</div>
+      <div class="rank-val ${cls}">${valFn(s)}</div>
+    </div>`).join('')}
+  </div>`;
+}
+
+// ═══════════════════════════════════════════════════════════
+// ■ CHARTS
+// ═══════════════════════════════════════════════════════════
+
+let chartsInitialized = false;
+
+function renderCharts() {
+  if (chartsInitialized) return;
+  chartsInitialized = true;
+
+  const months = ['26年2月', '26年3月', '26年4月'];
+
+  // Chart 1: Trend MO vs Suita
+  new Chart(document.getElementById('chart-trend'), {
+    type: 'line',
+    data: {
+      labels: months,
+      datasets: [
+        { label:'阪口商店（MO）FF販売高', data: FF_MO.sales, borderColor:'#e74c3c', backgroundColor:'rgba(231,76,60,0.1)', tension:0.3, pointRadius:5, borderWidth:2.5 },
+        { label:'吹田支店（ベンチマーク）', data: FF_SUITA.sales, borderColor:'#2ecc71', backgroundColor:'rgba(46,204,113,0.1)', tension:0.3, pointRadius:5, borderWidth:2.5, borderDash:[5,3] },
+      ]
+    },
+    options: { responsive:true, plugins:{ legend:{ position:'bottom', labels:{font:{size:11}} } }, scales:{ y:{ ticks:{ callback:v => (v/1000).toFixed(0)+'K' } } } }
   });
-  var blob = new Blob(['\uFEFF' + rows.join('\r\n')], { type: 'text/csv;charset=utf-8;' });
-  var url  = URL.createObjectURL(blob);
-  var a    = document.createElement('a');
-  a.href     = url;
-  a.download = 'BBQ_CLUB_回答_' + formatDateShort(new Date()) + '.csv';
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
-  URL.revokeObjectURL(url);
+
+  // Chart 2: Growth rates bar (all stores)
+  const storesSorted = [...ffStoreGrowths].sort((a,b) => (b.salesGrowth||0)-(a.salesGrowth||0));
+  new Chart(document.getElementById('chart-growth'), {
+    type: 'bar',
+    data: {
+      labels: storesSorted.map(s => s.name),
+      datasets: [
+        { label:'FF販売高伸長率（2月対比）', data: storesSorted.map(s => s.salesGrowth != null ? +s.salesGrowth.toFixed(2) : null),
+          backgroundColor: storesSorted.map(s => s.salesGrowth > ffSuitaGrowth ? 'rgba(46,204,113,0.75)' : 'rgba(231,76,60,0.75)'),
+          borderColor: storesSorted.map(s => s.salesGrowth > ffSuitaGrowth ? '#1a8a4a' : '#c0392b'),
+          borderWidth:1 },
+      ]
+    },
+    options: {
+      indexAxis:'y', responsive:true,
+      plugins: { legend:{ display:false }, annotation:{} },
+      scales: { x:{ ticks:{ callback:v => v.toFixed(0)+'%' }, min:90 } }
+    }
+  });
+
+  // Chart 3: Kitchen growth comparison
+  const ktSorted = [...ktStoreGrowths].filter(s => s.salesGrowth != null).sort((a,b) => (b.salesGrowth||0)-(a.salesGrowth||0));
+  new Chart(document.getElementById('chart-kitchen-growth'), {
+    type:'bar',
+    data: {
+      labels: ktSorted.map(s => s.name),
+      datasets: [
+        { label:'厨房販売高伸長率', data: ktSorted.map(s => s.salesGrowth != null ? +s.salesGrowth.toFixed(2) : null), backgroundColor:'rgba(54,162,235,0.7)', borderColor:'#1a6fc4', borderWidth:1 },
+        { label:'厨房荒利益高伸長率', data: ktSorted.map(s => s.marginGrowth != null ? +s.marginGrowth.toFixed(2) : null), backgroundColor:'rgba(75,192,100,0.7)', borderColor:'#1a8a4a', borderWidth:1 },
+      ]
+    },
+    options: { indexAxis:'y', responsive:true, plugins:{ legend:{ position:'bottom', labels:{font:{size:10}} } }, scales:{ x:{ ticks:{ callback:v=>v.toFixed(0)+'%' } } } }
+  });
+
+  // Chart 4: FF April sales ranking
+  const top10 = [...FF_STORES].sort((a,b)=>b.sales[2]-a.sales[2]).slice(0,10);
+  new Chart(document.getElementById('chart-ranking'), {
+    type:'bar',
+    data: {
+      labels: top10.map(s=>s.name),
+      datasets: [{ label:'4月FF販売高PSA/D', data: top10.map(s=>s.sales[2]), backgroundColor:'rgba(26,111,196,0.75)', borderColor:'#005bac', borderWidth:1 }]
+    },
+    options: { indexAxis:'y', responsive:true, plugins:{ legend:{display:false} }, scales:{ x:{ ticks:{ callback:v=>(v/1000).toFixed(0)+'K' } } } }
+  });
 }
 
-function csvCell(v) {
-  v = (v == null ? '' : String(v));
-  return (v.indexOf(',') >= 0 || v.indexOf('"') >= 0 || v.indexOf('\n') >= 0)
-    ? '"' + v.replace(/"/g, '""') + '"'
-    : v;
+// ═══════════════════════════════════════════════════════════
+// ■ TABLE SORT
+// ═══════════════════════════════════════════════════════════
+
+const sortState = {};
+function sortTable(tableId, colIdx) {
+  const table = document.getElementById(tableId);
+  const tbody = table.querySelector('tbody');
+  const rows = Array.from(tbody.querySelectorAll('tr:not(.mo-row):not(.branch-row)'));
+  const key = tableId + '_' + colIdx;
+  sortState[key] = !sortState[key];
+  const asc = sortState[key];
+
+  rows.sort((a,b) => {
+    const av = a.cells[colIdx]?.textContent.replace(/[^\d.\-+%]/g,'') || '';
+    const bv = b.cells[colIdx]?.textContent.replace(/[^\d.\-+%]/g,'') || '';
+    const an = parseFloat(av), bn = parseFloat(bv);
+    if (!isNaN(an) && !isNaN(bn)) return asc ? an - bn : bn - an;
+    return asc ? av.localeCompare(bv,'ja') : bv.localeCompare(av,'ja');
+  });
+
+  // Re-insert sorted rows before special rows
+  const specialRows = tbody.querySelectorAll('.mo-row, .branch-row');
+  rows.forEach(r => tbody.insertBefore(r, specialRows[0] || null));
 }
 
+// ═══════════════════════════════════════════════════════════
+// ■ TAB SWITCH
+// ═══════════════════════════════════════════════════════════
 
-// ============================================================
-//  ユーティリティ
-// ============================================================
-function esc(str) {
-  if (!str) return '';
-  return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+function switchTab(name) {
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('tab-' + name).classList.add('active');
+  event.target.classList.add('active');
+  if (name === 'charts') renderCharts();
 }
 
-function formatDate(d) {
-  return d.getFullYear() + '/' + pad(d.getMonth()+1) + '/' + pad(d.getDate()) + ' ' +
-         pad(d.getHours()) + ':' + pad(d.getMinutes()) + ':' + pad(d.getSeconds());
-}
+// ═══════════════════════════════════════════════════════════
+// ■ INIT
+// ═══════════════════════════════════════════════════════════
 
-function formatDateShort(d) {
-  return d.getFullYear() + pad(d.getMonth()+1) + pad(d.getDate()) + pad(d.getHours()) + pad(d.getMinutes());
-}
-
-function pad(n) { return n < 10 ? '0' + n : String(n); }
-
+document.addEventListener('DOMContentLoaded', () => {
+  renderSummary();
+  renderFFTable();
+  renderKitchenTable();
+});
 </script>
 </body>
 </html>
