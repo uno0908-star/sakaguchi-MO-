@@ -717,17 +717,10 @@ function submitForm() {
 
   setSurveyLoading(true);
 
-  // GAS環境チェック
-  if (typeof google === 'undefined' || !google.script) {
-    setSurveyLoading(false);
-    showSurveyError('⚠️ このフォームはGASのWebアプリURLで開く必要があります。デプロイ後のURLでアクセスしてください。');
-    return;
-  }
-
   // タイムアウト安全網（30秒）
   var _submitTimer = setTimeout(function() {
     setSurveyLoading(false);
-    showSurveyError('⚠️ タイムアウトしました。GASが正しくデプロイされているか確認してください。');
+    showSurveyError('⚠️ タイムアウトしました。GASが正しくデプロイ・承認されているか確認してください。');
   }, 30000);
 
   try {
@@ -737,7 +730,8 @@ function submitForm() {
       .submitResponse(formData);
   } catch(e) {
     clearTimeout(_submitTimer);
-    onSubmitFailure(e);
+    setSurveyLoading(false);
+    showSurveyError('⚠️ 送信に失敗しました。GASのWebアプリURLで開いているか確認してください。');
   }
 }
 
@@ -807,12 +801,6 @@ function adminLogout() {
 // ============================================================
 function loadAdminData() {
   setSectionsLoading();
-
-  // GAS環境チェック
-  if (typeof google === 'undefined' || !google.script) {
-    showAdminDataError('GASのWebアプリURLで開いてください。ローカルファイルでは動作しません。');
-    return;
-  }
 
   // タイムアウト安全網（30秒）
   var _adminTimer = setTimeout(function() {
