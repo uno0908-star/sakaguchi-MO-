@@ -10,7 +10,7 @@
 <!-- LINE in-app browser キャッシュ対策：バージョンが変わったら自動リロード -->
 <script>
 (function(){
-  var VER = '20260429-5'; // ★ 更新時はここを変える
+  var VER = '20260525-1'; // ★ 更新時はここを変える
   var stored = localStorage.getItem('_appVer');
   var param  = new URLSearchParams(location.search).get('_v');
   if (stored !== VER) {
@@ -97,6 +97,17 @@ main{padding:20px;max-width:960px;margin:0 auto;}
 .sc.d .sc-num{color:var(--red);}.sc.w .sc-num{color:var(--orange);}.sc.g .sc-num{color:var(--green);}.sc.b .sc-num{color:var(--accent);}
 .sc-ico{position:absolute;right:12px;bottom:8px;font-size:38px;opacity:.07;}
 .sc-sub{font-size:10px;color:var(--text3);margin-top:2px;}
+
+/* SEARCH */
+.search-row{display:flex;gap:8px;margin-bottom:12px;align-items:center;}
+.search-wrap{position:relative;flex:1;}
+.search-icon{position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--text3);font-size:14px;pointer-events:none;}
+.search-inp{width:100%;padding:8px 12px 8px 36px;border:1.5px solid var(--border2);border-radius:20px;background:var(--surface);font-family:inherit;font-size:13px;color:var(--text);outline:none;transition:border-color .18s,box-shadow .18s;box-shadow:var(--sh0);}
+.search-inp:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(43,107,224,.1);background:#fff;}
+.search-inp::placeholder{color:var(--text3);}
+.search-clear{padding:7px 12px;border:1.5px solid var(--border2);border-radius:20px;background:var(--surface);font-family:inherit;font-size:12px;color:var(--text3);cursor:pointer;transition:all .18s;white-space:nowrap;display:none;align-items:center;gap:4px;}
+.search-clear:hover{background:var(--red-bg);border-color:var(--red-bd);color:var(--red);}
+.search-count{font-size:11px;color:var(--text3);white-space:nowrap;min-width:36px;text-align:right;}
 
 /* FILTER */
 .frow{display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap;}
@@ -577,6 +588,14 @@ main{padding:20px;max-width:960px;margin:0 auto;}
     <div class="sc g"><div class="sc-lbl">完了済み</div><div class="sc-num" id="s2">0</div><div class="sc-sub" id="s2-sub"></div><div class="sc-ico">✅</div></div>
     <div class="sc b"><div class="sc-lbl">全タスク</div><div class="sc-num" id="s3">0</div><div class="sc-sub" id="s3-sub"></div><div class="sc-ico">📋</div></div>
   </div>
+  <div class="search-row">
+    <div class="search-wrap">
+      <span class="search-icon">🔍</span>
+      <input class="search-inp" id="search-inp" type="text" placeholder="タスクを検索...（タイトル・担当・メモ）" oninput="doSearch(this.value)">
+    </div>
+    <button class="search-clear" id="search-clear-btn" onclick="clearSearch()">✕ クリア</button>
+    <span class="search-count" id="search-count"></span>
+  </div>
   <div class="frow">
     <button class="flt active" onclick="sf('open',this)">進行中・近日</button>
     <button class="flt" onclick="sf('urgent',this)">🔴 緊急のみ</button>
@@ -765,7 +784,7 @@ let currentSC    = null;  // ログイン中のSC/ASCメンバー名
 let isMgr        = false; // 管理者フラグ
 let isCreator    = false; // タスク作成者フラグ
 let uName = '', curPw = '';
-let tasks = [], curF = 'open', selStore = null, selSC = null;
+let tasks = [], curF = 'open', curSearch = '', selStore = null, selSC = null;
 let calY, calM;
 
 const today  = () => new Date().toISOString().split('T')[0];
@@ -1182,8 +1201,11 @@ function render() {
   if (curF === 'urgent')  f = tasks.filter(t => ['overdue','today','soon'].includes(tStatus(t)));
   if (curF === 'pending') f = tasks.filter(t => !isTaskDone(t));
   if (curF === 'done')    f = tasks.filter(t => isTaskDone(t));
+  if (curSearch) f = f.filter(t => matchSearch(t, curSearch));
   f.sort(sortT);
-  document.getElementById('l-all').innerHTML = f.length ? f.map(cardH).join('') : emptyH();
+  const countEl = document.getElementById('search-count');
+  if (countEl) countEl.textContent = curSearch ? `${f.length}件` : '';
+  document.getElementById('l-all').innerHTML = f.length ? f.map(cardH).join('') : (curSearch ? `<div class="empty-state"><div class="empty-ico">🔍</div><div class="empty-msg">「${curSearch}」に一致するタスクはありません</div></div>` : emptyH());
 
   renderMem('store', STORES, 'm-store', 'l-store');
   renderMem('sc', SCS, 'm-sc', 'l-sc');
@@ -1697,6 +1719,31 @@ function upRecurrence() {
 
 // ── フィルター・タブ ──
 function sf(f, btn) { curF = f; document.querySelectorAll('.frow .flt').forEach(b => b.classList.remove('active')); btn.classList.add('active'); render(); }
+
+function doSearch(val) {
+  curSearch = val.trim();
+  const btn = document.getElementById('search-clear-btn');
+  if (btn) btn.style.display = curSearch ? 'inline-flex' : 'none';
+  render();
+}
+function clearSearch() {
+  curSearch = '';
+  const inp = document.getElementById('search-inp');
+  if (inp) inp.value = '';
+  const btn = document.getElementById('search-clear-btn');
+  if (btn) btn.style.display = 'none';
+  render();
+}
+function matchSearch(t, q) {
+  const lq = q.toLowerCase();
+  return (t.title || '').toLowerCase().includes(lq)
+    || (t.assignees || []).some(a => a.toLowerCase().includes(lq))
+    || (t.note || '').toLowerCase().includes(lq)
+    || (t.taskKind || '').toLowerCase().includes(lq)
+    || (t.priority || '').toLowerCase().includes(lq)
+    || (t.urgency || '').toLowerCase().includes(lq)
+    || (t.registeredBy || '').toLowerCase().includes(lq);
+}
 function sv(v, el) {
   document.querySelectorAll('.view').forEach(x => x.classList.remove('active'));
   document.querySelectorAll('.tab').forEach(x => x.classList.remove('active'));
