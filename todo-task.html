@@ -1470,9 +1470,15 @@ async function doToggle(id) {
       const r = await gPost({action:'updateDone', id, memberName:currentSC, done:nv});
       if (!r.ok) throw new Error(r.error || '更新失敗');
     } catch(e) {
-      t.completedStores[currentSC] = !nv;
-      render();
-      toast('⚠️ 保存失敗: ' + e.message);
+      if (nv) {
+        // 「完了にする」が失敗 → ローカルを元に戻す
+        t.completedStores[currentSC] = false;
+        render();
+        toast('⚠️ 保存失敗（完了できませんでした）: ' + e.message);
+      } else {
+        // 「未完了に戻す」が失敗 → ローカルはそのまま（更新ボタンで再確認を促す）
+        toast('⚠️ 保存失敗。🔄更新ボタンで最新状態を確認してください');
+      }
     }
     return;
   }
@@ -1489,9 +1495,15 @@ async function doToggle(id) {
     const r = await gPost({action:'updateDone', id, storeName:currentStore, done:nv});
     if (!r.ok) throw new Error(r.error || '更新失敗');
   } catch(e) {
-    t.completedStores[currentStore] = !nv;
-    render();
-    toast('⚠️ 保存失敗: ' + e.message);
+    if (nv) {
+      // 「完了にする」が失敗 → ローカルを元に戻す
+      t.completedStores[currentStore] = false;
+      render();
+      toast('⚠️ 保存失敗（完了できませんでした）: ' + e.message);
+    } else {
+      // 「未完了に戻す」が失敗 → ローカルはそのまま（更新ボタンで再確認を促す）
+      toast('⚠️ 保存失敗。🔄更新ボタンで最新状態を確認してください');
+    }
   }
 }
 
