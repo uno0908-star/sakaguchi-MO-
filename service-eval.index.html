@@ -386,6 +386,20 @@ const Storage=(()=>{
     return Object.values(map);
   }
 
+  // GASはフラット形式(s1_rank/s1_comment...)で返すため、ネスト形式(items:{s1:{rank,comment}...})に変換
+  function _normalizeEval(e){
+    if(e&&e.items)return e; // すでにネスト形式ならそのまま
+    var keys=['s1','s2','s3','s4','s5','s6'];
+    var items={};
+    for(var i=0;i<keys.length;i++){
+      var k=keys[i];
+      var rank=e[k+'_rank']||'';
+      var comment=e[k+'_comment']||'';
+      items[k]={rank:String(rank),comment:String(comment)};
+    }
+    return{id:e.id,employeeId:e.employeeId?String(e.employeeId):e.employeeId,evalDate:e.evalDate,evaluatorName:e.evaluatorName,evaluatorRole:e.evaluatorRole,guidanceNotes:e.guidanceNotes,createdAt:e.createdAt,items:items};
+  }
+
   async function _syncFromGas(){
     try{
       showToast('データを同期中...','info');
@@ -397,8 +411,10 @@ const Storage=(()=>{
       if(d.employees?.length)_write(STORAGE_KEYS.EMPLOYEES,d.employees.map(_normalizeEmp));
       if(d.users?.length)_write(STORAGE_KEYS.USERS,d.users);
       // 評価・メモ類はローカルの未同期データを失わないようにマージ
+      // GASのフラット形式をネスト形式に変換してからマージ
       const localEvals=_read(STORAGE_KEYS.EVALUATIONS,[]);
-      const mergedEvals=d.evaluations?.length?_mergeById(localEvals,d.evaluations):localEvals;
+      const gasEvals=d.evaluations?.length?d.evaluations.map(_normalizeEval):[];
+      const mergedEvals=gasEvals.length?_mergeById(localEvals,gasEvals):localEvals;
       _write(STORAGE_KEYS.EVALUATIONS,mergedEvals);
       const localCoach=_read(STORAGE_KEYS.COACHINGS,[]);
       const mergedCoach=d.coachings?.length?_mergeById(localCoach,d.coachings):localCoach;
@@ -1137,8 +1153,23 @@ const App={
   viewPhoto(src){window.open(src,'_blank')},
 
   _getFinalRank(evals,empId,itemKey){return this._getRankByRole(evals,empId,'SI',itemKey)||this._getRankByRole(evals,empId,'SC',itemKey)||this._getRankByRole(evals,empId,'店舗責任者',itemKey)||''},
-  _getRankByRole(evals,empId,role,itemKey){const f=evals.filter(e=>e.employeeId===empId&&e.evaluatorRole===role);if(!f.length)return'';return f.sort((a,b)=>b.createdAt.localeCompare(a.createdAt))[0].items?.[itemKey]?.rank||''},
-  _getLatestEval(evals,empId,role,itemKey){const f=evals.filter(e=>e.employeeId===empId&&e.evaluatorRole===role&&e.items?.[itemKey]?.rank);if(!f.length)return null;return f.sort((a,b)=>b.createdAt.localeCompare(a.createdAt))[0].items[itemKey]},
+  _getRankByRole(evals,empId,role,itemKey){
+    const f=evals.filter(e=>String(e.employeeId)===String(empId)&&e.evaluatorRole===role);
+    if(!f.length)return'';
+    const latest=f.sort((a,b)=>b.createdAt.localeCompare(a.createdAt))[0];
+    // ネスト形式(items)とフラット形式(s1_rank)の両方に対応
+    if(latest.items?.[itemKey]?.rank)return latest.items[itemKey].rank;
+    if(latest[itemKey+'_rank'])return latest[itemKey+'_rank'];
+    return'';
+  },
+  _getLatestEval(evals,empId,role,itemKey){
+    const f=evals.filter(e=>String(e.employeeId)===String(empId)&&e.evaluatorRole===role&&(e.items?.[itemKey]?.rank||e[itemKey+'_rank']));
+    if(!f.length)return null;
+    const latest=f.sort((a,b)=>b.createdAt.localeCompare(a.createdAt))[0];
+    if(latest.items?.[itemKey])return latest.items[itemKey];
+    if(latest[itemKey+'_rank'])return{rank:latest[itemKey+'_rank'],comment:latest[itemKey+'_comment']||''};
+    return null;
+  },
   _canEdit(){return Storage.AUTH.can(DB.user(),'evalWrite')},
   _canEditRole(role){const r=DB.user()?.role;return r==='SI'||(Storage.AUTH.can(DB.user(),'evalWrite')&&r===role)},
   _typeName(type){return{Crew:'クルー',ContractEmployee:'契約社員',FullTimeEmployee:'正社員'}[type]||type},
