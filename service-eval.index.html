@@ -989,6 +989,7 @@ const App={
     const myKey=Object.keys(roleMap).find(k=>roleMap[k]===user.role);
     const keys=user.role==='SI'?['sm','sc','si']:myKey?[myKey]:[];
     if(!keys.length){alert('評価権限がありません');return}
+    const existingEvals=Storage.getEvaluations();
     let saved=false;
     keys.forEach(roleKey=>{
       const items={};let hasAny=false;
@@ -998,7 +999,9 @@ const App={
         const comment=document.querySelector(`textarea.eval-comment[data-item="${item.key}"][data-role="${roleKey}"]`)?.value||'';
         items[item.key]={rank,comment};if(rank)hasAny=true;
       });
-      if(!hasAny)return;
+      // 今回ランクなし＆このロールの過去評価もなければスキップ
+      const hasPrev=existingEvals.some(e=>String(e.employeeId)===String(empId)&&e.evaluatorRole===roleMap[roleKey]);
+      if(!hasAny&&!hasPrev)return;
       const guidance=document.getElementById('eval-guidance')?.value||'';
       Storage.addEvaluation({id:`${Date.now()}-${roleKey}`,employeeId:empId,evalDate,evaluatorName:user.name,evaluatorRole:roleMap[roleKey],items,guidanceNotes:guidance,createdAt:now.toISOString()});
       saved=true;
@@ -1164,11 +1167,12 @@ const App={
     return'';
   },
   _getLatestEval(evals,empId,role,itemKey){
-    const f=evals.filter(e=>String(e.employeeId)===String(empId)&&e.evaluatorRole===role&&(e.items?.[itemKey]?.rank||e[itemKey+'_rank']));
+    // ランクが空のもの（未選択で保存）も含めて最新を取得し、正確な状態を反映する
+    const f=evals.filter(e=>String(e.employeeId)===String(empId)&&e.evaluatorRole===role);
     if(!f.length)return null;
     const latest=f.sort((a,b)=>b.createdAt.localeCompare(a.createdAt))[0];
-    if(latest.items?.[itemKey])return latest.items[itemKey];
-    if(latest[itemKey+'_rank'])return{rank:latest[itemKey+'_rank'],comment:latest[itemKey+'_comment']||''};
+    if(latest.items?.[itemKey]!==undefined)return latest.items[itemKey];
+    if(latest[itemKey+'_rank']!==undefined)return{rank:latest[itemKey+'_rank']||'',comment:latest[itemKey+'_comment']||''};
     return null;
   },
   _canEdit(){return Storage.AUTH.can(DB.user(),'evalWrite')},
