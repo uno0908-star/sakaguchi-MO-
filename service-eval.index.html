@@ -344,14 +344,18 @@ const Storage=(()=>{
   function _write(k,v){try{localStorage.setItem(k,JSON.stringify(v));return true}catch(e){return false}}
   function _genId(){return Date.now().toString(36)+Math.random().toString(36).slice(2,6)}
 
-  /* GASからの文字列化された配列を復元 */
+  /* GASからの文字列化された配列・数値IDを正規化 */
   function _parseArr(v){
     if(Array.isArray(v))return v;
     if(!v||v==='null')return[];
     try{const p=JSON.parse(v);return Array.isArray(p)?p:[]}catch(e){return[]}
   }
   function _normalizeEmp(e){
-    return{...e,crewRoles:_parseArr(e.crewRoles),certifications:_parseArr(e.certifications)};
+    return{...e,
+      id:e.id!=null?String(e.id):e.id,  // 数値IDを文字列に統一
+      crewRoles:_parseArr(e.crewRoles),
+      certifications:_parseArr(e.certifications)
+    };
   }
 
   /* 初期化: 起動時にGASから全データ同期 */
