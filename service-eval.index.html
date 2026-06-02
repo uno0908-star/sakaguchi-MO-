@@ -128,6 +128,7 @@ input,select,textarea,button{font-family:inherit;font-size:14px}
 .checkbox-group{display:flex;flex-wrap:wrap;gap:8px}
 .checkbox-item{display:flex;align-items:center;gap:5px;font-size:13px;cursor:pointer}
 .checkbox-item input[type=checkbox]{width:16px;height:16px;cursor:pointer;accent-color:var(--blue)}
+#app-toast{position:fixed;bottom:76px;left:50%;transform:translateX(-50%);padding:10px 20px;border-radius:20px;font-size:13px;font-weight:600;z-index:9999;color:#fff;max-width:82vw;text-align:center;box-shadow:0 4px 14px rgba(0,0,0,0.25);opacity:0;pointer-events:none;transition:opacity 0.4s;white-space:nowrap}
 .hidden{display:none!important}
 .text-center{text-align:center}
 .text-sub{color:var(--text-sub);font-size:12px}
@@ -162,8 +163,12 @@ input,select,textarea,button{font-family:inherit;font-size:14px}
           <option value="SI">SI</option>
           <option value="SC">SC</option>
           <option value="店舗責任者">店舗責任者</option>
-          <option value="一般クルー">一般クルー</option>
+          <option value="一般クルー">一般クルー（閲覧のみ）</option>
         </select>
+      </div>
+      <div class="form-group" id="login-pass-wrap">
+        <label>パスワード</label>
+        <input type="password" id="login-pass" placeholder="パスワードを入力">
       </div>
       <div class="form-group" id="login-store-wrap">
         <label>担当店舗</label>
@@ -225,6 +230,34 @@ input,select,textarea,button{font-family:inherit;font-size:14px}
 
 <div id="view-employee-form" class="view">
   <div class="view-content" id="employee-form-content"></div>
+</div>
+
+<div id="view-settings" class="view">
+  <div class="view-content">
+    <div class="card">
+      <div style="font-weight:700;margin-bottom:4px">🔗 GAS接続状態</div>
+      <div class="text-sub" style="margin-bottom:12px;font-size:11px;word-break:break-all">${typeof GAS_URL!=='undefined'?GAS_URL:''}</div>
+      <div style="display:flex;gap:8px">
+        <button class="btn btn-secondary btn-full" onclick="App.testGasConnection()">接続テスト</button>
+        <button class="btn btn-primary btn-full" onclick="App.syncNow()">今すぐ同期</button>
+      </div>
+      <div id="s-test-result" style="margin-top:10px;font-size:13px"></div>
+    </div>
+    <div class="card">
+      <div style="font-weight:700;margin-bottom:12px">👥 ユーザー管理</div>
+      <div id="user-list-content"></div>
+      <button class="btn btn-primary btn-full" style="margin-top:8px" onclick="App.showAddUser()">ユーザーを追加</button>
+    </div>
+    <div class="card">
+      <div style="font-weight:700;margin-bottom:12px">💾 バックアップ</div>
+      <button class="btn btn-secondary btn-full" onclick="Storage.downloadBackup()">データをダウンロード</button>
+      <div class="form-group" style="margin-top:10px">
+        <label>バックアップから復元</label>
+        <input type="file" id="s-import-file" accept=".json">
+      </div>
+      <button class="btn btn-secondary btn-full" onclick="App.importBackup()">復元する</button>
+    </div>
+  </div>
 </div>
 
 <div id="view-analysis-menu" class="view">
@@ -292,39 +325,156 @@ input,select,textarea,button{font-family:inherit;font-size:14px}
   <button class="nav-item" data-view="analysis-menu" onclick="App.navTo('analysis-menu')">
     <span>📊</span><small>分析</small>
   </button>
+  <button class="nav-item" id="nav-settings" data-view="settings" onclick="App.navTo('settings')" style="display:none">
+    <span>⚙️</span><small>設定</small>
+  </button>
 </nav>
+<div id="app-toast"></div>
 
 <script>
 /* =====================================================
-   storage.js — データ永続化レイヤー (localStorage)
-   将来: GAS / Firebase / Supabase へ差し替え可能
+   storage.js v2 — localStorage / GAS 切替対応
    ===================================================== */
-const STORAGE_KEYS={EMPLOYEES:'se_employees',EVALUATIONS:'se_evaluations',COACHINGS:'se_coachings',OBSERVATIONS:'se_observations',USER:'se_user'};
+/* GAS WebアプリURL（固定） */
+const GAS_URL='https://script.google.com/macros/s/AKfycbyHEBH5Q8VBcZFBzfH5tYQm46RCa_fYw3PDlKp1qA5E9EWmR44OQ8UA1JTXFa-stnbG8g/exec';
+
+const STORAGE_KEYS={EMPLOYEES:'se_employees',EVALUATIONS:'se_evaluations',COACHINGS:'se_coachings',OBSERVATIONS:'se_observations',USERS:'se_users',USER:'se_user',DISCUSSIONS:'se_discussions'};
 const Storage=(()=>{
-  function _read(key,fallback){try{const r=localStorage.getItem(key);return r===null?fallback:JSON.parse(r)}catch(e){return fallback}}
-  function _write(key,val){try{localStorage.setItem(key,JSON.stringify(val));return true}catch(e){return false}}
+  function _read(k,fb){try{const r=localStorage.getItem(k);return r===null?fb:JSON.parse(r)}catch(e){return fb}}
+  function _write(k,v){try{localStorage.setItem(k,JSON.stringify(v));return true}catch(e){return false}}
+  function _genId(){return Date.now().toString(36)+Math.random().toString(36).slice(2,6)}
+
+  /* 初期化: 起動時にGASから全データ同期 */
+  function init(){_syncFromGas()}
+
+  /* GAS同期 (GET) */
+  async function _syncFromGas(){
+    try{
+      showToast('データを同期中...','info');
+      const res=await fetch(`${GAS_URL}?action=getAll`,{redirect:'follow'});
+      if(!res.ok)throw new Error('HTTP '+res.status);
+      const d=await res.json();
+      if(!d.ok)throw new Error(d.error||'不明なエラー');
+      if(d.employees)_write(STORAGE_KEYS.EMPLOYEES,d.employees);
+      if(d.evaluations)_write(STORAGE_KEYS.EVALUATIONS,d.evaluations);
+      if(d.coachings)_write(STORAGE_KEYS.COACHINGS,d.coachings);
+      if(d.observations)_write(STORAGE_KEYS.OBSERVATIONS,d.observations);
+      if(d.users)_write(STORAGE_KEYS.USERS,d.users);
+      if(d.discussions)_write(STORAGE_KEYS.DISCUSSIONS,d.discussions);
+      showToast('同期完了','success');
+      // 同期後にダッシュボードを再描画
+      if(typeof App!=='undefined'&&App._view==='dashboard')App.renderDashboard();
+    }catch(e){showToast('GAS接続エラー: '+e.message,'error')}
+  }
+  async function syncNow(){return _syncFromGas()}
+  async function testConnection(){
+    try{const res=await fetch(`${GAS_URL}?action=ping`,{redirect:'follow'});const d=await res.json();return d.ok?{ok:true,message:d.message}:{ok:false,error:d.error}}
+    catch(e){return{ok:false,error:e.message}}
+  }
+
+  /* GAS書き込み (バックグラウンド) */
+  async function _postGas(action,payload){
+    try{
+      const res=await fetch(GAS_URL,{method:'POST',redirect:'follow',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify({action,...payload})});
+      const d=await res.json();
+      if(!d.ok)throw new Error(d.error||'保存エラー');
+      showToast('保存しました','success');
+    }catch(e){showToast('保存できませんでした: '+e.message,'error')}
+  }
+
+  /* トースト */
+  function showToast(msg,type='info'){
+    if(typeof App!=='undefined'&&App.showToast){App.showToast(msg,type);return}
+    const el=document.getElementById('app-toast');if(!el)return;
+    const c={success:'#00A651',error:'#E53E3E',info:'#005BAC'};
+    el.style.background=c[type]||c.info;el.style.opacity='1';el.textContent=msg;
+    clearTimeout(el._t);el._t=setTimeout(()=>{el.style.opacity='0'},3000);
+  }
+
+  /* 認証モジュール */
+  const AUTH={
+    _pw:{SI:'Lawson3963',SC:'Lawson3963','店舗責任者':'Lawson3963','一般クルー':null},
+    verify(name,role,password,store){
+      if(!name||!role)return{ok:false,error:'氏名と役職を入力してください'};
+      const users=getUsers();
+      const found=users.find(u=>u.name===name&&u.role===role&&u.status==='有効');
+      if(found)return found.password===password?{ok:true,user:{...found,store:found.store||store}}:{ok:false,error:'パスワードが違います'};
+      if(!(role in this._pw))return{ok:false,error:'無効な役職です'};
+      if(role==='一般クルー')return{ok:true,user:{userId:_genId(),name,role,store,password:''}};
+      if(password!==this._pw[role])return{ok:false,error:'パスワードが違います'};
+      return{ok:true,user:{userId:_genId(),name,role,store:(role==='SI'||role==='SC')?'':store,password}};
+    },
+    can(user,perm){
+      if(!user)return false;
+      const r=user.role;
+      const P={evalWrite:['SI','SC','店舗責任者'],empEdit:['SI','SC'],empManage:['SI'],memoWrite:['SI','SC','店舗責任者'],certEdit:['SI','SC','店舗責任者'],userManage:['SI'],sysAdmin:['SI'],backup:['SI'],allStores:['SI','SC']};
+      return(P[perm]||[]).includes(r);
+    }
+  };
+
+  /* 従業員 */
   function getEmployees(){return _read(STORAGE_KEYS.EMPLOYEES,[])}
   function saveEmployees(arr){return _write(STORAGE_KEYS.EMPLOYEES,arr)}
   function getEmployee(id){return getEmployees().find(e=>e.id===id)||null}
-  function upsertEmployee(emp){const arr=getEmployees();const idx=arr.findIndex(e=>e.id===emp.id);if(idx>=0){arr[idx]={...arr[idx],...emp,updatedAt:new Date().toISOString()}}else{arr.push({...emp,createdAt:new Date().toISOString()})}return saveEmployees(arr)}
-  function deleteEmployee(id){return saveEmployees(getEmployees().filter(e=>e.id!==id))}
+  function upsertEmployee(emp){
+    const arr=getEmployees();const idx=arr.findIndex(e=>e.id===emp.id);const now=new Date().toISOString();let entry;
+    if(idx>=0){entry={...arr[idx],...emp,updatedAt:now};arr[idx]=entry}else{entry={...emp,createdAt:now,updatedAt:now};arr.push(entry)}
+    _write(STORAGE_KEYS.EMPLOYEES,arr);_postGas('upsertEmployee',{employee:entry});return true;
+  }
+  function deleteEmployee(id){_write(STORAGE_KEYS.EMPLOYEES,getEmployees().filter(e=>e.id!==id));_postGas('deleteEmployee',{id});return true}
+  function transferEmployee(id,newStore){const e=getEmployee(id);if(!e)return false;return upsertEmployee({...e,store:newStore,transferDate:new Date().toISOString().slice(0,10)})}
+  function reinstateEmployee(id){const e=getEmployee(id);if(!e)return false;return upsertEmployee({...e,status:'在籍中',leaveDate:'',reinstatedAt:new Date().toISOString().slice(0,10)})}
+
+  /* 評価 */
   function getEvaluations(){return _read(STORAGE_KEYS.EVALUATIONS,[])}
-  function addEvaluation(rec){const arr=getEvaluations();arr.push({...rec,createdAt:new Date().toISOString()});return _write(STORAGE_KEYS.EVALUATIONS,arr)}
   function getEvalsByEmployee(id){return getEvaluations().filter(e=>e.employeeId===id)}
-  function getCoachings(){return _read(STORAGE_KEYS.COACHINGS,[])}
-  function addCoaching(rec){const arr=getCoachings();arr.push({...rec,id:_genId(),createdAt:new Date().toISOString()});return _write(STORAGE_KEYS.COACHINGS,arr)}
-  function getCoachingsByEmployee(id){return getCoachings().filter(c=>c.employeeId===id).sort((a,b)=>b.createdAt.localeCompare(a.createdAt))}
+  function addEvaluation(rec){const arr=getEvaluations();const entry={...rec,createdAt:new Date().toISOString()};arr.push(entry);_write(STORAGE_KEYS.EVALUATIONS,arr);_postGas('addEvaluation',{evaluation:entry});return true}
+
+  /* 気づきメモ */
   function getObservations(){return _read(STORAGE_KEYS.OBSERVATIONS,[])}
-  function addObservation(rec){const arr=getObservations();arr.push({...rec,id:_genId(),createdAt:new Date().toISOString()});return _write(STORAGE_KEYS.OBSERVATIONS,arr)}
+  function addObservation(rec){const arr=getObservations();const entry={...rec,id:_genId(),createdAt:new Date().toISOString()};arr.push(entry);_write(STORAGE_KEYS.OBSERVATIONS,arr);_postGas('addObservation',{observation:entry});return true}
+
+  /* 指導メモ */
+  function getCoachings(){return _read(STORAGE_KEYS.COACHINGS,[])}
+  function getCoachingsByEmployee(id){return getCoachings().filter(c=>c.employeeId===id).sort((a,b)=>b.createdAt.localeCompare(a.createdAt))}
+  function addCoaching(rec){const arr=getCoachings();const entry={...rec,id:_genId(),createdAt:new Date().toISOString()};arr.push(entry);_write(STORAGE_KEYS.COACHINGS,arr);_postGas('addCoaching',{coaching:entry});return true}
+
+  /* ユーザーマスタ */
+  function getUsers(){return _read(STORAGE_KEYS.USERS,[])}
+  function saveUsers(arr){return _write(STORAGE_KEYS.USERS,arr)}
+  function upsertUser(user){const arr=getUsers();const idx=arr.findIndex(u=>u.userId===user.userId);const now=new Date().toISOString();if(idx>=0){arr[idx]={...arr[idx],...user,updatedAt:now}}else{arr.push({...user,userId:user.userId||_genId(),createdAt:now,updatedAt:now})}return saveUsers(arr)}
+  function deleteUser(uid){return saveUsers(getUsers().filter(u=>u.userId!==uid))}
+
+  /* セッション */
   function getUser(){return _read(STORAGE_KEYS.USER,null)}
   function saveUser(u){return _write(STORAGE_KEYS.USER,u)}
   function clearUser(){localStorage.removeItem(STORAGE_KEYS.USER)}
-  function _genId(){return Date.now().toString(36)+Math.random().toString(36).slice(2,6)}
-  function getStoreList(){const e=getEmployees();if(!e.length)return[];return[...new Set(e.map(x=>(x.store||'').trim()).filter(s=>s.length>0))].sort((a,b)=>a.localeCompare(b,'ja'))}
-  function exportAll(){return{employees:getEmployees(),evaluations:getEvaluations(),coachings:getCoachings(),observations:getObservations(),exportedAt:new Date().toISOString()}}
+
+  /* 目線合わせ */
+  function getDiscussions(){return _read(STORAGE_KEYS.DISCUSSIONS,[])}
+  function upsertDiscussion(disc){
+    const arr=getDiscussions();const now=new Date().toISOString();
+    const idx=arr.findIndex(d=>d.employeeId===disc.employeeId&&d.itemKey===disc.itemKey);let entry;
+    if(idx>=0){entry={...arr[idx],...disc,updatedAt:now};arr[idx]=entry}else{entry={...disc,id:_genId(),createdAt:now,updatedAt:now};arr.push(entry)}
+    _write(STORAGE_KEYS.DISCUSSIONS,arr);_postGas('upsertDiscussion',{discussion:entry});return true;
+  }
+
+  /* ユーティリティ */
+  function getStoreList(){const e=getEmployees();if(!e.length)return[];return[...new Set(e.map(x=>(x.store||'').trim()).filter(s=>s))].sort((a,b)=>a.localeCompare(b,'ja'))}
+  function exportAll(){return{employees:getEmployees(),evaluations:getEvaluations(),coachings:getCoachings(),observations:getObservations(),users:getUsers(),discussions:getDiscussions(),exportedAt:new Date().toISOString()}}
   function downloadBackup(){const d=exportAll();const b=new Blob([JSON.stringify(d,null,2)],{type:'application/json'});const u=URL.createObjectURL(b);const a=document.createElement('a');a.href=u;a.download=`backup-${new Date().toISOString().slice(0,10)}.json`;a.click();URL.revokeObjectURL(u)}
-  return{getEmployees,saveEmployees,getEmployee,upsertEmployee,deleteEmployee,getEvaluations,addEvaluation,getEvalsByEmployee,getCoachings,addCoaching,getCoachingsByEmployee,getObservations,addObservation,getUser,saveUser,clearUser,getStoreList,exportAll,downloadBackup};
+  function importBackup(jsonStr){try{const d=JSON.parse(jsonStr);if(d.employees)_write(STORAGE_KEYS.EMPLOYEES,d.employees);if(d.evaluations)_write(STORAGE_KEYS.EVALUATIONS,d.evaluations);if(d.coachings)_write(STORAGE_KEYS.COACHINGS,d.coachings);if(d.observations)_write(STORAGE_KEYS.OBSERVATIONS,d.observations);if(d.users)_write(STORAGE_KEYS.USERS,d.users);if(d.discussions)_write(STORAGE_KEYS.DISCUSSIONS,d.discussions);return true}catch(e){return false}}
+
+  return{init,syncNow,testConnection,AUTH,showToast,
+    getEmployees,saveEmployees,getEmployee,upsertEmployee,deleteEmployee,transferEmployee,reinstateEmployee,
+    getEvaluations,addEvaluation,getEvalsByEmployee,
+    getObservations,addObservation,getCoachings,addCoaching,getCoachingsByEmployee,
+    getUsers,saveUsers,upsertUser,deleteUser,
+    getUser,saveUser,clearUser,
+    getDiscussions,upsertDiscussion,
+    getStoreList,exportAll,downloadBackup,importBackup};
 })();
+Storage.init();
 </script>
 
 <script>
@@ -560,6 +710,13 @@ const App={
     if(user){this._applyUser(user);this.showView('dashboard')}else{this.showView('login')}
   },
 
+  showToast(msg,type='info'){
+    const el=document.getElementById('app-toast');if(!el)return;
+    const c={success:'#00A651',error:'#E53E3E',info:'#005BAC'};
+    el.style.background=c[type]||c.info;el.style.opacity='1';el.textContent=msg;
+    clearTimeout(el._t);el._t=setTimeout(()=>{el.style.opacity='0'},3000);
+  },
+
   _buildStoreSelects(){
     let stores=Storage.getStoreList();
     if(!stores.length)stores=[...STORES];
@@ -574,8 +731,8 @@ const App={
 
   _toggleStoreWrap(){
     const role=document.getElementById('login-role')?.value;
-    const wrap=document.getElementById('login-store-wrap');
-    if(wrap)wrap.style.display=role==='SI'?'none':'';
+    document.getElementById('login-store-wrap').style.display=role==='SI'?'none':'';
+    document.getElementById('login-pass-wrap').style.display=role==='一般クルー'?'none':'';
   },
 
   _applyUser(user){
@@ -583,16 +740,23 @@ const App={
     document.getElementById('bottom-nav').classList.remove('hidden');
     const lbl={SI:'SI',SC:'SC','店舗責任者':'責任者','一般クルー':'クルー'}[user.role]||user.role;
     document.getElementById('header-user').textContent=`${user.name}｜${lbl}`;
+    // SI専用: 設定ナビを表示
+    const navSettings=document.getElementById('nav-settings');
+    if(navSettings)navSettings.style.display=user.role==='SI'?'flex':'none';
+    // 一般クルー: クルー追加ボタン(FAB)を隠す
+    this._currentUser=user;
   },
 
   login(){
     const name=document.getElementById('login-name').value.trim();
     const role=document.getElementById('login-role').value;
+    const pass=document.getElementById('login-pass')?.value||'';
     const store=document.getElementById('login-store').value;
-    if(!name){alert('お名前を入力してください');return}
-    if(role!=='SI'&&!store){alert('担当店舗を選択してください');return}
-    const user={name,role,store:(role==='SI'||role==='SC')?'':store};
-    Storage.saveUser(user);this._applyUser(user);this.showView('dashboard');
+    if(!name){this.showToast('お名前を入力してください','error');return}
+    if(role!=='SI'&&role!=='一般クルー'&&!store){this.showToast('担当店舗を選択してください','error');return}
+    const result=Storage.AUTH.verify(name,role,pass,store);
+    if(!result.ok){this.showToast(result.error,'error');return}
+    Storage.saveUser(result.user);this._applyUser(result.user);this.showView('dashboard');
   },
 
   logout(){
@@ -614,10 +778,10 @@ const App={
   goBack(){const p=this._history.pop();if(p)this.showView(p,false)},
 
   _updateHeader(viewId){
-    const titles={login:'接客評価システム',dashboard:'阪口商店 接客評価',employees:'クルー一覧','employee-detail':'クルー詳細',evaluation:'評価入力',observation:'気づきメモ',improvement:'改善必要者','store-analysis':'店舗別分析','analysis-menu':'分析','employee-form':'クルー登録・編集'};
+    const titles={login:'接客評価システム',dashboard:'阪口商店 接客評価',employees:'クルー一覧','employee-detail':'クルー詳細',evaluation:'評価入力',observation:'気づきメモ',improvement:'改善必要者','store-analysis':'店舗別分析','analysis-menu':'分析','employee-form':'クルー登録・編集',settings:'管理設定'};
     document.getElementById('header-title').textContent=titles[viewId]||'';
     const back=document.getElementById('btn-back');
-    back.classList.toggle('hidden',['dashboard','employees','observation','analysis-menu','login'].includes(viewId));
+    back.classList.toggle('hidden',['dashboard','employees','observation','analysis-menu','settings','login'].includes(viewId));
   },
 
   _updateNav(viewId){
@@ -625,7 +789,7 @@ const App={
   },
 
   _renderView(viewId){
-    const map={dashboard:'renderDashboard',employees:'renderEmployeeList','employee-detail':'renderEmployeeDetail',evaluation:'renderEvaluation',observation:'renderObservations',improvement:'renderImprovement','store-analysis':'renderStoreAnalysis','employee-form':'renderEmployeeForm'};
+    const map={dashboard:'renderDashboard',employees:'renderEmployeeList','employee-detail':'renderEmployeeDetail',evaluation:'renderEvaluation',observation:'renderObservations',improvement:'renderImprovement','store-analysis':'renderStoreAnalysis','employee-form':'renderEmployeeForm',settings:'renderSettings'};
     if(map[viewId])this[map[viewId]]();
   },
 
@@ -662,7 +826,7 @@ const App={
       <div class="section-title" style="margin-top:12px">店舗別評価完了率</div>
       ${storeStats.map(s=>`<div class="store-bar-wrap"><div class="store-bar-name"><span>${s.store}</span><span>${s.evaled}/${s.total}名 ${s.rate}%</span></div><div class="store-bar-track"><div class="store-bar-fill" style="width:${s.rate}%"></div></div></div>`).join('')}
       <div style="height:8px"></div>
-      <button class="btn btn-secondary btn-full" onclick="Storage.downloadBackup()" style="margin-top:8px">データバックアップ</button>
+      ${Storage.AUTH.can(DB.user(),'sysAdmin')?`<button class="btn btn-secondary btn-full" onclick="App.navTo('settings')" style="margin-top:8px">⚙️ 管理設定</button>`:''}
       <button class="btn btn-secondary btn-full" onclick="App.logout()" style="margin-top:8px">ログアウト</button>`;
   },
 
@@ -898,8 +1062,8 @@ const App={
   _getFinalRank(evals,empId,itemKey){return this._getRankByRole(evals,empId,'SI',itemKey)||this._getRankByRole(evals,empId,'SC',itemKey)||this._getRankByRole(evals,empId,'店舗責任者',itemKey)||''},
   _getRankByRole(evals,empId,role,itemKey){const f=evals.filter(e=>e.employeeId===empId&&e.evaluatorRole===role);if(!f.length)return'';return f.sort((a,b)=>b.createdAt.localeCompare(a.createdAt))[0].items?.[itemKey]?.rank||''},
   _getLatestEval(evals,empId,role,itemKey){const f=evals.filter(e=>e.employeeId===empId&&e.evaluatorRole===role&&e.items?.[itemKey]?.rank);if(!f.length)return null;return f.sort((a,b)=>b.createdAt.localeCompare(a.createdAt))[0].items[itemKey]},
-  _canEdit(){const r=DB.user()?.role;return r==='SI'||r==='SC'||r==='店舗責任者'},
-  _canEditRole(role){const r=DB.user()?.role;return r==='SI'||r===role},
+  _canEdit(){return Storage.AUTH.can(DB.user(),'evalWrite')},
+  _canEditRole(role){const r=DB.user()?.role;return r==='SI'||(Storage.AUTH.can(DB.user(),'evalWrite')&&r===role)},
   _typeName(type){return{Crew:'クルー',ContractEmployee:'契約社員',FullTimeEmployee:'正社員'}[type]||type},
   _roleClass(role){return{SI:'si',SC:'sc','店舗責任者':'sm'}[role]||'crew'},
   _chip(rank){return rank?`<span class="rank-chip ${rank}">${rank}</span>`:'<span class="rank-chip 未">未</span>'},
@@ -909,6 +1073,69 @@ const App={
     return[...roles,...certs].join('');
   },
   async _fileToBase64(file){return new Promise(r=>{const fr=new FileReader();fr.onload=e=>r(e.target.result);fr.readAsDataURL(file)})},
+
+  /* ===== 管理設定 ===== */
+  renderSettings(){
+    if(!Storage.AUTH.can(DB.user(),'sysAdmin')){this.showToast('権限がありません','error');this.navTo('dashboard');return}
+    this._renderUserList();
+  },
+
+  async testGasConnection(){
+    const el=document.getElementById('s-test-result');
+    el.textContent='接続中...';el.style.color='#6B7280';
+    const r=await Storage.testConnection();
+    if(r.ok){el.textContent='✅ '+r.message;el.style.color='#00A651'}
+    else{el.textContent='❌ '+r.error;el.style.color='#E53E3E'}
+  },
+
+  async syncNow(){
+    await Storage.syncNow();
+    if(this._view==='dashboard')this.renderDashboard();
+  },
+
+  importBackup(){
+    const f=document.getElementById('s-import-file').files[0];
+    if(!f){this.showToast('ファイルを選択してください','error');return}
+    const reader=new FileReader();
+    reader.onload=e=>{
+      const ok=Storage.importBackup(e.target.result);
+      if(ok){this.showToast('復元しました','success');Storage.init()}
+      else this.showToast('復元に失敗しました','error');
+    };
+    reader.readAsText(f);
+  },
+
+  _renderUserList(){
+    const users=Storage.getUsers();
+    const el=document.getElementById('user-list-content');
+    if(!el)return;
+    if(!users.length){el.innerHTML='<p class="text-sub">ユーザーなし（ロール別共通PWで認証中）</p>';return}
+    el.innerHTML=users.map(u=>`
+      <div style="display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid var(--border)">
+        <div style="flex:1">
+          <div style="font-weight:600">${u.name} <span class="badge badge-${this._roleClass(u.role)}">${u.role}</span></div>
+          <div class="text-sub">${u.store||'全店舗'} / ${u.status}</div>
+        </div>
+        <button class="btn btn-danger btn-sm" onclick="App.deleteUser('${u.userId}')">削除</button>
+      </div>`).join('');
+  },
+
+  showAddUser(){
+    const name=prompt('氏名:');if(!name)return;
+    const role=prompt('役職 (SI/SC/店舗責任者/一般クルー):');if(!role)return;
+    const store=prompt('担当店舗 (SI・SCは空欄OK):');
+    const pass=prompt('パスワード (空欄で共通PW):');
+    Storage.upsertUser({name,role,store:store||'',password:pass||'Lawson3963',status:'有効'});
+    this.showToast('ユーザーを追加しました','success');
+    this._renderUserList();
+  },
+
+  deleteUser(uid){
+    if(!confirm('このユーザーを削除しますか？'))return;
+    Storage.deleteUser(uid);
+    this.showToast('削除しました','success');
+    this._renderUserList();
+  },
 };
 
 App.init();
