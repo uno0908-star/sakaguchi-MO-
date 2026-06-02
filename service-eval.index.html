@@ -344,6 +344,16 @@ const Storage=(()=>{
   function _write(k,v){try{localStorage.setItem(k,JSON.stringify(v));return true}catch(e){return false}}
   function _genId(){return Date.now().toString(36)+Math.random().toString(36).slice(2,6)}
 
+  /* GASからの文字列化された配列を復元 */
+  function _parseArr(v){
+    if(Array.isArray(v))return v;
+    if(!v||v==='null')return[];
+    try{const p=JSON.parse(v);return Array.isArray(p)?p:[]}catch(e){return[]}
+  }
+  function _normalizeEmp(e){
+    return{...e,crewRoles:_parseArr(e.crewRoles),certifications:_parseArr(e.certifications)};
+  }
+
   /* 初期化: 起動時にGASから全データ同期 */
   function init(){_syncFromGas()}
 
@@ -355,17 +365,23 @@ const Storage=(()=>{
       if(!res.ok)throw new Error('HTTP '+res.status);
       const d=await res.json();
       if(!d.ok)throw new Error(d.error||'不明なエラー');
-      // GASにデータがある場合のみ上書き（空で消えるのを防ぐ）
-      if(d.employees?.length)_write(STORAGE_KEYS.EMPLOYEES,d.employees);
+      // GASにデータがある場合のみ上書き。配列フィールドを正規化して保存
+      if(d.employees?.length)_write(STORAGE_KEYS.EMPLOYEES,d.employees.map(_normalizeEmp));
       if(d.evaluations?.length)_write(STORAGE_KEYS.EVALUATIONS,d.evaluations);
       if(d.coachings?.length)_write(STORAGE_KEYS.COACHINGS,d.coachings);
       if(d.observations?.length)_write(STORAGE_KEYS.OBSERVATIONS,d.observations);
       if(d.users?.length)_write(STORAGE_KEYS.USERS,d.users);
       if(d.discussions?.length)_write(STORAGE_KEYS.DISCUSSIONS,d.discussions);
       showToast('同期完了','success');
-      // 同期後にダッシュボードを再描画
-      if(typeof App!=='undefined'&&App._view==='dashboard')App.renderDashboard();
-    }catch(e){showToast('GAS接続エラー: '+e.message,'error')}
+      // 同期後に現在の画面を再描画
+      if(typeof App!=='undefined'){
+        if(App._view==='dashboard')App.renderDashboard();
+        if(App._view==='employees')App.filterEmployees();
+      }
+    }catch(e){
+      console.error('[GAS sync]',e);
+      showToast('GAS接続エラー（キャッシュで表示中）','error');
+    }
   }
   async function syncNow(){return _syncFromGas()}
   async function testConnection(){
@@ -425,7 +441,7 @@ const Storage=(()=>{
   };
 
   /* 従業員 */
-  function getEmployees(){return _read(STORAGE_KEYS.EMPLOYEES,[])}
+  function getEmployees(){return _read(STORAGE_KEYS.EMPLOYEES,[]).map(_normalizeEmp)}
   function saveEmployees(arr){return _write(STORAGE_KEYS.EMPLOYEES,arr)}
   function getEmployee(id){return getEmployees().find(e=>e.id===id)||null}
   function upsertEmployee(emp){
@@ -1083,9 +1099,11 @@ const App={
   _roleClass(role){return{SI:'si',SC:'sc','店舗責任者':'sm'}[role]||'crew'},
   _chip(rank){return rank?`<span class="rank-chip ${rank}">${rank}</span>`:'<span class="rank-chip 未">未</span>'},
   _roleBadges(e){
-    const roles=(e.crewRoles||[]).map(r=>`<span class="badge ${{ルーキー:'badge-rookie',レギュラー:'badge-regular',サブリーダー:'badge-sub',リーダー:'badge-leader'}[r.replace('（新人）','')]||'badge-crew'}">${r}</span>`);
-    const certs=(e.certifications||[]).map(c=>{const cls=c.includes('グランドファンタジスタ')?'badge-grand':c==='認定店長'?'badge-store-mgr':'badge-fanta';const s=c.replace('グランドファンタジスタ','GF').replace('ファンタジスタ','F');return`<span class="badge ${cls}">${s}</span>`});
-    return[...roles,...certs].join('');
+    const crewRoles=Array.isArray(e.crewRoles)?e.crewRoles:[];
+    const certs=Array.isArray(e.certifications)?e.certifications:[];
+    const roles=crewRoles.map(r=>`<span class="badge ${{ルーキー:'badge-rookie',レギュラー:'badge-regular',サブリーダー:'badge-sub',リーダー:'badge-leader'}[r.replace('（新人）','')]||'badge-crew'}">${r}</span>`);
+    const certBadges=certs.map(c=>{const cls=c.includes('グランドファンタジスタ')?'badge-grand':c==='認定店長'?'badge-store-mgr':'badge-fanta';const s=c.replace('グランドファンタジスタ','GF').replace('ファンタジスタ','F');return`<span class="badge ${cls}">${s}</span>`});
+    return[...roles,...certBadges].join('');
   },
   async _fileToBase64(file){return new Promise(r=>{const fr=new FileReader();fr.onload=e=>r(e.target.result);fr.readAsDataURL(file)})},
 
