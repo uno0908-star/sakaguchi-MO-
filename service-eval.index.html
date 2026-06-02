@@ -4,20 +4,147 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
   <title>接客評価システム｜阪口商店</title>
-  <link rel="stylesheet" href="style.css">
+<style>
+:root{--blue:#005BAC;--blue-light:#0072C6;--green:#00A651;--orange:#FF6B35;--red:#E53E3E;--gold:#D4AF37;--gray:#6B7280;--gray-light:#F3F4F6;--border:#E5E7EB;--text:#1F2937;--text-sub:#6B7280;--header-h:52px;--nav-h:60px;--radius:10px}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+body{font-family:-apple-system,'Hiragino Sans',sans-serif;color:var(--text);background:var(--gray-light);font-size:14px}
+input,select,textarea,button{font-family:inherit;font-size:14px}
+#app-header{position:fixed;top:0;left:0;right:0;z-index:100;height:var(--header-h);background:var(--blue);display:flex;align-items:center;padding:0 12px;gap:8px;color:#fff}
+#app-header.hidden{display:none}
+#header-title{flex:1;font-size:16px;font-weight:700}
+.btn-back{background:none;border:none;color:#fff;font-size:20px;padding:8px;cursor:pointer;line-height:1}
+.btn-back.hidden{visibility:hidden}
+.header-user{font-size:12px;background:rgba(255,255,255,0.2);padding:4px 8px;border-radius:12px;white-space:nowrap}
+.view{display:none;min-height:100vh;padding-top:var(--header-h);padding-bottom:var(--nav-h)}
+.view.active{display:block}
+.view-content{padding:12px}
+#view-login{padding-top:0;padding-bottom:0;background:var(--blue)}
+#bottom-nav{position:fixed;bottom:0;left:0;right:0;z-index:100;height:var(--nav-h);background:#fff;border-top:1px solid var(--border);display:flex}
+#bottom-nav.hidden{display:none}
+.nav-item{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;background:none;border:none;cursor:pointer;gap:2px;color:var(--gray);padding:8px 0}
+.nav-item span{font-size:20px}
+.nav-item small{font-size:10px}
+.nav-item.active{color:var(--blue)}
+.card{background:#fff;border-radius:var(--radius);padding:14px;margin-bottom:10px;box-shadow:0 1px 3px rgba(0,0,0,0.08)}
+.form-group{margin-bottom:14px}
+.form-group label{display:block;font-size:12px;color:var(--text-sub);margin-bottom:4px;font-weight:600}
+.form-group input,.form-group select,.form-group textarea{width:100%;padding:10px 12px;border:1px solid var(--border);border-radius:8px;background:#fff;outline:none;transition:border-color 0.15s}
+.form-group input:focus,.form-group select:focus,.form-group textarea:focus{border-color:var(--blue)}
+.btn{display:inline-flex;align-items:center;justify-content:center;padding:11px 20px;border-radius:8px;border:none;cursor:pointer;font-weight:600;transition:opacity 0.15s}
+.btn:active{opacity:0.75}
+.btn-primary{background:var(--blue);color:#fff}
+.btn-secondary{background:var(--gray-light);color:var(--text)}
+.btn-danger{background:var(--red);color:#fff}
+.btn-full{width:100%}
+.btn-sm{padding:6px 12px;font-size:12px;border-radius:6px}
+.btn-fab{position:fixed;bottom:calc(var(--nav-h) + 16px);right:16px;z-index:50;width:52px;height:52px;border-radius:50%;background:var(--blue);color:#fff;border:none;font-size:24px;box-shadow:0 4px 12px rgba(0,91,172,0.4);cursor:pointer}
+.login-wrap{min-height:100vh;display:flex;flex-direction:column;justify-content:center;padding:24px 16px;gap:20px}
+.login-logo{text-align:center;color:#fff}
+.logo-badge{display:inline-block;font-size:26px;font-weight:800;letter-spacing:2px}
+.login-subtitle{font-size:14px;margin-top:6px;opacity:0.85}
+.search-bar{background:#fff;padding:10px 12px;border-bottom:1px solid var(--border);display:flex;gap:8px;flex-wrap:wrap;position:sticky;top:var(--header-h);z-index:10}
+.search-bar input,.search-bar select{flex:1;min-width:100px;padding:8px 10px;border:1px solid var(--border);border-radius:8px;background:var(--gray-light)}
+.emp-card{background:#fff;border-radius:var(--radius);padding:12px 14px;margin-bottom:8px;box-shadow:0 1px 3px rgba(0,0,0,0.08);display:flex;align-items:center;gap:12px;cursor:pointer}
+.emp-card:active{opacity:0.75}
+.emp-avatar{width:42px;height:42px;border-radius:50%;background:var(--blue);color:#fff;display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:700;flex-shrink:0}
+.emp-info{flex:1;min-width:0}
+.emp-name{font-weight:700;font-size:15px}
+.emp-sub{font-size:12px;color:var(--text-sub);margin-top:2px}
+.emp-badges{display:flex;flex-wrap:wrap;gap:4px;margin-top:5px}
+.badge{display:inline-block;padding:2px 7px;border-radius:10px;font-size:10px;font-weight:700;white-space:nowrap}
+.badge-rookie{background:#E5E7EB;color:#374151}
+.badge-regular{background:#DBEAFE;color:#1D4ED8}
+.badge-sub{background:#D1FAE5;color:#065F46}
+.badge-leader{background:#FEF3C7;color:#92400E}
+.badge-fanta{background:#EDE9FE;color:#5B21B6}
+.badge-grand{background:#FEF9C3;color:#713F12;border:1px solid var(--gold)}
+.badge-store-mgr{background:#FEE2E2;color:#991B1B}
+.badge-crew{background:var(--gray-light);color:var(--gray)}
+.badge-contract{background:#E0F2FE;color:#0369A1}
+.badge-full{background:#DCFCE7;color:#15803D}
+.badge-si{background:#1E40AF;color:#fff}
+.badge-sc{background:#0369A1;color:#fff}
+.badge-sm{background:#065F46;color:#fff}
+.rank-btn{width:48px;height:48px;border-radius:8px;border:2px solid var(--border);background:#fff;font-size:18px;font-weight:800;cursor:pointer;transition:all 0.15s}
+.rank-btn.selected-◎{background:var(--green);color:#fff;border-color:var(--green)}
+.rank-btn.selected-○{background:var(--blue);color:#fff;border-color:var(--blue)}
+.rank-btn.selected-△{background:var(--orange);color:#fff;border-color:var(--orange)}
+.rank-btn.selected-✕{background:var(--red);color:#fff;border-color:var(--red)}
+.rank-row{display:flex;gap:6px;margin:6px 0}
+.rank-chip{display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:6px;font-size:13px;font-weight:800}
+.rank-chip.◎{background:#D1FAE5;color:#065F46}
+.rank-chip.○{background:#DBEAFE;color:#1E40ED}
+.rank-chip.△{background:#FEF3C7;color:#92400E}
+.rank-chip.✕{background:#FEE2E2;color:#991B1B}
+.rank-chip.未{background:var(--gray-light);color:var(--gray);font-size:10px}
+.eval-item{background:#fff;border-radius:var(--radius);margin-bottom:10px;overflow:hidden}
+.eval-item-header{padding:12px 14px;background:var(--blue);color:#fff;display:flex;align-items:center;justify-content:space-between}
+.eval-item-header h3{font-size:14px;font-weight:700}
+.eval-item-body{padding:12px 14px}
+.eval-role-label{font-size:11px;color:var(--text-sub);font-weight:600;margin-bottom:4px}
+.eval-section{border-bottom:1px solid var(--border);padding-bottom:10px;margin-bottom:10px}
+.eval-section:last-child{border-bottom:none;margin-bottom:0;padding-bottom:0}
+.stats-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px}
+.stat-card{background:#fff;border-radius:var(--radius);padding:14px;text-align:center;box-shadow:0 1px 3px rgba(0,0,0,0.08)}
+.stat-num{font-size:28px;font-weight:800;color:var(--blue)}
+.stat-label{font-size:11px;color:var(--text-sub);margin-top:2px}
+.section-title{font-size:13px;font-weight:700;color:var(--text-sub);padding:4px 0 8px}
+.store-bar-wrap{background:#fff;border-radius:var(--radius);padding:12px 14px;margin-bottom:8px;box-shadow:0 1px 3px rgba(0,0,0,0.08)}
+.store-bar-name{font-size:12px;font-weight:600;margin-bottom:4px;display:flex;justify-content:space-between}
+.store-bar-track{background:var(--gray-light);border-radius:4px;height:8px;overflow:hidden}
+.store-bar-fill{height:100%;background:var(--green);border-radius:4px;transition:width 0.3s}
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:200}
+.modal-overlay.hidden{display:none}
+.modal{position:fixed;bottom:0;left:0;right:0;z-index:201;background:#fff;border-radius:16px 16px 0 0;max-height:90vh;overflow-y:auto;padding-bottom:env(safe-area-inset-bottom,0)}
+.modal.hidden{display:none}
+.modal-header{padding:14px 16px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--border);position:sticky;top:0;background:#fff;z-index:1}
+.modal-header h2{font-size:16px;font-weight:700}
+.modal-header button{background:none;border:none;font-size:18px;cursor:pointer;padding:4px;color:var(--gray)}
+.modal-body{padding:16px}
+.modal-img{width:100%;border-radius:8px;margin-top:10px}
+.timeline-item{display:flex;gap:10px;margin-bottom:14px}
+.timeline-dot{width:10px;height:10px;border-radius:50%;background:var(--blue);flex-shrink:0;margin-top:5px}
+.timeline-body{flex:1;background:#fff;border-radius:var(--radius);padding:10px 12px;box-shadow:0 1px 3px rgba(0,0,0,0.08)}
+.timeline-meta{font-size:11px;color:var(--text-sub);margin-bottom:4px;display:flex;gap:6px;flex-wrap:wrap}
+.timeline-photo{width:100%;border-radius:6px;margin-top:8px;max-height:200px;object-fit:cover;cursor:pointer}
+.menu-list{display:flex;flex-direction:column;gap:10px}
+.menu-item{background:#fff;border-radius:var(--radius);padding:16px;display:flex;align-items:center;gap:14px;cursor:pointer;box-shadow:0 1px 3px rgba(0,0,0,0.08)}
+.menu-item:active{opacity:0.75}
+.menu-icon{font-size:24px}
+.menu-item>div{flex:1}
+.menu-item p{font-size:12px;color:var(--text-sub);margin-top:2px}
+.imp-row{background:#fff;border-radius:var(--radius);padding:12px 14px;margin-bottom:8px;box-shadow:0 1px 3px rgba(0,0,0,0.08)}
+.imp-name{font-weight:700}
+.imp-store{font-size:12px;color:var(--text-sub)}
+.imp-items{display:flex;flex-wrap:wrap;gap:4px;margin-top:6px}
+.analysis-bar-wrap{background:#fff;border-radius:var(--radius);padding:12px 14px;margin-bottom:8px;box-shadow:0 1px 3px rgba(0,0,0,0.08)}
+.analysis-bar-label{font-size:12px;font-weight:600;margin-bottom:6px}
+.analysis-bar-multi{display:flex;height:10px;border-radius:5px;overflow:hidden}
+.bar-good{background:var(--green)}
+.bar-ok{background:var(--blue)}
+.bar-warn{background:var(--orange)}
+.bar-bad{background:var(--red)}
+.bar-legend{display:flex;gap:10px;margin-top:4px;font-size:10px;color:var(--text-sub)}
+.checkbox-group{display:flex;flex-wrap:wrap;gap:8px}
+.checkbox-item{display:flex;align-items:center;gap:5px;font-size:13px;cursor:pointer}
+.checkbox-item input[type=checkbox]{width:16px;height:16px;cursor:pointer;accent-color:var(--blue)}
+.hidden{display:none!important}
+.text-center{text-align:center}
+.text-sub{color:var(--text-sub);font-size:12px}
+.divider{border:none;border-top:1px solid var(--border);margin:12px 0}
+.flex-between{display:flex;justify-content:space-between;align-items:center}
+.empty-state{text-align:center;padding:40px 20px;color:var(--text-sub)}
+.empty-state p{margin-top:8px;font-size:13px}
+</style>
 </head>
 <body>
 
-<!-- ヘッダー -->
 <header id="app-header" class="hidden">
   <button id="btn-back" class="btn-back hidden" onclick="App.goBack()">&#8592;</button>
   <h1 id="header-title">接客評価システム</h1>
   <div id="header-user" class="header-user"></div>
 </header>
 
-<!-- ===== ビュー群 ===== -->
-
-<!-- ログイン -->
 <div id="view-login" class="view active">
   <div class="login-wrap">
     <div class="login-logo">
@@ -47,12 +174,10 @@
   </div>
 </div>
 
-<!-- ダッシュボード -->
 <div id="view-dashboard" class="view">
   <div class="view-content" id="dashboard-content"></div>
 </div>
 
-<!-- 従業員一覧 -->
 <div id="view-employees" class="view">
   <div class="search-bar">
     <input type="search" id="emp-search" placeholder="氏名・店舗で検索" oninput="App.filterEmployees()">
@@ -68,17 +193,14 @@
   <button class="btn-fab" onclick="App.showView('employee-form')" title="新規登録">＋</button>
 </div>
 
-<!-- 従業員詳細 -->
 <div id="view-employee-detail" class="view">
   <div class="view-content" id="employee-detail-content"></div>
 </div>
 
-<!-- 評価入力 -->
 <div id="view-evaluation" class="view">
   <div class="view-content" id="evaluation-content"></div>
 </div>
 
-<!-- 気づきメモ -->
 <div id="view-observation" class="view">
   <div class="search-bar">
     <select id="obs-filter-store" onchange="App.renderObservations()"><option value="">全店舗</option></select>
@@ -87,7 +209,6 @@
   <button class="btn-fab" onclick="App.showAddObservation()">＋</button>
 </div>
 
-<!-- 改善必要者 -->
 <div id="view-improvement" class="view">
   <div class="search-bar">
     <select id="imp-filter-store" onchange="App.renderImprovement()"><option value="">全店舗</option></select>
@@ -95,7 +216,6 @@
   <div class="view-content" id="improvement-content"></div>
 </div>
 
-<!-- 店舗分析 -->
 <div id="view-store-analysis" class="view">
   <div class="search-bar">
     <select id="sa-filter-store" onchange="App.renderStoreAnalysis()"><option value="">全店舗</option></select>
@@ -103,12 +223,10 @@
   <div class="view-content" id="store-analysis-content"></div>
 </div>
 
-<!-- 従業員フォーム（新規/編集） -->
 <div id="view-employee-form" class="view">
   <div class="view-content" id="employee-form-content"></div>
 </div>
 
-<!-- 分析メニュー -->
 <div id="view-analysis-menu" class="view">
   <div class="view-content">
     <div class="menu-list">
@@ -126,10 +244,8 @@
   </div>
 </div>
 
-<!-- ===== モーダル ===== -->
 <div id="modal-overlay" class="modal-overlay hidden" onclick="App.closeModal()"></div>
 
-<!-- 評価基準モーダル -->
 <div id="modal-standards" class="modal hidden">
   <div class="modal-header">
     <h2 id="modal-standards-title"></h2>
@@ -138,49 +254,31 @@
   <div class="modal-body" id="modal-standards-body"></div>
 </div>
 
-<!-- 気づきメモ追加モーダル -->
 <div id="modal-observation" class="modal hidden">
   <div class="modal-header">
     <h2>気づきメモを追加</h2>
     <button onclick="App.closeModal()">✕</button>
   </div>
   <div class="modal-body">
-    <div class="form-group">
-      <label>店舗</label>
-      <select id="obs-store"></select>
-    </div>
-    <div class="form-group">
-      <label>内容</label>
-      <textarea id="obs-content" rows="4" placeholder="気づいた内容を記入..."></textarea>
-    </div>
-    <div class="form-group">
-      <label>写真（任意）</label>
-      <input type="file" id="obs-photo" accept="image/*">
-    </div>
+    <div class="form-group"><label>店舗</label><select id="obs-store"></select></div>
+    <div class="form-group"><label>内容</label><textarea id="obs-content" rows="4" placeholder="気づいた内容を記入..."></textarea></div>
+    <div class="form-group"><label>写真（任意）</label><input type="file" id="obs-photo" accept="image/*"></div>
     <button class="btn btn-primary btn-full" onclick="App.saveObservation()">保存</button>
   </div>
 </div>
 
-<!-- 指導メモ追加モーダル -->
 <div id="modal-coaching" class="modal hidden">
   <div class="modal-header">
     <h2>指導メモを追加</h2>
     <button onclick="App.closeModal()">✕</button>
   </div>
   <div class="modal-body">
-    <div class="form-group">
-      <label>内容</label>
-      <textarea id="coaching-content" rows="4" placeholder="指導内容を記入..."></textarea>
-    </div>
-    <div class="form-group">
-      <label>写真（任意）</label>
-      <input type="file" id="coaching-photo" accept="image/*">
-    </div>
+    <div class="form-group"><label>内容</label><textarea id="coaching-content" rows="4" placeholder="指導内容を記入..."></textarea></div>
+    <div class="form-group"><label>写真（任意）</label><input type="file" id="coaching-photo" accept="image/*"></div>
     <button class="btn btn-primary btn-full" onclick="App.saveCoaching()">保存</button>
   </div>
 </div>
 
-<!-- ===== ボトムナビ ===== -->
 <nav id="bottom-nav" class="hidden">
   <button class="nav-item active" data-view="dashboard" onclick="App.navTo('dashboard')">
     <span>🏠</span><small>ホーム</small>
@@ -196,7 +294,624 @@
   </button>
 </nav>
 
-<script src="storage.js"></script>
-<script src="app.js"></script>
+<script>
+/* =====================================================
+   storage.js — データ永続化レイヤー (localStorage)
+   将来: GAS / Firebase / Supabase へ差し替え可能
+   ===================================================== */
+const STORAGE_KEYS={EMPLOYEES:'se_employees',EVALUATIONS:'se_evaluations',COACHINGS:'se_coachings',OBSERVATIONS:'se_observations',USER:'se_user'};
+const Storage=(()=>{
+  function _read(key,fallback){try{const r=localStorage.getItem(key);return r===null?fallback:JSON.parse(r)}catch(e){return fallback}}
+  function _write(key,val){try{localStorage.setItem(key,JSON.stringify(val));return true}catch(e){return false}}
+  function getEmployees(){return _read(STORAGE_KEYS.EMPLOYEES,[])}
+  function saveEmployees(arr){return _write(STORAGE_KEYS.EMPLOYEES,arr)}
+  function getEmployee(id){return getEmployees().find(e=>e.id===id)||null}
+  function upsertEmployee(emp){const arr=getEmployees();const idx=arr.findIndex(e=>e.id===emp.id);if(idx>=0){arr[idx]={...arr[idx],...emp,updatedAt:new Date().toISOString()}}else{arr.push({...emp,createdAt:new Date().toISOString()})}return saveEmployees(arr)}
+  function deleteEmployee(id){return saveEmployees(getEmployees().filter(e=>e.id!==id))}
+  function getEvaluations(){return _read(STORAGE_KEYS.EVALUATIONS,[])}
+  function addEvaluation(rec){const arr=getEvaluations();arr.push({...rec,createdAt:new Date().toISOString()});return _write(STORAGE_KEYS.EVALUATIONS,arr)}
+  function getEvalsByEmployee(id){return getEvaluations().filter(e=>e.employeeId===id)}
+  function getCoachings(){return _read(STORAGE_KEYS.COACHINGS,[])}
+  function addCoaching(rec){const arr=getCoachings();arr.push({...rec,id:_genId(),createdAt:new Date().toISOString()});return _write(STORAGE_KEYS.COACHINGS,arr)}
+  function getCoachingsByEmployee(id){return getCoachings().filter(c=>c.employeeId===id).sort((a,b)=>b.createdAt.localeCompare(a.createdAt))}
+  function getObservations(){return _read(STORAGE_KEYS.OBSERVATIONS,[])}
+  function addObservation(rec){const arr=getObservations();arr.push({...rec,id:_genId(),createdAt:new Date().toISOString()});return _write(STORAGE_KEYS.OBSERVATIONS,arr)}
+  function getUser(){return _read(STORAGE_KEYS.USER,null)}
+  function saveUser(u){return _write(STORAGE_KEYS.USER,u)}
+  function clearUser(){localStorage.removeItem(STORAGE_KEYS.USER)}
+  function _genId(){return Date.now().toString(36)+Math.random().toString(36).slice(2,6)}
+  function getStoreList(){const e=getEmployees();if(!e.length)return[];return[...new Set(e.map(x=>(x.store||'').trim()).filter(s=>s.length>0))].sort((a,b)=>a.localeCompare(b,'ja'))}
+  function exportAll(){return{employees:getEmployees(),evaluations:getEvaluations(),coachings:getCoachings(),observations:getObservations(),exportedAt:new Date().toISOString()}}
+  function downloadBackup(){const d=exportAll();const b=new Blob([JSON.stringify(d,null,2)],{type:'application/json'});const u=URL.createObjectURL(b);const a=document.createElement('a');a.href=u;a.download=`backup-${new Date().toISOString().slice(0,10)}.json`;a.click();URL.revokeObjectURL(u)}
+  return{getEmployees,saveEmployees,getEmployee,upsertEmployee,deleteEmployee,getEvaluations,addEvaluation,getEvalsByEmployee,getCoachings,addCoaching,getCoachingsByEmployee,getObservations,addObservation,getUser,saveUser,clearUser,getStoreList,exportAll,downloadBackup};
+})();
+</script>
+
+<script>
+/* =====================================================
+   app.js — メインアプリケーションロジック
+   ===================================================== */
+
+const STORES=['五月ケ丘東','南金田二丁目','吹田垂水三丁目','吹田朝日町','吹田警察署前','吹田豊津中学校前','吹田青山台三丁目','大道南一丁目','新御堂筋上新田','東淀川大道南','東淀川豊里五丁目','江坂東','江坂駅南口','池田市役所前','箕面白島二丁目','豊中利倉東一丁目','豊中原田南一丁目','豊中服部元町一丁目','豊中服部西町三丁目','豊里六丁目'];
+
+const SERVICE_ITEMS=[
+  {key:'s1',label:'接客①',title:'身だしなみルール',points:'ユニフォームの清潔感・着こなし、名札の着用、髪型・化粧・アクセサリー',criteria:{'◎':'意識しなくても完璧な身だしなみができている','○':'意識すれば整った身だしなみができる','△':'指摘されたら直せる','✕':'指摘されても改善しない'},good:'清潔なユニフォーム・正しい名札着用・整った髪型',bad:'汚れたユニフォーム・名札なし・派手なアクセサリー',note:'名札は必ず着用。ユニフォームは毎日清潔に。',img:'画像/service_01.png'},
+  {key:'s2',label:'接客②',title:'入店時あいさつ',points:'来店時「いらっしゃいませ」を明るく元気に・アイコンタクト・笑顔',criteria:{'◎':'自然に大きな声で笑顔であいさつできる','○':'意識して笑顔であいさつできる','△':'指摘されるとできる','✕':'指摘されてもできない'},good:'来店に気づきすぐに明るく「いらっしゃいませ」',bad:'うつむいたまま・小さな声・無表情',note:'作業中でも来店に気づいたらあいさつする。',img:'画像/service_02.png'},
+  {key:'s3',label:'接客③',title:'レジでお待たせしない',points:'迅速なレジ操作・スムーズな誘導・待ち時間最小化',criteria:{'◎':'常に素早くスムーズにレジ対応できる','○':'ほぼお待たせしない','△':'指摘されると速くなる','✕':'常に遅い・モタモタしている'},good:'お客様が並んだらすぐに気づき迅速に対応',bad:'作業優先でお客様を長く待たせる',note:'行列ができたら他スタッフへ応援要請を。',img:'画像/service_03.png'},
+  {key:'s4',label:'接客④',title:'会計前あいさつ',points:'「○○円でございます」など金額の明確な伝達・笑顔',criteria:{'◎':'自然に明確かつ笑顔で金額を伝えられる','○':'意識して金額を伝えられる','△':'指摘されると言える','✕':'金額を伝えない'},good:'明るくはっきりと「○○円でございます」',bad:'金額を言わずにバーコードを読み取るだけ',note:'金額確認はお客様の安心につながる。',img:'画像/service_04.png'},
+  {key:'s5',label:'接客⑤',title:'商品・金銭・レシート授受',points:'両手で丁寧に渡す・釣銭は手のひらで確認しながら渡す',criteria:{'◎':'常に丁寧・正確に授受できる','○':'意識して丁寧にできる','△':'指摘されると丁寧になる','✕':'片手・乱暴な渡し方をする'},good:'両手で丁寧に・釣銭を声に出して確認',bad:'片手で投げるように渡す・釣銭確認なし',note:'金銭授受は特に丁寧・正確に。',img:'画像/service_05.png'},
+  {key:'s6',label:'接客⑥',title:'会計後あいさつ',points:'「ありがとうございました」「またご利用ください」笑顔で見送り',criteria:{'◎':'自然に笑顔で見送れる','○':'意識して言える','△':'指摘されると言える','✕':'何も言わずに次の作業に移る'},good:'笑顔でしっかり「ありがとうございました」',bad:'無言・背を向けてすぐ次の作業',note:'最後の一言がお客様の印象を決める。',img:'画像/service_06.png'},
+];
+
+const CREW_ROLES=['ルーキー（新人）','レギュラー','サブリーダー','リーダー'];
+const CERTIFICATIONS=['ファンタジスタ（接客）','ファンタジスタ（FF）','ファンタジスタ（厨房）','ファンタジスタ（マチカフェ）','グランドファンタジスタ（接客）','グランドファンタジスタ（FF）','グランドファンタジスタ（厨房）','グランドファンタジスタ（マチカフェ）','認定店長'];
+const RANKS=['◎','○','△','✕'];
+
+const INITIAL_EMPLOYEES=[
+  {id:'5123059',name:'堀 智晶',store:'五月ケ丘東',type:'Crew'},
+  {id:'6123057',name:'下井 美穂',store:'五月ケ丘東',type:'Crew'},
+  {id:'6191053',name:'日高 一光',store:'五月ケ丘東',type:'Crew'},
+  {id:'7192227',name:'樋上 八雲',store:'五月ケ丘東',type:'Crew'},
+  {id:'9560297',name:'江見 良太',store:'五月ケ丘東',type:'ContractEmployee'},
+  {id:'9304509',name:'ゴレ チティズ',store:'五月ケ丘東',type:'FullTimeEmployee'},
+  {id:'4189928',name:'ブイ ティ トゥ チャン',store:'吹田垂水三丁目',type:'Crew'},
+  {id:'5117657',name:'バリヤ アリサ',store:'吹田垂水三丁目',type:'Crew'},
+  {id:'5190174',name:'小林律',store:'吹田垂水三丁目',type:'Crew'},
+  {id:'5302854',name:'小原 佐代子',store:'吹田垂水三丁目',type:'Crew'},
+  {id:'6109044',name:'松田 哲平',store:'吹田垂水三丁目',type:'Crew'},
+  {id:'6126586',name:'河野 真',store:'吹田垂水三丁目',type:'Crew'},
+  {id:'7191364',name:'シタウラ リゾン',store:'吹田垂水三丁目',type:'Crew'},
+  {id:'9177766',name:'レ ティ トゥ チャン',store:'吹田垂水三丁目',type:'Crew'},
+  {id:'5033824',name:'チュオン トゥアン フィ',store:'吹田垂水三丁目',type:'FullTimeEmployee'},
+  {id:'6150425',name:'杉本 久美子',store:'豊里六丁目',type:'Crew'},
+  {id:'6187432',name:'バンダリ ハリシング',store:'豊里六丁目',type:'Crew'},
+  {id:'8171186',name:'ラナ マガル タマン サンテイ',store:'豊里六丁目',type:'Crew'},
+  {id:'9164140',name:'ダカル ナビン',store:'豊里六丁目',type:'Crew'},
+  {id:'9174833',name:'クマル ジャルガ スマン',store:'豊里六丁目',type:'Crew'},
+  {id:'9082599',name:'チャリセ リル バハドゥル',store:'豊里六丁目',type:'FullTimeEmployee'},
+  {id:'4161412',name:'高橋 真矢',store:'池田市役所前',type:'Crew'},
+  {id:'4161419',name:'鳴海 璃久',store:'池田市役所前',type:'Crew'},
+  {id:'4166625',name:'宇井 竪之恭',store:'池田市役所前',type:'Crew'},
+  {id:'4180811',name:'栗本 花菜',store:'池田市役所前',type:'Crew'},
+  {id:'5161402',name:'三谷 輝粋',store:'池田市役所前',type:'Crew'},
+  {id:'6188470',name:'三輪 理恵子',store:'池田市役所前',type:'Crew'},
+  {id:'7161405',name:'高木 博子',store:'池田市役所前',type:'Crew'},
+  {id:'7191291',name:'中井 優那',store:'池田市役所前',type:'Crew'},
+  {id:'8161403',name:'数田 恵美',store:'池田市役所前',type:'Crew'},
+  {id:'8161407',name:'富永 麻衣',store:'池田市役所前',type:'Crew'},
+  {id:'8162432',name:'大井川 梨彩',store:'池田市役所前',type:'Crew'},
+  {id:'9161409',name:'齊藤 初美',store:'池田市役所前',type:'Crew'},
+  {id:'9054116',name:'原田 陽介',store:'池田市役所前',type:'ContractEmployee'},
+  {id:'9898484',name:'有村 保人',store:'池田市役所前',type:'FullTimeEmployee'},
+  {id:'8067662',name:'五島 菜穂',store:'池田市役所前',type:'FullTimeEmployee'},
+  {id:'4124224',name:'金光 久仁子',store:'豊中服部西町三丁目',type:'Crew'},
+  {id:'6051842',name:'中河 真代',store:'豊中服部西町三丁目',type:'Crew'},
+  {id:'7051842',name:'佐藤 順子',store:'豊中服部西町三丁目',type:'Crew'},
+  {id:'7113912',name:'河野 壮哉',store:'豊中服部西町三丁目',type:'Crew'},
+  {id:'7182770',name:'カルキ サガル',store:'豊中服部西町三丁目',type:'Crew'},
+  {id:'7192985',name:'ビスタ ラチミ',store:'豊中服部西町三丁目',type:'Crew'},
+  {id:'8187784',name:'ピャクレル サンギト',store:'豊中服部西町三丁目',type:'Crew'},
+  {id:'8152620',name:'アディカリ ビカス',store:'豊中服部西町三丁目',type:'FullTimeEmployee'},
+  {id:'5189948',name:'シン アソク',store:'豊中原田南一丁目',type:'Crew'},
+  {id:'6948839',name:'林 典子',store:'豊中原田南一丁目',type:'ContractEmployee'},
+  {id:'7166072',name:'カルキ スレシュ バブ',store:'豊中原田南一丁目',type:'Crew'},
+  {id:'8111495',name:'鵜川 大輔',store:'豊中原田南一丁目',type:'Crew'},
+  {id:'9111915',name:'北川 富美子',store:'豊中原田南一丁目',type:'ContractEmployee'},
+  {id:'4133375',name:'カナル ナレス パラサト',store:'豊中原田南一丁目',type:'FullTimeEmployee'},
+  {id:'5160156',name:'シヤンタン サロイ',store:'大道南一丁目',type:'Crew'},
+  {id:'9055995',name:'本間 美樹',store:'大道南一丁目',type:'ContractEmployee'},
+  {id:'9140700',name:'スレスタ マニサ',store:'大道南一丁目',type:'Crew'},
+  {id:'9187864',name:'パタク ラクシュマン',store:'大道南一丁目',type:'Crew'},
+  {id:'9188123',name:'グルン アショク',store:'大道南一丁目',type:'Crew'},
+  {id:'8176002',name:'グルン プレム クマル',store:'大道南一丁目',type:'FullTimeEmployee'},
+  {id:'4189974',name:'坂根 葵',store:'吹田警察署前',type:'Crew'},
+  {id:'4367791',name:'藤原 真由美',store:'吹田警察署前',type:'Crew'},
+  {id:'5140287',name:'川橋 隼',store:'吹田警察署前',type:'Crew'},
+  {id:'6000453',name:'中須賀 良',store:'吹田警察署前',type:'Crew'},
+  {id:'6153704',name:'川合 和美',store:'吹田警察署前',type:'Crew'},
+  {id:'8170241',name:'久倉 惺太郎',store:'吹田警察署前',type:'Crew'},
+  {id:'9030323',name:'速水 裕大',store:'吹田警察署前',type:'ContractEmployee'},
+  {id:'9180568',name:'森脇 海琉',store:'吹田警察署前',type:'Crew'},
+  {id:'6152603',name:'カナル ヘムラジ',store:'吹田警察署前',type:'FullTimeEmployee'},
+  {id:'4172967',name:'グエン ティ ゴック ビック',store:'江坂駅南口',type:'Crew'},
+  {id:'5180768',name:'グエン ティエン ビン',store:'江坂駅南口',type:'Crew'},
+  {id:'6169927',name:'コントゥラエフ ジョードゥラ',store:'江坂駅南口',type:'Crew'},
+  {id:'6170377',name:'グエン ドゥック ズン',store:'江坂駅南口',type:'Crew'},
+  {id:'6188734',name:'小林 悠煌',store:'江坂駅南口',type:'Crew'},
+  {id:'7138696',name:'グエン ティ ハン',store:'江坂駅南口',type:'Crew'},
+  {id:'7161508',name:'フィン グエン アイン トゥ',store:'江坂駅南口',type:'Crew'},
+  {id:'7164438',name:'マ フォン リン',store:'江坂駅南口',type:'Crew'},
+  {id:'7170116',name:'グエン ティ ビック',store:'江坂駅南口',type:'Crew'},
+  {id:'7193455',name:'ウイン トゥ カイン',store:'江坂駅南口',type:'Crew'},
+  {id:'8129172',name:'チャン スアン チン',store:'江坂駅南口',type:'Crew'},
+  {id:'8129174',name:'グェン フー ティエン',store:'江坂駅南口',type:'Crew'},
+  {id:'8170112',name:'クオン ティ バオ ミン',store:'江坂駅南口',type:'Crew'},
+  {id:'8187766',name:'カルキ レジーナ',store:'江坂駅南口',type:'Crew'},
+  {id:'8193567',name:'カオ アイン ホアイ',store:'江坂駅南口',type:'Crew'},
+  {id:'6117167',name:'グエン ゴック トゥアン',store:'江坂駅南口',type:'FullTimeEmployee'},
+  {id:'8017657',name:'シュレスタ ジティシュ',store:'江坂駅南口',type:'FullTimeEmployee'},
+  {id:'4147850',name:'スナル ロシャン',store:'東淀川大道南',type:'Crew'},
+  {id:'4188589',name:'ラミチャネ サンディプ',store:'東淀川大道南',type:'Crew'},
+  {id:'5165984',name:'ヨンジャン クンサング',store:'東淀川大道南',type:'Crew'},
+  {id:'6191437',name:'山田 竜禅',store:'東淀川大道南',type:'Crew'},
+  {id:'7177582',name:'リンブ サビナ',store:'東淀川大道南',type:'Crew'},
+  {id:'7190013',name:'バラティ ビノド',store:'東淀川大道南',type:'Crew'},
+  {id:'9107052',name:'ダハル パウデル アスミタ',store:'東淀川大道南',type:'Crew'},
+  {id:'9131735',name:'パウデル ビノダ',store:'東淀川大道南',type:'FullTimeEmployee'},
+  {id:'7060510',name:'末礼多 プラカス チャンドラ',store:'東淀川大道南',type:'FullTimeEmployee'},
+  {id:'4176518',name:'ポカレル ディピカ',store:'江坂東',type:'Crew'},
+  {id:'5162878',name:'サプコタ スジャン',store:'江坂東',type:'Crew'},
+  {id:'5948321',name:'山田 幸代',store:'江坂東',type:'ContractEmployee'},
+  {id:'6110040',name:'ギミレ シクシャ',store:'江坂東',type:'Crew'},
+  {id:'9160803',name:'アシス ポウデル',store:'江坂東',type:'Crew'},
+  {id:'9968652',name:'中村 俊哉',store:'江坂東',type:'ContractEmployee'},
+  {id:'7050784',name:'ダハル ガネス',store:'江坂東',type:'FullTimeEmployee'},
+  {id:'4189929',name:'ブイ ティ トゥ チャン',store:'吹田豊津中学校前',type:'Crew'},
+  {id:'5370647',name:'堀江 和恵',store:'吹田豊津中学校前',type:'Crew'},
+  {id:'6109145',name:'北野 美香',store:'吹田豊津中学校前',type:'Crew'},
+  {id:'6174674',name:'バニヤ カリナ',store:'吹田豊津中学校前',type:'Crew'},
+  {id:'6178058',name:'梶 藍人',store:'吹田豊津中学校前',type:'Crew'},
+  {id:'6184587',name:'米谷 宏子',store:'吹田豊津中学校前',type:'Crew'},
+  {id:'7188108',name:'バイヤー ミア',store:'吹田豊津中学校前',type:'Crew'},
+  {id:'9033711',name:'落合 麻誉',store:'吹田豊津中学校前',type:'Crew'},
+  {id:'8114662',name:'ウプレティ マノズ',store:'吹田豊津中学校前',type:'FullTimeEmployee'},
+  {id:'9611959',name:'神田 もも子',store:'吹田豊津中学校前',type:'FullTimeEmployee'},
+  {id:'5190563',name:'ラワティ ニトゥ',store:'南金田二丁目',type:'Crew'},
+  {id:'5192065',name:'大谷 真澄',store:'南金田二丁目',type:'Crew'},
+  {id:'6043610',name:'迫田 悠之介',store:'南金田二丁目',type:'Crew'},
+  {id:'6186224',name:'ボラケ サンギタ',store:'南金田二丁目',type:'Crew'},
+  {id:'6317553',name:'梶谷 裕美',store:'南金田二丁目',type:'Crew'},
+  {id:'8188224',name:'バスネット イショル',store:'南金田二丁目',type:'Crew'},
+  {id:'8087694',name:'佐藤 碧人',store:'南金田二丁目',type:'Crew'},
+  {id:'9179118',name:'ラウト ラジュ バハドゥル',store:'南金田二丁目',type:'Crew'},
+  {id:'9191099',name:'チャンド テイラク',store:'南金田二丁目',type:'Crew'},
+  {id:'9567330',name:'新開 一郎',store:'南金田二丁目',type:'Crew'},
+  {id:'9767835',name:'有島 紹子',store:'南金田二丁目',type:'Crew'},
+  {id:'8339082',name:'三國 健太',store:'南金田二丁目',type:'FullTimeEmployee'},
+  {id:'6132000',name:'レグミ キショル',store:'南金田二丁目',type:'FullTimeEmployee'},
+  {id:'4150718',name:'齋藤 楓太',store:'新御堂筋上新田',type:'Crew'},
+  {id:'5137843',name:'タパ ラトナディプ',store:'新御堂筋上新田',type:'Crew'},
+  {id:'5173340',name:'サハ スザタ',store:'新御堂筋上新田',type:'Crew'},
+  {id:'6096224',name:'松井 和美',store:'新御堂筋上新田',type:'Crew'},
+  {id:'7191434',name:'パタ マガル ラビナ',store:'新御堂筋上新田',type:'Crew'},
+  {id:'7794355',name:'松浦 慶吾',store:'新御堂筋上新田',type:'Crew'},
+  {id:'8186026',name:'ハサン エムディーナズムル',store:'新御堂筋上新田',type:'Crew'},
+  {id:'9124857',name:'稲毛 由美',store:'新御堂筋上新田',type:'Crew'},
+  {id:'6087682',name:'ボガティ ビノッド',store:'新御堂筋上新田',type:'FullTimeEmployee'},
+  {id:'6119821',name:'ディン ティ トゥイ ズン',store:'新御堂筋上新田',type:'FullTimeEmployee'},
+  {id:'4177550',name:'清水 こゆき',store:'吹田青山台三丁目',type:'ContractEmployee'},
+  {id:'5175618',name:'森 倖大',store:'吹田青山台三丁目',type:'Crew'},
+  {id:'6084890',name:'松山 翔平',store:'吹田青山台三丁目',type:'Crew'},
+  {id:'6184033',name:'小川 美穂',store:'吹田青山台三丁目',type:'Crew'},
+  {id:'6189787',name:'中村 翔太',store:'吹田青山台三丁目',type:'Crew'},
+  {id:'7172866',name:'岡平 早織',store:'吹田青山台三丁目',type:'Crew'},
+  {id:'7172867',name:'森 智弘',store:'吹田青山台三丁目',type:'Crew'},
+  {id:'7177617',name:'湯浅 美風',store:'吹田青山台三丁目',type:'Crew'},
+  {id:'7177618',name:'橋本 理央',store:'吹田青山台三丁目',type:'Crew'},
+  {id:'7193493',name:'タパ パビトラ',store:'吹田青山台三丁目',type:'Crew'},
+  {id:'8189344',name:'江上友翔',store:'吹田青山台三丁目',type:'Crew'},
+  {id:'8196168',name:'松山 貴子',store:'吹田青山台三丁目',type:'Crew'},
+  {id:'9179497',name:'廣畑 昌伍',store:'吹田青山台三丁目',type:'Crew'},
+  {id:'7179705',name:'ケーシー マヘンドラ',store:'吹田青山台三丁目',type:'FullTimeEmployee'},
+  {id:'5957559',name:'高橋 惇',store:'吹田青山台三丁目',type:'FullTimeEmployee'},
+  {id:'8432163',name:'阪口 日代',store:'吹田青山台三丁目',type:'FullTimeEmployee'},
+  {id:'4159221',name:'バヤルコティ ロカ スジャータ',store:'豊中利倉東一丁目',type:'Crew'},
+  {id:'5157185',name:'速水 紗優菜',store:'豊中利倉東一丁目',type:'Crew'},
+  {id:'5160646',name:'細川 優歩',store:'豊中利倉東一丁目',type:'Crew'},
+  {id:'5189856',name:'タマン カリナ',store:'豊中利倉東一丁目',type:'Crew'},
+  {id:'7148781',name:'大屋 美津子',store:'豊中利倉東一丁目',type:'Crew'},
+  {id:'7180472',name:'カルキ メヌカ',store:'豊中利倉東一丁目',type:'Crew'},
+  {id:'8193204',name:'マガル デイリップ',store:'豊中利倉東一丁目',type:'Crew'},
+  {id:'9183711',name:'平田 愛',store:'豊中利倉東一丁目',type:'Crew'},
+  {id:'6143082',name:'ネパリ プラディープ',store:'豊中利倉東一丁目',type:'FullTimeEmployee'},
+  {id:'4155020',name:'ダカル ジャムナ',store:'豊中服部元町一丁目',type:'Crew'},
+  {id:'4181589',name:'ブダトキ スバス',store:'豊中服部元町一丁目',type:'Crew'},
+  {id:'4193896',name:'ティーミルシナ サニチャ',store:'豊中服部元町一丁目',type:'Crew'},
+  {id:'5137437',name:'パリヤル ジバン',store:'豊中服部元町一丁目',type:'Crew'},
+  {id:'6177013',name:'バラム ススミタ',store:'豊中服部元町一丁目',type:'Crew'},
+  {id:'7192986',name:'ビスタ ラチミ',store:'豊中服部元町一丁目',type:'Crew'},
+  {id:'9171966',name:'タグンナ サントス',store:'豊中服部元町一丁目',type:'Crew'},
+  {id:'7158383',name:'ラナ バト ビシャル',store:'豊中服部元町一丁目',type:'FullTimeEmployee'},
+  {id:'4106913',name:'ビスワカルマ ビスワス',store:'豊中服部元町一丁目',type:'FullTimeEmployee'},
+  {id:'4180081',name:'ラマ ラジト',store:'豊中服部元町一丁目',type:'FullTimeEmployee'},
+  {id:'4145187',name:'スナル サンディプ',store:'吹田朝日町',type:'Crew'},
+  {id:'4181219',name:'ロカ ヤムナ',store:'吹田朝日町',type:'Crew'},
+  {id:'6188356',name:'中川未有',store:'吹田朝日町',type:'Crew'},
+  {id:'7185556',name:'岩城 美玖',store:'吹田朝日町',type:'Crew'},
+  {id:'9169937',name:'シャヒバハドゥル アルジュン',store:'吹田朝日町',type:'Crew'},
+  {id:'4894367',name:'阪口 紀子',store:'吹田朝日町',type:'FullTimeEmployee'},
+  {id:'6023885',name:'ネパリ クル バハドゥール',store:'吹田朝日町',type:'FullTimeEmployee'},
+  {id:'6087766',name:'レサム スレスタ',store:'吹田朝日町',type:'FullTimeEmployee'},
+  {id:'5057823',name:'南田 美和子',store:'東淀川豊里五丁目',type:'ContractEmployee'},
+  {id:'5144586',name:'岩崎 真人',store:'東淀川豊里五丁目',type:'Crew'},
+  {id:'6144759',name:'原田 友依絵',store:'東淀川豊里五丁目',type:'ContractEmployee'},
+  {id:'8173616',name:'新城 虎ノ助',store:'東淀川豊里五丁目',type:'Crew'},
+  {id:'8192644',name:'サウド ビノド',store:'東淀川豊里五丁目',type:'Crew'},
+  {id:'9144785',name:'パウデル サントス',store:'東淀川豊里五丁目',type:'Crew'},
+  {id:'9145944',name:'岩崎 栞',store:'東淀川豊里五丁目',type:'Crew'},
+  {id:'9133996',name:'スレスタ ラスミ',store:'東淀川豊里五丁目',type:'Crew'},
+  {id:'7114110',name:'カルキ ゴクル',store:'東淀川豊里五丁目',type:'FullTimeEmployee'},
+  {id:'5118084',name:'スレスタ サントス',store:'東淀川豊里五丁目',type:'FullTimeEmployee'},
+  {id:'4180124',name:'仲野 智貴',store:'箕面白島二丁目',type:'Crew'},
+  {id:'4193808',name:'矢口 雄大',store:'箕面白島二丁目',type:'Crew'},
+  {id:'5596505',name:'野上 晴海',store:'箕面白島二丁目',type:'Crew'},
+  {id:'7179082',name:'ブダトキ ソバ',store:'箕面白島二丁目',type:'Crew'},
+  {id:'7180108',name:'秋田 瑛輝',store:'箕面白島二丁目',type:'Crew'},
+  {id:'8180624',name:'山本 由美',store:'箕面白島二丁目',type:'Crew'},
+  {id:'9190809',name:'アクレ リモナ',store:'箕面白島二丁目',type:'Crew'},
+  {id:'9192200',name:'加藤 日桜里',store:'箕面白島二丁目',type:'Crew'},
+  {id:'5125663',name:'ブジェル カマル',store:'箕面白島二丁目',type:'FullTimeEmployee'},
+  {id:'8114642',name:'ダンガル スラズ',store:'箕面白島二丁目',type:'FullTimeEmployee'},
+];
+
+const DB={employees(){return Storage.getEmployees()},evaluations(){return Storage.getEvaluations()},coachings(){return Storage.getCoachings()},observations(){return Storage.getObservations()},user(){return Storage.getUser()}};
+
+const App={
+  _view:'login',_history:[],_currentEmpId:null,_currentFormEmpId:null,
+
+  init(){
+    if(!Storage.getEmployees().length){
+      Storage.saveEmployees(INITIAL_EMPLOYEES.map(e=>({...e,status:'在籍中',joinDate:'',leaveDate:'',notes:'',crewRoles:['ルーキー（新人）'],certifications:[],createdAt:new Date().toISOString()})));
+    }
+    this._buildStoreSelects();
+    const roleEl=document.getElementById('login-role');
+    if(roleEl){roleEl.addEventListener('change',()=>this._toggleStoreWrap());this._toggleStoreWrap()}
+    const user=DB.user();
+    if(user){this._applyUser(user);this.showView('dashboard')}else{this.showView('login')}
+  },
+
+  _buildStoreSelects(){
+    let stores=Storage.getStoreList();
+    if(!stores.length)stores=[...STORES];
+    if(!stores.length){const el=document.getElementById('login-store');if(el)el.innerHTML='<option value="">店舗データが空です</option>';return}
+    const el=document.getElementById('login-store');
+    if(el)el.innerHTML='<option value="">── 店舗を選択 ──</option>'+stores.map(s=>`<option value="${s}">${s}</option>`).join('');
+    ['emp-filter-store','obs-filter-store','imp-filter-store','sa-filter-store','obs-store'].forEach(id=>{
+      const e=document.getElementById(id);if(!e)return;
+      e.innerHTML='<option value="">全店舗</option>'+stores.map(s=>`<option value="${s}">${s}</option>`).join('');
+    });
+  },
+
+  _toggleStoreWrap(){
+    const role=document.getElementById('login-role')?.value;
+    const wrap=document.getElementById('login-store-wrap');
+    if(wrap)wrap.style.display=role==='SI'?'none':'';
+  },
+
+  _applyUser(user){
+    document.getElementById('app-header').classList.remove('hidden');
+    document.getElementById('bottom-nav').classList.remove('hidden');
+    const lbl={SI:'SI',SC:'SC','店舗責任者':'責任者','一般クルー':'クルー'}[user.role]||user.role;
+    document.getElementById('header-user').textContent=`${user.name}｜${lbl}`;
+  },
+
+  login(){
+    const name=document.getElementById('login-name').value.trim();
+    const role=document.getElementById('login-role').value;
+    const store=document.getElementById('login-store').value;
+    if(!name){alert('お名前を入力してください');return}
+    if(role!=='SI'&&!store){alert('担当店舗を選択してください');return}
+    const user={name,role,store:(role==='SI'||role==='SC')?'':store};
+    Storage.saveUser(user);this._applyUser(user);this.showView('dashboard');
+  },
+
+  logout(){
+    Storage.clearUser();
+    document.getElementById('app-header').classList.add('hidden');
+    document.getElementById('bottom-nav').classList.add('hidden');
+    this.showView('login');
+  },
+
+  showView(viewId,pushHistory=true){
+    document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
+    const el=document.getElementById('view-'+viewId);if(!el)return;
+    el.classList.add('active');
+    if(pushHistory&&this._view!==viewId)this._history.push(this._view);
+    this._view=viewId;this._updateHeader(viewId);this._updateNav(viewId);this._renderView(viewId);window.scrollTo(0,0);
+  },
+
+  navTo(viewId){this._history=[];this.showView(viewId,false)},
+  goBack(){const p=this._history.pop();if(p)this.showView(p,false)},
+
+  _updateHeader(viewId){
+    const titles={login:'接客評価システム',dashboard:'阪口商店 接客評価',employees:'クルー一覧','employee-detail':'クルー詳細',evaluation:'評価入力',observation:'気づきメモ',improvement:'改善必要者','store-analysis':'店舗別分析','analysis-menu':'分析','employee-form':'クルー登録・編集'};
+    document.getElementById('header-title').textContent=titles[viewId]||'';
+    const back=document.getElementById('btn-back');
+    back.classList.toggle('hidden',['dashboard','employees','observation','analysis-menu','login'].includes(viewId));
+  },
+
+  _updateNav(viewId){
+    document.querySelectorAll('.nav-item').forEach(b=>{b.classList.remove('active');if(b.dataset.view===viewId)b.classList.add('active')});
+  },
+
+  _renderView(viewId){
+    const map={dashboard:'renderDashboard',employees:'renderEmployeeList','employee-detail':'renderEmployeeDetail',evaluation:'renderEvaluation',observation:'renderObservations',improvement:'renderImprovement','store-analysis':'renderStoreAnalysis','employee-form':'renderEmployeeForm'};
+    if(map[viewId])this[map[viewId]]();
+  },
+
+  renderDashboard(){
+    const emps=DB.employees().filter(e=>e.status==='在籍中');
+    const evals=DB.evaluations();
+    const evaledIds=new Set(evals.map(e=>e.employeeId));
+    const total=emps.length,evaled=emps.filter(e=>evaledIds.has(e.id)).length;
+    const rate=total?Math.round(evaled/total*100):0;
+    const needImprove=emps.filter(e=>SERVICE_ITEMS.some(item=>{const r=this._getFinalRank(evals,e.id,item.key);return r==='△'||r==='✕'}));
+    const fantaCount=emps.filter(e=>(e.certifications||[]).some(c=>c.includes('ファンタジスタ')&&!c.includes('グランド'))).length;
+    const grandCount=emps.filter(e=>(e.certifications||[]).some(c=>c.includes('グランドファンタジスタ'))).length;
+    const storeManagerCount=emps.filter(e=>(e.certifications||[]).includes('認定店長')).length;
+    const storeStats=STORES.map(s=>{const se=emps.filter(e=>e.store===s);const ev=se.filter(e=>evaledIds.has(e.id)).length;return{store:s,total:se.length,evaled:ev,rate:se.length?Math.round(ev/se.length*100):0}}).filter(s=>s.total>0).sort((a,b)=>b.rate-a.rate);
+    const improveList=needImprove.slice(0,5).map(e=>{
+      const items=SERVICE_ITEMS.filter(item=>{const r=this._getFinalRank(evals,e.id,item.key);return r==='△'||r==='✕'});
+      return`<div class="imp-row" onclick="App.openEmployee('${e.id}')"><div class="imp-name">${e.name}</div><div class="imp-store">${e.store}</div><div class="imp-items">${items.map(i=>`<span class="badge badge-crew">${i.label}</span>`).join('')}</div></div>`;
+    }).join('');
+    document.getElementById('dashboard-content').innerHTML=`
+      <div class="stats-grid">
+        <div class="stat-card"><div class="stat-num">${total}</div><div class="stat-label">在籍クルー数</div></div>
+        <div class="stat-card"><div class="stat-num" style="color:var(--green)">${rate}%</div><div class="stat-label">評価完了率</div></div>
+        <div class="stat-card"><div class="stat-num" style="color:var(--orange)">${total-evaled}</div><div class="stat-label">未評価人数</div></div>
+        <div class="stat-card"><div class="stat-num" style="color:var(--red)">${needImprove.length}</div><div class="stat-label">改善必要人数</div></div>
+      </div>
+      <div class="card"><div class="section-title">育成指標</div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <div class="stat-card" style="flex:1;min-width:80px"><div class="stat-num" style="font-size:20px;color:#5B21B6">${fantaCount}</div><div class="stat-label">ファンタジスタ</div></div>
+          <div class="stat-card" style="flex:1;min-width:80px"><div class="stat-num" style="font-size:20px;color:#713F12">${grandCount}</div><div class="stat-label">Gファンタジスタ</div></div>
+          <div class="stat-card" style="flex:1;min-width:80px"><div class="stat-num" style="font-size:20px;color:#991B1B">${storeManagerCount}</div><div class="stat-label">認定店長</div></div>
+        </div>
+      </div>
+      ${needImprove.length?`<div class="section-title">改善必要クルー（上位5名）</div>${improveList}<button class="btn btn-secondary btn-full" onclick="App.navTo('improvement')">全員を見る</button>`:''}
+      <div class="section-title" style="margin-top:12px">店舗別評価完了率</div>
+      ${storeStats.map(s=>`<div class="store-bar-wrap"><div class="store-bar-name"><span>${s.store}</span><span>${s.evaled}/${s.total}名 ${s.rate}%</span></div><div class="store-bar-track"><div class="store-bar-fill" style="width:${s.rate}%"></div></div></div>`).join('')}
+      <div style="height:8px"></div>
+      <button class="btn btn-secondary btn-full" onclick="Storage.downloadBackup()" style="margin-top:8px">データバックアップ</button>
+      <button class="btn btn-secondary btn-full" onclick="App.logout()" style="margin-top:8px">ログアウト</button>`;
+  },
+
+  renderEmployeeList(){
+    const user=DB.user();const storeEl=document.getElementById('emp-filter-store');
+    if(storeEl){if(user.role==='店舗責任者'){storeEl.value=user.store;storeEl.disabled=true}else{storeEl.disabled=false}}
+    this.filterEmployees();
+  },
+
+  filterEmployees(){
+    const q=(document.getElementById('emp-search')?.value||'').trim();
+    const store=document.getElementById('emp-filter-store')?.value||'';
+    const type=document.getElementById('emp-filter-type')?.value||'';
+    const user=DB.user();let emps=DB.employees();
+    if(user.role==='店舗責任者')emps=emps.filter(e=>e.store===user.store);
+    if(store)emps=emps.filter(e=>e.store===store);
+    if(type)emps=emps.filter(e=>e.type===type);
+    if(q)emps=emps.filter(e=>e.name.includes(q)||e.store.includes(q));
+    emps=emps.filter(e=>e.status!=='退職');
+    const evals=DB.evaluations();
+    document.getElementById('employee-list-content').innerHTML=emps.length?emps.map(e=>{
+      const badges=this._roleBadges(e);
+      const done=SERVICE_ITEMS.every(item=>this._getFinalRank(evals,e.id,item.key));
+      const tag=done?'<span class="badge" style="background:#D1FAE5;color:#065F46">評価済</span>':'<span class="badge badge-crew">未評価</span>';
+      return`<div class="emp-card" onclick="App.openEmployee('${e.id}')"><div class="emp-avatar">${e.name.charAt(0)}</div><div class="emp-info"><div class="emp-name">${e.name}</div><div class="emp-sub">${e.store}｜${this._typeName(e.type)}</div><div class="emp-badges">${badges}${tag}</div></div><div style="color:var(--gray)">›</div></div>`;
+    }).join(''):'<div class="empty-state"><p>該当するクルーが見つかりません</p></div>';
+  },
+
+  openEmployee(id){this._currentEmpId=id;this.showView('employee-detail')},
+
+  renderEmployeeDetail(){
+    const id=this._currentEmpId;const e=DB.employees().find(x=>x.id===id);if(!e)return;
+    const evals=DB.evaluations();
+    const coachings=DB.coachings().filter(c=>c.employeeId===id).sort((a,b)=>b.createdAt.localeCompare(a.createdAt));
+    const evalSummary=SERVICE_ITEMS.map(item=>{
+      const si=this._getRankByRole(evals,id,'SI',item.key),sc=this._getRankByRole(evals,id,'SC',item.key),sm=this._getRankByRole(evals,id,'店舗責任者',item.key);
+      const fin=si||sc||sm||'';
+      return`<div style="display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid var(--border)"><span style="font-size:13px;font-weight:600;width:65px">${item.label}</span><span class="rank-chip ${fin||'未'}">${fin||'未'}</span><span style="font-size:11px;color:var(--text-sub)">SI:${this._chip(si)} SC:${this._chip(sc)} 責:${this._chip(sm)}</span></div>`;
+    }).join('');
+    const coachHtml=coachings.length?coachings.map(c=>`<div class="timeline-item"><div class="timeline-dot"></div><div class="timeline-body"><div class="timeline-meta"><span>${c.date||c.createdAt?.slice(0,10)||''}</span><span class="badge badge-${this._roleClass(c.authorRole)}">${c.authorRole}</span><span>${c.authorName}</span></div><div>${c.content}</div>${c.photo?`<img src="${c.photo}" class="timeline-photo">`:''}</div></div>`).join(''):'<div class="empty-state"><p>指導メモなし</p></div>';
+    const canEdit=this._canEdit();
+    document.getElementById('employee-detail-content').innerHTML=`
+      <div class="card"><div class="flex-between"><div><div style="font-size:20px;font-weight:800">${e.name}</div><div class="text-sub">${e.store}｜${this._typeName(e.type)}｜ID:${e.id}</div></div><div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px"><span class="badge ${e.status==='在籍中'?'badge-sub':'badge-crew'}">${e.status}</span>${canEdit?`<button class="btn btn-secondary btn-sm" onclick="App.editEmployee('${e.id}')">編集</button>`:''}</div></div><div class="emp-badges" style="margin-top:10px">${this._roleBadges(e)}</div></div>
+      <div class="card"><div class="flex-between" style="margin-bottom:8px"><div style="font-weight:700">評価サマリー</div>${canEdit?`<button class="btn btn-primary btn-sm" onclick="App.openEvaluation('${e.id}')">評価入力</button>`:''}</div>${evalSummary}</div>
+      <div class="card"><div class="flex-between" style="margin-bottom:8px"><div style="font-weight:700">指導メモ</div>${canEdit?`<button class="btn btn-primary btn-sm" onclick="App.showAddCoaching('${e.id}')">追加</button>`:''}</div>${coachHtml}</div>`;
+  },
+
+  openEvaluation(id){this._currentEmpId=id;this.showView('evaluation')},
+
+  renderEvaluation(){
+    const id=this._currentEmpId;const e=DB.employees().find(x=>x.id===id);if(!e)return;
+    const evals=DB.evaluations();
+    const cur={};SERVICE_ITEMS.forEach(item=>{cur[item.key]={sm:this._getLatestEval(evals,id,'店舗責任者',item.key),sc:this._getLatestEval(evals,id,'SC',item.key),si:this._getLatestEval(evals,id,'SI',item.key)}});
+    const roles=[{role:'店舗責任者',key:'sm',label:'店舗責任者評価'},{role:'SC',key:'sc',label:'SC評価'},{role:'SI',key:'si',label:'SI評価'}];
+    const items=SERVICE_ITEMS.map(item=>{
+      const sections=roles.map(r=>{
+        const cur2=cur[item.key][r.key];const dis=!this._canEditRole(r.role);
+        const btns=RANKS.map(rank=>`<button class="rank-btn ${cur2&&cur2.rank===rank?'selected-'+rank:''}" data-item="${item.key}" data-role="${r.key}" onclick="App.selectRank(this,'${item.key}','${r.key}','${rank}')" ${dis?'disabled style="opacity:0.4"':''}>${rank}</button>`).join('');
+        return`<div class="eval-section"><div class="eval-role-label">${r.label}</div><div class="rank-row">${btns}</div><textarea class="eval-comment" data-item="${item.key}" data-role="${r.key}" rows="2" placeholder="コメント（任意）" style="width:100%;padding:8px;border:1px solid var(--border);border-radius:6px;margin-top:4px;resize:vertical" ${dis?'disabled style="opacity:0.6;background:var(--gray-light)"':''}>${cur2?cur2.comment:''}</textarea></div>`;
+      }).join('');
+      return`<div class="eval-item"><div class="eval-item-header"><h3>${item.label} ${item.title}</h3><button style="background:rgba(255,255,255,0.2);border:none;color:#fff;padding:4px 8px;border-radius:6px;font-size:11px;cursor:pointer" onclick="App.showStandards('${item.key}')">評価基準を見る</button></div><div class="eval-item-body">${sections}</div></div>`;
+    }).join('');
+    document.getElementById('evaluation-content').innerHTML=`<div style="background:#fff;border-radius:var(--radius);padding:12px 14px;margin-bottom:10px;box-shadow:0 1px 3px rgba(0,0,0,0.08)"><div style="font-weight:700;font-size:15px">${e.name}</div><div class="text-sub">${e.store}</div></div>${items}<div style="padding:8px 0"><div class="form-group"><label>指導メモ（任意）</label><textarea id="eval-guidance" rows="3" placeholder="指導内容・申し送り事項など"></textarea></div><button class="btn btn-primary btn-full" onclick="App.saveEvaluation('${id}')">保存する</button></div>`;
+  },
+
+  selectRank(btn,itemKey,roleKey,rank){
+    document.querySelectorAll(`.rank-btn[data-item="${itemKey}"][data-role="${roleKey}"]`).forEach(b=>b.className='rank-btn');
+    btn.classList.add('selected-'+rank);
+  },
+
+  saveEvaluation(empId){
+    const user=DB.user();const now=new Date();const evalDate=now.toISOString().slice(0,7);
+    const roleMap={sm:'店舗責任者',sc:'SC',si:'SI'};
+    const myKey=Object.keys(roleMap).find(k=>roleMap[k]===user.role);
+    const keys=user.role==='SI'?['sm','sc','si']:myKey?[myKey]:[];
+    if(!keys.length){alert('評価権限がありません');return}
+    let saved=false;
+    keys.forEach(roleKey=>{
+      const items={};let hasAny=false;
+      SERVICE_ITEMS.forEach(item=>{
+        const btn=[...document.querySelectorAll(`.rank-btn[data-item="${item.key}"][data-role="${roleKey}"]`)].find(b=>RANKS.some(r=>b.classList.contains('selected-'+r)));
+        const rank=btn?RANKS.find(r=>btn.classList.contains('selected-'+r))||'':'';
+        const comment=document.querySelector(`textarea.eval-comment[data-item="${item.key}"][data-role="${roleKey}"]`)?.value||'';
+        items[item.key]={rank,comment};if(rank)hasAny=true;
+      });
+      if(!hasAny)return;
+      const guidance=document.getElementById('eval-guidance')?.value||'';
+      Storage.addEvaluation({id:`${Date.now()}-${roleKey}`,employeeId:empId,evalDate,evaluatorName:user.name,evaluatorRole:roleMap[roleKey],items,guidanceNotes:guidance,createdAt:now.toISOString()});
+      saved=true;
+      if(guidance.trim())Storage.addCoaching({employeeId:empId,date:evalDate,authorName:user.name,authorRole:roleMap[roleKey],content:guidance,photo:null});
+    });
+    if(!saved){alert('少なくとも1つの評価ランクを選択してください');return}
+    alert('評価を保存しました');this.goBack();
+  },
+
+  renderObservations(){
+    const store=document.getElementById('obs-filter-store')?.value||'';
+    const user=DB.user();
+    let obs=DB.observations().sort((a,b)=>b.createdAt.localeCompare(a.createdAt));
+    if(user.role==='店舗責任者')obs=obs.filter(o=>o.store===user.store);
+    else if(store)obs=obs.filter(o=>o.store===store);
+    const html=obs.length?obs.map(o=>`<div class="timeline-item"><div class="timeline-dot" style="background:${o.authorRole==='SI'?'#1E40AF':o.authorRole==='SC'?'#0369A1':'#065F46'}"></div><div class="timeline-body"><div class="timeline-meta"><span>${o.createdAt.slice(0,10)}</span><span class="badge badge-${this._roleClass(o.authorRole)}">${o.authorRole}</span><span>${o.authorName}</span><span style="color:var(--blue)">${o.store}</span></div><div style="margin-top:4px">${o.content.replace(/\n/g,'<br>')}</div>${o.photo?`<img src="${o.photo}" class="timeline-photo">`:''}  </div></div>`).join(''):'<div class="empty-state"><p>気づきメモはまだありません</p></div>';
+    document.getElementById('observation-content').innerHTML=`<div style="padding:12px">${html}</div>`;
+  },
+
+  showAddObservation(){
+    const user=DB.user();const el=document.getElementById('obs-store');
+    if(user.role==='店舗責任者'){el.value=user.store;el.disabled=true}else{el.disabled=false}
+    document.getElementById('obs-content').value='';document.getElementById('obs-photo').value='';
+    this._openModal('modal-observation');
+  },
+
+  async saveObservation(){
+    const user=DB.user();const store=document.getElementById('obs-store').value;
+    const content=document.getElementById('obs-content').value.trim();
+    if(!content){alert('内容を入力してください');return}
+    const f=document.getElementById('obs-photo').files[0];
+    const photo=f?await this._fileToBase64(f):null;
+    Storage.addObservation({store,content,authorName:user.name,authorRole:user.role,photo});
+    this.closeModal();this.renderObservations();
+  },
+
+  showAddCoaching(empId){
+    this._currentEmpId=empId;
+    document.getElementById('coaching-content').value='';document.getElementById('coaching-photo').value='';
+    this._openModal('modal-coaching');
+  },
+
+  async saveCoaching(){
+    const user=DB.user();const content=document.getElementById('coaching-content').value.trim();
+    if(!content){alert('内容を入力してください');return}
+    const f=document.getElementById('coaching-photo').files[0];
+    const photo=f?await this._fileToBase64(f):null;
+    Storage.addCoaching({employeeId:this._currentEmpId,date:new Date().toISOString().slice(0,10),authorName:user.name,authorRole:user.role,content,photo});
+    this.closeModal();this.renderEmployeeDetail();
+  },
+
+  renderImprovement(){
+    const store=document.getElementById('imp-filter-store')?.value||'';
+    const user=DB.user();let emps=DB.employees().filter(e=>e.status==='在籍中');
+    if(user.role==='店舗責任者')emps=emps.filter(e=>e.store===user.store);
+    else if(store)emps=emps.filter(e=>e.store===store);
+    const evals=DB.evaluations();
+    const rows=emps.filter(e=>SERVICE_ITEMS.some(item=>{const r=this._getFinalRank(evals,e.id,item.key);return r==='△'||r==='✕'})).map(e=>{
+      const items=SERVICE_ITEMS.filter(item=>{const r=this._getFinalRank(evals,e.id,item.key);return r==='△'||r==='✕'});
+      const badges=items.map(item=>{const r=this._getFinalRank(evals,e.id,item.key);return`<span class="rank-chip ${r}" style="font-size:11px;padding:0 6px">${item.label}:${r}</span>`}).join('');
+      return`<div class="imp-row" onclick="App.openEmployee('${e.id}')"><div class="flex-between"><div class="imp-name">${e.name}</div><span style="color:var(--gray)">›</span></div><div class="imp-store">${e.store}</div><div class="imp-items" style="margin-top:6px">${badges}</div></div>`;
+    }).join('');
+    document.getElementById('improvement-content').innerHTML=rows||'<div class="empty-state"><p>改善必要なクルーはいません</p></div>';
+  },
+
+  renderStoreAnalysis(){
+    const store=document.getElementById('sa-filter-store')?.value||'';
+    const evals=DB.evaluations();const emps=DB.employees().filter(e=>e.status==='在籍中');
+    const target=store?[store]:STORES;
+    const html=target.map(st=>{
+      const se=emps.filter(e=>e.store===st);if(!se.length)return'';
+      const bars=SERVICE_ITEMS.map(item=>{
+        const counts={'◎':0,'○':0,'△':0,'✕':0,未:0};
+        se.forEach(e=>{const r=this._getFinalRank(evals,e.id,item.key);if(r)counts[r]++;else counts['未']++});
+        const n=se.length,p=v=>Math.round(v/n*100);
+        return`<div class="analysis-bar-wrap"><div class="analysis-bar-label">${item.label} ${item.title}</div><div class="analysis-bar-multi"><div class="bar-good" style="width:${p(counts['◎'])}%"></div><div class="bar-ok" style="width:${p(counts['○'])}%"></div><div class="bar-warn" style="width:${p(counts['△'])}%"></div><div class="bar-bad" style="width:${p(counts['✕'])}%"></div></div><div class="bar-legend"><span>◎${counts['◎']}</span><span>○${counts['○']}</span><span>△${counts['△']}</span><span>✕${counts['✕']}</span><span>未${counts['未']}</span></div></div>`;
+      }).join('');
+      return`<div class="card"><div style="font-weight:700;margin-bottom:10px">${st}（${se.length}名）</div>${bars}</div>`;
+    }).join('');
+    document.getElementById('store-analysis-content').innerHTML=html||'<div class="empty-state"><p>データがありません</p></div>';
+  },
+
+  editEmployee(id){this._currentFormEmpId=id;this.showView('employee-form')},
+
+  renderEmployeeForm(){
+    const id=this._currentFormEmpId;const emps=DB.employees();const e=id?emps.find(x=>x.id===id):null;
+    const stores=Storage.getStoreList().length?Storage.getStoreList():STORES;
+    const roleChecks=CREW_ROLES.map(r=>`<label class="checkbox-item"><input type="checkbox" name="crewRole" value="${r}" ${(e?.crewRoles||[]).includes(r)?'checked':''}>${r}</label>`).join('');
+    const certChecks=CERTIFICATIONS.map(c=>`<label class="checkbox-item"><input type="checkbox" name="cert" value="${c}" ${(e?.certifications||[]).includes(c)?'checked':''}>${c}</label>`).join('');
+    const storeOpts=stores.map(s=>`<option value="${s}" ${e?.store===s?'selected':''}>${s}</option>`).join('');
+    const typeOpts=[['Crew','クルー'],['ContractEmployee','契約社員'],['FullTimeEmployee','正社員']].map(([v,l])=>`<option value="${v}" ${e?.type===v?'selected':''}>${l}</option>`).join('');
+    document.getElementById('employee-form-content').innerHTML=`
+      <div class="card">
+        <div class="form-group"><label>従業員ID</label><input type="text" id="f-id" value="${e?.id||''}" ${e?'disabled':''}></div>
+        <div class="form-group"><label>氏名 *</label><input type="text" id="f-name" value="${e?.name||''}"></div>
+        <div class="form-group"><label>店舗 *</label><select id="f-store">${storeOpts}</select></div>
+        <div class="form-group"><label>社員区分</label><select id="f-type">${typeOpts}</select></div>
+        <div class="form-group"><label>在籍状況</label><select id="f-status">${['在籍中','休職中','退職'].map(s=>`<option value="${s}" ${e?.status===s?'selected':''}>${s}</option>`).join('')}</select></div>
+        <div class="form-group"><label>入社日</label><input type="date" id="f-join" value="${e?.joinDate||''}"></div>
+        <div class="form-group"><label>退職日</label><input type="date" id="f-leave" value="${e?.leaveDate||''}"></div>
+        <div class="form-group"><label>備考</label><textarea id="f-notes" rows="2">${e?.notes||''}</textarea></div>
+      </div>
+      <div class="card"><div style="font-weight:700;margin-bottom:10px">クルー役職</div><div class="checkbox-group">${roleChecks}</div></div>
+      <div class="card"><div style="font-weight:700;margin-bottom:10px">資格・認定</div><div class="checkbox-group">${certChecks}</div></div>
+      <div style="padding:0 0 8px">
+        <button class="btn btn-primary btn-full" onclick="App.saveEmployeeForm()">保存する</button>
+        ${e?`<button class="btn btn-danger btn-full" style="margin-top:8px" onclick="App.deleteEmployee('${e.id}')">退職処理</button>`:''}
+      </div>`;
+  },
+
+  saveEmployeeForm(){
+    const id=this._currentFormEmpId;const name=document.getElementById('f-name').value.trim();
+    if(!name){alert('氏名を入力してください');return}
+    const crewRoles=[...document.querySelectorAll('input[name=crewRole]:checked')].map(i=>i.value);
+    const certifications=[...document.querySelectorAll('input[name=cert]:checked')].map(i=>i.value);
+    const existing=id?Storage.getEmployee(id):null;
+    Storage.upsertEmployee({id:id||document.getElementById('f-id').value.trim()||Date.now().toString(36),name,store:document.getElementById('f-store').value,type:document.getElementById('f-type').value,status:document.getElementById('f-status').value,joinDate:document.getElementById('f-join').value,leaveDate:document.getElementById('f-leave').value,notes:document.getElementById('f-notes').value,crewRoles:crewRoles.length?crewRoles:['ルーキー（新人）'],certifications,createdAt:existing?.createdAt||new Date().toISOString()});
+    alert('保存しました');this._currentFormEmpId=null;this.goBack();
+  },
+
+  deleteEmployee(id){
+    if(!confirm('退職処理を行いますか？'))return;
+    const emp=Storage.getEmployee(id);
+    if(emp)Storage.upsertEmployee({...emp,status:'退職',leaveDate:new Date().toISOString().slice(0,10)});
+    alert('退職処理しました');this._history=[];this.navTo('employees');
+  },
+
+  showStandards(itemKey){
+    const item=SERVICE_ITEMS.find(i=>i.key===itemKey);if(!item)return;
+    document.getElementById('modal-standards-title').textContent=`${item.label} ${item.title}`;
+    document.getElementById('modal-standards-body').innerHTML=`
+      <p style="font-size:13px;margin-bottom:10px"><strong>確認ポイント：</strong>${item.points}</p>
+      <div style="margin-bottom:12px"><div style="font-weight:700;margin-bottom:6px">評価基準</div>${RANKS.map(r=>`<div style="display:flex;gap:8px;align-items:flex-start;margin-bottom:6px"><span class="rank-chip ${r}" style="flex-shrink:0">${r}</span><span style="font-size:13px">${item.criteria[r]}</span></div>`).join('')}</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px">
+        <div style="background:#D1FAE5;border-radius:8px;padding:10px"><div style="font-size:11px;font-weight:700;color:#065F46;margin-bottom:4px">✓ 良い例</div><div style="font-size:12px">${item.good}</div></div>
+        <div style="background:#FEE2E2;border-radius:8px;padding:10px"><div style="font-size:11px;font-weight:700;color:#991B1B;margin-bottom:4px">✗ 悪い例</div><div style="font-size:12px">${item.bad}</div></div>
+      </div>
+      <div style="background:#FEF9C3;border-radius:8px;padding:10px;margin-bottom:12px"><div style="font-size:11px;font-weight:700;color:#713F12;margin-bottom:4px">⚠ 注意事項</div><div style="font-size:12px">${item.note}</div></div>
+      <img src="${item.img}" class="modal-img" onerror="this.style.display='none'">`;
+    this._openModal('modal-standards');
+  },
+
+  _openModal(id){document.getElementById('modal-overlay').classList.remove('hidden');document.getElementById(id).classList.remove('hidden')},
+  closeModal(){document.getElementById('modal-overlay').classList.add('hidden');document.querySelectorAll('.modal').forEach(m=>m.classList.add('hidden'))},
+  viewPhoto(src){window.open(src,'_blank')},
+
+  _getFinalRank(evals,empId,itemKey){return this._getRankByRole(evals,empId,'SI',itemKey)||this._getRankByRole(evals,empId,'SC',itemKey)||this._getRankByRole(evals,empId,'店舗責任者',itemKey)||''},
+  _getRankByRole(evals,empId,role,itemKey){const f=evals.filter(e=>e.employeeId===empId&&e.evaluatorRole===role);if(!f.length)return'';return f.sort((a,b)=>b.createdAt.localeCompare(a.createdAt))[0].items?.[itemKey]?.rank||''},
+  _getLatestEval(evals,empId,role,itemKey){const f=evals.filter(e=>e.employeeId===empId&&e.evaluatorRole===role&&e.items?.[itemKey]?.rank);if(!f.length)return null;return f.sort((a,b)=>b.createdAt.localeCompare(a.createdAt))[0].items[itemKey]},
+  _canEdit(){const r=DB.user()?.role;return r==='SI'||r==='SC'||r==='店舗責任者'},
+  _canEditRole(role){const r=DB.user()?.role;return r==='SI'||r===role},
+  _typeName(type){return{Crew:'クルー',ContractEmployee:'契約社員',FullTimeEmployee:'正社員'}[type]||type},
+  _roleClass(role){return{SI:'si',SC:'sc','店舗責任者':'sm'}[role]||'crew'},
+  _chip(rank){return rank?`<span class="rank-chip ${rank}">${rank}</span>`:'<span class="rank-chip 未">未</span>'},
+  _roleBadges(e){
+    const roles=(e.crewRoles||[]).map(r=>`<span class="badge ${{ルーキー:'badge-rookie',レギュラー:'badge-regular',サブリーダー:'badge-sub',リーダー:'badge-leader'}[r.replace('（新人）','')]||'badge-crew'}">${r}</span>`);
+    const certs=(e.certifications||[]).map(c=>{const cls=c.includes('グランドファンタジスタ')?'badge-grand':c==='認定店長'?'badge-store-mgr':'badge-fanta';const s=c.replace('グランドファンタジスタ','GF').replace('ファンタジスタ','F');return`<span class="badge ${cls}">${s}</span>`});
+    return[...roles,...certs].join('');
+  },
+  async _fileToBase64(file){return new Promise(r=>{const fr=new FileReader();fr.onload=e=>r(e.target.result);fr.readAsDataURL(file)})},
+};
+
+App.init();
+</script>
 </body>
 </html>
