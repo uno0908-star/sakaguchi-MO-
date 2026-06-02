@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+  <title>接客評価システム｜阪口商店</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<!-- ヘッダー -->
+<header id="app-header" class="hidden">
+  <button id="btn-back" class="btn-back hidden" onclick="App.goBack()">&#8592;</button>
+  <h1 id="header-title">接客評価システム</h1>
+  <div id="header-user" class="header-user"></div>
+</header>
+
+<!-- ===== ビュー群 ===== -->
+
+<!-- ログイン -->
+<div id="view-login" class="view active">
+  <div class="login-wrap">
+    <div class="login-logo">
+      <div class="logo-badge">阪口商店</div>
+      <p class="login-subtitle">接客評価システム</p>
+    </div>
+    <div class="card">
+      <div class="form-group">
+        <label>お名前</label>
+        <input type="text" id="login-name" placeholder="例：田中 太郎">
+      </div>
+      <div class="form-group">
+        <label>役職</label>
+        <select id="login-role">
+          <option value="SI">SI</option>
+          <option value="SC">SC</option>
+          <option value="店舗責任者">店舗責任者</option>
+          <option value="一般クルー">一般クルー</option>
+        </select>
+      </div>
+      <div class="form-group" id="login-store-wrap">
+        <label>担当店舗</label>
+        <select id="login-store"></select>
+      </div>
+      <button class="btn btn-primary btn-full" onclick="App.login()">ログイン</button>
+    </div>
+  </div>
+</div>
+
+<!-- ダッシュボード -->
+<div id="view-dashboard" class="view">
+  <div class="view-content" id="dashboard-content"></div>
+</div>
+
+<!-- 従業員一覧 -->
+<div id="view-employees" class="view">
+  <div class="search-bar">
+    <input type="search" id="emp-search" placeholder="氏名・店舗で検索" oninput="App.filterEmployees()">
+    <select id="emp-filter-store" onchange="App.filterEmployees()"><option value="">全店舗</option></select>
+    <select id="emp-filter-type" onchange="App.filterEmployees()">
+      <option value="">全区分</option>
+      <option value="FullTimeEmployee">正社員</option>
+      <option value="ContractEmployee">契約社員</option>
+      <option value="Crew">クルー</option>
+    </select>
+  </div>
+  <div class="view-content" id="employee-list-content"></div>
+  <button class="btn-fab" onclick="App.showView('employee-form')" title="新規登録">＋</button>
+</div>
+
+<!-- 従業員詳細 -->
+<div id="view-employee-detail" class="view">
+  <div class="view-content" id="employee-detail-content"></div>
+</div>
+
+<!-- 評価入力 -->
+<div id="view-evaluation" class="view">
+  <div class="view-content" id="evaluation-content"></div>
+</div>
+
+<!-- 気づきメモ -->
+<div id="view-observation" class="view">
+  <div class="search-bar">
+    <select id="obs-filter-store" onchange="App.renderObservations()"><option value="">全店舗</option></select>
+  </div>
+  <div class="view-content" id="observation-content"></div>
+  <button class="btn-fab" onclick="App.showAddObservation()">＋</button>
+</div>
+
+<!-- 改善必要者 -->
+<div id="view-improvement" class="view">
+  <div class="search-bar">
+    <select id="imp-filter-store" onchange="App.renderImprovement()"><option value="">全店舗</option></select>
+  </div>
+  <div class="view-content" id="improvement-content"></div>
+</div>
+
+<!-- 店舗分析 -->
+<div id="view-store-analysis" class="view">
+  <div class="search-bar">
+    <select id="sa-filter-store" onchange="App.renderStoreAnalysis()"><option value="">全店舗</option></select>
+  </div>
+  <div class="view-content" id="store-analysis-content"></div>
+</div>
+
+<!-- 従業員フォーム（新規/編集） -->
+<div id="view-employee-form" class="view">
+  <div class="view-content" id="employee-form-content"></div>
+</div>
+
+<!-- 分析メニュー -->
+<div id="view-analysis-menu" class="view">
+  <div class="view-content">
+    <div class="menu-list">
+      <div class="menu-item" onclick="App.showView('improvement')">
+        <span class="menu-icon">⚠️</span>
+        <div><strong>改善必要者一覧</strong><p>△・✕のあるクルー</p></div>
+        <span>›</span>
+      </div>
+      <div class="menu-item" onclick="App.showView('store-analysis')">
+        <span class="menu-icon">🏪</span>
+        <div><strong>店舗別分析</strong><p>店舗ごとの評価分布</p></div>
+        <span>›</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== モーダル ===== -->
+<div id="modal-overlay" class="modal-overlay hidden" onclick="App.closeModal()"></div>
+
+<!-- 評価基準モーダル -->
+<div id="modal-standards" class="modal hidden">
+  <div class="modal-header">
+    <h2 id="modal-standards-title"></h2>
+    <button onclick="App.closeModal()">✕</button>
+  </div>
+  <div class="modal-body" id="modal-standards-body"></div>
+</div>
+
+<!-- 気づきメモ追加モーダル -->
+<div id="modal-observation" class="modal hidden">
+  <div class="modal-header">
+    <h2>気づきメモを追加</h2>
+    <button onclick="App.closeModal()">✕</button>
+  </div>
+  <div class="modal-body">
+    <div class="form-group">
+      <label>店舗</label>
+      <select id="obs-store"></select>
+    </div>
+    <div class="form-group">
+      <label>内容</label>
+      <textarea id="obs-content" rows="4" placeholder="気づいた内容を記入..."></textarea>
+    </div>
+    <div class="form-group">
+      <label>写真（任意）</label>
+      <input type="file" id="obs-photo" accept="image/*">
+    </div>
+    <button class="btn btn-primary btn-full" onclick="App.saveObservation()">保存</button>
+  </div>
+</div>
+
+<!-- 指導メモ追加モーダル -->
+<div id="modal-coaching" class="modal hidden">
+  <div class="modal-header">
+    <h2>指導メモを追加</h2>
+    <button onclick="App.closeModal()">✕</button>
+  </div>
+  <div class="modal-body">
+    <div class="form-group">
+      <label>内容</label>
+      <textarea id="coaching-content" rows="4" placeholder="指導内容を記入..."></textarea>
+    </div>
+    <div class="form-group">
+      <label>写真（任意）</label>
+      <input type="file" id="coaching-photo" accept="image/*">
+    </div>
+    <button class="btn btn-primary btn-full" onclick="App.saveCoaching()">保存</button>
+  </div>
+</div>
+
+<!-- ===== ボトムナビ ===== -->
+<nav id="bottom-nav" class="hidden">
+  <button class="nav-item active" data-view="dashboard" onclick="App.navTo('dashboard')">
+    <span>🏠</span><small>ホーム</small>
+  </button>
+  <button class="nav-item" data-view="employees" onclick="App.navTo('employees')">
+    <span>👥</span><small>クルー</small>
+  </button>
+  <button class="nav-item" data-view="observation" onclick="App.navTo('observation')">
+    <span>💬</span><small>メモ</small>
+  </button>
+  <button class="nav-item" data-view="analysis-menu" onclick="App.navTo('analysis-menu')">
+    <span>📊</span><small>分析</small>
+  </button>
+</nav>
+
+<script src="storage.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
