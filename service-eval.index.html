@@ -279,6 +279,22 @@ input,select,textarea,button{font-family:inherit;font-size:14px}
 
 <div id="modal-overlay" class="modal-overlay hidden" onclick="App.closeModal()"></div>
 
+<div id="modal-admin-pin" class="modal hidden" style="z-index:3001">
+  <div class="modal-header">
+    <h2>🔐 管理者認証</h2>
+    <button onclick="App.closeAdminPin()">✕</button>
+  </div>
+  <div class="modal-body">
+    <p style="margin-bottom:16px;font-size:14px;color:#374151">管理設定は管理者のみ操作できます。<br>管理者パスワードを入力してください。</p>
+    <div class="form-group">
+      <label>管理者パスワード</label>
+      <input type="password" id="admin-pin-input" class="form-control" placeholder="パスワードを入力" onkeydown="if(event.key==='Enter')App.verifyAdminPin()">
+    </div>
+    <div id="admin-pin-error" style="color:#EF4444;font-size:13px;margin-top:6px;display:none">❌ パスワードが違います</div>
+    <button class="btn btn-primary btn-full" style="margin-top:16px" onclick="App.verifyAdminPin()">認証する</button>
+  </div>
+</div>
+
 <div id="modal-standards" class="modal hidden">
   <div class="modal-header">
     <h2 id="modal-standards-title"></h2>
@@ -796,6 +812,7 @@ const App={
 
   logout(){
     Storage.clearUser();
+    this._adminAuthed=false;
     document.getElementById('app-header').classList.add('hidden');
     document.getElementById('bottom-nav').classList.add('hidden');
     this.showView('login');
@@ -1114,7 +1131,34 @@ const App={
   /* ===== 管理設定 ===== */
   renderSettings(){
     if(!Storage.AUTH.can(DB.user(),'sysAdmin')){this.showToast('権限がありません','error');this.navTo('dashboard');return}
+    if(!this._adminAuthed){
+      document.getElementById('admin-pin-input').value='';
+      document.getElementById('admin-pin-error').style.display='none';
+      document.getElementById('modal-overlay').classList.remove('hidden');
+      document.getElementById('modal-admin-pin').classList.remove('hidden');
+      return;
+    }
     this._renderUserList();
+  },
+
+  closeAdminPin(){
+    document.getElementById('modal-overlay').classList.add('hidden');
+    document.getElementById('modal-admin-pin').classList.add('hidden');
+    this.navTo('dashboard');
+  },
+
+  verifyAdminPin(){
+    const pin=document.getElementById('admin-pin-input').value;
+    if(pin==='3272885'){
+      this._adminAuthed=true;
+      document.getElementById('modal-overlay').classList.add('hidden');
+      document.getElementById('modal-admin-pin').classList.add('hidden');
+      this._renderUserList();
+    } else {
+      document.getElementById('admin-pin-error').style.display='block';
+      document.getElementById('admin-pin-input').value='';
+      document.getElementById('admin-pin-input').focus();
+    }
   },
 
   async testGasConnection(){
