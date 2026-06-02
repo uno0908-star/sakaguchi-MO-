@@ -1114,7 +1114,7 @@ const App={
     const crewRoles=[...document.querySelectorAll('input[name=crewRole]:checked')].map(i=>i.value);
     const certifications=[...document.querySelectorAll('input[name=cert]:checked')].map(i=>i.value);
     const existing=id?Storage.getEmployee(id):null;
-    Storage.upsertEmployee({id:id||document.getElementById('f-id').value.trim()||Date.now().toString(36),name,store:document.getElementById('f-store').value,type:document.getElementById('f-type').value,status:document.getElementById('f-status').value,joinDate:document.getElementById('f-join').value,leaveDate:document.getElementById('f-leave').value,notes:document.getElementById('f-notes').value,crewRoles:crewRoles.length?crewRoles:['ルーキー（新人）'],certifications,createdAt:existing?.createdAt||new Date().toISOString()});
+    Storage.upsertEmployee({id:id||document.getElementById('f-id').value.trim()||Date.now().toString(36),name,store:document.getElementById('f-store').value,type:document.getElementById('f-type').value,status:document.getElementById('f-status').value,joinDate:document.getElementById('f-join').value,leaveDate:document.getElementById('f-leave').value,notes:document.getElementById('f-notes').value,crewRoles,certifications,createdAt:existing?.createdAt||new Date().toISOString()});
     alert('保存しました');this._currentFormEmpId=null;this.goBack();
   },
 
