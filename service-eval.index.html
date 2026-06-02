@@ -969,7 +969,7 @@ const App={
     const items=SERVICE_ITEMS.map(item=>{
       const sections=roles.map(r=>{
         const cur2=cur[item.key][r.key];const dis=!this._canEditRole(r.role);
-        const btns=RANKS.map(rank=>`<button class="rank-btn ${cur2&&cur2.rank===rank?'selected-'+rank:''}" data-item="${item.key}" data-role="${r.key}" onclick="App.selectRank(this,'${item.key}','${r.key}','${rank}')" ${dis?'disabled style="opacity:0.4"':''}>${rank}</button>`).join('');
+        const btns=RANKS.map(rank=>`<button class="rank-btn ${cur2&&cur2.rank===rank?'selected-'+rank:''}" data-item="${item.key}" data-role="${r.key}" ontouchend="event.preventDefault();App.selectRank(this,'${item.key}','${r.key}','${rank}')" onclick="App.selectRank(this,'${item.key}','${r.key}','${rank}')" ${dis?'disabled style="opacity:0.4"':''}>${rank}</button>`).join('');
         return`<div class="eval-section"><div class="eval-role-label">${r.label}</div><div class="rank-row">${btns}</div><textarea class="eval-comment" data-item="${item.key}" data-role="${r.key}" rows="2" placeholder="コメント（任意）" style="width:100%;padding:8px;border:1px solid var(--border);border-radius:6px;margin-top:4px;resize:vertical" ${dis?'disabled style="opacity:0.6;background:var(--gray-light)"':''}>${cur2?cur2.comment:''}</textarea></div>`;
       }).join('');
       return`<div class="eval-item"><div class="eval-item-header"><h3>${item.label} ${item.title}</h3><button style="background:rgba(255,255,255,0.2);border:none;color:#fff;padding:4px 8px;border-radius:6px;font-size:11px;cursor:pointer" onclick="App.showStandards('${item.key}')">評価基準を見る</button></div><div class="eval-item-body">${sections}</div></div>`;
