@@ -943,6 +943,8 @@ const App={
     const fantaCount=emps.filter(e=>(e.certifications||[]).some(c=>c.includes('ファンタジスタ')&&!c.includes('グランド'))).length;
     const grandCount=emps.filter(e=>(e.certifications||[]).some(c=>c.includes('グランドファンタジスタ'))).length;
     const storeManagerCount=emps.filter(e=>(e.certifications||[]).includes('認定店長')).length;
+    const subLeaderCount=emps.filter(e=>(e.crewRoles||[]).some(r=>r.includes('サブリーダー'))).length;
+    const leaderCount=emps.filter(e=>(e.crewRoles||[]).some(r=>r.includes('リーダー')&&!r.includes('サブ'))).length;
     const storeStats=STORES.map(s=>{const se=emps.filter(e=>e.store===s);const ev=se.filter(e=>evaledIds.has(e.id)).length;return{store:s,total:se.length,evaled:ev,rate:se.length?Math.round(ev/se.length*100):0}}).filter(s=>s.total>0).sort((a,b)=>b.rate-a.rate);
     const improveList=needImprove.slice(0,5).map(e=>{
       const items=SERVICE_ITEMS.filter(item=>{const r=this._getFinalRank(evals,e.id,item.key);return r==='△'||r==='✕'});
@@ -960,6 +962,8 @@ const App={
           <div class="stat-card" style="flex:1;min-width:80px"><div class="stat-num" style="font-size:20px;color:#5B21B6">${fantaCount}</div><div class="stat-label">ファンタジスタ</div></div>
           <div class="stat-card" style="flex:1;min-width:80px"><div class="stat-num" style="font-size:20px;color:#713F12">${grandCount}</div><div class="stat-label">Gファンタジスタ</div></div>
           <div class="stat-card" style="flex:1;min-width:80px"><div class="stat-num" style="font-size:20px;color:#991B1B">${storeManagerCount}</div><div class="stat-label">認定店長</div></div>
+          <div class="stat-card" style="flex:1;min-width:80px"><div class="stat-num" style="font-size:20px;color:#0369A1">${subLeaderCount}</div><div class="stat-label">サブリーダー</div></div>
+          <div class="stat-card" style="flex:1;min-width:80px"><div class="stat-num" style="font-size:20px;color:#065F46">${leaderCount}</div><div class="stat-label">リーダー</div></div>
         </div>
       </div>
       ${needImprove.length?`<div class="section-title">改善必要クルー（上位5名）</div>${improveList}<button class="btn btn-secondary btn-full" onclick="App.navTo('improvement')">全員を見る</button>`:''}
