@@ -277,7 +277,7 @@ input,select,textarea,button{font-family:inherit;font-size:14px}
   </div>
 </div>
 
-<div id="modal-overlay" class="modal-overlay hidden" onclick="App.closeModal()"></div>
+<div id="modal-overlay" class="modal-overlay hidden" onclick="App.handleOverlayClick()"></div>
 
 <div id="modal-admin-pin" class="modal hidden" style="z-index:3001">
   <div class="modal-header">
@@ -378,6 +378,14 @@ const Storage=(()=>{
   function init(){_syncFromGas()}
 
   /* GAS同期 (GET) */
+  // ローカル未同期データを保護しつつGASデータとマージ（IDで重複排除、GAS優先）
+  function _mergeById(local,remote){
+    const map={};
+    remote.forEach(function(r){if(r&&r.id)map[String(r.id)]=r});
+    local.forEach(function(l){if(l&&l.id&&!map[String(l.id)])map[String(l.id)]=l});
+    return Object.values(map);
+  }
+
   async function _syncFromGas(){
     try{
       showToast('データを同期中...','info');
@@ -385,13 +393,22 @@ const Storage=(()=>{
       if(!res.ok)throw new Error('HTTP '+res.status);
       const d=await res.json();
       if(!d.ok)throw new Error(d.error||'不明なエラー');
-      // GASにデータがある場合のみ上書き。配列フィールドを正規化して保存
+      // 従業員・ユーザーはGAS優先で上書き
       if(d.employees?.length)_write(STORAGE_KEYS.EMPLOYEES,d.employees.map(_normalizeEmp));
-      if(d.evaluations?.length)_write(STORAGE_KEYS.EVALUATIONS,d.evaluations);
-      if(d.coachings?.length)_write(STORAGE_KEYS.COACHINGS,d.coachings);
-      if(d.observations?.length)_write(STORAGE_KEYS.OBSERVATIONS,d.observations);
       if(d.users?.length)_write(STORAGE_KEYS.USERS,d.users);
-      if(d.discussions?.length)_write(STORAGE_KEYS.DISCUSSIONS,d.discussions);
+      // 評価・メモ類はローカルの未同期データを失わないようにマージ
+      const localEvals=_read(STORAGE_KEYS.EVALUATIONS,[]);
+      const mergedEvals=d.evaluations?.length?_mergeById(localEvals,d.evaluations):localEvals;
+      _write(STORAGE_KEYS.EVALUATIONS,mergedEvals);
+      const localCoach=_read(STORAGE_KEYS.COACHINGS,[]);
+      const mergedCoach=d.coachings?.length?_mergeById(localCoach,d.coachings):localCoach;
+      _write(STORAGE_KEYS.COACHINGS,mergedCoach);
+      const localObs=_read(STORAGE_KEYS.OBSERVATIONS,[]);
+      const mergedObs=d.observations?.length?_mergeById(localObs,d.observations):localObs;
+      _write(STORAGE_KEYS.OBSERVATIONS,mergedObs);
+      const localDisc=_read(STORAGE_KEYS.DISCUSSIONS,[]);
+      const mergedDisc=d.discussions?.length?_mergeById(localDisc,d.discussions):localDisc;
+      _write(STORAGE_KEYS.DISCUSSIONS,mergedDisc);
       showToast('同期完了','success');
       // 同期後に現在の画面を再描画
       if(typeof App!=='undefined'){
@@ -1109,6 +1126,14 @@ const App={
 
   _openModal(id){document.getElementById('modal-overlay').classList.remove('hidden');document.getElementById(id).classList.remove('hidden')},
   closeModal(){document.getElementById('modal-overlay').classList.add('hidden');document.querySelectorAll('.modal').forEach(m=>m.classList.add('hidden'))},
+  handleOverlayClick(){
+    // 管理者PINモーダルが表示中はoverlay外クリックでもPIN認証をスキップさせない
+    if(!document.getElementById('modal-admin-pin').classList.contains('hidden')){
+      this.closeAdminPin();
+    }else{
+      this.closeModal();
+    }
+  },
   viewPhoto(src){window.open(src,'_blank')},
 
   _getFinalRank(evals,empId,itemKey){return this._getRankByRole(evals,empId,'SI',itemKey)||this._getRankByRole(evals,empId,'SC',itemKey)||this._getRankByRole(evals,empId,'店舗責任者',itemKey)||''},
