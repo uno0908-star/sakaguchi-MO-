@@ -355,12 +355,13 @@ const Storage=(()=>{
       if(!res.ok)throw new Error('HTTP '+res.status);
       const d=await res.json();
       if(!d.ok)throw new Error(d.error||'不明なエラー');
-      if(d.employees)_write(STORAGE_KEYS.EMPLOYEES,d.employees);
-      if(d.evaluations)_write(STORAGE_KEYS.EVALUATIONS,d.evaluations);
-      if(d.coachings)_write(STORAGE_KEYS.COACHINGS,d.coachings);
-      if(d.observations)_write(STORAGE_KEYS.OBSERVATIONS,d.observations);
-      if(d.users)_write(STORAGE_KEYS.USERS,d.users);
-      if(d.discussions)_write(STORAGE_KEYS.DISCUSSIONS,d.discussions);
+      // GASにデータがある場合のみ上書き（空で消えるのを防ぐ）
+      if(d.employees?.length)_write(STORAGE_KEYS.EMPLOYEES,d.employees);
+      if(d.evaluations?.length)_write(STORAGE_KEYS.EVALUATIONS,d.evaluations);
+      if(d.coachings?.length)_write(STORAGE_KEYS.COACHINGS,d.coachings);
+      if(d.observations?.length)_write(STORAGE_KEYS.OBSERVATIONS,d.observations);
+      if(d.users?.length)_write(STORAGE_KEYS.USERS,d.users);
+      if(d.discussions?.length)_write(STORAGE_KEYS.DISCUSSIONS,d.discussions);
       showToast('同期完了','success');
       // 同期後にダッシュボードを再描画
       if(typeof App!=='undefined'&&App._view==='dashboard')App.renderDashboard();
@@ -370,6 +371,17 @@ const Storage=(()=>{
   async function testConnection(){
     try{const res=await fetch(`${GAS_URL}?action=ping`,{redirect:'follow'});const d=await res.json();return d.ok?{ok:true,message:d.message}:{ok:false,error:d.error}}
     catch(e){return{ok:false,error:e.message}}
+  }
+
+  /* 初回: 従業員を一括でGASに登録 */
+  async function seedGas(employees){
+    try{
+      showToast('GASに初期データを登録中...','info');
+      const res=await fetch(GAS_URL,{method:'POST',redirect:'follow',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify({action:'bulkUpsertEmployees',employees})});
+      const d=await res.json();
+      if(d.ok)showToast(`${employees.length}名をGASに登録しました`,'success');
+      else showToast('GAS登録エラー: '+d.error,'error');
+    }catch(e){showToast('GAS登録失敗: '+e.message,'error')}
   }
 
   /* GAS書き込み (バックグラウンド) */
@@ -465,7 +477,7 @@ const Storage=(()=>{
   function downloadBackup(){const d=exportAll();const b=new Blob([JSON.stringify(d,null,2)],{type:'application/json'});const u=URL.createObjectURL(b);const a=document.createElement('a');a.href=u;a.download=`backup-${new Date().toISOString().slice(0,10)}.json`;a.click();URL.revokeObjectURL(u)}
   function importBackup(jsonStr){try{const d=JSON.parse(jsonStr);if(d.employees)_write(STORAGE_KEYS.EMPLOYEES,d.employees);if(d.evaluations)_write(STORAGE_KEYS.EVALUATIONS,d.evaluations);if(d.coachings)_write(STORAGE_KEYS.COACHINGS,d.coachings);if(d.observations)_write(STORAGE_KEYS.OBSERVATIONS,d.observations);if(d.users)_write(STORAGE_KEYS.USERS,d.users);if(d.discussions)_write(STORAGE_KEYS.DISCUSSIONS,d.discussions);return true}catch(e){return false}}
 
-  return{init,syncNow,testConnection,AUTH,showToast,
+  return{init,syncNow,testConnection,seedGas,AUTH,showToast,
     getEmployees,saveEmployees,getEmployee,upsertEmployee,deleteEmployee,transferEmployee,reinstateEmployee,
     getEvaluations,addEvaluation,getEvalsByEmployee,
     getObservations,addObservation,getCoachings,addCoaching,getCoachingsByEmployee,
@@ -701,7 +713,10 @@ const App={
 
   init(){
     if(!Storage.getEmployees().length){
-      Storage.saveEmployees(INITIAL_EMPLOYEES.map(e=>({...e,status:'在籍中',joinDate:'',leaveDate:'',notes:'',crewRoles:['ルーキー（新人）'],certifications:[],createdAt:new Date().toISOString()})));
+      const seeded=INITIAL_EMPLOYEES.map(e=>({...e,status:'在籍中',joinDate:'',leaveDate:'',notes:'',crewRoles:['ルーキー（新人）'],certifications:[],createdAt:new Date().toISOString()}));
+      Storage.saveEmployees(seeded);
+      // GASのEmployeesシートが空なら一括登録
+      Storage.seedGas(seeded);
     }
     this._buildStoreSelects();
     const roleEl=document.getElementById('login-role');
