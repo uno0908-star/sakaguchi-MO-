@@ -228,6 +228,20 @@ input,select,textarea,button{font-family:inherit;font-size:14px}
   <div class="view-content" id="store-analysis-content"></div>
 </div>
 
+<div id="view-discussion" class="view">
+  <div class="search-bar">
+    <select id="disc-filter-store" onchange="App.renderDiscussion()"><option value="">全店舗</option></select>
+  </div>
+  <div class="view-content" id="discussion-content"></div>
+</div>
+
+<div id="view-item-ranking" class="view">
+  <div class="search-bar">
+    <select id="ir-filter-store" onchange="App.renderItemRanking()"><option value="">全店舗</option></select>
+  </div>
+  <div class="view-content" id="item-ranking-content"></div>
+</div>
+
 <div id="view-employee-form" class="view">
   <div class="view-content" id="employee-form-content"></div>
 </div>
@@ -271,6 +285,16 @@ input,select,textarea,button{font-family:inherit;font-size:14px}
       <div class="menu-item" onclick="App.showView('store-analysis')">
         <span class="menu-icon">🏪</span>
         <div><strong>店舗別分析</strong><p>店舗ごとの評価分布</p></div>
+        <span>›</span>
+      </div>
+      <div class="menu-item" onclick="App.showView('discussion')">
+        <span class="menu-icon">🤝</span>
+        <div><strong>目線合わせ</strong><p>SI・SC・責任者の評価差異を確認</p></div>
+        <span>›</span>
+      </div>
+      <div class="menu-item" onclick="App.showView('item-ranking')">
+        <span class="menu-icon">📊</span>
+        <div><strong>項目別弱点ランキング</strong><p>△・✕が多い接客項目を確認</p></div>
         <span>›</span>
       </div>
     </div>
@@ -378,12 +402,35 @@ const Storage=(()=>{
   function init(){_syncFromGas()}
 
   /* GAS同期 (GET) */
-  // ローカル未同期データを保護しつつGASデータとマージ（IDで重複排除、GAS優先）
+  // 評価・メモ類: IDで重複排除、GAS優先・ローカル未同期は保持
   function _mergeById(local,remote){
     const map={};
     remote.forEach(function(r){if(r&&r.id)map[String(r.id)]=r});
     local.forEach(function(l){if(l&&l.id&&!map[String(l.id)])map[String(l.id)]=l});
     return Object.values(map);
+  }
+
+  // 従業員: updatedAtが新しい方を残す。ローカルの方が新しければGAS再送も行う
+  function _mergeEmployees(local,remote){
+    const map={};
+    remote.forEach(function(r){if(r&&r.id)map[String(r.id)]=r});
+    var toResync=[];
+    local.forEach(function(l){
+      if(!l||!l.id)return;
+      var key=String(l.id);
+      if(!map[key]){
+        // GASにない（未同期の新規）→ローカルを保持して再送
+        map[key]=l;toResync.push(l);
+      }else{
+        var localTime=l.updatedAt||l.createdAt||'';
+        var remoteTime=map[key].updatedAt||map[key].createdAt||'';
+        if(localTime>remoteTime){
+          // ローカルの方が新しい → GAS書き込みが失敗していた → 保持して再送
+          map[key]=l;toResync.push(l);
+        }
+      }
+    });
+    return{merged:Object.values(map),toResync:toResync};
   }
 
   // GASはフラット形式(s1_rank/s1_comment...)で返すため、ネスト形式(items:{s1:{rank,comment}...})に変換
@@ -407,8 +454,16 @@ const Storage=(()=>{
       if(!res.ok)throw new Error('HTTP '+res.status);
       const d=await res.json();
       if(!d.ok)throw new Error(d.error||'不明なエラー');
-      // 従業員・ユーザーはGAS優先で上書き
-      if(d.employees?.length)_write(STORAGE_KEYS.EMPLOYEES,d.employees.map(_normalizeEmp));
+      // 従業員: updatedAtで比較マージ。ローカルが新しければ自動再送
+      var localEmps=_read(STORAGE_KEYS.EMPLOYEES,[]).map(_normalizeEmp);
+      var gasEmps=d.employees?.length?d.employees.map(_normalizeEmp):[];
+      if(gasEmps.length){
+        var empResult=_mergeEmployees(localEmps,gasEmps);
+        _write(STORAGE_KEYS.EMPLOYEES,empResult.merged);
+        // GASへの書き込みが失敗していた分を自動再送
+        empResult.toResync.forEach(function(emp){_postGas('upsertEmployee',{employee:emp})});
+      }
+      // ユーザーはGAS優先で上書き
       if(d.users?.length)_write(STORAGE_KEYS.USERS,d.users);
       // 評価・メモ類はローカルの未同期データを失わないようにマージ
       // GASのフラット形式をネスト形式に変換してからマージ
@@ -775,7 +830,7 @@ const INITIAL_EMPLOYEES=[
   {id:'8114642',name:'ダンガル スラズ',store:'箕面白島二丁目',type:'FullTimeEmployee'},
 ];
 
-const DB={employees(){return Storage.getEmployees()},evaluations(){return Storage.getEvaluations()},coachings(){return Storage.getCoachings()},observations(){return Storage.getObservations()},user(){return Storage.getUser()}};
+const DB={employees(){return Storage.getEmployees()},evaluations(){return Storage.getEvaluations()},coachings(){return Storage.getCoachings()},observations(){return Storage.getObservations()},user(){return Storage.getUser()},discussions(){return Storage.getDiscussions()}};
 
 const App={
   _view:'login',_history:[],_currentEmpId:null,_currentFormEmpId:null,
@@ -807,7 +862,7 @@ const App={
     if(!stores.length){const el=document.getElementById('login-store');if(el)el.innerHTML='<option value="">店舗データが空です</option>';return}
     const el=document.getElementById('login-store');
     if(el)el.innerHTML='<option value="">── 店舗を選択 ──</option>'+stores.map(s=>`<option value="${s}">${s}</option>`).join('');
-    ['emp-filter-store','obs-filter-store','imp-filter-store','sa-filter-store','obs-store'].forEach(id=>{
+    ['emp-filter-store','obs-filter-store','imp-filter-store','sa-filter-store','obs-store','disc-filter-store','ir-filter-store'].forEach(id=>{
       const e=document.getElementById(id);if(!e)return;
       e.innerHTML='<option value="">全店舗</option>'+stores.map(s=>`<option value="${s}">${s}</option>`).join('');
     });
@@ -863,7 +918,7 @@ const App={
   goBack(){const p=this._history.pop();if(p)this.showView(p,false)},
 
   _updateHeader(viewId){
-    const titles={login:'接客評価システム',dashboard:'阪口商店 接客評価',employees:'クルー一覧','employee-detail':'クルー詳細',evaluation:'評価入力',observation:'気づきメモ',improvement:'改善必要者','store-analysis':'店舗別分析','analysis-menu':'分析','employee-form':'クルー登録・編集',settings:'管理設定'};
+    const titles={login:'接客評価システム',dashboard:'阪口商店 接客評価',employees:'クルー一覧','employee-detail':'クルー詳細',evaluation:'評価入力',observation:'気づきメモ',improvement:'改善必要者','store-analysis':'店舗別分析','analysis-menu':'分析','employee-form':'クルー登録・編集',settings:'管理設定',discussion:'目線合わせ','item-ranking':'項目別弱点ランキング'};
     document.getElementById('header-title').textContent=titles[viewId]||'';
     const back=document.getElementById('btn-back');
     back.classList.toggle('hidden',['dashboard','employees','observation','analysis-menu','settings','login'].includes(viewId));
@@ -874,7 +929,7 @@ const App={
   },
 
   _renderView(viewId){
-    const map={dashboard:'renderDashboard',employees:'renderEmployeeList','employee-detail':'renderEmployeeDetail',evaluation:'renderEvaluation',observation:'renderObservations',improvement:'renderImprovement','store-analysis':'renderStoreAnalysis','employee-form':'renderEmployeeForm',settings:'renderSettings'};
+    const map={dashboard:'renderDashboard',employees:'renderEmployeeList','employee-detail':'renderEmployeeDetail',evaluation:'renderEvaluation',observation:'renderObservations',improvement:'renderImprovement','store-analysis':'renderStoreAnalysis','employee-form':'renderEmployeeForm',settings:'renderSettings',discussion:'renderDiscussion','item-ranking':'renderItemRanking'};
     if(map[viewId])this[map[viewId]]();
   },
 
@@ -953,9 +1008,11 @@ const App={
     }).join('');
     const coachHtml=coachings.length?coachings.map(c=>`<div class="timeline-item"><div class="timeline-dot"></div><div class="timeline-body"><div class="timeline-meta"><span>${c.date||c.createdAt?.slice(0,10)||''}</span><span class="badge badge-${this._roleClass(c.authorRole)}">${c.authorRole}</span><span>${c.authorName}</span></div><div>${c.content}</div>${c.photo?`<img src="${c.photo}" class="timeline-photo">`:''}</div></div>`).join(''):'<div class="empty-state"><p>指導メモなし</p></div>';
     const canEdit=this._canEdit();
+    const monthlyGraph=this._getMonthlyTrend(evals,id);
     document.getElementById('employee-detail-content').innerHTML=`
       <div class="card"><div class="flex-between"><div><div style="font-size:20px;font-weight:800">${e.name}</div><div class="text-sub">${e.store}｜${this._typeName(e.type)}｜ID:${e.id}</div></div><div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px"><span class="badge ${e.status==='在籍中'?'badge-sub':'badge-crew'}">${e.status}</span>${canEdit?`<button class="btn btn-secondary btn-sm" onclick="App.editEmployee('${e.id}')">編集</button>`:''}</div></div><div class="emp-badges" style="margin-top:10px">${this._roleBadges(e)}</div></div>
       <div class="card"><div class="flex-between" style="margin-bottom:8px"><div style="font-weight:700">評価サマリー</div>${canEdit?`<button class="btn btn-primary btn-sm" onclick="App.openEvaluation('${e.id}')">評価入力</button>`:''}</div>${evalSummary}</div>
+      ${monthlyGraph}
       <div class="card"><div class="flex-between" style="margin-bottom:8px"><div style="font-weight:700">指導メモ</div>${canEdit?`<button class="btn btn-primary btn-sm" onclick="App.showAddCoaching('${e.id}')">追加</button>`:''}</div>${coachHtml}</div>`;
   },
 
@@ -1082,6 +1139,121 @@ const App={
       return`<div class="card"><div style="font-weight:700;margin-bottom:10px">${st}（${se.length}名）</div>${bars}</div>`;
     }).join('');
     document.getElementById('store-analysis-content').innerHTML=html||'<div class="empty-state"><p>データがありません</p></div>';
+  },
+
+  /* ===== 目線合わせ ===== */
+  renderDiscussion(){
+    const store=document.getElementById('disc-filter-store')?.value||'';
+    const user=DB.user();const evals=DB.evaluations();const discs=DB.discussions();
+    let emps=DB.employees().filter(e=>e.status==='在籍中');
+    if(user.role==='店舗責任者')emps=emps.filter(e=>e.store===user.store);
+    else if(store)emps=emps.filter(e=>e.store===store);
+    const canEdit=Storage.AUTH.can(user,'evalWrite');
+    const rows=[];
+    emps.forEach(emp=>{
+      SERVICE_ITEMS.forEach(item=>{
+        const si=this._getRankByRole(evals,emp.id,'SI',item.key);
+        const sc=this._getRankByRole(evals,emp.id,'SC',item.key);
+        const sm=this._getRankByRole(evals,emp.id,'店舗責任者',item.key);
+        const ranked=[si,sc,sm].filter(r=>r);
+        if(ranked.length<2)return;
+        if(new Set(ranked).size===1)return; // 全員一致はスキップ
+        const disc=discs.find(d=>String(d.employeeId)===String(emp.id)&&d.itemKey===item.key)||{};
+        const finalOpts=RANKS.map(r=>`<option value="${r}" ${disc.finalJudge===r?'selected':''}>${r}</option>`).join('');
+        const uid=`${emp.id}_${item.key}`;
+        rows.push(`<div class="card" style="margin-bottom:10px">
+          <div class="flex-between" style="margin-bottom:8px">
+            <div><span style="font-weight:700;cursor:pointer;color:var(--blue)" onclick="App.openEmployee('${emp.id}')">${emp.name}</span><span class="text-sub" style="margin-left:8px">${emp.store}</span></div>
+            <span style="font-size:13px;font-weight:600">${item.label} ${item.title}</span>
+          </div>
+          <div style="display:flex;gap:10px;margin-bottom:10px;flex-wrap:wrap">
+            <div style="text-align:center"><div style="font-size:10px;color:var(--text-sub);margin-bottom:2px">SI</div>${si?`<span class="rank-chip ${si}">${si}</span>`:'<span class="rank-chip 未">未</span>'}</div>
+            <div style="text-align:center"><div style="font-size:10px;color:var(--text-sub);margin-bottom:2px">SC</div>${sc?`<span class="rank-chip ${sc}">${sc}</span>`:'<span class="rank-chip 未">未</span>'}</div>
+            <div style="text-align:center"><div style="font-size:10px;color:var(--text-sub);margin-bottom:2px">責任者</div>${sm?`<span class="rank-chip ${sm}">${sm}</span>`:'<span class="rank-chip 未">未</span>'}</div>
+            <div style="text-align:center;margin-left:auto"><div style="font-size:10px;color:var(--text-sub);margin-bottom:2px">最終判定</div>
+              ${canEdit?`<select id="fj_${uid}" style="padding:4px 8px;border:1px solid var(--border);border-radius:6px;font-size:13px"><option value="">未設定</option>${finalOpts}</select>`:disc.finalJudge?`<span class="rank-chip ${disc.finalJudge}">${disc.finalJudge}</span>`:'<span class="rank-chip 未">未</span>'}
+            </div>
+          </div>
+          ${canEdit?`<textarea id="memo_${uid}" rows="2" placeholder="話し合いメモ（任意）" style="width:100%;padding:8px;border:1px solid var(--border);border-radius:6px;font-size:13px;resize:vertical">${disc.memo||''}</textarea>
+          <button class="btn btn-primary btn-full" style="margin-top:8px" onclick="App.saveDiscussion('${emp.id}','${item.key}','${emp.name}','${emp.store}','${item.label}')">保存</button>`:`${disc.memo?`<div style="font-size:13px;background:var(--gray-light);padding:8px;border-radius:6px">${disc.memo}</div>`:''}` }
+        </div>`);
+      });
+    });
+    document.getElementById('discussion-content').innerHTML=rows.length?rows.join(''):'<div class="empty-state"><p>評価差異のあるクルーはいません</p></div>';
+  },
+
+  saveDiscussion(empId,itemKey,empName,store,itemLabel){
+    const uid=`${empId}_${itemKey}`;
+    const finalJudge=document.getElementById(`fj_${uid}`)?.value||'';
+    const memo=document.getElementById(`memo_${uid}`)?.value||'';
+    const user=DB.user();
+    Storage.upsertDiscussion({employeeId:String(empId),employeeName:empName,store,itemKey,itemLabel,
+      siRank:this._getRankByRole(DB.evaluations(),empId,'SI',itemKey),
+      scRank:this._getRankByRole(DB.evaluations(),empId,'SC',itemKey),
+      smRank:this._getRankByRole(DB.evaluations(),empId,'店舗責任者',itemKey),
+      finalJudge,memo,updatedBy:user.name});
+    this.showToast('保存しました','success');
+  },
+
+  /* ===== 項目別弱点ランキング ===== */
+  renderItemRanking(){
+    const store=document.getElementById('ir-filter-store')?.value||'';
+    const user=DB.user();const evals=DB.evaluations();
+    let emps=DB.employees().filter(e=>e.status==='在籍中');
+    if(user.role==='店舗責任者')emps=emps.filter(e=>e.store===user.store);
+    else if(store)emps=emps.filter(e=>e.store===store);
+    const total=emps.length;
+    const stats=SERVICE_ITEMS.map(item=>{
+      const counts={'◎':0,'○':0,'△':0,'✕':0,未:0};
+      emps.forEach(emp=>{const r=this._getFinalRank(evals,emp.id,item.key);r?counts[r]++:counts['未']++});
+      const bad=counts['△']+counts['✕'];
+      const evaluated=total-counts['未'];
+      const badRate=evaluated?Math.round(bad/evaluated*100):0;
+      return{item,counts,bad,badRate,evaluated,total};
+    }).sort((a,b)=>b.bad-a.bad||b.badRate-a.badRate);
+    const html=stats.map((s,i)=>{
+      const n=s.total;const p=v=>n?Math.round(v/n*100):0;
+      const medal=['🥇','🥈','🥉'][i]||`${i+1}.`;
+      return`<div class="card" style="margin-bottom:8px">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
+          <span style="font-size:18px">${medal}</span>
+          <div style="flex:1"><div style="font-weight:700">${s.item.label} ${s.item.title}</div>
+          <div style="font-size:12px;color:var(--text-sub)">評価済${s.evaluated}名 ／ 要改善 <strong style="color:${s.bad?'#E53E3E':'#00A651'}">${s.bad}名（${s.badRate}%）</strong></div></div>
+        </div>
+        <div class="analysis-bar-multi" style="height:12px">
+          <div class="bar-good" style="width:${p(s.counts['◎'])}%"></div>
+          <div class="bar-ok" style="width:${p(s.counts['○'])}%"></div>
+          <div class="bar-warn" style="width:${p(s.counts['△'])}%"></div>
+          <div class="bar-bad" style="width:${p(s.counts['✕'])}%"></div>
+          <div style="flex:${p(s.counts['未'])};background:var(--gray-light)"></div>
+        </div>
+        <div class="bar-legend" style="margin-top:4px">
+          <span>◎${s.counts['◎']}</span><span>○${s.counts['○']}</span><span>△${s.counts['△']}</span><span>✕${s.counts['✕']}</span><span style="color:var(--gray)">未${s.counts['未']}</span>
+        </div>
+      </div>`;
+    }).join('');
+    document.getElementById('item-ranking-content').innerHTML=html||'<div class="empty-state"><p>データがありません</p></div>';
+  },
+
+  /* ===== 月次推移グラフ ===== */
+  _getMonthlyTrend(evals,empId){
+    const empEvals=evals.filter(e=>String(e.employeeId)===String(empId));
+    if(!empEvals.length)return'';
+    const months=[...new Set(empEvals.map(e=>(e.evalDate||e.createdAt?.slice(0,7)||'').slice(0,7)).filter(Boolean))].sort();
+    if(months.length<1)return'';
+    const headers=months.map(m=>`<th style="text-align:center;padding:4px 6px;font-size:11px;white-space:nowrap;color:var(--text-sub)">${m.slice(5)}月</th>`).join('');
+    const rows=SERVICE_ITEMS.map(item=>{
+      const cells=months.map(month=>{
+        const monthEvals=empEvals.filter(e=>(e.evalDate||e.createdAt?.slice(0,7)||'').slice(0,7)===month);
+        const si=this._getRankByRole(monthEvals,empId,'SI',item.key);
+        const sc=this._getRankByRole(monthEvals,empId,'SC',item.key);
+        const sm=this._getRankByRole(monthEvals,empId,'店舗責任者',item.key);
+        const rank=si||sc||sm||'';
+        return`<td style="text-align:center;padding:4px 6px"><span class="rank-chip ${rank||'未'}" style="font-size:10px;width:22px;height:22px">${rank||'ー'}</span></td>`;
+      }).join('');
+      return`<tr><td style="font-size:12px;font-weight:600;white-space:nowrap;padding:4px 8px 4px 0;color:var(--text-sub)">${item.label}</td>${cells}</tr>`;
+    }).join('');
+    return`<div class="card"><div style="font-weight:700;margin-bottom:10px">📈 月次推移</div><div style="overflow-x:auto;-webkit-overflow-scrolling:touch"><table style="border-collapse:collapse;min-width:100%"><thead><tr><th style="text-align:left;padding:4px 8px 4px 0;font-size:11px"></th>${headers}</tr></thead><tbody>${rows}</tbody></table></div><div style="font-size:11px;color:var(--text-sub);margin-top:6px">※ 月ごとの最新評価を表示（SI/SC/責任者の優先順）</div></div>`;
   },
 
   editEmployee(id){this._currentFormEmpId=id;this.showView('employee-form')},
