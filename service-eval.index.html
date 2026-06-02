@@ -978,8 +978,9 @@ const App={
   },
 
   selectRank(btn,itemKey,roleKey,rank){
+    const already=btn.classList.contains('selected-'+rank);
     document.querySelectorAll(`.rank-btn[data-item="${itemKey}"][data-role="${roleKey}"]`).forEach(b=>b.className='rank-btn');
-    btn.classList.add('selected-'+rank);
+    if(!already)btn.classList.add('selected-'+rank);
   },
 
   saveEvaluation(empId){
