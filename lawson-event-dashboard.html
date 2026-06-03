@@ -140,7 +140,7 @@ body {
 }
 .target-label { font-size:9px; color:rgba(0,0,0,0.5); position:absolute; top:4px; transform:translateX(-50%); white-space:nowrap; }
 /* ── QUICK STATS ── */
-.quick-stats { display:grid; grid-template-columns:repeat(4,1fr); gap:8px; margin-top:14px; }
+.quick-stats { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin-top:14px; }
 .qs-card {
   border-radius:var(--radius-sm);
   padding: 10px 6px;
@@ -312,6 +312,44 @@ body {
 .note-text { font-size:11px; color:var(--sub); line-height:1.7; }
 /* ── FOOTER ── */
 .footer { text-align:center; padding:20px; font-size:10px; color:rgba(0,0,0,0.35); }
+/* ── DIAGNOSIS ── */
+.diag-groups { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin-top:10px; }
+.dg-card { border-radius:var(--radius-sm); padding:10px 6px; text-align:center; border:1px solid; }
+.dg-icon { font-size:16px; margin-bottom:2px; }
+.dg-num { font-size:22px; font-weight:900; line-height:1; }
+.dg-label { font-size:9px; color:var(--sub); margin-top:2px; line-height:1.4; }
+.diag-card { border:1px solid; border-radius:var(--radius); padding:14px; margin-bottom:10px; }
+.diag-card-top { display:flex; align-items:flex-start; justify-content:space-between; margin-bottom:10px; }
+.diag-store-name { font-size:14px; font-weight:700; }
+.diag-pattern-badge { display:inline-flex; align-items:center; gap:3px; border-radius:999px; padding:2px 9px; font-size:9px; font-weight:700; margin-top:5px; }
+.diag-traj { display:flex; align-items:stretch; gap:0; margin:12px 0 10px; background:rgba(0,0,0,0.04); border-radius:10px; padding:10px 4px; }
+.traj-node { flex:1; text-align:center; }
+.traj-month { font-size:7px; color:var(--sub); margin-bottom:2px; }
+.traj-psad { font-size:10px; font-weight:700; }
+.traj-delta { font-size:9px; font-weight:700; margin-top:2px; }
+.traj-arrow-col { width:32px; text-align:center; padding-top:6px; flex-shrink:0; }
+.traj-arr-icon { font-size:12px; }
+.traj-arr-pct { font-size:8px; font-weight:700; margin-top:1px; }
+.diag-metrics { display:grid; grid-template-columns:repeat(3,1fr); gap:6px; margin-top:4px; }
+.dm-block { background:rgba(0,0,0,0.04); border-radius:8px; padding:7px 4px; text-align:center; }
+.dm-label { font-size:8px; color:var(--sub); margin-bottom:2px; }
+.dm-val { font-size:15px; font-weight:900; line-height:1; }
+.diag-chef-row { display:flex; align-items:center; gap:8px; margin-top:8px; background:rgba(37,99,235,0.07); border-radius:8px; padding:7px 10px; flex-wrap:wrap; }
+.diag-finding { font-size:10px; color:var(--sub); line-height:1.7; margin-top:10px; padding:8px 10px; background:rgba(0,0,0,0.04); border-radius:8px; }
+.diag-divider { display:flex; align-items:center; gap:8px; margin:16px 0 8px; font-size:11px; font-weight:700; letter-spacing:0.5px; }
+.diag-divider::after { content:''; flex:1; height:1px; background:rgba(0,0,0,0.1); }
+/* ── TRACTION RANKING ── */
+.traction-wrap { margin-top:12px; }
+.traction-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:4px; font-size:10px; font-weight:700; }
+.traction-row { display:flex; align-items:center; gap:8px; margin-bottom:6px; }
+.tr-name { font-size:10px; font-weight:600; width:80px; flex-shrink:0; text-align:right; }
+.tr-bar-wrap { flex:1; position:relative; height:22px; }
+.tr-bar { position:absolute; top:0; height:22px; border-radius:4px; display:flex; align-items:center; }
+.tr-bar-pos { left:50%; border-radius:0 4px 4px 0; justify-content:flex-end; padding-right:4px; }
+.tr-bar-neg { right:50%; border-radius:4px 0 0 4px; justify-content:flex-start; padding-left:4px; }
+.tr-val { font-size:8px; font-weight:700; white-space:nowrap; }
+.tr-center-line { position:absolute; left:50%; top:0; width:2px; height:22px; background:rgba(0,0,0,0.15); }
+.tr-rank { font-size:9px; font-weight:700; width:22px; text-align:center; flex-shrink:0; }
 /* ── HIDDEN ── */
 .hidden { display:none !important; }
 /* ── PULSE ANIMATION ── */
@@ -334,12 +372,12 @@ body {
       </div>
     </div>
     <div class="countdown-badge">
-      <div class="countdown-num" id="daysLeft">18</div>
-      <div class="countdown-label">残り日数</div>
+      <div class="countdown-num" id="daysLeft" style="font-size:16px;color:#10b981">確定</div>
+      <div class="countdown-label">最終結果</div>
     </div>
   </div>
   <div class="header-meta">
-    <div class="header-date">集計日: 2026年5月13日</div>
+    <div class="header-date">集計日: 2026年5月31日（最終確定）</div>
     <div class="event-period">5月1日 〜 5月31日</div>
   </div>
 </div>
@@ -353,39 +391,39 @@ body {
     <div class="summary-card">
       <div class="summary-org">阪口清治 MO ／ 全店平均</div>
       <div class="summary-title">FF荒利益高 3月対比</div>
-      <div class="summary-eval">
-        <span class="summary-eval-icon">⚠️</span>
-        <span class="summary-eval-text">現在評価：△ ギリギリ　目標まであと少し</span>
+      <div class="summary-eval" style="background:rgba(5,150,105,0.15); border-color:rgba(5,150,105,0.4);">
+        <span class="summary-eval-icon">⚖️</span>
+        <span class="summary-eval-text" style="color:#047857">総合評価：○ 牽引　MO総合スコア 102.2pt（支店比）</span>
       </div>
       <div class="summary-grid">
         <div class="summary-metric">
-          <div class="sm-label">FF荒利益高 3月対比</div>
-          <div class="sm-value yellow">99.1<span style="font-size:16px">%</span></div>
-          <div class="sm-sub">目標：100%以上</div>
+          <div class="sm-label">FF 3月対比 <span style="font-size:8px">（基準97%）</span></div>
+          <div class="sm-value red">94.8<span style="font-size:16px">%</span></div>
+          <div class="sm-sub">× 支店基準未満</div>
         </div>
         <div class="summary-metric">
-          <div class="sm-label">厨房荒利益高 3月対比</div>
-          <div class="sm-value red">92.8<span style="font-size:16px">%</span></div>
-          <div class="sm-sub">参考指標（加点評価）</div>
+          <div class="sm-label">厨房 3月対比 <span style="font-size:8px">（基準89%）</span></div>
+          <div class="sm-value green">97.9<span style="font-size:16px">%</span></div>
+          <div class="sm-sub">○ 支店基準超え</div>
         </div>
         <div class="summary-metric">
-          <div class="sm-label">達成店舗数</div>
-          <div class="sm-value green">8<span style="font-size:14px">/20</span></div>
-          <div class="sm-sub">100%以上達成</div>
+          <div class="sm-label">○ 牽引店舗</div>
+          <div class="sm-value green">9<span style="font-size:14px">/20</span></div>
+          <div class="sm-sub">総合スコア100pt以上</div>
         </div>
         <div class="summary-metric">
-          <div class="sm-label">危険店舗数</div>
-          <div class="sm-value red">6<span style="font-size:14px">店</span></div>
-          <div class="sm-sub">FF 95%未満</div>
+          <div class="sm-label">× 改悪店舗</div>
+          <div class="sm-value red">11<span style="font-size:14px">店</span></div>
+          <div class="sm-sub">総合スコア100pt未満</div>
         </div>
       </div>
       <div class="summary-bar-wrap">
         <div class="summary-bar-label">
-          <span>FF荒利益高 達成率ゲージ（3月対比）</span>
-          <span style="color:var(--yellow); font-weight:700">99.1%</span>
+          <span>MO総合スコア ゲージ（支店水準100pt＝基準）</span>
+          <span style="color:var(--green); font-weight:700">102.2pt</span>
         </div>
         <div class="progress-track">
-          <div class="progress-fill" style="width:82%"></div>
+          <div class="progress-fill" style="width:79%; background:linear-gradient(90deg,var(--lawson2),var(--green))"></div>
         </div>
         <div class="target-marker">
           <div class="target-line" style="left:83.3%"></div>
@@ -397,56 +435,47 @@ body {
     <!-- QUICK STATS -->
     <div class="quick-stats">
       <div class="qs-card gold">
-        <div class="qs-num">4</div>
-        <div class="qs-label">超優秀<br>105%以上</div>
+        <div class="qs-num">3</div>
+        <div class="qs-label">◎ 大幅牽引<br>115pt以上</div>
       </div>
       <div class="qs-card green">
-        <div class="qs-num">4</div>
-        <div class="qs-label">達成<br>100-105%</div>
-      </div>
-      <div class="qs-card yellow">
         <div class="qs-num">6</div>
-        <div class="qs-label">ギリギリ<br>95-100%</div>
+        <div class="qs-label">○ 牽引<br>100〜115pt</div>
       </div>
       <div class="qs-card red">
-        <div class="qs-num">6</div>
-        <div class="qs-label">危険<br>95%未満</div>
+        <div class="qs-num">11</div>
+        <div class="qs-label">✕ 改悪<br>100pt未満</div>
       </div>
     </div>
   </div>
 
   <!-- ▶ DONUT -->
   <div class="section">
-    <div class="section-title">イベント達成状況</div>
+    <div class="section-title">牽引状況サマリー</div>
     <div class="donut-wrap">
       <div class="donut-inner">
         <div class="donut-canvas-wrap">
           <canvas id="donutChart" width="130" height="130"></canvas>
           <div class="donut-center">
-            <div class="donut-pct">40<span style="font-size:12px">%</span></div>
-            <div class="donut-pct-label">達成店率</div>
+            <div class="donut-pct">45<span style="font-size:12px">%</span></div>
+            <div class="donut-pct-label">牽引店率</div>
           </div>
         </div>
         <div class="donut-legend">
           <div class="legend-item">
             <div class="legend-dot" style="background:var(--gold)"></div>
-            <div class="legend-text">超優秀（105%+）</div>
-            <div class="legend-count" style="color:var(--gold)">4</div>
+            <div class="legend-text">◎ 大幅牽引（115pt+）</div>
+            <div class="legend-count" style="color:var(--gold)">3</div>
           </div>
           <div class="legend-item">
             <div class="legend-dot" style="background:var(--green)"></div>
-            <div class="legend-text">達成（100-105%）</div>
-            <div class="legend-count" style="color:var(--green)">4</div>
-          </div>
-          <div class="legend-item">
-            <div class="legend-dot" style="background:var(--yellow)"></div>
-            <div class="legend-text">ギリギリ（95-100%）</div>
-            <div class="legend-count" style="color:var(--yellow)">6</div>
+            <div class="legend-text">○ 牽引（100〜115pt）</div>
+            <div class="legend-count" style="color:var(--green)">6</div>
           </div>
           <div class="legend-item">
             <div class="legend-dot" style="background:var(--red)"></div>
-            <div class="legend-text">危険（95%未満）</div>
-            <div class="legend-count" style="color:var(--red)">6</div>
+            <div class="legend-text">✕ 改悪（100pt未満）</div>
+            <div class="legend-count" style="color:var(--red)">11</div>
           </div>
         </div>
       </div>
@@ -461,7 +490,7 @@ body {
         <button class="filter-btn active" onclick="setFilter('all',this)">全店</button>
         <button class="filter-btn" onclick="setFilter('chef',this)">厨房あり</button>
         <button class="filter-btn" onclick="setFilter('no-chef',this)">厨房なし</button>
-        <button class="filter-btn" onclick="setFilter('danger',this)">🔴 危険店舗</button>
+        <button class="filter-btn" onclick="setFilter('danger',this)">✕ 改悪店舗</button>
         <button class="filter-btn" onclick="setFilter('top5',this)">上位5店舗</button>
         <button class="filter-btn" onclick="setFilter('bottom5',this)">下位5店舗</button>
       </div>
@@ -473,7 +502,7 @@ body {
   <div class="section">
     <div class="section-title">月次推移グラフ（FF荒利益高 PSA/D）</div>
     <div class="chart-card">
-      <div class="chart-title">📈 3月→4月→5月 全店推移</div>
+      <div class="chart-title">📈 3月→4月→5月（最終） 全店推移</div>
       <div class="chart-wrap">
         <canvas id="trendChart" height="220"></canvas>
       </div>
@@ -488,14 +517,13 @@ body {
 
   <!-- ▶ HEATMAP -->
   <div class="section">
-    <div class="section-title">危険度ヒートマップ（FF伸長率）</div>
+    <div class="section-title">牽引力ヒートマップ（総合スコア）</div>
     <div class="chart-card">
       <div class="hm-legend">
-        <div class="hm-legend-item"><div class="hm-legend-dot" style="background:var(--gold)"></div>超優秀 105%+</div>
-        <div class="hm-legend-item"><div class="hm-legend-dot" style="background:var(--blue)"></div>達成 100-105%</div>
-        <div class="hm-legend-item"><div class="hm-legend-dot" style="background:var(--green)"></div>達成 100%</div>
-        <div class="hm-legend-item"><div class="hm-legend-dot" style="background:var(--yellow)"></div>ギリギリ</div>
-        <div class="hm-legend-item"><div class="hm-legend-dot" style="background:var(--red)"></div>危険</div>
+        <div class="hm-legend-item"><div class="hm-legend-dot" style="background:var(--gold)"></div>◎ 大幅牽引 115pt+</div>
+        <div class="hm-legend-item"><div class="hm-legend-dot" style="background:var(--green)"></div>○ 牽引 100pt+</div>
+        <div class="hm-legend-item"><div class="hm-legend-dot" style="background:var(--yellow)"></div>△ 97-100pt</div>
+        <div class="hm-legend-item"><div class="hm-legend-dot" style="background:var(--red)"></div>✕ 改悪 97pt未満</div>
       </div>
       <div class="heatmap-grid" id="heatmapGrid"></div>
     </div>
@@ -505,7 +533,7 @@ body {
   <div class="section">
     <div class="section-title">全店舗ランキングバー</div>
     <div class="chart-card">
-      <div class="chart-title">📊 FF荒利益高 3月対比 順位グラフ</div>
+      <div class="chart-title">📊 総合スコア（牽引力）順位グラフ　※100pt＝支店水準</div>
       <div class="chart-wrap">
         <canvas id="barChart" height="500"></canvas>
       </div>
@@ -527,6 +555,32 @@ body {
     </div>
   </div>
 
+  <!-- ▶ DIAGNOSIS -->
+  <div class="section">
+    <div class="section-title">店舗検診レポート（3→4→5月 推移分析）</div>
+    <div class="note-card" style="margin-top:10px;margin-bottom:12px">
+      <div class="note-title">🩺 検診の見方</div>
+      <div class="note-text">
+        3月を基準に4月・5月の推移パターンを分析し、各店舗の荒利健全性を診断します。<br>
+        <strong>伸長率（3月対比）</strong>と<strong>実額変化（円/日）</strong>の両軸で評価します。
+      </div>
+    </div>
+    <div class="diag-groups" id="diagGroups"></div>
+    <div id="diagCards"></div>
+  </div>
+
+  <!-- ▶ TRACTION RANKING -->
+  <div class="section">
+    <div class="section-title">牽引力ランキング（3月→5月 実額寄与）</div>
+    <div class="chart-card">
+      <div class="chart-title">📊 MO全体への荒利増減寄与（円/日）</div>
+      <div class="note-text" style="font-size:10px;margin-bottom:12px;color:var(--sub)">
+        プラス棒グラフ＝MO全体を引き上げた店舗　／　マイナス棒グラフ＝引き下げた店舗
+      </div>
+      <div class="traction-wrap" id="tractionWrap"></div>
+    </div>
+  </div>
+
   <!-- ▶ NOTE -->
   <div class="note-card">
     <div class="note-title">📋 評価設計ルール（公平性確保）</div>
@@ -541,8 +595,8 @@ body {
   </div>
 
   <div class="footer">
-    阪口商店 ／ 2026年5月度 自社イベント ／ 集計：2026.05.13<br>
-    ※ 5月データは集計日時点の速報値（PSA/D = 日割荒利益高）
+    阪口商店 ／ 2026年5月度 自社イベント ／ 集計：2026.05.31（最終確定）<br>
+    ※ 5月データは最終確定値（PSA/D = 日割荒利益高）
   </div>
 </div>
 
@@ -552,101 +606,114 @@ body {
 // ══════════════════════════════════════════
 const stores = [
   { id:1,  name:'池田市役所前',      short:'池田市役所前',   hasChef:false, isNewChef:false,
-    ff:{ mar:12828.47, apr:12882.74, may:10218.19 }, chef:null },
+    ff:{ mar:12828.47, apr:12882.74, may:10848.16 }, chef:null },
   { id:2,  name:'江坂駅南口',        short:'江坂駅南口',     hasChef:true,  isNewChef:false,
-    ff:{ mar:34825.47, apr:35778.31, may:34602.10 }, chef:{ mar:10241.56, apr:8736.11,  may:7746.70  } },
+    ff:{ mar:34825.47, apr:35778.31, may:33345.10 }, chef:{ mar:10241.56, apr:8736.11,  may:9746.06  } },
   { id:3,  name:'江坂東',            short:'江坂東',         hasChef:true,  isNewChef:false,
-    ff:{ mar:23917.60, apr:22654.43, may:21458.43 }, chef:{ mar:8480.32,  apr:8793.08,  may:6908.99  } },
+    ff:{ mar:23917.60, apr:22654.43, may:21308.15 }, chef:{ mar:8480.32,  apr:8793.08,  may:7508.63  } },
   { id:4,  name:'五月ケ丘東',        short:'五月ケ丘東',     hasChef:true,  isNewChef:true,
-    ff:{ mar:10107.75, apr:10806.67, may:9755.93  }, chef:{ mar:158.51,   apr:331.48,   may:438.70   } },
+    ff:{ mar:10107.75, apr:10806.67, may:8815.66  }, chef:{ mar:158.51,   apr:331.48,   may:196.76   } },
   { id:5,  name:'新御堂筋上新田',    short:'新御堂筋',       hasChef:true,  isNewChef:false,
-    ff:{ mar:24174.25, apr:27487.37, may:24755.33 }, chef:{ mar:5502.13,  apr:5842.82,  may:4636.83  } },
+    ff:{ mar:24174.25, apr:27487.37, may:24511.26 }, chef:{ mar:5502.13,  apr:5842.82,  may:4606.67  } },
   { id:6,  name:'吹田青山台三丁目',  short:'青山台三',       hasChef:true,  isNewChef:false,
-    ff:{ mar:25063.59, apr:24556.98, may:25317.95 }, chef:{ mar:7597.84,  apr:8877.74,  may:7244.58  } },
+    ff:{ mar:25063.59, apr:24556.98, may:22718.54 }, chef:{ mar:7597.84,  apr:8877.74,  may:7315.99  } },
   { id:7,  name:'吹田朝日町',        short:'吹田朝日町',     hasChef:true,  isNewChef:false,
-    ff:{ mar:24260.58, apr:26156.71, may:23877.08 }, chef:{ mar:7845.45,  apr:8742.67,  may:7603.20  } },
+    ff:{ mar:24260.58, apr:26156.71, may:23884.16 }, chef:{ mar:7845.45,  apr:8742.67,  may:8479.63  } },
   { id:8,  name:'吹田警察署前',      short:'警察署前',       hasChef:true,  isNewChef:false,
-    ff:{ mar:17411.37, apr:16399.64, may:15817.80 }, chef:{ mar:4699.36,  apr:4624.86,  may:3359.30  } },
+    ff:{ mar:17411.37, apr:16399.64, may:15724.05 }, chef:{ mar:4699.36,  apr:4624.86,  may:4252.69  } },
   { id:9,  name:'吹田垂水三丁目',    short:'垂水三丁目',     hasChef:false, isNewChef:false,
-    ff:{ mar:10891.56, apr:11203.59, may:9982.38  }, chef:null },
+    ff:{ mar:10891.56, apr:11203.59, may:10131.75 }, chef:null },
   { id:10, name:'吹田豊津中学校前',  short:'豊津中学校前',   hasChef:true,  isNewChef:false,
-    ff:{ mar:20202.49, apr:20289.91, may:16469.72 }, chef:{ mar:8648.59,  apr:8911.77,  may:6111.04  } },
+    ff:{ mar:20202.49, apr:20289.91, may:18052.28 }, chef:{ mar:8648.59,  apr:8911.77,  may:7221.82  } },
   { id:11, name:'大道南一丁目',      short:'大道南一',       hasChef:true,  isNewChef:false,
-    ff:{ mar:18811.09, apr:17438.07, may:16998.66 }, chef:{ mar:3849.08,  apr:4353.96,  may:3934.91  } },
+    ff:{ mar:18811.09, apr:17438.07, may:16338.92 }, chef:{ mar:3849.08,  apr:4353.96,  may:3710.48  } },
   { id:12, name:'豊里六丁目',        short:'豊里六丁目',     hasChef:false, isNewChef:false,
-    ff:{ mar:9333.57,  apr:11193.68, may:9243.84  }, chef:null },
+    ff:{ mar:9333.57,  apr:11193.68, may:8798.72  }, chef:null },
   { id:13, name:'豊中利倉東一丁目',  short:'利倉東一',       hasChef:true,  isNewChef:false,
-    ff:{ mar:26702.87, apr:26527.73, may:25949.31 }, chef:{ mar:4866.15,  apr:5651.38,  may:4816.47  } },
+    ff:{ mar:26702.87, apr:26527.73, may:24196.89 }, chef:{ mar:4866.15,  apr:5651.38,  may:5191.50  } },
   { id:14, name:'豊中服部西町三丁目',short:'服部西町三',     hasChef:false, isNewChef:false,
-    ff:{ mar:14998.45, apr:16676.00, may:17906.49 }, chef:null },
+    ff:{ mar:14998.45, apr:16676.00, may:15907.74 }, chef:null },
   { id:15, name:'豊中服部元町一丁目',short:'服部元町一',     hasChef:true,  isNewChef:false,
-    ff:{ mar:20764.36, apr:21801.88, may:21761.13 }, chef:{ mar:5662.91,  apr:7073.08,  may:7877.22  } },
+    ff:{ mar:20764.36, apr:21801.88, may:20612.91 }, chef:{ mar:5662.91,  apr:7073.08,  may:8052.03  } },
   { id:16, name:'豊中原田南一丁目',  short:'原田南一',       hasChef:true,  isNewChef:false,
-    ff:{ mar:20474.28, apr:22409.47, may:20733.37 }, chef:{ mar:5562.97,  apr:6285.77,  may:6139.80  } },
+    ff:{ mar:20474.28, apr:22409.47, may:19742.66 }, chef:{ mar:5562.97,  apr:6285.77,  may:5671.82  } },
   { id:17, name:'東淀川大道南',      short:'東淀川大道南',   hasChef:true,  isNewChef:false,
-    ff:{ mar:18542.21, apr:18746.39, may:21061.75 }, chef:{ mar:5397.99,  apr:5361.38,  may:3546.26  } },
+    ff:{ mar:18542.21, apr:18746.39, may:18979.42 }, chef:{ mar:5397.99,  apr:5361.38,  may:4648.30  } },
   { id:18, name:'東淀川豊里五丁目',  short:'豊里五丁目',     hasChef:true,  isNewChef:false,
-    ff:{ mar:23198.44, apr:22938.30, may:24838.87 }, chef:{ mar:8273.63,  apr:8451.56,  may:6806.85  } },
+    ff:{ mar:23198.44, apr:22938.30, may:22711.20 }, chef:{ mar:8273.63,  apr:8451.56,  may:6857.29  } },
   { id:19, name:'南金田二丁目',      short:'南金田二',       hasChef:true,  isNewChef:false,
-    ff:{ mar:32090.95, apr:30850.08, may:30774.02 }, chef:{ mar:6316.23,  apr:6933.14,  may:5709.15  } },
+    ff:{ mar:32090.95, apr:30850.08, may:29496.18 }, chef:{ mar:6316.23,  apr:6933.14,  may:5801.64  } },
   { id:20, name:'箕面白島二丁目',    short:'箕面白島二',     hasChef:true,  isNewChef:false,
-    ff:{ mar:24911.12, apr:25461.03, may:28182.96 }, chef:{ mar:7548.89,  apr:8843.80,  may:10550.16 } },
+    ff:{ mar:24911.12, apr:25461.03, may:26034.47 }, chef:{ mar:7548.89,  apr:8843.80,  may:9314.76  } },
 ];
+
+// ── BENCHMARKS（支店平均） ──
+const FF_BENCH   = 97;   // FF荒利益高 3月対比 支店水準
+const CHEF_BENCH = 89;   // 厨房荒利益高 3月対比 支店水準
+
+function getScore(s) {
+  const ffIdx = s.ffRate / FF_BENCH * 100;
+  if (s.hasChef && !s.isNewChef && s.chefRate !== null) {
+    const chefIdx = s.chefRate / CHEF_BENCH * 100;
+    return (ffIdx + chefIdx) / 2;
+  }
+  return ffIdx;
+}
 
 // ── COMPUTE RATES ──
 stores.forEach(s => {
-  s.ffRate  = s.ff.may  / s.ff.mar  * 100;
-  s.ffRateApr = s.ff.apr / s.ff.mar * 100;
-  s.ffTrend = s.ff.may - s.ff.apr; // positive = improving vs Apr
-  s.chefRate = (s.chef && !s.isNewChef) ? s.chef.may / s.chef.mar * 100 : null;
+  s.ffRate     = s.ff.may / s.ff.mar * 100;
+  s.ffRateApr  = s.ff.apr / s.ff.mar * 100;   // グラフ参照用（評価は除外）
+  s.ffTrend    = s.ff.may - s.ff.apr;
+  s.absChange  = s.ff.may - s.ff.mar;
+  s.chefRate   = (s.chef && !s.isNewChef) ? s.chef.may / s.chef.mar * 100 : null;
   s.chefRateApr = (s.chef && !s.isNewChef) ? s.chef.apr / s.chef.mar * 100 : null;
-  s.isDanger = s.ffRate < 95;
-  s.isChefDanger = s.chef && !s.isNewChef && s.chefRate !== null && s.chefRate < 90;
-  // Total evaluation
-  s.eval = getEval(s);
+  s.compositeScore = getScore(s);
+  s.isDanger   = s.compositeScore < 100;
+  s.isChefDanger = s.chef && !s.isNewChef && s.chefRate !== null && s.chefRate < CHEF_BENCH;
+  s.eval       = getEval(s);
 });
 
-// Sort by FF rate desc
-const sortedStores = [...stores].sort((a,b) => b.ffRate - a.ffRate);
+// Sort by composite score desc（総合スコア順）
+const sortedStores = [...stores].sort((a,b) => b.compositeScore - a.compositeScore);
 sortedStores.forEach((s,i) => { s.rank = i+1; });
 
 function getEval(s) {
-  const ff = s.ffRate;
-  const chef = s.chefRate;
-  const hasChef = s.hasChef && !s.isNewChef;
-
-  let grade, label, cls, color;
-
-  if (ff >= 115) {
-    grade='◎◎'; label='最優秀'; cls='excellent'; color='var(--gold)';
-  } else if (ff >= 105) {
-    grade='◎'; label='超優秀'; cls='excellent'; color='var(--gold)';
-    // chef bonus
-    if (hasChef && chef !== null && chef >= 110) { grade='◎◎'; label='最優秀'; }
-  } else if (ff >= 100) {
-    grade='○'; label='達成'; cls='achieve'; color='var(--green)';
-    // chef bonus → ◎
-    if (hasChef && chef !== null && chef >= 105) { grade='◎'; label='優秀'; cls='great'; color='var(--blue)'; }
-  } else if (ff >= 95) {
-    grade='△'; label='ギリギリ'; cls='caution'; color='var(--yellow)';
+  const score = s.compositeScore;
+  if (score >= 115) {
+    return { grade:'\u25ce', label:'\u5927\u5e45\u728d\u5f15', cls:'excellent', color:'var(--gold)' };
+  } else if (score >= 100) {
+    return { grade:'\u25cb', label:'\u728d\u5f15', cls:'achieve', color:'var(--green)' };
   } else {
-    grade='×'; label='未達危険'; cls='danger'; color='var(--red)';
+    return { grade:'\u2715', label:'\u6539\u60aa', cls:'danger', color:'var(--red)' };
   }
-
-  return { grade, label, cls, color };
 }
 
 function getRateClass(rate) {
-  if (rate >= 105) return 'gold';
-  if (rate >= 100) return 'green';
-  if (rate >= 95)  return 'yellow';
+  if (rate >= 110) return 'gold';
+  if (rate >= 97)  return 'green';
+  if (rate >= 90)  return 'yellow';
   return 'red';
 }
 
 function getBarClass(rate) {
-  if (rate >= 105) return 'gold';
-  if (rate >= 100) return 'green';
-  if (rate >= 95)  return 'yellow';
+  if (rate >= 110) return 'gold';
+  if (rate >= 97)  return 'green';
+  if (rate >= 90)  return 'yellow';
+  return 'red';
+}
+
+function getChefRateClass(rate) {
+  if (rate >= 100) return 'gold';
+  if (rate >= 89)  return 'green';
+  if (rate >= 80)  return 'yellow';
+  return 'red';
+}
+
+function getScoreClass(score) {
+  if (score >= 115) return 'gold';
+  if (score >= 100) return 'green';
+  if (score >= 95)  return 'yellow';
   return 'red';
 }
 
@@ -696,53 +763,48 @@ function renderCards() {
 
   list.innerHTML = filtered.map(s => {
     const ev = s.eval;
-    const trend = getTrend(s);
     const ffRateFmt = s.ffRate.toFixed(1);
     const rateClass = getRateClass(s.ffRate);
-    const barClass = getBarClass(s.ffRate);
+    const barClass  = getBarClass(s.ffRate);
+    const scoreCls  = getScoreClass(s.compositeScore);
     const rankClass = s.rank <= 3 ? `rank-${s.rank}` : 'rank-n';
+    const ffOk  = s.ffRate >= FF_BENCH;
 
     let chefHtml = '';
     if (s.hasChef && !s.isNewChef && s.chefRate !== null) {
-      const cr = s.chefRate.toFixed(1);
-      const cc = getRateClass(s.chefRate);
-      const cb = getBarClass(s.chefRate);
+      const cr  = s.chefRate.toFixed(1);
+      const cc  = getChefRateClass(s.chefRate);
+      const chefOk = s.chefRate >= CHEF_BENCH;
       chefHtml = `
         <div class="chef-block">
-          <div class="metric-label">🍳 厨房荒利益高 3月対比（加点評価）</div>
+          <div class="metric-label">🍳 厨房荒利益高 3月対比　<span style="font-size:8px;color:var(--sub)">（基準 ${CHEF_BENCH}%）</span></div>
           <div class="metric-row">
             <span class="metric-value ${cc}">${cr}<span style="font-size:12px">%</span></span>
-            <span style="font-size:10px;color:var(--sub)">${s.chefRate>=100?'✅ 達成':s.chefRate>=95?'⚠️ 注意':'🔴 悪化'}</span>
+            <span style="font-size:10px;font-weight:700;color:${chefOk?'#059669':'#ef4444'}">${chefOk?'\u25cb\u57fa\u6e96\u8d85':'\u00d7\u57fa\u6e96\u672a\u6e80'}</span>
           </div>
           <div class="metric-bar-wrap">
             <div class="metric-bar-track">
-              <div class="metric-bar-fill ${cb}" style="width:${getBarWidth(s.chefRate)}"></div>
+              <div class="metric-bar-fill ${cc}" style="width:${getBarWidth(s.chefRate)}"></div>
             </div>
           </div>
         </div>`;
     } else if (s.isNewChef) {
-      chefHtml = `<div class="chef-block"><div class="metric-label">🍳 厨房（新規導入中・伸長率除外）</div><span class="badge new-chef">新規導入</span></div>`;
+      chefHtml = `<div class="chef-block"><div class="metric-label">🍳 厨房（新規導入中・評価除外）</div><span class="badge new-chef">新規導入</span></div>`;
     }
 
     let dangerHtml = '';
     if (s.isDanger) {
-      dangerHtml = `
-        <div class="danger-alert">
-          🚨 FF伸長率95%未満 — 重点強化店舗
-        </div>`;
+      dangerHtml = `<div class="danger-alert">\u2716 \u7dcf\u5408\u30b9\u30b3\u30a2 ${s.compositeScore.toFixed(1)}\u70b9 \u2014 \u6539\u60aa\u5e97\u8217</div>`;
     }
     if (s.isChefDanger && !s.isDanger) {
-      dangerHtml = `
-        <div class="danger-alert" style="background:rgba(249,115,22,0.1);border-color:rgba(249,115,22,0.3);color:#fb923c;">
-          ⚠️ 厨房荒利益悪化傾向あり（要注意）
-        </div>`;
+      dangerHtml = `<div class="danger-alert" style="background:rgba(249,115,22,0.1);border-color:rgba(249,115,22,0.3);color:#fb923c;">\u26a0\ufe0f \u53a8\u623f\u8377\u5229\u76ca\u9ad8 \u57fa\u6e96\uff08${CHEF_BENCH}%\uff09\u672a\u6e80\uff08FF\u306f\u57fa\u6e96\u8d85\uff09</div>`;
     }
 
     let badgeHtml = '';
     if (!s.hasChef) badgeHtml += `<span class="badge no-chef">厨房なし</span>`;
     else if (s.isNewChef) badgeHtml += `<span class="badge new-chef">厨房 新規</span>`;
     else badgeHtml += `<span class="badge chef">厨房あり</span>`;
-    if (s.isDanger) badgeHtml += `<span class="badge danger-badge">危険</span>`;
+    if (s.isDanger) badgeHtml += `<span class="badge danger-badge">改悪</span>`;
 
     return `
     <div class="store-card ${ev.cls} fade-in">
@@ -759,10 +821,10 @@ function renderCards() {
       </div>
       <div class="store-metrics">
         <div class="metric-block">
-          <div class="metric-label">FF荒利益高 3月対比 ⭐主評価</div>
+          <div class="metric-label">FF荒利益高 3月対比　<span style="font-size:8px;color:var(--sub)">（基準 ${FF_BENCH}%）</span></div>
           <div class="metric-row">
             <span class="metric-value ${rateClass}">${ffRateFmt}<span style="font-size:12px">%</span></span>
-            <span class="metric-trend ${trend.cls}">${trend.icon} ${trend.label}円/日</span>
+            <span style="font-size:10px;font-weight:700;color:${ffOk?'#059669':'#ef4444'}">${ffOk?'\u25cb\u57fa\u6e96\u8d85':'\u00d7\u57fa\u6e96\u672a\u6e80'}</span>
           </div>
           <div class="metric-bar-wrap">
             <div class="metric-bar-track">
@@ -771,14 +833,14 @@ function renderCards() {
           </div>
         </div>
         <div class="metric-block">
-          <div class="metric-label">4月対比トレンド</div>
+          <div class="metric-label">総合スコア <span style="font-size:8px;color:var(--sub)">（100点＝支店水準）</span></div>
           <div class="metric-row">
-            <span class="metric-value ${getRateClass(s.ffRateApr)}">${s.ffRateApr.toFixed(1)}<span style="font-size:11px">%</span></span>
-            <span style="font-size:9px;color:var(--sub)">4月/3月比</span>
+            <span class="metric-value ${scoreCls}">${s.compositeScore.toFixed(1)}<span style="font-size:11px">pt</span></span>
+            <span style="font-size:9px;color:var(--sub)">${s.compositeScore>=100?'支店超':'支店未満'}</span>
           </div>
           <div class="metric-bar-wrap">
             <div class="metric-bar-track">
-              <div class="metric-bar-fill ${getBarClass(s.ffRateApr)}" style="width:${getBarWidth(s.ffRateApr)}"></div>
+              <div class="metric-bar-fill ${scoreCls}" style="width:${getBarWidth(s.compositeScore)}"></div>
             </div>
           </div>
         </div>
@@ -795,19 +857,18 @@ renderCards();
 // ══════════════════════════════════════════
 // HEATMAP
 // ══════════════════════════════════════════
-function getHmClass(rate) {
-  if (rate >= 115) return 'excellent';
-  if (rate >= 105) return 'excellent';
-  if (rate >= 100) return 'achieve';
-  if (rate >= 95)  return 'caution';
+function getHmClass(score) {
+  if (score >= 115) return 'excellent';
+  if (score >= 100) return 'achieve';
+  if (score >= 97)  return 'caution';
   return 'danger';
 }
 
 const hmGrid = document.getElementById('heatmapGrid');
 hmGrid.innerHTML = sortedStores.map(s => `
-  <div class="hm-cell ${getHmClass(s.ffRate)}">
+  <div class="hm-cell ${getHmClass(s.compositeScore)}">
     <div class="hm-name">${s.short}</div>
-    <div class="hm-rate">${s.ffRate.toFixed(1)}%</div>
+    <div class="hm-rate">${s.compositeScore.toFixed(0)}pt</div>
   </div>
 `).join('');
 
@@ -822,10 +883,10 @@ Chart.defaults.font.size = 11;
 new Chart(document.getElementById('donutChart'), {
   type: 'doughnut',
   data: {
-    labels:['超優秀(105%+)','達成(100-105%)','ギリギリ(95-100%)','危険(<95%)'],
+    labels:['\u25ce\u5927\u5e45\u728d\u5f15(115pt+)','\u25cb\u728d\u5f15(100-115pt)','\u00d7\u6539\u60aa(100pt\u672a\u6e80)'],
     datasets:[{
-      data:[4,4,6,6],
-      backgroundColor:['#d97706','#059669','#ca8a04','#ef4444'],
+      data:[3,6,11],
+      backgroundColor:['#d97706','#059669','#ef4444'],
       borderWidth:0,
       hoverOffset:4
     }]
@@ -833,7 +894,7 @@ new Chart(document.getElementById('donutChart'), {
   options: {
     cutout:'68%',
     plugins:{ legend:{ display:false }, tooltip:{ callbacks:{
-      label: ctx => ` ${ctx.label}: ${ctx.raw}店舗`
+      label: ctx => ` ${ctx.label}: ${ctx.raw}\u5e97\u8217`
     }}},
     animation:{ duration:1200, easing:'easeOutCubic' }
   }
@@ -852,7 +913,7 @@ const trendColors = sortedStores.map(s => {
 new Chart(document.getElementById('trendChart'), {
   type: 'line',
   data: {
-    labels:['3月','4月','5月（現在）'],
+    labels:['3月','4月','5月（最終）'],
     datasets: sortedStores.map((s,i) => ({
       label: s.short,
       data:[s.ffRate/s.ffRate*100*0 + 100, s.ffRateApr, s.ffRate],
@@ -892,7 +953,7 @@ const compareColors = ['#d97706','#ca8a04','#059669','#ef4444','#dc2626','#b91c1
 new Chart(document.getElementById('compareChart'), {
   type: 'line',
   data: {
-    labels:['3月','4月','5月（現在）'],
+    labels:['3月','4月','5月（最終）'],
     datasets: compareStores.map((s,i) => ({
       label: s.name,
       data: [100, s.ffRateApr, s.ffRate],
@@ -925,9 +986,7 @@ new Chart(document.getElementById('compareChart'), {
 const barColors = sortedStores.map(s => {
   const e = s.eval.cls;
   if(e==='excellent') return '#d97706';
-  if(e==='great')     return '#2563eb';
   if(e==='achieve')   return '#059669';
-  if(e==='caution')   return '#ca8a04';
   return '#ef4444';
 });
 
@@ -936,8 +995,8 @@ new Chart(document.getElementById('barChart'), {
   data: {
     labels: sortedStores.map(s => s.short),
     datasets:[{
-      label:'FF荒利益高 3月対比(%)',
-      data: sortedStores.map(s => s.ffRate),
+      label:'\u7dcf\u5408\u30b9\u30b3\u30a2(pt)',
+      data: sortedStores.map(s => s.compositeScore),
       backgroundColor: barColors,
       borderRadius:4,
       borderSkipped:false,
@@ -949,14 +1008,14 @@ new Chart(document.getElementById('barChart'), {
     plugins:{
       legend:{ display:false },
       tooltip:{ callbacks:{
-        label: ctx => ` ${ctx.raw.toFixed(1)}%`
+        label: ctx => ` ${ctx.raw.toFixed(1)}pt  (FF:${sortedStores[ctx.dataIndex].ffRate.toFixed(1)}%)`
       }}
     },
     scales:{
       x:{
         grid:{ color:'rgba(0,0,0,0.08)' },
-        ticks:{ callback:v=>v+'%' },
-        min:70, max:130,
+        ticks:{ callback:v=>v+'pt' },
+        min:75, max:145,
       },
       y:{ grid:{ display:false }, ticks:{ font:{size:10} } }
     }
@@ -1012,11 +1071,212 @@ new Chart(document.getElementById('scatterChart'), {
   }
 });
 
-// ── 残り日数カウントダウン ──
-const today = new Date('2026-05-13');
-const end   = new Date('2026-05-31');
-const diff  = Math.ceil((end - today) / (1000*60*60*24));
-document.getElementById('daysLeft').textContent = diff;
+// ══════════════════════════════════════════
+// DIAGNOSIS
+// ══════════════════════════════════════════
+function getDiag(s) {
+  const a = s.ff.apr / s.ff.mar * 100;
+  const m = s.ff.may / s.ff.apr * 100;
+  const r = s.ffRate;
+
+  if (a >= 100 && m >= 100) return {
+    type:'C', label:'継続成長型', icon:'📈',
+    bg:'rgba(5,150,105,0.09)', border:'rgba(5,150,105,0.3)', textColor:'#047857',
+    finding:`3月→4月（${a.toFixed(1)}%）→5月（${m.toFixed(1)}%）と2ヶ月連続で荒利を積み上げた。一貫した取り組みが数字に表れている優良店舗。`
+  };
+  if (a >= 100 && m < 100 && r >= 100) return {
+    type:'A+', label:'頂点型・達成維持', icon:'🏔️',
+    bg:'rgba(37,99,235,0.08)', border:'rgba(37,99,235,0.25)', textColor:'#1d4ed8',
+    finding:`4月に${a.toFixed(1)}%まで伸ばしたが5月は${m.toFixed(1)}%に反落。それでも3月対比${r.toFixed(1)}%と達成水準を維持。底力のある店舗。`
+  };
+  if (a >= 100 && m < 100 && r >= 95) return {
+    type:'A', label:'頂点型・要注意', icon:'⚠️',
+    bg:'rgba(245,158,11,0.08)', border:'rgba(245,158,11,0.3)', textColor:'#b45309',
+    finding:`4月は${a.toFixed(1)}%まで上昇したが、5月は${m.toFixed(1)}%と大幅失速。3月対比${r.toFixed(1)}%で目標に届かなかった。4月施策の継続性が課題。`
+  };
+  if (a >= 100 && m < 100 && r < 95) return {
+    type:'A-', label:'頂点型・急落', icon:'📉',
+    bg:'rgba(239,68,68,0.07)', border:'rgba(239,68,68,0.3)', textColor:'#dc2626',
+    finding:`4月の一時回復（${a.toFixed(1)}%）が5月に急失速（${m.toFixed(1)}%）。3月対比${r.toFixed(1)}%と大きく割り込んだ。5月の急落要因の特定と立て直しが急務。`
+  };
+  if (a < 100 && m >= 100) return {
+    type:'D', label:'V字回復型', icon:'🔄',
+    bg:'rgba(251,191,36,0.12)', border:'rgba(251,191,36,0.4)', textColor:'#d97706',
+    finding:`4月は下落（${a.toFixed(1)}%）したが5月に回復（${m.toFixed(1)}%）。立て直しの成果が出ている。この勢いを維持できるか注目。`
+  };
+  if (r >= 95) return {
+    type:'B1', label:'継続下落・軽微', icon:'↘',
+    bg:'rgba(245,158,11,0.08)', border:'rgba(245,158,11,0.3)', textColor:'#b45309',
+    finding:`4月（${a.toFixed(1)}%）→5月（${m.toFixed(1)}%）と2ヶ月連続の下落だが3月対比${r.toFixed(1)}%と軽微。早めの打ち手で回復できる水準。`
+  };
+  return {
+    type:'B2', label:'継続下落型', icon:'🔴',
+    bg:'rgba(239,68,68,0.07)', border:'rgba(239,68,68,0.3)', textColor:'#dc2626',
+    finding:`4月（${a.toFixed(1)}%）→5月（${m.toFixed(1)}%）と2ヶ月にわたる持続的な下落。3月対比${r.toFixed(1)}%と落ち込んでいる。根本的な施策の見直しが必要。`
+  };
+}
+
+// Compute diagnosis for each store
+stores.forEach(s => {
+  s.aprMarRate = s.ff.apr / s.ff.mar * 100;
+  s.mayAprRate = s.ff.may / s.ff.apr * 100;
+  s.absChange  = s.ff.may - s.ff.mar;
+  s.diag = getDiag(s);
+});
+
+// Group stores
+const diagHealthy = sortedStores.filter(s => ['C','A+','D'].includes(s.diag.type));
+const diagCaution = sortedStores.filter(s => ['A','B1'].includes(s.diag.type));
+const diagDanger  = sortedStores.filter(s => ['A-','B2'].includes(s.diag.type));
+
+// Render group summary
+document.getElementById('diagGroups').innerHTML = [
+  { label:'健全群<br>3月比 100%以上', count:diagHealthy.length, icon:'✅', bg:'rgba(5,150,105,0.1)', border:'rgba(5,150,105,0.3)', color:'#047857' },
+  { label:'要注意群<br>3月比 95〜100%', count:diagCaution.length, icon:'⚠️', bg:'rgba(245,158,11,0.1)', border:'rgba(245,158,11,0.3)', color:'#b45309' },
+  { label:'危険群<br>3月比 95%未満', count:diagDanger.length, icon:'🔴', bg:'rgba(239,68,68,0.1)', border:'rgba(239,68,68,0.3)', color:'#dc2626' },
+].map(g => `
+  <div class="dg-card" style="background:${g.bg};border-color:${g.border}">
+    <div class="dg-icon">${g.icon}</div>
+    <div class="dg-num" style="color:${g.color}">${g.count}</div>
+    <div class="dg-label">${g.label}</div>
+  </div>
+`).join('');
+
+function getArrow(rate) {
+  const c = rate>=103?'#059669':rate>=100?'#22c55e':rate>=97?'#64748b':rate>=90?'#f97316':'#ef4444';
+  const i = rate>=103?'▲▲':rate>=100?'▲':rate>=97?'→':rate>=90?'▼':'▼▼';
+  return {color:c, icon:i};
+}
+
+function fmtNum(n) {
+  return Math.round(n).toLocaleString('ja-JP');
+}
+
+function renderDiagGroup(storeArr, groupLabel, groupColor) {
+  if (!storeArr.length) return '';
+  return `<div class="diag-divider" style="color:${groupColor}">${groupLabel}（${storeArr.length}店）</div>` +
+    storeArr.map(s => {
+      const d = s.diag;
+      const a1 = getArrow(s.aprMarRate);
+      const a2 = getArrow(s.mayAprRate);
+      const rColor = s.ffRate>=105?'var(--gold)':s.ffRate>=100?'var(--green)':s.ffRate>=95?'var(--yellow)':'var(--red)';
+      const aColor = s.absChange>=0?'#059669':'#ef4444';
+      const aSign  = s.absChange>=0?'+':'';
+
+      let chefRow = '';
+      if (s.hasChef && !s.isNewChef && s.chefRate !== null) {
+        const cc = s.chefRate>=100?'#059669':s.chefRate>=95?'#b45309':'#dc2626';
+        const cl = s.chefRate>=100?'✅ 達成':s.chefRate>=95?'⚠️ 注意':'🔴 悪化';
+        const chefAbs = Math.round(s.chef.may - s.chef.mar);
+        const chefSign = chefAbs>=0?'+':'';
+        chefRow = `<div class="diag-chef-row">
+          <span style="font-size:10px">🍳 厨房 3月比</span>
+          <span style="font-size:14px;font-weight:900;color:${cc}">${s.chefRate.toFixed(1)}%</span>
+          <span style="font-size:9px;color:${cc}">${cl}</span>
+          <span style="font-size:9px;color:var(--sub);margin-left:auto">実額 ${chefSign}${chefAbs.toLocaleString('ja-JP')}円/日</span>
+        </div>`;
+      }
+
+      return `<div class="diag-card" style="border-color:${d.border};background:${d.bg}">
+        <div class="diag-card-top">
+          <div>
+            <div class="diag-store-name">${s.name}</div>
+            <div class="diag-pattern-badge" style="background:${d.bg};color:${d.textColor};border:1px solid ${d.border}">${d.icon} ${d.label}</div>
+          </div>
+          <div style="text-align:right">
+            <div style="font-size:9px;color:var(--sub)">FF順位</div>
+            <div style="font-size:18px;font-weight:900;color:${s.rank<=3?'var(--gold)':s.rank<=10?'var(--blue)':'var(--sub)'}">${s.rank}位</div>
+          </div>
+        </div>
+        <div class="diag-traj">
+          <div class="traj-node">
+            <div class="traj-month">3月（基準）</div>
+            <div class="traj-psad">${fmtNum(s.ff.mar)}</div>
+            <div class="traj-delta" style="color:var(--sub)">——</div>
+          </div>
+          <div class="traj-arrow-col">
+            <div class="traj-arr-icon" style="color:${a1.color}">${a1.icon}</div>
+            <div class="traj-arr-pct" style="color:${a1.color}">${s.aprMarRate.toFixed(1)}%</div>
+          </div>
+          <div class="traj-node">
+            <div class="traj-month">4月</div>
+            <div class="traj-psad">${fmtNum(s.ff.apr)}</div>
+            <div class="traj-delta" style="color:${a1.color}">${s.aprMarRate>=100?'+':''}${(s.aprMarRate-100).toFixed(1)}%</div>
+          </div>
+          <div class="traj-arrow-col">
+            <div class="traj-arr-icon" style="color:${a2.color}">${a2.icon}</div>
+            <div class="traj-arr-pct" style="color:${a2.color}">${s.mayAprRate.toFixed(1)}%</div>
+          </div>
+          <div class="traj-node">
+            <div class="traj-month">5月（最終）</div>
+            <div class="traj-psad">${fmtNum(s.ff.may)}</div>
+            <div class="traj-delta" style="color:${rColor};font-weight:900">${s.ffRate>=100?'+':''}${(s.ffRate-100).toFixed(1)}%</div>
+          </div>
+        </div>
+        <div class="diag-metrics">
+          <div class="dm-block">
+            <div class="dm-label">3月比 伸長率</div>
+            <div class="dm-val" style="color:${rColor}">${s.ffRate.toFixed(1)}%</div>
+          </div>
+          <div class="dm-block">
+            <div class="dm-label">実額変化（円/日）</div>
+            <div class="dm-val" style="color:${aColor}">${aSign}${fmtNum(s.absChange)}</div>
+          </div>
+          <div class="dm-block">
+            <div class="dm-label">4→5月 変化率</div>
+            <div class="dm-val" style="color:${a2.color}">${s.mayAprRate.toFixed(1)}%</div>
+          </div>
+        </div>
+        ${chefRow}
+        <div class="diag-finding">💬 ${d.finding}</div>
+      </div>`;
+    }).join('');
+}
+
+document.getElementById('diagCards').innerHTML =
+  renderDiagGroup(diagHealthy, '✅ 健全群', '#047857') +
+  renderDiagGroup(diagCaution, '⚠️ 要注意群', '#b45309') +
+  renderDiagGroup(diagDanger,  '🔴 危険群', '#dc2626');
+
+// ══════════════════════════════════════════
+// TRACTION RANKING
+// ══════════════════════════════════════════
+const tractionSorted = [...stores].sort((a,b) => b.absChange - a.absChange);
+const maxAbs = Math.max(...tractionSorted.map(s => Math.abs(s.absChange)));
+
+const trWrap = document.getElementById('tractionWrap');
+
+// Header
+trWrap.innerHTML = `
+  <div class="traction-header">
+    <span style="color:#059669">▲ 牽引（プラス寄与）</span>
+    <span style="font-size:9px;color:var(--sub)">← 0円基準 →</span>
+    <span style="color:#ef4444">▼ 重荷（マイナス寄与）</span>
+  </div>` +
+  tractionSorted.map((s,i) => {
+    const pct = (Math.abs(s.absChange) / maxAbs) * 45; // max 45% of half-bar
+    const isPos = s.absChange >= 0;
+    const color = isPos
+      ? (s.absChange>800?'#059669':s.absChange>300?'#22c55e':'#86efac')
+      : (s.absChange<-2000?'#dc2626':s.absChange<-1000?'#f97316':'#fca5a5');
+    const rankColor = i<4?'#059669':i>=16?'#dc2626':'#64748b';
+    const absStr = (isPos?'+':'')+fmtNum(s.absChange)+'円';
+
+    return `<div class="traction-row">
+      <div class="tr-rank" style="color:${rankColor}">${i===0?'🥇':i===1?'🥈':i===2?'🥉':i>=17?'↓'+(i+1):(i+1)}</div>
+      <div class="tr-name" style="font-size:${s.name.length>8?'8px':'10px'}">${s.name}</div>
+      <div class="tr-bar-wrap">
+        <div class="tr-center-line"></div>
+        <div class="tr-bar ${isPos?'tr-bar-pos':'tr-bar-neg'}" style="width:${pct}%;background:${color}">
+          <span class="tr-val" style="color:${isPos?'#065f46':'#7f1d1d'}">${absStr}</span>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+
+// ── イベント終了 ──
+// イベント終了済み（最終結果確定）
+document.getElementById('daysLeft').textContent = '確定';
 
 </script>
 </body>
