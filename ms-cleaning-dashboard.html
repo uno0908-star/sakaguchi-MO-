@@ -356,8 +356,10 @@ const STANDARDS = {
   8:{img:'images/seiso-08.png',point:'レジ・カウンター周辺が整理整頓されキレイな状態である',checks:['レジ本体・電子決済端末・スキャナー・キャッシュトレイに汚れがない','カウンター・バックカウンター・セルフレジ用案内板が整理されている']},
   9:{img:'images/seiso-09.png',point:'要冷機器（冷蔵・冷凍ケース）にホコリや汚れがなく、キレイな状態である',checks:['オープンケース・冷温ケース・デザートケースが清潔である','リーチイン冷蔵・冷凍ケース・冷凍平台・アイスクリームケースに汚れがない']},
   10:{img:'images/seiso-10.png',point:'サービスコーナー機器類にホコリや汚れがなく、キレイな状態である',checks:['Loppi・ATMのタッチパネルに汚れ・べたつきがない','コピー機に汚れがなく正常に使用できる']},
-  11:{img:'images/seiso-13.png',point:'トイレ前室に汚れや匂いがなく、清掃用品が清潔でキレイな状態である',checks:['鏡・洗面台・床に水垢・汚れがない','消耗品が補充されゴミ箱が満杯でない']},
-  12:{img:'images/seiso-14.png',point:'トイレ室内にゴミや汚れがなく、消耗品が揃えられキレイな状態である',checks:['便器・ふた・便座・床・壁に汚れ・水はねがない','消耗品が補充されゴミ箱・換気扇が清潔である']}
+  11:{img:'images/seiso-11.png',point:'ゴンドラ（無印良品・日用品）にホコリや汚れがなく、キレイな状態である',checks:['棚板にホコリや汚れ・汁もれ・ゴミが見えない','仕切り・プライスカードホルダーにホコリがない']},
+  12:{img:'images/seiso-12.png',point:'ゴンドラ（菓子・加工食品）にホコリや汚れがなく、キレイな状態である',checks:['棚板にホコリや汚れ・汁もれ・ゴミが見えない','商品仕切り・プライスカードに汚れがない']},
+  13:{img:'images/seiso-13.png',point:'トイレ前室に汚れや匂いがなく、清掃用品が清潔でキレイな状態である',checks:['鏡・洗面台・床に水垢・汚れがない','消耗品が補充されゴミ箱が満杯でない']},
+  14:{img:'images/seiso-14.png',point:'トイレ室内にゴミや汚れがなく、消耗品が揃えられキレイな状態である',checks:['便器・ふた・便座・床・壁に汚れ・水はねがない','消耗品が補充されゴミ箱・換気扇が清潔である']}
 };
 
 // ============================================================
@@ -376,90 +378,78 @@ const STORES = [
   {storeId:19,storeName:'池田市役所前'},{storeId:20,storeName:'箕面白島二丁目'}
 ];
 const ITEMS = [
-  {itemId:1, itemName:'店舗周辺',          sortOrder:1},
-  {itemId:2, itemName:'店頭',              sortOrder:2},
-  {itemId:3, itemName:'犬走り・灰皿',      sortOrder:3},
-  {itemId:4, itemName:'ゴミ箱',            sortOrder:4},
-  {itemId:5, itemName:'床',               sortOrder:5},
-  {itemId:6, itemName:'コーヒーマシン',    sortOrder:6},
-  {itemId:7, itemName:'FF什器',           sortOrder:7},
-  {itemId:8, itemName:'レジ・カウンター周辺',sortOrder:8},
-  {itemId:9, itemName:'要冷機器',          sortOrder:9},
-  {itemId:10,itemName:'サービスコーナー',  sortOrder:10},
-  {itemId:11,itemName:'トイレ前室',        sortOrder:11},
-  {itemId:12,itemName:'トイレ室内',        sortOrder:12}
+  {itemId:1, itemName:'店舗周辺',              sortOrder:1},
+  {itemId:2, itemName:'店頭',                  sortOrder:2},
+  {itemId:3, itemName:'犬走り・灰皿',          sortOrder:3},
+  {itemId:4, itemName:'ゴミ箱',                sortOrder:4},
+  {itemId:5, itemName:'床',                   sortOrder:5},
+  {itemId:6, itemName:'コーヒーマシン',        sortOrder:6},
+  {itemId:7, itemName:'FF什器',               sortOrder:7},
+  {itemId:8, itemName:'レジ・カウンター周辺',  sortOrder:8},
+  {itemId:9, itemName:'要冷機器',              sortOrder:9},
+  {itemId:10,itemName:'サービスコーナー',      sortOrder:10},
+  {itemId:11,itemName:'棚（無印良品・日用品）', sortOrder:11},
+  {itemId:12,itemName:'棚（菓子・加工食品）',  sortOrder:12},
+  {itemId:13,itemName:'トイレ前室',            sortOrder:13},
+  {itemId:14,itemName:'トイレ室内',            sortOrder:14}
 ];
-// 清掃対象箇所（新仕様）※各店舗56箇所 × 20店舗 = 1120箇所
+// 清掃対象箇所（各店舗87箇所 × 20店舗 = 1740箇所）
 const ALL_SETTINGS=(()=>{
   const base=[
-    // 1.店舗周辺
-    {itemId:1,unitLabel:'駐車場'},
-    {itemId:1,unitLabel:'植栽'},
-    // 2.店頭
-    {itemId:2,unitLabel:'軒下'},
-    {itemId:2,unitLabel:'ガラス面'},
-    // 3.犬走り・灰皿
-    {itemId:3,unitLabel:'犬走り'},
-    {itemId:3,unitLabel:'灰皿'},
-    // 4.ゴミ箱
-    {itemId:4,unitLabel:'ゴミ箱本体'},
-    {itemId:4,unitLabel:'中箱'},
-    {itemId:4,unitLabel:'中床'},
-    // 5.床
-    {itemId:5,unitLabel:'店内床'},
-    {itemId:5,unitLabel:'店頭マット'},
-    {itemId:5,unitLabel:'店内マット'},
-    // 6.コーヒーマシン
-    {itemId:6,unitLabel:'ホッパー'},
-    {itemId:6,unitLabel:'抽出口'},
-    {itemId:6,unitLabel:'排水トレイ'},
-    {itemId:6,unitLabel:'タッチパネル'},
-    {itemId:6,unitLabel:'本体下'},
-    {itemId:6,unitLabel:'本体周辺'},
-    {itemId:6,unitLabel:'コンディメント什器'},
-    {itemId:6,unitLabel:'ゴミ箱'},
-    // 7.FF什器
-    {itemId:7,unitLabel:'ホットケースガラス面'},
-    {itemId:7,unitLabel:'常温ケースガラス面'},
-    {itemId:7,unitLabel:'バット'},
-    {itemId:7,unitLabel:'陳列什器'},
-    {itemId:7,unitLabel:'プライスカードケース'},
-    // 8.レジ・カウンター周辺
-    {itemId:8,unitLabel:'レジ本体'},
-    {itemId:8,unitLabel:'電子決済端末'},
-    {itemId:8,unitLabel:'スキャナー'},
-    {itemId:8,unitLabel:'キャッシュトレイ'},
-    {itemId:8,unitLabel:'カウンター'},
-    {itemId:8,unitLabel:'バックカウンター'},
-    {itemId:8,unitLabel:'セルフレジ用案内板'},
-    // 9.要冷機器
-    {itemId:9,unitLabel:'オープンケース'},
-    {itemId:9,unitLabel:'冷温ケース'},
-    {itemId:9,unitLabel:'デザートケース'},
-    {itemId:9,unitLabel:'リーチイン冷蔵ケース'},
-    {itemId:9,unitLabel:'ドリンク剤ケース'},
-    {itemId:9,unitLabel:'リーチイン冷凍ケース'},
-    {itemId:9,unitLabel:'冷凍平台'},
-    {itemId:9,unitLabel:'アイスクリームケース'},
-    // 10.サービスコーナー
-    {itemId:10,unitLabel:'Loppi'},
-    {itemId:10,unitLabel:'ATM'},
-    {itemId:10,unitLabel:'コピー機'},
-    // 11.トイレ前室
-    {itemId:11,unitLabel:'鏡'},
-    {itemId:11,unitLabel:'洗面台'},
-    {itemId:11,unitLabel:'床'},
-    {itemId:11,unitLabel:'消耗品（ペーパータオル・ハンドソープ）'},
-    {itemId:11,unitLabel:'ゴミ箱'},
-    // 12.トイレ室内
-    {itemId:12,unitLabel:'便器'},
-    {itemId:12,unitLabel:'ふた'},
-    {itemId:12,unitLabel:'便座'},
-    {itemId:12,unitLabel:'床'},
-    {itemId:12,unitLabel:'壁'},
-    {itemId:12,unitLabel:'消耗品（トイレットペーパー・除菌アルコール）'},
-    {itemId:12,unitLabel:'ゴミ箱'},
-    {itemId:12,unitLabel:'換気扇'},
+    // 1.店舗周辺（2）
+    {itemId:1,unitLabel:'駐車場'},{itemId:1,unitLabel:'植栽'},
+    // 2.店頭（2）
+    {itemId:2,unitLabel:'軒下'},{itemId:2,unitLabel:'ガラス面'},
+    // 3.犬走り・灰皿（2）
+    {itemId:3,unitLabel:'犬走り'},{itemId:3,unitLabel:'灰皿'},
+    // 4.ゴミ箱（3）
+    {itemId:4,unitLabel:'ゴミ箱本体'},{itemId:4,unitLabel:'中箱'},{itemId:4,unitLabel:'中床'},
+    // 5.床（3）
+    {itemId:5,unitLabel:'店内床'},{itemId:5,unitLabel:'店頭マット'},{itemId:5,unitLabel:'店内マット'},
+    // 6.コーヒーマシン（8）
+    {itemId:6,unitLabel:'ホッパー'},{itemId:6,unitLabel:'抽出口'},{itemId:6,unitLabel:'排水トレイ'},
+    {itemId:6,unitLabel:'タッチパネル'},{itemId:6,unitLabel:'本体下'},{itemId:6,unitLabel:'本体周辺'},
+    {itemId:6,unitLabel:'コンディメント什器'},{itemId:6,unitLabel:'ゴミ箱'},
+    // 7.FF什器（5）
+    {itemId:7,unitLabel:'ホットケースガラス面'},{itemId:7,unitLabel:'常温ケースガラス面'},
+    {itemId:7,unitLabel:'バット'},{itemId:7,unitLabel:'陳列什器'},{itemId:7,unitLabel:'プライスカードケース'},
+    // 8.レジ・カウンター周辺（7）
+    {itemId:8,unitLabel:'レジ本体'},{itemId:8,unitLabel:'電子決済端末'},{itemId:8,unitLabel:'スキャナー'},
+    {itemId:8,unitLabel:'キャッシュトレイ'},{itemId:8,unitLabel:'カウンター'},
+    {itemId:8,unitLabel:'バックカウンター'},{itemId:8,unitLabel:'セルフレジ用案内板'},
+    // 9.要冷機器（8）
+    {itemId:9,unitLabel:'オープンケース'},{itemId:9,unitLabel:'冷温ケース'},
+    {itemId:9,unitLabel:'デザートケース'},{itemId:9,unitLabel:'リーチイン冷蔵ケース'},
+    {itemId:9,unitLabel:'ドリンク剤ケース'},{itemId:9,unitLabel:'リーチイン冷凍ケース'},
+    {itemId:9,unitLabel:'冷凍平台'},{itemId:9,unitLabel:'アイスクリームケース'},
+    // 10.サービスコーナー（3）
+    {itemId:10,unitLabel:'Loppi'},{itemId:10,unitLabel:'ATM'},{itemId:10,unitLabel:'コピー機'},
+    // 11.棚（無印良品・日用品）（9）
+    {itemId:11,unitLabel:'日用品 1本目'},{itemId:11,unitLabel:'日用品 2本目'},
+    {itemId:11,unitLabel:'日用品 3本目'},{itemId:11,unitLabel:'日用品 4本目'},
+    {itemId:11,unitLabel:'日用品 5本目'},{itemId:11,unitLabel:'無印良品 1本目'},
+    {itemId:11,unitLabel:'無印良品 2本目'},{itemId:11,unitLabel:'無印良品 3本目'},
+    {itemId:11,unitLabel:'栄養ドリンク'},
+    // 12.棚（菓子・加工食品）（22）
+    {itemId:12,unitLabel:'ポケット菓子 1本目'},{itemId:12,unitLabel:'ポケット菓子 2本目'},
+    {itemId:12,unitLabel:'ポケット菓子 3本目'},{itemId:12,unitLabel:'ポケット菓子 4本目'},
+    {itemId:12,unitLabel:'スナック菓子 1本目'},{itemId:12,unitLabel:'スナック菓子 2本目'},
+    {itemId:12,unitLabel:'スナック菓子 3本目'},{itemId:12,unitLabel:'珍味 1本目'},
+    {itemId:12,unitLabel:'珍味 2本目'},{itemId:12,unitLabel:'オリジナル菓子 1本目'},
+    {itemId:12,unitLabel:'オリジナル菓子 2本目'},{itemId:12,unitLabel:'オリジナル菓子 3本目'},
+    {itemId:12,unitLabel:'NL菓子'},{itemId:12,unitLabel:'クッキー・ビスケット'},
+    {itemId:12,unitLabel:'調味料 1本目'},{itemId:12,unitLabel:'調味料 2本目'},
+    {itemId:12,unitLabel:'即席麺 1本目'},{itemId:12,unitLabel:'即席麺 2本目'},
+    {itemId:12,unitLabel:'即席麺 3本目'},{itemId:12,unitLabel:'スープ・みそ汁'},
+    {itemId:12,unitLabel:'嗜好品'},{itemId:12,unitLabel:'機能簡易食品'},
+    // 13.トイレ前室（5）
+    {itemId:13,unitLabel:'鏡'},{itemId:13,unitLabel:'洗面台'},{itemId:13,unitLabel:'床'},
+    {itemId:13,unitLabel:'消耗品（ペーパータオル・ハンドソープ）'},{itemId:13,unitLabel:'ゴミ箱'},
+    // 14.トイレ室内（8）
+    {itemId:14,unitLabel:'便器'},{itemId:14,unitLabel:'ふた'},{itemId:14,unitLabel:'便座'},
+    {itemId:14,unitLabel:'床'},{itemId:14,unitLabel:'壁'},
+    {itemId:14,unitLabel:'消耗品（トイレットペーパー・除菌アルコール）'},
+    {itemId:14,unitLabel:'ゴミ箱'},{itemId:14,unitLabel:'換気扇'},
   ];
   const result=[];let counter=1;
   for(let storeId=1;storeId<=20;storeId++){
@@ -508,26 +498,38 @@ async function loadData(force=false) {
   showLoading();
   try {
     const d = await apiGet('getSubmissions');
-    S.submissions=d||[]; saveCache(S.submissions); S.lastFetch=Date.now(); S.error=null;
+    S.submissions=d||[]; _clearSubIdx(); saveCache(S.submissions); S.lastFetch=Date.now(); S.error=null;
   } catch(e) { S.error=e.message; showToast('データ取得失敗: '+e.message,'error'); }
   renderView();
 }
 function applyData(d) { S.submissions=d||[]; }
 function tryCache() { try{const r=localStorage.getItem(CFG.CACHE_KEY);if(!r)return null;const{subs,ts}=JSON.parse(r);if(Date.now()-ts>CFG.CACHE_TTL_MS)return null;return subs;}catch{return null;} }
 function saveCache(subs) { try{localStorage.setItem(CFG.CACHE_KEY,JSON.stringify({subs,ts:Date.now()}));}catch{} }
-function clearCache() { localStorage.removeItem(CFG.CACHE_KEY); S.lastFetch=0; }
+function clearCache() { localStorage.removeItem(CFG.CACHE_KEY); S.lastFetch=0; _clearSubIdx(); }
 
 // ============================================================
 // 計算
 // ============================================================
-function getSettings(storeId,itemId) {
-  return S.storeSettings.filter(s=>String(s.storeId)===String(storeId)&&(!itemId||String(s.itemId)===String(itemId)));
+// 設定インデックス（storeId_itemId → settings[]）
+const _settingsIdx={};
+(()=>{S.storeSettings.forEach(s=>{const k=s.storeId+'_';const k2=k+s.itemId;if(!_settingsIdx[k])_settingsIdx[k]=[];if(!_settingsIdx[k2])_settingsIdx[k2]=[];_settingsIdx[k].push(s);_settingsIdx[k2].push(s);});})();
+function getSettings(storeId,itemId){
+  return itemId?(_settingsIdx[storeId+'_'+itemId]||[]):(_settingsIdx[storeId+'_']||[]);
 }
-function latestSub(settingId) {
-  const subs=S.submissions.filter(s=>String(s.settingId)===String(settingId));
-  if(!subs.length)return null;
-  return subs.sort((a,b)=>new Date(b.submittedAt||0)-new Date(a.submittedAt||0))[0];
+// 報告インデックス（settingId → 最新submission）—submissions変更時にクリア
+let _subIdx=null;
+function _buildSubIdx(){
+  _subIdx={};
+  S.submissions.forEach(s=>{
+    const id=String(s.settingId);
+    if(!_subIdx[id]||new Date(s.submittedAt||0)>new Date(_subIdx[id].submittedAt||0)) _subIdx[id]=s;
+  });
 }
+function latestSub(settingId){
+  if(!_subIdx) _buildSubIdx();
+  return _subIdx[String(settingId)]||null;
+}
+function _clearSubIdx(){_subIdx=null;}
 function isExcluded(sub){ return sub&&sub.role==='除外'; }
 function storeProgress(storeId) {
   const sets=getSettings(storeId);
@@ -616,7 +618,7 @@ function navigate(view,params={}) {
   if(params.settingId!==undefined) S.selSettingId=params.settingId;
   if(params.itemId!==undefined) S.selItemId=params.itemId;
   if(view!=='store-detail'&&view!=='item-detail') S.openItems.clear();
-  renderView(); window.scrollTo(0,0);
+  requestAnimationFrame(()=>{renderView();window.scrollTo(0,0);});
 }
 function showLoading() {
   document.getElementById('app').innerHTML=`<div class="loading-view"><div class="spinner spinner-dark"></div><div style="color:var(--gray-text);font-size:.88rem">データ取得中...</div></div>${renderNav()}`;
