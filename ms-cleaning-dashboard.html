@@ -337,7 +337,7 @@ const CFG = {
   IMG_QUALITY:   0.65,
   CACHE_KEY:     'msCleaningCache_v3',
   CACHE_TTL_MS:  5 * 60 * 1000,
-  GAS_URL_KEY:   'msCleaningGasUrl'
+  GAS_URL:       'https://script.google.com/macros/s/AKfycbzEcgQyhtO4wZ4MTOc9HjPnGrYkQUllxzF7TALstWJdqeHxOZzFwqPC-NDv-cAPPdvd7g/exec'
 };
 const ROLES = ['クルー','サブリーダー','リーダー','契約社員','店長'];
 
@@ -426,7 +426,7 @@ const ALL_SETTINGS=(()=>{
 // 状態
 // ============================================================
 const S = {
-  gasUrl: localStorage.getItem(CFG.GAS_URL_KEY) || '',
+  gasUrl: CFG.GAS_URL,
   view: 'dashboard',
   stores: STORES, cleaningItems: ITEMS, storeSettings: ALL_SETTINGS, submissions:[],
   lastFetch: 0, isAdmin: false,
@@ -1120,12 +1120,9 @@ function attachEvents() {
 }
 async function refreshData(){clearCache();await loadData(true);renderView();showToast('データを更新しました');}
 async function init(){
-  // マスターデータは常に固定値で即時設定
   S.stores=STORES; S.cleaningItems=ITEMS; S.storeSettings=ALL_SETTINGS;
-  if(!S.gasUrl){renderView();return;}
-  // GASから報告データだけ取得（軽量）
   renderView(); // まず写真入りダッシュボードを即表示
-  await loadData(); // バックグラウンドで報告データ取得
+  await loadData(); // GASから報告データ取得
   renderView(); // 報告データ反映後に再描画
 }
 document.addEventListener('DOMContentLoaded',init);
