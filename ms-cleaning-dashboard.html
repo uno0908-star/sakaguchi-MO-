@@ -628,7 +628,6 @@ function renderView() {
   if(!S.gasUrl){app.innerHTML=renderSetup();return;}
   const views={dashboard:renderDashboard,'item-detail':renderItemDetail,stores:renderStores,'store-detail':renderStoreDetail,submit:renderSubmitForm,analysis:renderAnalysis,admin:renderAdmin};
   app.innerHTML=(views[S.view]||renderDashboard)()+renderNav();
-  attachEvents();
 }
 
 // ============================================================
@@ -679,7 +678,7 @@ function renderDashboard() {
         <div class="ipc-name">${item.itemName}</div>
         ${over?'<span class="badge badge-overdue">期限超過</span>':pct===100?'<span class="badge badge-complete">全店完了</span>':''}
       </div>
-      ${std?`<div class="ipc-standard-thumb"><img src="${std.img}" alt="${item.itemName}" loading="lazy" onerror="this.style.display='none'"></div>`:''}
+      ${std?`<div class="ipc-standard-thumb"><img src="${std.img}" alt="${item.itemName}" loading="eager" decoding="async" onerror="this.style.display='none'"></div>`:''}
       <div class="ipc-body">
         <div class="ipc-deadline ${over?'text-red':'text-gray'}">📅 改善期限: <strong>${CFG.IMPROVEMENT_DL}</strong></div>
         <div class="ipc-stats">
@@ -1040,7 +1039,7 @@ async function handleSubmit(e) {
       <div class="success-title">登録完了！</div>
       <div class="success-msg">${name}さんの改善報告を受け付けました。ありがとうございます！</div>
       <button class="btn-primary" style="max-width:280px" data-nav="${S.selStoreId?'store-detail':'dashboard'}">${S.selStoreId?'店舗詳細に戻る':'ホームに戻る'}</button>
-    </div>`+renderNav(); attachEvents();
+    </div>`+renderNav();
   } catch(err) { showToast('送信失敗: '+err.message,'error'); btn.disabled=false; btn.textContent='改善を登録する'; }
 }
 
@@ -1215,20 +1214,26 @@ function closePhotoModal(){document.getElementById('modal-photo').classList.add(
 // ============================================================
 // イベント & 初期化
 // ============================================================
-function attachEvents() {
-  document.getElementById('app').addEventListener('click',e=>{
-    const t=e.target.closest('[data-nav]'); if(!t)return;
+// イベント登録は起動時に1回だけ（重複登録による累積スローダウンを防止）
+function initEvents() {
+  // ナビゲーション委譲：document に一括登録
+  document.addEventListener('click',e=>{
+    const t=e.target.closest('[data-nav]');
+    if(!t)return;
     navigate(t.dataset.nav,{storeId:t.dataset.store||null,settingId:t.dataset.setting||null,itemId:t.dataset.item||null});
   });
-  const pw=document.getElementById('admin-password-input');
-  if(pw) pw.addEventListener('keydown',e=>{if(e.key==='Enter')doAdminLogin();});
+  // 管理者パスワード Enter キー
+  document.addEventListener('keydown',e=>{
+    if(e.key==='Enter'&&document.getElementById('admin-password-input')===document.activeElement) doAdminLogin();
+  });
 }
 async function refreshData(){clearCache();await loadData(true);renderView();showToast('データを更新しました');}
 async function init(){
   S.stores=STORES; S.cleaningItems=ITEMS; S.storeSettings=ALL_SETTINGS;
-  renderView(); // まず写真入りダッシュボードを即表示
-  await loadData(); // GASから報告データ取得
-  renderView(); // 報告データ反映後に再描画
+  initEvents(); // イベント登録（1回のみ）
+  renderView(); // マスターデータで即時表示（写真付きダッシュボード）
+  try { await loadData(); } catch(e){ /* エラーはloadData内でtoast表示済み */ }
+  renderView(); // 報告データ反映
 }
 document.addEventListener('DOMContentLoaded',init);
 </script>
