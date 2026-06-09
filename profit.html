@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>26年5月度 統合ダッシュボード（5/31時点）</title>
+<title>26年6月度 統合ダッシュボード（6/7時点）</title>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 body{background:#f0f2f7;color:#1a1a2e;font-family:'Hiragino Sans','Meiryo',sans-serif;font-size:14px;min-height:100vh}
@@ -155,7 +155,7 @@ tbody td:nth-child(2){text-align:center}
 <body>
 
 <div class="top-bar">
-  <h1>26年5月度 店舗管理 統合ダッシュボード　<span style="font-size:11px;opacity:.7">5/31時点</span></h1>
+  <h1>26年6月度 店舗管理 統合ダッシュボード　<span style="font-size:11px;opacity:.7">6/7時点</span></h1>
   <div class="tab-row">
     <button class="tab-btn active" onclick="switchTab('profit')">📊 店利益着地</button>
     <button class="tab-btn" onclick="switchTab('waste')">♻️ 廃棄検証</button>
@@ -177,12 +177,12 @@ tbody td:nth-child(2){text-align:center}
   </div>
   <!-- 利益構造サマリー -->
   <div class="section" id="section-profit-analysis">
-    <div class="section-title">📊 利益構造 サマリー — 3秒で分かる要因分析　<span style="font-size:11px;font-weight:400;color:#888">5/31時点</span></div>
+    <div class="section-title">📊 利益構造 サマリー — 3秒で分かる要因分析　<span style="font-size:11px;font-weight:400;color:#888">6/7時点</span></div>
     <div id="profitAnalysisContent"></div>
   </div>
   <!-- カテゴリ別検証 -->
   <div class="section" id="section-cat-impact">
-    <div class="section-title">🔍 利益影響 カテゴリ別検証（廃棄連動）　<span style="font-size:11px;font-weight:400;color:#888">5/31時点</span></div>
+    <div class="section-title">🔍 利益影響 カテゴリ別検証（廃棄連動）　<span style="font-size:11px;font-weight:400;color:#888">6/7時点</span></div>
     <div id="catImpactContent"></div>
   </div>
   <div class="section">
@@ -287,50 +287,50 @@ const SC_LIST = [...new Set(Object.values(SC_MAP))];
 // kitchenSupportMonth=厨房支援金/月, kitchenSupportRate=厨房支援金率
 // miscExtra=雑益追加分(CN/TS店舗)
 const PROFIT = [
-  {name:'吹田警察署前', type:'CN', nisshu:455.103, yoy:103.33, yoyBudget:102.045, sales:14108, fjIncome:2148, fjBudget:2131, miscBudget:209, laborBudget:981, otherExp:498, markdownActual:764.089, markdownBudget:418, hqSupport:9.61, kitchenSalesDay:12.692, kitchenSupportMonth:27.541, kitchenSupportRate:0.07, miscExtra:173.045, miscExtraMin:0, landing:348.1, budget:467, diff:-118.9, markdownAmount:12.936},
-  {name:'吹田朝日町', type:'CN', nisshu:621.998, yoy:111.79, yoyBudget:101.989, sales:19282, fjIncome:3186, fjBudget:2920, miscBudget:257, laborBudget:727, otherExp:735, markdownActual:1060.581, markdownBudget:527, hqSupport:48.41, kitchenSalesDay:23.108, kitchenSupportMonth:57.309, kitchenSupportRate:0.08, miscExtra:266.79, miscExtraMin:0, landing:1391.1, budget:1286, diff:105.1, markdownAmount:33.087},
-  {name:'池田市役所前', type:'TS', nisshu:357.273, yoy:100.46, yoyBudget:101.882, sales:11075, fjIncome:2162, fjBudget:2176, miscBudget:247, laborBudget:984, otherExp:426, markdownActual:459.147, markdownBudget:338, hqSupport:0.0, kitchenSalesDay:0.0, kitchenSupportMonth:0.0, kitchenSupportRate:0.0, miscExtra:-2.6, miscExtraMin:0, landing:573.2, budget:711, diff:-137.8, markdownAmount:5.188},
-  {name:'吹田青山台三丁目', type:'CN', nisshu:609.382, yoy:100.17, yoyBudget:101.939, sales:18891, fjIncome:2950, fjBudget:2999, miscBudget:246, laborBudget:1604, otherExp:769, markdownActual:905.599, markdownBudget:577, hqSupport:18.22, kitchenSalesDay:20.212, kitchenSupportMonth:50.125, kitchenSupportRate:0.08, miscExtra:164.299, miscExtraMin:0, landing:209.6, budget:355, diff:-145.4, markdownAmount:18.488},
-  {name:'五月ケ丘東', type:'CN', nisshu:380.036, yoy:93.0, yoyBudget:102.041, sales:11781, fjIncome:1841, fjBudget:1944, miscBudget:799, laborBudget:914, otherExp:415, markdownActual:300.959, markdownBudget:388, hqSupport:0.0, kitchenSalesDay:0.453, kitchenSupportMonth:0.0, kitchenSupportRate:0.0, miscExtra:-43.521, miscExtraMin:59, landing:1068.1, budget:1069, diff:-0.9, markdownAmount:4.164},
-  {name:'江坂東', type:'CN', nisshu:615.403, yoy:109.34, yoyBudget:102.08, sales:19077, fjIncome:2904, fjBudget:2711, miscBudget:235, laborBudget:1377, otherExp:588, markdownActual:954.032, markdownBudget:534, hqSupport:20.65, kitchenSalesDay:22.442, kitchenSupportMonth:55.657, kitchenSupportRate:0.08, miscExtra:210.016, miscExtraMin:0, landing:558.1, budget:498, diff:60.1, markdownAmount:27.015},
-  {name:'吹田豊津中学校前', type:'CN', nisshu:515.815, yoy:98.07, yoyBudget:102.06, sales:15990, fjIncome:2894, fjBudget:3013, miscBudget:229, laborBudget:876, otherExp:680, markdownActual:835.752, markdownBudget:499, hqSupport:13.63, kitchenSalesDay:17.804, kitchenSupportMonth:38.634, kitchenSupportRate:0.07, miscExtra:168.376, miscExtraMin:0, landing:962.9, budget:1198, diff:-235.1, markdownAmount:15.481},
-  {name:'豊中利倉東一丁目', type:'CN', nisshu:592.668, yoy:101.09, yoyBudget:102.083, sales:18373, fjIncome:2704, fjBudget:2729, miscBudget:247, laborBudget:1105, otherExp:698, markdownActual:1002.166, markdownBudget:556, hqSupport:35.63, kitchenSalesDay:16.738, kitchenSupportMonth:36.322, kitchenSupportRate:0.07, miscExtra:223.083, miscExtraMin:0, landing:480.8, budget:657, diff:-176.2, markdownAmount:19.4},
-  {name:'豊中服部元町一丁目', type:'CN', nisshu:597.82, yoy:103.91, yoyBudget:101.968, sales:18532, fjIncome:2811, fjBudget:2762, miscBudget:231, laborBudget:742, otherExp:554, markdownActual:906.464, markdownBudget:546, hqSupport:0.0, kitchenSalesDay:21.264, kitchenSupportMonth:52.734, kitchenSupportRate:0.08, miscExtra:180.232, miscExtraMin:0, landing:1127.2, budget:1205, diff:-77.8, markdownAmount:22.47},
-  {name:'東淀川大道南', type:'CN', nisshu:523.464, yoy:104.59, yoyBudget:102.033, sales:16227, fjIncome:2409, fjBudget:2354, miscBudget:234, laborBudget:1137, otherExp:535, markdownActual:1062.452, markdownBudget:474, hqSupport:44.37, kitchenSalesDay:15.127, kitchenSupportMonth:32.826, kitchenSupportRate:0.07, miscExtra:294.226, miscExtraMin:0, landing:326.2, budget:488, diff:-161.8, markdownAmount:37.555},
-  {name:'大道南一丁目', type:'TS', nisshu:475.563, yoy:102.04, yoyBudget:101.978, sales:14742, fjIncome:2296, fjBudget:2295, miscBudget:266, laborBudget:1177, otherExp:547, markdownActual:837.26, markdownBudget:442, hqSupport:37.32, kitchenSalesDay:11.335, kitchenSupportMonth:24.598, kitchenSupportRate:0.07, miscExtra:0.127, miscExtraMin:0, landing:80.5, budget:413, diff:-332.5, markdownAmount:24.364},
-  {name:'豊里六丁目', type:'TS', nisshu:410.638, yoy:105.73, yoyBudget:102.067, sales:12730, fjIncome:2138, fjBudget:2105, miscBudget:233, laborBudget:858, otherExp:399, markdownActual:482.255, markdownBudget:368, hqSupport:0.0, kitchenSalesDay:0.0, kitchenSupportMonth:0.0, kitchenSupportRate:0.0, miscExtra:6.211, miscExtraMin:0, landing:668.5, budget:743, diff:-74.5, markdownAmount:15.943},
-  {name:'東淀川豊里五丁目', type:'CN', nisshu:666.704, yoy:106.97, yoyBudget:101.926, sales:20668, fjIncome:2927, fjBudget:2796, miscBudget:237, laborBudget:1120, otherExp:551, markdownActual:1208.006, markdownBudget:591, hqSupport:58.59, kitchenSalesDay:20.546, kitchenSupportMonth:50.955, kitchenSupportRate:0.08, miscExtra:308.503, miscExtraMin:0, landing:743.0, budget:811, diff:-68.0, markdownAmount:35.81},
-  {name:'豊中原田南一丁目', type:'CN', nisshu:479.977, yoy:106.02, yoyBudget:102.059, sales:14879, fjIncome:2449, fjBudget:2382, miscBudget:220, laborBudget:940, otherExp:506, markdownActual:869.365, markdownBudget:430, hqSupport:32.76, kitchenSalesDay:18.186, kitchenSupportMonth:39.463, kitchenSupportRate:0.07, miscExtra:219.683, miscExtraMin:0, landing:641.3, budget:722, diff:-80.7, markdownAmount:18.12},
-  {name:'南金田二丁目', type:'CN', nisshu:734.779, yoy:104.2, yoyBudget:101.961, sales:22778, fjIncome:3417, fjBudget:3347, miscBudget:280, laborBudget:1149, otherExp:734, markdownActual:1008.313, markdownBudget:669, hqSupport:31.68, kitchenSalesDay:21.253, kitchenSupportMonth:52.707, kitchenSupportRate:0.08, miscExtra:169.657, miscExtraMin:0, landing:1116.9, budget:1132, diff:-15.1, markdownAmount:18.13},
-  {name:'豊中服部西町三丁目', type:'TS', nisshu:400.923, yoy:102.02, yoyBudget:102.036, sales:12429, fjIncome:2149, fjBudget:2149, miscBudget:241, laborBudget:913, otherExp:403, markdownActual:425.103, markdownBudget:373, hqSupport:0.47, kitchenSalesDay:0.0, kitchenSupportMonth:0.0, kitchenSupportRate:0.0, miscExtra:-0.028, miscExtraMin:0, landing:677.2, budget:729, diff:-51.8, markdownAmount:7.86},
-  {name:'箕面白島二丁目', type:'CN', nisshu:572.035, yoy:null, yoyBudget:null, sales:17733, fjIncome:2617, fjBudget:2479, miscBudget:547, laborBudget:1141, otherExp:594, markdownActual:719.47, markdownBudget:753, hqSupport:0.0, kitchenSalesDay:22.400, kitchenSupportMonth:55.551, kitchenSupportRate:0.08, miscExtra:-16.765, miscExtraMin:0, landing:790.5, budget:580, diff:210.5, markdownAmount:14.488},
-  {name:'吹田垂水三丁目', type:'CN', nisshu:303.708, yoy:96.68, yoyBudget:102.0, sales:9415, fjIncome:1623, fjBudget:1712, miscBudget:331, laborBudget:863, otherExp:521, markdownActual:215.839, markdownBudget:298, hqSupport:0.0, kitchenSalesDay:0.0, kitchenSupportMonth:0.0, kitchenSupportRate:0.0, miscExtra:-41.081, miscExtraMin:277, landing:692.2, budget:463, diff:229.2, markdownAmount:3.938},
-  {name:'新御堂筋上新田', type:'CN', nisshu:702.266, yoy:100.77, yoyBudget:102.035, sales:21770, fjIncome:3173, fjBudget:3211, miscBudget:255, laborBudget:1159, otherExp:702, markdownActual:1036.766, markdownBudget:661, hqSupport:39.78, kitchenSalesDay:17.131, kitchenSupportMonth:37.175, kitchenSupportRate:0.07, miscExtra:187.883, miscExtraMin:0, landing:852.1, budget:1001, diff:-148.9, markdownAmount:26.797},
-  {name:'江坂駅南口', type:'CN', nisshu:1045.647, yoy:93.81, yoyBudget:101.995, sales:32415, fjIncome:4942, fjBudget:5375, miscBudget:325, laborBudget:2188, otherExp:875, markdownActual:1427.588, markdownBudget:1057, hqSupport:20.4, kitchenSalesDay:34.481, kitchenSupportMonth:106.891, kitchenSupportRate:0.1, miscExtra:185.294, miscExtraMin:0, landing:1166.5, budget:1657, diff:-490.5, markdownAmount:29.954},
+  {name:'吹田警察署前', type:'CN', nisshu:474.264, yoy:98.63, yoyBudget:102.088, sales:14227, fjIncome:2204, fjBudget:2268, miscBudget:238, laborBudget:1013, otherExp:658, markdownActual:899.847, markdownBudget:440, hqSupport:46.186, kitchenSalesDay:18.165, kitchenSupportMonth:38.146, kitchenSupportRate:0.07, miscExtra:229.923, miscExtraMin:0, landing:195.6, budget:406, diff:-210.4, markdownAmount:45.567},
+  {name:'吹田朝日町', type:'CN', nisshu:672.086, yoy:111.82, yoyBudget:101.948, sales:20162, fjIncome:3323, fjBudget:3043, miscBudget:292, laborBudget:750, otherExp:704, markdownActual:1040.385, markdownBudget:565, hqSupport:125.671, kitchenSalesDay:29.028, kitchenSupportMonth:69.667, kitchenSupportRate:0.08, miscExtra:237.693, miscExtraMin:0, landing:1747.8, budget:1510, diff:237.8, markdownAmount:50.897},
+  {name:'池田市役所前', type:'TS', nisshu:394.498, yoy:99.48, yoyBudget:102.057, sales:11834, fjIncome:2229, fjBudget:2257, miscBudget:258, laborBudget:950, otherExp:436, markdownActual:354.87, markdownBudget:357, hqSupport:0.0, kitchenSalesDay:0.0, kitchenSupportMonth:0.0, kitchenSupportRate:0.0, miscExtra:-5.084, miscExtraMin:0, landing:753.6, budget:784, diff:-30.4, markdownAmount:18.119},
+  {name:'吹田青山台三丁目', type:'CN', nisshu:642.652, yoy:100.99, yoyBudget:101.976, sales:19279, fjIncome:3005, fjBudget:3033, miscBudget:261, laborBudget:1607, otherExp:695, markdownActual:937.305, markdownBudget:604, hqSupport:48.695, kitchenSalesDay:22.877, kitchenSupportMonth:54.904, kitchenSupportRate:0.08, miscExtra:166.653, miscExtraMin:0, landing:463.1, budget:554, diff:-90.9, markdownAmount:48.294},
+  {name:'五月ケ丘東', type:'CN', nisshu:364.701, yoy:88.71, yoyBudget:101.891, sales:10941, fjIncome:1800, fjBudget:1952, miscBudget:819, laborBudget:944, otherExp:560, markdownActual:169.326, markdownBudget:388, hqSupport:0.0, kitchenSalesDay:0.0, kitchenSupportMonth:0.0, kitchenSupportRate:0.1, miscExtra:-109.337, miscExtraMin:99.071, landing:1009.7, budget:953, diff:56.7, markdownAmount:8.172},
+  {name:'江坂東', type:'CN', nisshu:652.151, yoy:106.9, yoyBudget:101.942, sales:19564, fjIncome:3073, fjBudget:2930, miscBudget:266, laborBudget:1384, otherExp:646, markdownActual:958.017, markdownBudget:567, hqSupport:65.832, kitchenSalesDay:30.132, kitchenSupportMonth:90.395, kitchenSupportRate:0.1, miscExtra:195.508, miscExtraMin:0, landing:815.0, budget:711, diff:104.0, markdownAmount:47.685},
+  {name:'吹田豊津中学校前', type:'CN', nisshu:604.996, yoy:106.97, yoyBudget:101.975, sales:18149, fjIncome:3188, fjBudget:3038, miscBudget:238, laborBudget:905, otherExp:598, markdownActual:882.825, markdownBudget:511, hqSupport:70.917, kitchenSalesDay:26.369, kitchenSupportMonth:63.285, kitchenSupportRate:0.08, miscExtra:185.912, miscExtraMin:0, landing:1331.6, budget:1233, diff:98.6, markdownAmount:44.289},
+  {name:'豊中利倉東一丁目', type:'CN', nisshu:664.818, yoy:109.07, yoyBudget:101.961, sales:19944, fjIncome:3014, fjBudget:2827, miscBudget:245, laborBudget:1141, otherExp:597, markdownActual:980.34, markdownBudget:562, hqSupport:95.997, kitchenSalesDay:21.776, kitchenSupportMonth:52.263, kitchenSupportRate:0.08, miscExtra:209.17, miscExtraMin:0, landing:956.8, budget:831, diff:125.8, markdownAmount:48.211},
+  {name:'豊中服部元町一丁目', type:'CN', nisshu:624.665, yoy:100.52, yoyBudget:102.07, sales:18739, fjIncome:2840, fjBudget:2881, miscBudget:244, laborBudget:766, otherExp:579, markdownActual:834.6, markdownBudget:577, hqSupport:0.0, kitchenSalesDay:24.424, kitchenSupportMonth:58.617, kitchenSupportRate:0.08, miscExtra:128.8, miscExtraMin:0, landing:1180.3, budget:1292, diff:-111.7, markdownAmount:41.125},
+  {name:'東淀川大道南', type:'CN', nisshu:565.944, yoy:109.08, yoyBudget:101.931, sales:16978, fjIncome:2513, fjBudget:2358, miscBudget:230, laborBudget:1036, otherExp:532, markdownActual:1000.2, markdownBudget:465, hqSupport:115.37, kitchenSalesDay:19.68, kitchenSupportMonth:41.328, kitchenSupportRate:0.07, miscExtra:267.6, miscExtraMin:0, landing:654.0, budget:610, diff:44.0, markdownAmount:48.106},
+  {name:'大道南一丁目', type:'TS', nisshu:497.958, yoy:100.7, yoyBudget:102.049, sales:14938, fjIncome:2350, fjBudget:2366, miscBudget:277, laborBudget:1208, otherExp:592, markdownActual:830.799, markdownBudget:448, hqSupport:81.186, kitchenSalesDay:15.697, kitchenSupportMonth:32.964, kitchenSupportRate:0.07, miscExtra:-2.93, miscExtraMin:0, landing:115.6, budget:403, diff:-287.4, markdownAmount:40.526},
+  {name:'豊里六丁目', type:'TS', nisshu:444.854, yoy:109.81, yoyBudget:101.928, sales:13345, fjIncome:2184, fjBudget:2111, miscBudget:239, laborBudget:886, otherExp:407, markdownActual:404.355, markdownBudget:381, hqSupport:0.0, kitchenSalesDay:0.0, kitchenSupportMonth:0.0, kitchenSupportRate:0.0, miscExtra:13.488, miscExtraMin:0, landing:794.0, budget:731, diff:63.0, markdownAmount:19.653},
+  {name:'東淀川豊里五丁目', type:'CN', nisshu:682.575, yoy:105.09, yoyBudget:101.973, sales:20477, fjIncome:2994, fjBudget:2910, miscBudget:244, laborBudget:1150, otherExp:665, markdownActual:1175.112, markdownBudget:605, hqSupport:141.021, kitchenSalesDay:26.11, kitchenSupportMonth:62.664, kitchenSupportRate:0.08, miscExtra:285.056, miscExtraMin:0, landing:832.0, budget:829, diff:3.0, markdownAmount:58.664},
+  {name:'豊中原田南一丁目', type:'CN', nisshu:516.612, yoy:109.41, yoyBudget:101.923, sales:15498, fjIncome:2637, fjBudget:2454, miscBudget:222, laborBudget:970, otherExp:517, markdownActual:778.254, markdownBudget:429, hqSupport:74.964, kitchenSalesDay:21.911, kitchenSupportMonth:52.587, kitchenSupportRate:0.08, miscExtra:174.627, miscExtraMin:0, landing:888.4, budget:753, diff:135.4, markdownAmount:38.997},
+  {name:'南金田二丁目', type:'CN', nisshu:780.518, yoy:103.74, yoyBudget:101.969, sales:23415, fjIncome:3507, fjBudget:3450, miscBudget:308, laborBudget:1186, otherExp:787, markdownActual:1029.429, markdownBudget:699, hqSupport:102.798, kitchenSalesDay:28.488, kitchenSupportMonth:68.372, kitchenSupportRate:0.08, miscExtra:165.214, miscExtraMin:0, landing:1256.3, budget:1193, diff:63.3, markdownAmount:52.528},
+  {name:'豊中服部西町三丁目', type:'TS', nisshu:403.396, yoy:95.43, yoyBudget:101.887, sales:12101, fjIncome:2155, fjBudget:2222, miscBudget:255, laborBudget:943, otherExp:440, markdownActual:292.563, markdownBudget:389, hqSupport:3.892, kitchenSalesDay:0.0, kitchenSupportMonth:0.0, kitchenSupportRate:0.0, miscExtra:-12.348, miscExtraMin:0, landing:758.3, budget:737, diff:21.3, markdownAmount:14.818},
+  {name:'箕面白島二丁目', type:'CN', nisshu:591.153, yoy:null, yoyBudget:null, sales:17734, fjIncome:2618, fjBudget:2404, miscBudget:535, laborBudget:1179, otherExp:594, markdownActual:832.902, markdownBudget:729, hqSupport:0.0, kitchenSalesDay:23.086, kitchenSupportMonth:55.406, kitchenSupportRate:0.08, miscExtra:51.951, miscExtraMin:0, landing:696.1, budget:479, diff:217.1, markdownAmount:42.494},
+  {name:'吹田垂水三丁目', type:'CN', nisshu:355.963, yoy:103.11, yoyBudget:101.944, sales:10678, fjIncome:1869, fjBudget:1857, miscBudget:232, laborBudget:857, otherExp:564, markdownActual:210.948, markdownBudget:330, hqSupport:0.0, kitchenSalesDay:0.0, kitchenSupportMonth:0.0, kitchenSupportRate:0.0, miscExtra:-59.526, miscExtraMin:30.776, landing:539.6, budget:438, diff:101.6, markdownAmount:10.785},
+  {name:'新御堂筋上新田', type:'CN', nisshu:754.343, yoy:103.16, yoyBudget:102.041, sales:22630, fjIncome:3395, fjBudget:3360, miscBudget:281, laborBudget:1196, otherExp:760, markdownActual:1103.307, markdownBudget:675, hqSupport:117.317, kitchenSalesDay:22.35, kitchenSupportMonth:53.641, kitchenSupportRate:0.08, miscExtra:214.153, miscExtraMin:0, landing:1090.0, budget:1098, diff:-8.0, markdownAmount:54.12},
+  {name:'江坂駅南口', type:'CN', nisshu:1071.7, yoy:88.81, yoyBudget:101.982, sales:32151, fjIncome:4900, fjBudget:5629, miscBudget:352, laborBudget:2250, otherExp:921, markdownActual:1364.442, markdownBudget:1112, hqSupport:72.591, kitchenSalesDay:41.38, kitchenSupportMonth:124.14, kitchenSupportRate:0.1, miscExtra:126.221, miscExtraMin:0, landing:1158.5, budget:1817, diff:-658.5, markdownAmount:69.409},
 ];
 
 // 総荒利益高 実績・予算（Excelから取得）
 const GROSS_PROFIT = {
-  '吹田警察署前'    :{gpa:4275, gpb:4222},
-  '吹田朝日町'     :{gpa:6600, gpb:6022},
-  '池田市役所前'   :{gpa:3675, gpb:3727},
-  '吹田青山台三丁目':{gpa:6087, gpb:6194},
-  '五月ケ丘東'     :{gpa:3316, gpb:3639},
-  '江坂東'        :{gpa:5958, gpb:5562},
-  '吹田豊津中学校前':{gpa:5317, gpb:5533},
-  '豊中利倉東一丁目':{gpa:5552, gpb:5607},
-  '豊中服部元町一丁目':{gpa:5786, gpb:5678},
-  '東淀川大道南'   :{gpa:4910, gpb:4790},
-  '大道南一丁目'   :{gpa:4169, gpb:4167},
-  '豊里六丁目'     :{gpa:3586, gpb:3462},
-  '東淀川豊里五丁目':{gpa:6037, gpb:5752},
-  '豊中原田南一丁目':{gpa:4507, gpb:4339},
-  '南金田二丁目'   :{gpa:7102, gpb:6950},
-  '豊中服部西町三丁目':{gpa:3625, gpb:3626},
-  '箕面白島二丁目'  :{gpa:5362, gpb:5062},
-  '吹田垂水三丁目'  :{gpa:2750, gpb:2901},
-  '新御堂筋上新田'  :{gpa:6572, gpb:6655},
-  '江坂駅南口'     :{gpa:10117, gpb:10999},
+  '吹田警察署前'    :{gpa:4450, gpb:4606},
+  '吹田朝日町'     :{gpa:6899, gpb:6290},
+  '池田市役所前'   :{gpa:3925, gpb:4027},
+  '吹田青山台三丁目':{gpa:6208, gpb:6268},
+  '五月ケ丘東'     :{gpa:3190, gpb:3664},
+  '江坂東'        :{gpa:6303, gpb:6011},
+  '吹田豊津中学校前':{gpa:5851, gpb:5578},
+  '豊中利倉東一丁目':{gpa:6226, gpb:5820},
+  '豊中服部元町一丁目':{gpa:5848, gpb:5938},
+  '東淀川大道南'   :{gpa:5137, gpb:4800},
+  '大道南一丁目'   :{gpa:4374, gpb:4432},
+  '豊里六丁目'     :{gpa:3758, gpb:3488},
+  '東淀川豊里五丁目':{gpa:6184, gpb:6000},
+  '豊中原田南一丁目':{gpa:4849, gpb:4517},
+  '南金田二丁目'   :{gpa:7298, gpb:7173},
+  '豊中服部西町三丁目':{gpa:3649, gpb:3896},
+  '箕面白島二丁目'  :{gpa:5366, gpb:4902},
+  '吹田垂水三丁目'  :{gpa:3330, gpb:3293},
+  '新御堂筋上新田'  :{gpa:7056, gpb:6979},
+  '江坂駅南口'     :{gpa:10031, gpb:11518},
 };
 PROFIT.forEach(s => {
   const gp   = GROSS_PROFIT[s.name] || {};
@@ -461,26 +461,26 @@ function renderCatImpact(fp) {
 
 // 廃棄データ (PSA/D 千円/日)
 const WASTE = [
-  {name:'吹田警察署前', aico:{bench:10.748,actual:13.794,diff:3.046}, op:{bench:1.336,actual:1.925,diff:0.589}, ff:{bench:2.636,actual:5.587,diff:2.951}, kitch:{bench:1.971,actual:2.529,diff:0.558}, dry:{bench:0.824,actual:0.759,diff:-0.065}},
-  {name:'吹田朝日町', aico:{bench:14.619,actual:12.801,diff:-1.818}, op:{bench:2.027,actual:0.852,diff:-1.175}, ff:{bench:3.929,actual:1.637,diff:-2.292}, kitch:{bench:3.838,actual:1.052,diff:-2.786}, dry:{bench:1.082,actual:0.214,diff:-0.868}},
-  {name:'池田市役所前', aico:{bench:10.575,actual:8.846,diff:-1.729}, op:{bench:1.477,actual:2.161,diff:0.684}, ff:{bench:1.907,actual:6.037,diff:4.13}, kitch:{bench:0.0,actual:0.0,diff:0.0}, dry:{bench:0.594,actual:0.652,diff:0.058}},
-  {name:'吹田青山台三丁目', aico:{bench:14.452,actual:11.346,diff:-3.106}, op:{bench:1.761,actual:2.464,diff:0.703}, ff:{bench:3.968,actual:7.754,diff:3.786}, kitch:{bench:3.353,actual:3.325,diff:-0.028}, dry:{bench:1.073,actual:1.521,diff:0.448}},
-  {name:'五月ケ丘東', aico:{bench:6.338,actual:5.334,diff:-1.004}, op:{bench:0.986,actual:2.269,diff:1.283}, ff:{bench:1.438,actual:2.241,diff:0.803}, kitch:{bench:0.096,actual:0.181,diff:0.085}, dry:{bench:0.835,actual:0.372,diff:-0.463}},
-  {name:'江坂東', aico:{bench:14.131,actual:9.057,diff:-5.074}, op:{bench:1.805,actual:1.439,diff:-0.366}, ff:{bench:3.529,actual:5.058,diff:1.529}, kitch:{bench:3.686,actual:2.785,diff:-0.901}, dry:{bench:1.108,actual:0.851,diff:-0.257}},
-  {name:'吹田豊津中学校前', aico:{bench:13.512,actual:15.461,diff:1.949}, op:{bench:1.917,actual:1.486,diff:-0.431}, ff:{bench:2.989,actual:5.354,diff:2.365}, kitch:{bench:2.72,actual:2.596,diff:-0.124}, dry:{bench:0.861,actual:0.407,diff:-0.454}},
-  {name:'豊中利倉東一丁目', aico:{bench:12.424,actual:18.464,diff:6.04}, op:{bench:1.743,actual:2.552,diff:0.809}, ff:{bench:3.842,actual:4.682,diff:0.84}, kitch:{bench:2.492,actual:2.534,diff:0.042}, dry:{bench:1.107,actual:0.612,diff:-0.495}},
-  {name:'豊中服部元町一丁目', aico:{bench:14.489,actual:12.083,diff:-2.406}, op:{bench:1.88,actual:2.812,diff:0.932}, ff:{bench:3.516,actual:3.405,diff:-0.111}, kitch:{bench:3.558,actual:2.216,diff:-1.342}, dry:{bench:1.043,actual:0.393,diff:-0.65}},
-  {name:'東淀川大道南', aico:{bench:11.174,actual:7.451,diff:-3.723}, op:{bench:1.338,actual:0.596,diff:-0.742}, ff:{bench:3.17,actual:1.911,diff:-1.259}, kitch:{bench:2.258,actual:2.239,diff:-0.019}, dry:{bench:0.991,actual:0.395,diff:-0.596}},
-  {name:'大道南一丁目', aico:{bench:8.613,actual:10.538,diff:1.925}, op:{bench:1.209,actual:0.637,diff:-0.572}, ff:{bench:2.596,actual:1.929,diff:-0.667}, kitch:{bench:1.757,actual:1.435,diff:-0.322}, dry:{bench:0.963,actual:0.643,diff:-0.32}},
-  {name:'豊里六丁目', aico:{bench:7.098,actual:3.208,diff:-3.89}, op:{bench:1.145,actual:1.335,diff:0.19}, ff:{bench:1.47,actual:1.454,diff:-0.016}, kitch:{bench:0.0,actual:0.0,diff:0.0}, dry:{bench:0.895,actual:0.699,diff:-0.196}},
-  {name:'東淀川豊里五丁目', aico:{bench:13.918,actual:14.777,diff:0.859}, op:{bench:1.828,actual:0.578,diff:-1.25}, ff:{bench:3.735,actual:2.886,diff:-0.849}, kitch:{bench:3.273,actual:2.877,diff:-0.396}, dry:{bench:1.267,actual:0.387,diff:-0.88}},
-  {name:'豊中原田南一丁目', aico:{bench:10.14,actual:12.908,diff:2.768}, op:{bench:1.196,actual:1.625,diff:0.429}, ff:{bench:3.252,actual:4.243,diff:0.991}, kitch:{bench:3.016,actual:4.008,diff:0.992}, dry:{bench:0.882,actual:1.516,diff:0.634}},
-  {name:'南金田二丁目', aico:{bench:17.209,actual:17.588,diff:0.379}, op:{bench:2.318,actual:1.683,diff:-0.635}, ff:{bench:4.665,actual:6.479,diff:1.814}, kitch:{bench:3.214,actual:5.556,diff:2.342}, dry:{bench:1.31,actual:0.469,diff:-0.841}},
-  {name:'豊中服部西町三丁目', aico:{bench:9.113,actual:7.741,diff:-1.372}, op:{bench:1.212,actual:1.162,diff:-0.05}, ff:{bench:2.597,actual:3.3,diff:0.703}, kitch:{bench:0.0,actual:0.0,diff:0.0}, dry:{bench:0.759,actual:0.471,diff:-0.288}},
-  {name:'箕面白島二丁目', aico:{bench:13.459,actual:8.583,diff:-4.876}, op:{bench:1.711,actual:1.736,diff:0.025}, ff:{bench:4.257,actual:6.216,diff:1.959}, kitch:{bench:3.349,actual:3.541,diff:0.192}, dry:{bench:0.983,actual:1.379,diff:0.396}},
-  {name:'吹田垂水三丁目', aico:{bench:7.338,actual:2.198,diff:-5.14}, op:{bench:1.102,actual:1.002,diff:-0.1}, ff:{bench:1.584,actual:2.176,diff:0.592}, kitch:{bench:0.0,actual:0.0,diff:0.0}, dry:{bench:0.565,actual:1.254,diff:0.689}},
-  {name:'新御堂筋上新田', aico:{bench:17.303,actual:14.725,diff:-2.578}, op:{bench:2.114,actual:1.282,diff:-0.832}, ff:{bench:4.046,actual:3.395,diff:-0.651}, kitch:{bench:2.808,actual:2.924,diff:0.116}, dry:{bench:1.253,actual:0.46,diff:-0.793}},
-  {name:'江坂駅南口', aico:{bench:23.575,actual:23.23,diff:-0.345}, op:{bench:3.362,actual:0.92,diff:-2.442}, ff:{bench:5.83,actual:8.83,diff:3.0}, kitch:{bench:5.223,actual:6.74,diff:1.517}, dry:{bench:1.905,actual:0.563,diff:-1.342}},
+  {name:'吹田警察署前', aico:{bench:11.922,actual:15.467,diff:3.545}, op:{bench:1.389,actual:1.947,diff:0.558}, ff:{bench:2.716,actual:5.133,diff:2.417}, kitch:{bench:2.727,actual:4.376,diff:1.649}, dry:{bench:0.825,actual:0.241,diff:-0.584}},
+  {name:'吹田朝日町', aico:{bench:16.787,actual:9.585,diff:-7.202}, op:{bench:2.107,actual:0.843,diff:-1.264}, ff:{bench:4.195,actual:0.974,diff:-3.221}, kitch:{bench:4.701,actual:3.768,diff:-0.933}, dry:{bench:1.135,actual:0.034,diff:-1.101}},
+  {name:'池田市役所前', aico:{bench:11.36,actual:6.556,diff:-4.804}, op:{bench:1.602,actual:1.524,diff:-0.078}, ff:{bench:2.225,actual:4.272,diff:2.047}, kitch:{bench:0.0,actual:0.0,diff:0.0}, dry:{bench:0.663,actual:0.056,diff:-0.607}},
+  {name:'吹田青山台三丁目', aico:{bench:14.809,actual:11.406,diff:-3.403}, op:{bench:1.987,actual:3.465,diff:1.478}, ff:{bench:3.9,actual:6.564,diff:2.664}, kitch:{bench:4.171,actual:6.249,diff:2.078}, dry:{bench:1.135,actual:0.193,diff:-0.942}},
+  {name:'五月ケ丘東', aico:{bench:6.473,actual:2.855,diff:-3.618}, op:{bench:1.039,actual:1.723,diff:0.684}, ff:{bench:1.333,actual:0.381,diff:-0.952}, kitch:{bench:0.0,actual:0.0,diff:0.0}, dry:{bench:0.788,actual:0.198,diff:-0.59}},
+  {name:'江坂東', aico:{bench:15.6,actual:9.831,diff:-5.769}, op:{bench:1.928,actual:1.236,diff:-0.692}, ff:{bench:3.88,actual:5.001,diff:1.121}, kitch:{bench:5.16,actual:2.227,diff:-2.933}, dry:{bench:1.124,actual:0.219,diff:-0.905}},
+  {name:'吹田豊津中学校前', aico:{bench:15.488,actual:15.174,diff:-0.314}, op:{bench:2.026,actual:1.927,diff:-0.099}, ff:{bench:3.311,actual:5.324,diff:2.013}, kitch:{bench:3.939,actual:2.549,diff:-1.39}, dry:{bench:1.026,actual:0.37,diff:-0.656}},
+  {name:'豊中利倉東一丁目', aico:{bench:13.729,actual:18.753,diff:5.024}, op:{bench:1.919,actual:2.498,diff:0.579}, ff:{bench:4.482,actual:4.205,diff:-0.277}, kitch:{bench:3.234,actual:1.143,diff:-2.091}, dry:{bench:1.235,actual:0.232,diff:-1.003}},
+  {name:'豊中服部元町一丁目', aico:{bench:15.876,actual:11.776,diff:-4.1}, op:{bench:1.986,actual:2.664,diff:0.678}, ff:{bench:3.946,actual:2.773,diff:-1.173}, kitch:{bench:3.8,actual:2.064,diff:-1.736}, dry:{bench:1.055,actual:0.116,diff:-0.939}},
+  {name:'東淀川大道南', aico:{bench:11.906,actual:5.214,diff:-6.692}, op:{bench:1.421,actual:0.87,diff:-0.551}, ff:{bench:3.386,actual:1.376,diff:-2.01}, kitch:{bench:2.964,actual:0.296,diff:-2.668}, dry:{bench:1.069,actual:0.349,diff:-0.72}},
+  {name:'大道南一丁目', aico:{bench:9.079,actual:10.177,diff:1.098}, op:{bench:1.181,actual:0.426,diff:-0.755}, ff:{bench:2.859,actual:1.778,diff:-1.081}, kitch:{bench:2.363,actual:1.596,diff:-0.767}, dry:{bench:0.996,actual:0.388,diff:-0.608}},
+  {name:'豊里六丁目', aico:{bench:7.547,actual:2.99,diff:-4.557}, op:{bench:1.188,actual:0.923,diff:-0.265}, ff:{bench:1.527,actual:1.394,diff:-0.133}, kitch:{bench:0.0,actual:0.0,diff:0.0}, dry:{bench:0.98,actual:0.47,diff:-0.51}},
+  {name:'東淀川豊里五丁目', aico:{bench:13.98,actual:10.485,diff:-3.495}, op:{bench:2.013,actual:0.39,diff:-1.623}, ff:{bench:3.684,actual:4.082,diff:0.398}, kitch:{bench:4.872,actual:5.391,diff:0.519}, dry:{bench:1.272,actual:0.318,diff:-0.954}},
+  {name:'豊中原田南一丁目', aico:{bench:11.52,actual:11.417,diff:-0.103}, op:{bench:1.306,actual:1.479,diff:0.173}, ff:{bench:3.208,actual:3.346,diff:0.138}, kitch:{bench:3.454,actual:3.435,diff:-0.019}, dry:{bench:0.937,actual:0.227,diff:-0.71}},
+  {name:'南金田二丁目', aico:{bench:18.643,actual:15.475,diff:-3.168}, op:{bench:2.341,actual:1.555,diff:-0.786}, ff:{bench:4.881,actual:5.182,diff:0.301}, kitch:{bench:4.138,actual:7.095,diff:2.957}, dry:{bench:1.376,actual:0.516,diff:-0.86}},
+  {name:'豊中服部西町三丁目', aico:{bench:9.219,actual:5.596,diff:-3.623}, op:{bench:1.304,actual:0.811,diff:-0.493}, ff:{bench:2.4,actual:3.103,diff:0.703}, kitch:{bench:0.0,actual:0.0,diff:0.0}, dry:{bench:0.765,actual:0.206,diff:-0.559}},
+  {name:'箕面白島二丁目', aico:{bench:14.831,actual:13.478,diff:-1.353}, op:{bench:1.854,actual:1.645,diff:-0.209}, ff:{bench:4.102,actual:4.828,diff:0.726}, kitch:{bench:3.413,actual:5.085,diff:1.672}, dry:{bench:0.995,actual:0.35,diff:-0.645}},
+  {name:'吹田垂水三丁目', aico:{bench:9.164,actual:2.703,diff:-6.461}, op:{bench:1.256,actual:0.598,diff:-0.658}, ff:{bench:1.742,actual:2.59,diff:0.848}, kitch:{bench:0.0,actual:0.0,diff:0.0}, dry:{bench:0.652,actual:0.404,diff:-0.248}},
+  {name:'新御堂筋上新田', aico:{bench:17.071,actual:16.359,diff:-0.712}, op:{bench:2.313,actual:1.027,diff:-1.286}, ff:{bench:4.442,actual:3.02,diff:-1.422}, kitch:{bench:3.577,actual:2.514,diff:-1.063}, dry:{bench:1.374,actual:0.412,diff:-0.962}},
+  {name:'江坂駅南口', aico:{bench:25.847,actual:20.805,diff:-5.042}, op:{bench:3.5,actual:1.816,diff:-1.684}, ff:{bench:6.181,actual:9.887,diff:3.706}, kitch:{bench:6.019,actual:5.636,diff:-0.383}, dry:{bench:1.878,actual:0.538,diff:-1.34}},
 ];
 
 const WCATS = ['aico','op','ff','kitch','dry'];
