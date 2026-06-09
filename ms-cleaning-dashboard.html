@@ -484,7 +484,8 @@ const S = {
   lastFetch: 0, isAdmin: false,
   selStoreId: null, selSettingId: null, selItemId: null,
   openItems: new Set(), adminTab: 'submissions',
-  confirmCallback: null, pendingManagerId: null, storeFilter: ''
+  confirmCallback: null, pendingManagerId: null, storeFilter: '',
+  bulkSelected: new Set()
 };
 
 // ============================================================
@@ -849,7 +850,8 @@ function renderStores() {
       return`<div class="store-card ${bc}" data-nav="store-detail" data-store="${st.storeId}">
         <div class="store-card-name">${st.storeName}</div>
         <div class="store-card-pct ${pc}">${p.pct}%</div>
-        <div class="store-card-count">${p.done}/${p.total}箇所</div>
+        <div class="store-card-count">提出済 ${p.done} / 有効 ${p.active}</div>
+        ${p.excluded>0?`<div class="store-card-count" style="color:var(--blue)">除外 ${p.excluded}</div>`:''}
         <div class="store-card-bar"><div class="store-card-bar-fill" style="width:${p.pct}%;background:${p.pct===100?'var(--green)':p.pct>=50?'var(--blue)':'var(--orange)'}"></div></div>
       </div>`;}).join('')}
     </div>
@@ -859,7 +861,7 @@ function filterStores(val) {
   S.storeFilter=val;
   document.querySelector('.store-grid').innerHTML=storeRanking().filter(s=>!val||s.storeName.includes(val)).map(st=>{
     const p=st.prog,bc=p.pct===100?'complete-border':p.pct<50?'partial-border':'',pc=p.pct===100?'complete':p.pct<50?'warning':'';
-    return`<div class="store-card ${bc}" data-nav="store-detail" data-store="${st.storeId}"><div class="store-card-name">${st.storeName}</div><div class="store-card-pct ${pc}">${p.pct}%</div><div class="store-card-count">${p.done}/${p.total}箇所</div><div class="store-card-bar"><div class="store-card-bar-fill" style="width:${p.pct}%;background:${p.pct===100?'var(--green)':p.pct>=50?'var(--blue)':'var(--orange)'}"></div></div></div>`;}).join('');
+    return`<div class="store-card ${bc}" data-nav="store-detail" data-store="${st.storeId}"><div class="store-card-name">${st.storeName}</div><div class="store-card-pct ${pc}">${p.pct}%</div><div class="store-card-count">提出済 ${p.done} / 有効 ${p.active}</div>${p.excluded>0?`<div class="store-card-count" style="color:var(--blue)">除外 ${p.excluded}</div>`:''}<div class="store-card-bar"><div class="store-card-bar-fill" style="width:${p.pct}%;background:${p.pct===100?'var(--green)':p.pct>=50?'var(--blue)':'var(--orange)'}"></div></div></div>`;}).join('');
 }
 
 // ============================================================
@@ -1107,7 +1109,7 @@ function renderAdmin() {
   return`<div class="app-header"><div class="header-title">管理者画面</div><button class="header-action" onclick="adminLogout()">ログアウト</button></div>
   <div class="view-content">
     <div class="tabs">
-      ${['submissions:報告一覧','stores:店舗管理','settings:箇所設定','system:システム'].map(t=>{const[v,l]=t.split(':');return`<button class="tab-btn ${tab===v?'active':''}" onclick="adminTab('${v}')">${l}</button>`;}).join('')}
+      ${['submissions:報告一覧','stores:店舗管理','settings:除外設定','system:システム'].map(t=>{const[v,l]=t.split(':');return`<button class="tab-btn ${tab===v?'active':''}" onclick="adminTab('${v}')">${l}</button>`;}).join('')}
     </div>
     ${tab==='submissions'?`
       <div class="flex justify-between items-center mb-8">
@@ -1133,21 +1135,28 @@ function renderAdmin() {
       ${S.stores.map(st=>{const p=storeProgress(st.storeId);return`<div class="submission-item"><div class="flex items-center justify-between"><div><div class="submission-item-title">${st.storeName}</div><div class="submission-item-meta">進捗: ${p.pct}%（${p.done}/${p.total}箇所）</div></div><span class="badge badge-blue">ID:${st.storeId}</span></div></div>`;}).join('')}` : ''}
     ${tab==='settings'?`
       <div class="admin-section-title">設備除外設定（設備なし・適用外の箇所を除外）</div>
-      <div class="alert alert-info" style="margin-bottom:12px;font-size:.8rem">除外にすると進捗の母数から除かれます。設備が復活した場合は「除外解除」してください。</div>
+      <div class="alert alert-info" style="margin-bottom:12px;font-size:.8rem">除外にすると進捗の母数から除かれます。チェックボックスで複数選択し一括操作できます。設備が復活した場合は「一括で除外解除」してください。</div>
       <select class="input-field mb-8" onchange="adminSelectStore(this.value)">
         <option value="">-- 店舗を選択 --</option>
         ${STORES.map(s=>`<option value="${s.storeId}" ${selStore&&String(s.storeId)===String(S.selStoreId)?'selected':''}>${s.storeName}</option>`).join('')}
       </select>
       ${selStore?`
         <div class="text-sm text-gray mb-8">対象箇所: <strong>${getSettings(selStore.storeId).length}箇所</strong> ／ 除外: <strong>${getSettings(selStore.storeId).filter(s=>{const sub=latestSub(s.settingId);return isExcluded(sub);}).length}箇所</strong></div>
+        <div id="bulk-actions-bar"></div>
         ${ITEMS.map(item=>{
           const sets=getSettings(selStore.storeId,item.itemId); if(!sets.length)return'';
-          return`<div class="setting-group"><div class="setting-group-title">${item.itemId}. ${item.itemName}（${sets.length}箇所）</div>
-            ${sets.map(s=>{const sub=latestSub(s.settingId);const excl=isExcluded(sub);
+          const allIds=sets.map(s=>String(s.settingId));
+          const allSelected=allIds.length>0&&allIds.every(id=>S.bulkSelected.has(id));
+          return`<div class="setting-group">
+            <div class="setting-group-title" style="display:flex;align-items:center;gap:6px">
+              <span style="flex:1">${item.itemId}. ${item.itemName}（${sets.length}箇所）</span>
+              <button class="setting-row-toggle" style="font-size:.7rem;padding:3px 8px" onclick="bulkSelectGroup([${allIds.map(id=>`'${id}'`).join(',')}],${!allSelected})">${allSelected?'全解除':'全選択'}</button>
+            </div>
+            ${sets.map(s=>{const sub=latestSub(s.settingId);const excl=isExcluded(sub);const chk=S.bulkSelected.has(String(s.settingId));
               return`<div class="setting-row">
+                <input type="checkbox" style="width:16px;height:16px;cursor:pointer;flex-shrink:0" ${chk?'checked':''} onchange="toggleBulkSelect('${s.settingId}',this.checked)">
                 <div class="setting-row-label" style="${excl?'text-decoration:line-through;color:var(--gray-text)':''}">${s.unitLabel}</div>
-                ${excl?`<span style="color:var(--blue);font-size:.72rem;font-weight:700;margin-right:4px">除外中</span><button class="setting-row-toggle" style="background:var(--blue);color:#fff" onclick="unExcludeSetting('${sub.submissionId}')">解除</button>`:
-                       `<button class="setting-row-toggle" onclick="excludeSetting('${s.settingId}','${selStore.storeId}','${item.itemId}')">除外にする</button>`}
+                ${excl?`<span style="color:var(--blue);font-size:.72rem;font-weight:700">除外中</span>`:`<span style="font-size:.72rem;color:var(--gray-text)">未除外</span>`}
               </div>`;}).join('')}
           </div>`;}).join('')}`:
         '<div class="empty-state text-sm text-gray">店舗を選択してください</div>'}` : ''}
@@ -1166,7 +1175,7 @@ function renderAdmin() {
 }
 function adminTab(t){S.adminTab=t;renderView();}
 function adminLogout(){S.isAdmin=false;renderView();}
-function adminSelectStore(v){S.selStoreId=v;renderView();}
+function adminSelectStore(v){S.selStoreId=v;S.bulkSelected.clear();renderView();}
 // 除外設定（設備なし）
 async function excludeSetting(settingId,storeId,itemId){
   const today=new Date().toISOString().substring(0,10);
@@ -1184,6 +1193,52 @@ function unExcludeSetting(submissionId){
     catch(e){showToast('失敗: '+e.message,'error');}
   },'解除する');
 }
+// 一括選択
+function toggleBulkSelect(settingId,checked){
+  if(checked)S.bulkSelected.add(String(settingId));else S.bulkSelected.delete(String(settingId));
+  _updateBulkActionsUI();
+}
+function _updateBulkActionsUI(){
+  const el=document.getElementById('bulk-actions-bar');if(!el)return;
+  const cnt=S.bulkSelected.size;if(cnt===0){el.innerHTML='';return;}
+  const selStore=S.selStoreId?S.stores.find(s=>String(s.storeId)===String(S.selStoreId)):null;if(!selStore)return;
+  const sets=getSettings(selStore.storeId);
+  const hasNonExcluded=[...S.bulkSelected].some(id=>{const s=sets.find(st=>String(st.settingId)===id);return s&&!isExcluded(latestSub(s.settingId));});
+  const hasExcluded=[...S.bulkSelected].some(id=>{const s=sets.find(st=>String(st.settingId)===id);return s&&isExcluded(latestSub(s.settingId));});
+  el.innerHTML=`<div style="background:var(--blue-light);border-radius:var(--rs);padding:10px 12px;margin-bottom:8px;display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+    <span style="font-size:.82rem;font-weight:700;flex:1">${cnt}件選択中</span>
+    ${hasNonExcluded?`<button class="setting-row-toggle" style="background:var(--orange);color:#fff;border-color:var(--orange)" onclick="bulkExclude()">一括で除外にする</button>`:''}
+    ${hasExcluded?`<button class="setting-row-toggle" style="background:var(--blue);color:#fff;border-color:var(--blue)" onclick="bulkUnexclude()">一括で除外解除</button>`:''}
+    <button class="setting-row-toggle" onclick="clearBulkSelect()">選択解除</button>
+  </div>`;
+}
+async function bulkExclude(){
+  const selStore=S.stores.find(s=>String(s.storeId)===String(S.selStoreId));if(!selStore)return;
+  const sets=getSettings(selStore.storeId);
+  const toExclude=[...S.bulkSelected].filter(id=>{const s=sets.find(st=>String(st.settingId)===id);return s&&!isExcluded(latestSub(s.settingId));});
+  if(!toExclude.length){showToast('除外にする箇所がありません','error');return;}
+  showConfirmModal('一括除外',`${toExclude.length}件を除外に設定します。`,async()=>{
+    try{
+      const today=new Date().toISOString().substring(0,10);
+      for(const settingId of toExclude){const s=sets.find(st=>String(st.settingId)===settingId);if(!s)continue;await apiPost('addSubmission',{settingId:s.settingId,storeId:selStore.storeId,itemId:s.itemId,improvedBy:'管理者',role:'除外',improvedDate:today,comment:'設備なし・除外設定',imageData:''});}
+      S.bulkSelected.clear();clearCache();await loadData(true);renderView();showToast(`${toExclude.length}件を除外にしました`);
+    }catch(e){showToast('失敗: '+e.message,'error');}
+  },'一括で除外にする');
+}
+async function bulkUnexclude(){
+  const selStore=S.stores.find(s=>String(s.storeId)===String(S.selStoreId));if(!selStore)return;
+  const sets=getSettings(selStore.storeId);
+  const toUnexclude=[...S.bulkSelected].filter(id=>{const s=sets.find(st=>String(st.settingId)===id);return s&&isExcluded(latestSub(s.settingId));});
+  if(!toUnexclude.length){showToast('除外解除する箇所がありません','error');return;}
+  showConfirmModal('一括除外解除',`${toUnexclude.length}件の除外を解除します。`,async()=>{
+    try{
+      for(const settingId of toUnexclude){const s=sets.find(st=>String(st.settingId)===settingId);if(!s)continue;const sub=latestSub(s.settingId);if(!sub)continue;await apiPost('deleteSubmission',{submissionId:sub.submissionId});}
+      S.bulkSelected.clear();clearCache();await loadData(true);renderView();showToast(`${toUnexclude.length}件の除外を解除しました`);
+    }catch(e){showToast('失敗: '+e.message,'error');}
+  },'一括で解除する');
+}
+function bulkSelectGroup(ids,select){ids.forEach(id=>select?S.bulkSelected.add(String(id)):S.bulkSelected.delete(String(id)));renderView();_updateBulkActionsUI();}
+function clearBulkSelect(){S.bulkSelected.clear();renderView();}
 function confirmDeleteSub(id){showConfirmModal('報告を削除','この改善報告を削除します。元に戻せません。',async()=>{try{await apiPost('deleteSubmission',{submissionId:id});clearCache();await loadData(true);renderView();showToast('削除しました');}catch(e){showToast('失敗: '+e.message,'error');}});}
 async function refreshData(){clearCache();await loadData(true);renderView();showToast('データを更新しました');}
 function exportCSV(){
@@ -1248,7 +1303,7 @@ async function init(){
   S.stores=STORES; S.cleaningItems=ITEMS; S.storeSettings=ALL_SETTINGS;
   initEvents(); // イベント登録（1回のみ）
   renderView(); // マスターデータで即時表示（写真付きダッシュボード）
-  try { await loadData(); } catch(e){ /* エラーはloadData内でtoast表示済み */ }
+  try { await loadData(true); } catch(e){ /* エラーはloadData内でtoast表示済み */ }
   renderView(); // 報告データ反映
 }
 document.addEventListener('DOMContentLoaded',init);
