@@ -362,12 +362,73 @@ const STANDARDS = {
 };
 
 // ============================================================
+// マスターデータ（固定値）
+// ============================================================
+const STORES = [
+  {storeId:1,storeName:'吹田垂水三丁目'},{storeId:2,storeName:'江坂東'},
+  {storeId:3,storeName:'江坂駅南口'},{storeId:4,storeName:'吹田警察署前'},
+  {storeId:5,storeName:'豊中原田南一丁目'},{storeId:6,storeName:'南金田二丁目'},
+  {storeId:7,storeName:'吹田豊津中学校前'},{storeId:8,storeName:'新御堂筋上新田'},
+  {storeId:9,storeName:'東淀川大道南'},{storeId:10,storeName:'豊中服部西町三丁目'},
+  {storeId:11,storeName:'大道南一丁目'},{storeId:12,storeName:'豊里大丁目'},
+  {storeId:13,storeName:'吹田青山台三丁目'},{storeId:14,storeName:'豊中利倉東一丁目'},
+  {storeId:15,storeName:'五月ケ丘東'},{storeId:16,storeName:'豊中服部元町一丁目'},
+  {storeId:17,storeName:'吹田朝日町'},{storeId:18,storeName:'東淀川豊里五丁目'},
+  {storeId:19,storeName:'池田市役所前'},{storeId:20,storeName:'箕面白島二丁目'}
+];
+const ITEMS = [
+  {itemId:1,itemName:'店舗周辺',sortOrder:1},
+  {itemId:2,itemName:'店頭（軒下・ガラス面）',sortOrder:2},
+  {itemId:3,itemName:'犬走り・灰皿',sortOrder:3},
+  {itemId:4,itemName:'ゴミ箱',sortOrder:4},
+  {itemId:5,itemName:'床',sortOrder:5},
+  {itemId:6,itemName:'コーヒーマシン',sortOrder:6},
+  {itemId:7,itemName:'FF什器',sortOrder:7},
+  {itemId:8,itemName:'レジ・カウンター周辺',sortOrder:8},
+  {itemId:9,itemName:'要冷機器',sortOrder:9},
+  {itemId:10,itemName:'サービスコーナー',sortOrder:10},
+  {itemId:11,itemName:'棚（無印良品・日用品）',sortOrder:11},
+  {itemId:12,itemName:'棚（菓子・加工食品）',sortOrder:12},
+  {itemId:13,itemName:'トイレ前室',sortOrder:13},
+  {itemId:14,itemName:'トイレ室内',sortOrder:14}
+];
+const ALL_SETTINGS=(()=>{
+  const base=[];
+  base.push({itemId:1,subItemName:'店舗周辺',unitLabel:'店舗周辺'});
+  base.push({itemId:2,subItemName:'店頭',unitLabel:'店頭（軒下・ガラス面）'});
+  base.push({itemId:3,subItemName:'犬走り・灰皿',unitLabel:'犬走り・灰皿'});
+  base.push({itemId:5,subItemName:'床',unitLabel:'売場床全体'});
+  base.push({itemId:6,subItemName:'コーヒーマシン',unitLabel:'コーヒーマシン'});
+  base.push({itemId:8,subItemName:'レジ・カウンター',unitLabel:'レジ・カウンター周辺'});
+  base.push({itemId:10,subItemName:'サービスコーナー',unitLabel:'サービスコーナー'});
+  base.push({itemId:13,subItemName:'トイレ前室',unitLabel:'トイレ前室'});
+  base.push({itemId:14,subItemName:'トイレ室内',unitLabel:'トイレ室内'});
+  for(let i=1;i<=3;i++) base.push({itemId:4,subItemName:'ゴミ箱',unitLabel:'ゴミ箱'+i});
+  base.push({itemId:7,subItemName:'FF什器',unitLabel:'ホットケース'});
+  base.push({itemId:7,subItemName:'FF什器',unitLabel:'中華まんケース'});
+  base.push({itemId:7,subItemName:'FF什器',unitLabel:'常温ケース'});
+  for(let i=1;i<=3;i++) base.push({itemId:9,subItemName:'要冷機器',unitLabel:'リーチイン'+i});
+  for(let i=1;i<=2;i++) base.push({itemId:9,subItemName:'要冷機器',unitLabel:'オープンケース'+i});
+  for(let i=1;i<=5;i++) base.push({itemId:11,subItemName:'日用品',unitLabel:'日用品 '+i+'本目'});
+  for(let i=1;i<=3;i++) base.push({itemId:11,subItemName:'無印良品',unitLabel:'無印良品 '+i+'本目'});
+  base.push({itemId:11,subItemName:'栄養ドリンク',unitLabel:'栄養ドリンク'});
+  [{sub:'ポケット菓子',count:4},{sub:'スナック菓子',count:3},{sub:'珍味',count:2},
+   {sub:'オリジナル菓子',count:3},{sub:'NL菓子',count:1},{sub:'クッキー・ビスケット',count:1},
+   {sub:'調味料',count:2},{sub:'即席麺',count:3},{sub:'スープ・みそ汁',count:1},
+   {sub:'嗜好品',count:1},{sub:'機能簡易食品',count:1}
+  ].forEach(c=>{for(let i=1;i<=c.count;i++) base.push({itemId:12,subItemName:c.sub,unitLabel:c.count>1?c.sub+' '+i+'本目':c.sub});});
+  const result=[];let counter=1;
+  for(let storeId=1;storeId<=20;storeId++){for(const s of base){result.push({settingId:counter++,storeId,...s,active:true});}}
+  return result;
+})();
+
+// ============================================================
 // 状態
 // ============================================================
 const S = {
   gasUrl: localStorage.getItem(CFG.GAS_URL_KEY) || '',
   view: 'dashboard',
-  stores:[], cleaningItems:[], storeSettings:[], submissions:[],
+  stores: STORES, cleaningItems: ITEMS, storeSettings: ALL_SETTINGS, submissions:[],
   lastFetch: 0, isAdmin: false,
   selStoreId: null, selSettingId: null, selItemId: null,
   openItems: new Set(), adminTab: 'submissions',
@@ -397,17 +458,17 @@ async function apiPost(action, body={}) {
 async function loadData(force=false) {
   const now = Date.now();
   if (!force && S.lastFetch && now-S.lastFetch < CFG.CACHE_TTL_MS) return;
-  if (!force) { const c=tryCache(); if(c){applyData(c);return;} }
+  if (!force) { const c=tryCache(); if(c){S.submissions=c;return;} }
   showLoading();
   try {
-    const d = await apiGet('getAllData');
-    applyData(d); saveCache(d); S.lastFetch=Date.now(); S.error=null;
+    const d = await apiGet('getSubmissions');
+    S.submissions=d||[]; saveCache(S.submissions); S.lastFetch=Date.now(); S.error=null;
   } catch(e) { S.error=e.message; showToast('データ取得失敗: '+e.message,'error'); }
   renderView();
 }
-function applyData(d) { S.stores=d.stores||[]; S.cleaningItems=d.cleaningItems||[]; S.storeSettings=d.storeSettings||[]; S.submissions=d.submissions||[]; }
-function tryCache() { try{const r=localStorage.getItem(CFG.CACHE_KEY);if(!r)return null;const{data,ts}=JSON.parse(r);if(Date.now()-ts>CFG.CACHE_TTL_MS)return null;return data;}catch{return null;} }
-function saveCache(d) { try{localStorage.setItem(CFG.CACHE_KEY,JSON.stringify({data:d,ts:Date.now()}));}catch{} }
+function applyData(d) { S.submissions=d||[]; }
+function tryCache() { try{const r=localStorage.getItem(CFG.CACHE_KEY);if(!r)return null;const{subs,ts}=JSON.parse(r);if(Date.now()-ts>CFG.CACHE_TTL_MS)return null;return subs;}catch{return null;} }
+function saveCache(subs) { try{localStorage.setItem(CFG.CACHE_KEY,JSON.stringify({subs,ts:Date.now()}));}catch{} }
 function clearCache() { localStorage.removeItem(CFG.CACHE_KEY); S.lastFetch=0; }
 
 // ============================================================
@@ -752,9 +813,9 @@ function renderStoreDetail() {
         <div class="item-name">${item.itemName}</div>
         <div class="item-prog">${ip.done}/${ip.total}</div>
         <span class="badge ${sBadge[ip.status]}">${sLbl[ip.status]}</span>
-        <span class="item-chevron ${isOpen?'open'}">›</span>
+        <span class="item-chevron ${isOpen?'open':''}">›</span>
       </div>
-      <div class="subitems-wrap ${isOpen?'open'}" id="sw-${item.itemId}">${subHtml}</div>
+      <div class="subitems-wrap ${isOpen?'open':''}" id="sw-${item.itemId}">${subHtml}</div>
     </div>`;
   }).join('');
 
@@ -1058,7 +1119,15 @@ function attachEvents() {
   if(pw) pw.addEventListener('keydown',e=>{if(e.key==='Enter')doAdminLogin();});
 }
 async function refreshData(){clearCache();await loadData(true);renderView();showToast('データを更新しました');}
-async function init(){if(!S.gasUrl){renderView();return;}await loadData();renderView();}
+async function init(){
+  // マスターデータは常に固定値で即時設定
+  S.stores=STORES; S.cleaningItems=ITEMS; S.storeSettings=ALL_SETTINGS;
+  if(!S.gasUrl){renderView();return;}
+  // GASから報告データだけ取得（軽量）
+  renderView(); // まず写真入りダッシュボードを即表示
+  await loadData(); // バックグラウンドで報告データ取得
+  renderView(); // 報告データ反映後に再描画
+}
 document.addEventListener('DOMContentLoaded',init);
 </script>
 </body>
