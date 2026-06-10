@@ -230,6 +230,18 @@ select.input-field{background-image:url("data:image/svg+xml,%3Csvg xmlns='http:/
 .photo-close-btn{margin-top:12px;padding:10px 24px;background:#fff;border:none;border-radius:var(--rs);font-size:.88rem;font-weight:700;cursor:pointer;font-family:var(--font)}
 .error-msg{font-size:.8rem;color:var(--red);margin:4px 0 8px}
 
+/* ── 写真ギャラリー ── */
+.photo-gallery-filter{display:flex;gap:8px;margin-bottom:12px;align-items:center}
+.photo-gallery-filter select{flex:1}
+.photo-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
+.photo-card{background:#fff;border:1px solid var(--gray-border);border-radius:var(--rs);overflow:hidden;cursor:pointer;box-shadow:var(--sh)}
+.photo-card-img{width:100%;aspect-ratio:1/1;object-fit:cover;display:block}
+.photo-card-body{padding:7px 9px}
+.photo-card-store{font-size:.78rem;font-weight:700;color:var(--blue-dark);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.photo-card-item{font-size:.72rem;color:var(--gray-text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:2px}
+.photo-card-date{font-size:.68rem;color:var(--gray-text);margin-top:2px}
+.photo-gallery-empty{text-align:center;padding:40px 0;color:var(--gray-text);font-size:.88rem}
+
 /* ── セットアップ ── */
 .setup-view{min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px}
 .setup-logo{font-size:2rem;font-weight:900;color:var(--blue);letter-spacing:2px;margin-bottom:4px}
@@ -643,7 +655,7 @@ function showLoading() {
 function renderView() {
   const app=document.getElementById('app');
   if(!S.gasUrl){app.innerHTML=renderSetup();return;}
-  const views={dashboard:renderDashboard,'item-detail':renderItemDetail,stores:renderStores,'store-detail':renderStoreDetail,submit:renderSubmitForm,analysis:renderAnalysis,admin:renderAdmin};
+  const views={dashboard:renderDashboard,'item-detail':renderItemDetail,stores:renderStores,'store-detail':renderStoreDetail,submit:renderSubmitForm,analysis:renderAnalysis,admin:renderAdmin,photos:renderPhotos};
   app.innerHTML=(views[S.view]||renderDashboard)()+renderNav();
 }
 
@@ -1256,10 +1268,54 @@ function exportCSV(){
 // ============================================================
 // ナビ
 // ============================================================
+// ============================================================
+// 写真一覧
+// ============================================================
+function renderPhotos() {
+  const filterStore=S.photoFilterStore||'';
+  const subs=S.submissions
+    .filter(sub=>sub.imageData&&sub.imageData!=='[IMAGE]')
+    .filter(sub=>!filterStore||String(sub.storeId)===filterStore)
+    .slice().sort((a,b)=>new Date(b.submittedAt||b.improvedDate)-new Date(a.submittedAt||a.improvedDate));
+
+  const storeOptions=S.stores.map(s=>`<option value="${s.storeId}" ${filterStore===String(s.storeId)?'selected':''}>${s.storeName}</option>`).join('');
+
+  const cards=subs.map(sub=>{
+    const store=S.stores.find(s=>String(s.storeId)===String(sub.storeId));
+    const item=S.cleaningItems.find(i=>String(i.itemId)===String(sub.itemId));
+    const setting=S.storeSettings.find(s=>String(s.settingId)===String(sub.settingId));
+    const storeName=store?.storeName||'不明';
+    const itemLabel=item?`${item.itemId}. ${item.itemName}`:'';
+    const unitLabel=setting?.unitLabel||'';
+    return`<div class="photo-card" onclick="openPhotoModal('${sub.imageData.replace(/'/g,"\\'")}')">
+      <img class="photo-card-img" src="${sub.imageData}" loading="lazy" alt="${itemLabel}" onerror="this.style.display='none'">
+      <div class="photo-card-body">
+        <div class="photo-card-store">${storeName}</div>
+        <div class="photo-card-item">${itemLabel}${unitLabel?' / '+unitLabel:''}</div>
+        <div class="photo-card-date">${sub.improvedDate} ／ ${sub.improvedBy}</div>
+      </div>
+    </div>`;
+  }).join('');
+
+  return`<div class="app-header">
+    <div class="header-title">写真一覧</div>
+    <button class="header-action" onclick="refreshData()">↻</button>
+  </div>
+  <div class="view-content">
+    <div class="photo-gallery-filter">
+      <select class="input-field" onchange="S.photoFilterStore=this.value;renderView()">
+        <option value="">全店舗</option>${storeOptions}
+      </select>
+      <span style="font-size:.78rem;color:var(--gray-text);white-space:nowrap">${subs.length}件</span>
+    </div>
+    ${subs.length?`<div class="photo-grid">${cards}</div>`:'<div class="photo-gallery-empty">📷 写真付き提出がありません</div>'}
+  </div>`;
+}
+
 function renderNav() {
   const v=S.view;
   return`<nav class="bottom-nav">
-    ${[['dashboard','🏠','ホーム'],['stores','🏪','店舗一覧'],['submit','＋','報告する'],['analysis','📊','分析'],['admin','⚙️','管理']].map(([nv,ic,lb])=>`
+    ${[['dashboard','🏠','ホーム'],['stores','🏪','店舗一覧'],['submit','＋','報告する'],['photos','📷','写真'],['analysis','📊','分析'],['admin','⚙️','管理']].map(([nv,ic,lb])=>`
     <button class="nav-item ${v===nv?'active':''}" data-nav="${nv}">
       <span class="nav-icon">${ic}</span><span class="nav-label">${lb}</span>
     </button>`).join('')}
