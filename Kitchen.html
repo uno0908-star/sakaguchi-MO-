@@ -79,7 +79,7 @@ body{font-family:"Hiragino Sans","Meiryo",sans-serif;background:#f0f4f8;color:#1
 .cw{background:#fff;border-radius:12px;padding:12px;box-shadow:0 2px 8px rgba(0,0,0,.06);overflow-x:auto}
 .clbl{font-size:11px;font-weight:700;color:#475569;margin-bottom:4px}
 .chint{font-size:10px;color:#94a3b8;margin-bottom:8px}
-canvas{display:block;max-width:100%}
+canvas{display:block;max-width:100%;touch-action:none;cursor:pointer}
 /* 店舗セレクト */
 .store-sel{width:100%;padding:12px 14px;font-size:15px;font-weight:700;border:2px solid #2563eb;border-radius:12px;background:#fff;color:#1e2a3a;display:block}
 /* 時間帯ロスピル */
@@ -282,7 +282,7 @@ canvas{display:block;max-width:100%}
       <div class="sec-ttl">③ 単品マトリクス</div>
       <div class="cw">
         <div class="clbl">この店舗の単品マトリクス</div>
-        <div class="chint">横：販売数（週平均/日）｜縦：廃棄率｜縦線15% ＝ 廃棄目標</div>
+        <div class="chint">横：販売数（週平均/日）｜縦：廃棄率｜縦線15% ＝ 廃棄目標｜📱タップで商品名表示</div>
         <canvas id="sCM" height="300"></canvas>
         <div class="quad-grid" style="margin-top:10px">
           <div class="qc q1"><div class="qt">① 作成増のチャンス</div><div class="qi">売れてる × 廃棄低い<br>→ 積極的に作成数UP</div></div>
@@ -448,6 +448,7 @@ var ORG_AVG_YOY = 115.45;// 阪口清治 MO 5月 前年比%
 // ============================================================
 function bOpt(leg){
   return {responsive:false,
+    events:['mousemove','mouseout','click','touchstart','touchmove'],
     plugins:{legend:{display:!!leg,labels:{font:{size:10},padding:6,usePointStyle:true}}},
     scales:{x:{ticks:{font:{size:9},maxRotation:0}},y:{ticks:{font:{size:9}},beginAtZero:true}}};
 }
@@ -862,17 +863,21 @@ function US(){
 
   var m=MO[st]||{};
   var wr=wasteCache[st];
-  var vsOrg=m.s5!=null?m.s5-ORG_AVG_S4:null;
-  var vsBranch=m.s5!=null?m.s5-BRANCH_AVG_S4:null;
+  // 直近月（6月）を優先、なければ5月にフォールバック
+  var sLatest=m.s6!=null?m.s6:m.s5;
+  var latestLabel=m.s6!=null?'6月':'5月';
+  var g6=(m.s6!=null&&m.s2)?m.s6/m.s2:null;
+  var vsOrg=sLatest!=null?sLatest-ORG_AVG_S4:null;
+  var vsBranch=sLatest!=null?sLatest-BRANCH_AVG_S4:null;
 
   // ① 基本数値 KPI
-  var sc=m.s5!=null?(m.s5>=BRANCH_AVG_S4?'c-g':m.s5>=ORG_AVG_S4?'c-o':'c-r'):'c-gy';
+  var sc=sLatest!=null?(sLatest>=BRANCH_AVG_S4?'c-g':sLatest>=ORG_AVG_S4?'c-o':'c-r'):'c-gy';
   var vc=function(v){return v==null?'c-gy':v>=0?'c-g':v<-5?'c-r':'c-o';};
   var vs=function(v,u){return v==null?'--':(v>=0?'+':'')+v.toFixed(1)+(u||'');};
   var wrc=wr==null?'c-gy':wr<10?'c-g':wr<20?'c-o':'c-r';
   document.getElementById('sKpi').innerHTML=
-    '<div class="kc"><div class="kl">5月 販売数/日</div><div class="kv '+sc+'">'+(m.s5!=null?m.s5.toFixed(1):'--')+'</div>'+
-    '<div class="ks">'+(m.g5!=null?'2月比 '+(m.g5>=1?'+':'')+((m.g5*100-100).toFixed(1))+'%':'')+'</div></div>'+
+    '<div class="kc"><div class="kl">'+latestLabel+' 販売数/日</div><div class="kv '+sc+'">'+(sLatest!=null?sLatest.toFixed(1):'--')+'</div>'+
+    '<div class="ks">'+(g6!=null?'2月比 '+(g6>=1?'+':'')+((g6*100-100).toFixed(1))+'%':m.g5!=null?'2月比 '+(m.g5>=1?'+':'')+((m.g5*100-100).toFixed(1))+'%':'')+'</div></div>'+
     '<div class="kc"><div class="kl">vs 組織平均</div><div class="kv '+vc(vsOrg)+'">'+vs(vsOrg)+'</div>'+
     '<div class="ks">組織平均 '+ORG_AVG_S4.toFixed(1)+'個/日</div></div>'+
     '<div class="kc"><div class="kl">vs 支店平均</div><div class="kv '+vc(vsBranch)+'">'+vs(vsBranch)+'</div>'+
@@ -889,7 +894,7 @@ function US(){
       '<div class="pull-banner '+cls2+'">'+
       '<div class="pb-icon">'+icon2+'</div>'+
       '<div class="pb-main"><div class="pb-title">'+txt2+'</div>'+
-      '<div class="pb-sub">支店平均差：'+(vsBranch>=0?'+':'')+vsBranch.toFixed(1)+'個/日 ／ 前年比：'+(m.y5!=null?m.y5.toFixed(1)+'%':'--')+'</div></div>'+
+      '<div class="pb-sub">支店平均差：'+(vsBranch>=0?'+':'')+vsBranch.toFixed(1)+'個/日 ／ 5月前年比：'+(m.y5!=null?m.y5.toFixed(1)+'%':'--')+'</div></div>'+
       '</div>';
   }
 
@@ -936,6 +941,8 @@ function US(){
   var qcA2={1:'rgba(37,99,235,.8)',2:'rgba(34,197,94,.8)',3:'rgba(245,158,11,.8)',4:'rgba(239,68,68,.8)'};
   var qlA2={1:'① 作成増',2:'② 廃棄優秀',3:'③ 計画改善',4:'④ カット'};
   var mxo2={responsive:false,
+    events:['mousemove','mouseout','click','touchstart','touchmove'],
+    interaction:{mode:'nearest',intersect:false},
     plugins:{legend:{labels:{font:{size:10},padding:6,usePointStyle:true}},
       tooltip:{callbacks:{label:function(c){return c.raw.name+'（'+c.raw.x.toFixed(1)+'個 / 廃棄'+c.raw.y.toFixed(1)+'%）';}}}
     }
@@ -959,7 +966,7 @@ function US(){
     var its=si.filter(function(x){return aq(x.sales,x.wr)===q;}).sort(function(a,b){return b.sales-a.sales;});
     mlHtml+='<div class="qc '+qCls2[q]+'"><div class="qt">'+qTtl[q]+'</div>';
     if(its.length){
-      mlHtml+=its.slice(0,6).map(function(i){return '<div style="font-size:10px;padding:2px 0;border-bottom:1px solid rgba(0,0,0,.06)">'+shortName(i.name)+' <span style="float:right;color:#64748b">'+i.s2.toFixed(1)+'個/日</span></div>';}).join('');
+      mlHtml+=its.slice(0,6).map(function(i){return '<div style="font-size:10px;padding:2px 0;border-bottom:1px solid rgba(0,0,0,.06)">'+shortName(i.name)+' <span style="float:right;color:#64748b">'+i.sales.toFixed(1)+'個/日</span></div>';}).join('');
     }else{mlHtml+='<div style="font-size:10px;color:#94a3b8">なし</div>';}
     mlHtml+='</div>';
   });
