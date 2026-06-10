@@ -221,6 +221,7 @@ select.input-field{background-image:url("data:image/svg+xml,%3Csvg xmlns='http:/
 /* ── モーダル ── */
 .modal-overlay{position:fixed;inset:0;z-index:200;background:rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center;padding:20px}
 .modal-overlay.hidden{display:none}
+#modal-photo{z-index:300}
 .modal-box{background:#fff;border-radius:var(--r);padding:22px;width:100%;max-width:400px;box-shadow:var(--sh-lg);max-height:88vh;overflow-y:auto}
 .modal-title{font-size:1.05rem;font-weight:700;margin-bottom:14px}
 .modal-msg{font-size:.88rem;color:var(--gray-text);margin-bottom:18px;line-height:1.6}
@@ -359,8 +360,8 @@ const CFG = {
   IMPROVEMENT_DL:'2026-07-20',
   MS_START:      '2026-07-28',
   MS_END:        '2026-08-31',
-  IMG_MAX_W:     400,
-  IMG_QUALITY:   0.5,
+  IMG_MAX_W:     320,
+  IMG_QUALITY:   0.35,
   CACHE_KEY:     'msCleaningCache_v3',
   CACHE_TTL_MS:  5 * 60 * 1000,
   GAS_URL:       'https://script.google.com/macros/s/AKfycbzEcgQyhtO4wZ4MTOc9HjPnGrYkQUllxzF7TALstWJdqeHxOZzFwqPC-NDv-cAPPdvd7g/exec'
@@ -670,6 +671,7 @@ function renderView() {
   if(!S.gasUrl){app.innerHTML=renderSetup();return;}
   const views={dashboard:renderDashboard,'item-detail':renderItemDetail,stores:renderStores,'store-detail':renderStoreDetail,submit:renderSubmitForm,analysis:renderAnalysis,admin:renderAdmin,photos:renderPhotos};
   app.innerHTML=(views[S.view]||renderDashboard)()+renderNav();
+  if(S.view==='photos'||S.view==='admin') requestAnimationFrame(autoLoadThumbnails);
 }
 
 // ============================================================
@@ -970,6 +972,7 @@ async function showSubDetail(settingId,storeId,itemId) {
   const sub=latestSub(settingId); if(!sub)return;
   const setting=S.storeSettings.find(s=>String(s.settingId)===String(settingId));
   const item=S.cleaningItems.find(i=>String(i.itemId)===String(itemId));
+  const sid=sub.submissionId;
   const metaHtml=`<div style="font-size:.87rem;line-height:1.75;color:var(--gray-dark)">
     <div><span style="color:var(--gray-text)">改善者: </span><strong>${sub.improvedBy}</strong>（${sub.role}）</div>
     <div><span style="color:var(--gray-text)">改善日: </span>${sub.improvedDate}</div>
@@ -978,30 +981,41 @@ async function showSubDetail(settingId,storeId,itemId) {
       `<div style="margin-top:10px;padding:8px 12px;background:var(--green-light);border-radius:var(--rs);color:var(--green);font-weight:700;font-size:.83rem">★ 店長確認済: ${sub.managerConfirmedBy}（${sub.managerConfirmedDate}）</div>`:
       `<div style="margin-top:10px"><button class='btn-link' onclick='openManagerModal("${sub.submissionId}")'>店長確認を記録する →</button></div>`}
   </div>`;
-  // 写真エリアはローディング表示で先にモーダルを開く
+  // 写真エリアを含むモーダルを先に表示
   showConfirmModal(`${item?.itemName} ／ ${setting?.unitLabel}`,
-    `<div id="sub-photo-area" style="margin:-4px 0 14px;border-radius:var(--rs);min-height:72px;background:var(--gray-bg);display:flex;align-items:center;justify-content:center">
-      <span style="font-size:.82rem;color:var(--gray-text)">📷 写真を読み込み中...</span>
-    </div>${metaHtml}`,
-    null,null,'閉じる');
+    `<div id="sub-photo-area" style="margin:-4px 0 12px;border-radius:var(--rs);min-height:64px;background:var(--gray-bg);display:flex;align-items:center;justify-content:center;overflow:hidden;cursor:pointer">
+      <span style="font-size:.82rem;color:var(--gray-text)">📷 読み込み中...</span>
+    </div>${metaHtml}`,null,null,'閉じる');
   // 非同期で写真取得
-  try {
-    const r=await apiGet('getSubmissionImage',{submissionId:sub.submissionId});
-    const imageData=r?.imageData||'';
-    const area=document.getElementById('sub-photo-area'); if(!area)return;
+  try{
+    const r=await apiGet('getSubmissionImage',{submissionId:sid});
+    const imageData=r&&r.imageData||'';
+    const area=document.getElementById('sub-photo-area');if(!area)return;
     if(imageData&&imageData!=='[IMAGE]'&&imageData!==''){
+      _photoCache[sid]=imageData;
       const imgs=parseImages(imageData);
-      const safe=imageData.replace(/&/g,'&amp;').replace(/"/g,'&quot;');
-      area.style.background='none'; area.style.minHeight='auto'; area.style.display='block';
-      area.innerHTML=`<div data-imgs="${safe}" onclick="openPhotoModal(this.dataset.imgs)" style="cursor:pointer;position:relative;border-radius:var(--rs);overflow:hidden">
-        <img src="${imgs[0]}" style="width:100%;max-height:240px;object-fit:cover;display:block" onerror="this.parentNode.style.display='none'">
-        ${imgs.length>1?`<span class="photo-count-badge" style="font-size:.75rem;padding:4px 10px">📷 ${imgs.length}枚</span>`:''}
-        <div style="position:absolute;bottom:8px;right:8px;background:rgba(0,0,0,.5);color:#fff;font-size:.7rem;padding:3px 9px;border-radius:99px">タップで拡大</div>
-      </div>`;
-    } else {
+      // 写真を直接描画
+      area.style.background='none';area.style.minHeight='auto';area.style.display='block';
+      const img=document.createElement('img');
+      img.src=imgs[0];
+      img.style.cssText='width:100%;max-height:240px;object-fit:cover;display:block;border-radius:var(--rs)';
+      area.innerHTML='';area.appendChild(img);
+      if(imgs.length>1){
+        const badge=document.createElement('span');
+        badge.style.cssText='display:block;text-align:right;font-size:.75rem;color:var(--gray-text);padding:3px 0';
+        badge.textContent='📷 '+imgs.length+'枚';
+        area.appendChild(badge);
+      }
+      const hint=document.createElement('div');
+      hint.style.cssText='text-align:center;font-size:.75rem;color:var(--blue);padding:5px 0;font-weight:600';
+      hint.textContent='タップで拡大表示';
+      area.appendChild(hint);
+      // タップ → 写真モーダルを開く（直接イベント登録で確実に動作）
+      area.onclick=function(){showPhotoModal(imageData);};
+    }else{
       area.innerHTML='<span style="font-size:.82rem;color:var(--gray-text);padding:16px">📷 写真なし</span>';
     }
-  } catch(e) {
+  }catch(e){
     const area=document.getElementById('sub-photo-area');
     if(area)area.innerHTML='<span style="font-size:.8rem;color:var(--red);padding:16px">写真の読み込みに失敗しました</span>';
   }
@@ -1424,26 +1438,115 @@ function renderPhotos() {
   </div>`;
 }
 
-async function loadAndOpenPhoto(submissionId,cardEl) {
-  const wrap=document.getElementById('pgw-'+submissionId);
-  if(wrap)wrap.innerHTML='<span style="font-size:.65rem;color:var(--gray-text)">読込中</span>';
-  try {
-    const r=await apiGet('getSubmissionImage',{submissionId});
-    const imageData=r?.imageData||'';
+// ── 写真キャッシュ（var = window登録でどこからでも参照可能）
+var _photoCache={};
+
+// ── 写真モーダルを直接開く（最もシンプルな実装）
+function showPhotoModal(imageData){
+  var imgs=parseImages(imageData);
+  if(!imgs.length)return;
+  var modal=document.getElementById('modal-photo');
+  var img=document.getElementById('modal-photo-img');
+  img.style.minHeight='';
+  img.src=imgs[0];
+  _gallery=imgs; _gIdx=0;
+  var multi=imgs.length>1;
+  document.getElementById('modal-photo-prev').style.display=multi?'':'none';
+  document.getElementById('modal-photo-next').style.display=multi?'':'none';
+  document.getElementById('modal-photo-counter').textContent=multi?'1 / '+imgs.length:'';
+  modal.style.display='flex';          // classList操作に頼らず直接指定
+  modal.classList.remove('hidden');
+}
+
+// ── サムネイルをwrap内に描画し、タップで拡大できるようにする
+function _showPhotoInWrap(wrap,imageData){
+  if(!wrap)return;
+  var imgs=parseImages(imageData);
+  if(!imgs.length)return;
+  wrap.style.padding='0';
+  var img=document.createElement('img');
+  img.src=imgs[0];
+  img.style.cssText='width:100%;height:100%;object-fit:cover;display:block';
+  wrap.innerHTML='';
+  wrap.appendChild(img);
+  if(imgs.length>1){
+    var badge=document.createElement('span');
+    badge.className='photo-count-badge';
+    badge.textContent='+'+(imgs.length-1);
+    wrap.appendChild(badge);
+  }
+  // wrapにイベントを直接登録（inline onclickに依存しない）
+  wrap.onclick=function(e){
+    e.stopPropagation();
+    showPhotoModal(imageData);
+  };
+}
+
+// ── サムネイルのみ取得（モーダルを開かない）
+async function loadThumbnailOnly(submissionId){
+  if(_photoCache[submissionId]){
+    var w=document.getElementById('pgw-'+submissionId);
+    if(w&&!w.onclick)_showPhotoInWrap(w,_photoCache[submissionId]);
+    return;
+  }
+  try{
+    var r=await apiGet('getSubmissionImage',{submissionId});
+    var imageData=r&&r.imageData||'';
     if(imageData&&imageData!=='[IMAGE]'&&imageData!==''){
-      const imgs=parseImages(imageData);
-      if(wrap){
-        wrap.style.padding='0';
-        wrap.innerHTML=`<img src="${imgs[0]}" style="width:100%;height:100%;object-fit:cover;display:block" onerror="this.parentNode.innerHTML='<span>📷</span>'">`;
-        if(imgs.length>1)wrap.innerHTML+=`<span class="photo-count-badge">+${imgs.length-1}</span>`;
-      }
-      openPhotoModal(imageData);
-    } else {
-      if(wrap)wrap.innerHTML='<span style="font-size:.75rem;color:var(--gray-text)">なし</span>';
+      _photoCache[submissionId]=imageData;
+      var w=document.getElementById('pgw-'+submissionId);
+      if(w)_showPhotoInWrap(w,imageData);
+    }
+  }catch(e){}
+}
+
+// ── IntersectionObserverで画面内の写真カードを順次自動ロード
+function autoLoadThumbnails(){
+  var cards=document.querySelectorAll('[id^="pgw-"]');
+  if(!cards.length)return;
+  var loading=0,queue=[];
+  function next(){
+    if(!queue.length||loading>=3)return;
+    loading++;
+    loadThumbnailOnly(queue.shift()).then(function(){loading--;next();},function(){loading--;next();});
+  }
+  var obs=new IntersectionObserver(function(entries){
+    entries.forEach(function(entry){
+      if(!entry.isIntersecting)return;
+      obs.unobserve(entry.target);
+      var id=entry.target.id.replace('pgw-','');
+      if(_photoCache[id])_showPhotoInWrap(entry.target,_photoCache[id]);
+      else{queue.push(id);next();}
+    });
+  },{rootMargin:'400px'});
+  cards.forEach(function(w){obs.observe(w);});
+}
+
+// ── 写真カードタップ（ギャラリー・管理画面など）
+async function loadAndOpenPhoto(submissionId){
+  if(_photoCache[submissionId]){showPhotoModal(_photoCache[submissionId]);return;}
+  // 未キャッシュ：モーダルを先に開いて「読込中」表示
+  var modal=document.getElementById('modal-photo');
+  var img=document.getElementById('modal-photo-img');
+  img.src='';img.style.minHeight='160px';
+  document.getElementById('modal-photo-prev').style.display='none';
+  document.getElementById('modal-photo-next').style.display='none';
+  document.getElementById('modal-photo-counter').textContent='読込中...';
+  modal.style.display='flex';modal.classList.remove('hidden');
+  try{
+    var r=await apiGet('getSubmissionImage',{submissionId});
+    var imageData=r&&r.imageData||'';
+    if(imageData&&imageData!=='[IMAGE]'&&imageData!==''){
+      _photoCache[submissionId]=imageData;
+      var wrap=document.getElementById('pgw-'+submissionId);
+      if(wrap)_showPhotoInWrap(wrap,imageData);
+      showPhotoModal(imageData);
+    }else{
+      modal.style.display='';modal.classList.add('hidden');
       showToast('写真が見つかりません','error');
     }
-  } catch(e) {
-    if(wrap)wrap.innerHTML='<span>📷</span>';
+  }catch(e){
+    modal.style.display='';modal.classList.add('hidden');
     showToast('読み込み失敗: '+e.message,'error');
   }
 }
@@ -1497,24 +1600,24 @@ function imgWidget(data,thumbCls,extraStyle){
     ${imgs.length>1?`<span class="photo-count-badge">+${imgs.length-1}</span>`:''}
   </div>`;
 }
-let _gallery=[],_gIdx=0;
-function openPhotoModal(data,startIdx){
-  if(typeof data==='string'&&data.trimStart().startsWith('[')){try{_gallery=JSON.parse(data);}catch(e){_gallery=[data];}}
-  else if(Array.isArray(data)){_gallery=data;}
-  else{_gallery=[data];}
-  _gIdx=startIdx||0;
-  _syncPhotoModal();
-  document.getElementById('modal-photo').classList.remove('hidden');
-}
+var _gallery=[],_gIdx=0;
+function openPhotoModal(data,startIdx){showPhotoModal(data);}  // 後方互換ラッパー
 function _syncPhotoModal(){
-  document.getElementById('modal-photo-img').src=_gallery[_gIdx]||'';
-  const multi=_gallery.length>1;
+  var img=document.getElementById('modal-photo-img');
+  img.style.minHeight='';
+  img.src=_gallery[_gIdx]||'';
+  var multi=_gallery.length>1;
   document.getElementById('modal-photo-prev').style.display=multi?'':'none';
   document.getElementById('modal-photo-next').style.display=multi?'':'none';
   document.getElementById('modal-photo-counter').textContent=multi?(_gIdx+1)+' / '+_gallery.length:'';
 }
 function photoNavStep(d){_gIdx=(_gIdx+d+_gallery.length)%_gallery.length;_syncPhotoModal();}
-function closePhotoModal(e){if(e&&e.target!==document.getElementById('modal-photo'))return;document.getElementById('modal-photo').classList.add('hidden');}
+function closePhotoModal(e){
+  var modal=document.getElementById('modal-photo');
+  if(e&&e.target!==modal)return;
+  modal.style.display='';
+  modal.classList.add('hidden');
+}
 
 
 // ============================================================
