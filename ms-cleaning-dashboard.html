@@ -387,7 +387,7 @@ const STORES = [
   {storeId:5,storeName:'豊中原田南一丁目'},{storeId:6,storeName:'南金田二丁目'},
   {storeId:7,storeName:'吹田豊津中学校前'},{storeId:8,storeName:'新御堂筋上新田'},
   {storeId:9,storeName:'東淀川大道南'},{storeId:10,storeName:'豊中服部西町三丁目'},
-  {storeId:11,storeName:'大道南一丁目'},{storeId:12,storeName:'豊里大丁目'},
+  {storeId:11,storeName:'大道南一丁目'},{storeId:12,storeName:'豊里六丁目'},
   {storeId:13,storeName:'吹田青山台三丁目'},{storeId:14,storeName:'豊中利倉東一丁目'},
   {storeId:15,storeName:'五月ケ丘東'},{storeId:16,storeName:'豊中服部元町一丁目'},
   {storeId:17,storeName:'吹田朝日町'},{storeId:18,storeName:'東淀川豊里五丁目'},
@@ -1005,7 +1005,7 @@ function renderSubmitForm() {
             <div class="photo-upload-icon">📷</div>
             <div class="photo-upload-text">タップして写真を撮影・選択</div>
           </div>
-          <input type="file" id="photo-input" accept="image/*" capture="environment" style="display:none" onchange="handlePhotoSelect(this)">
+          <input type="file" id="photo-input" accept="image/*" style="display:none" onchange="handlePhotoSelect(this)">
           <div id="photo-preview-wrap" style="display:none;margin-top:8px">
             <img id="photo-preview" class="photo-preview" src="" alt="プレビュー" onclick="openPhotoModal(this.src)">
             <button type="button" class="photo-remove-btn" onclick="removePhoto()">✕ 写真を削除</button>
