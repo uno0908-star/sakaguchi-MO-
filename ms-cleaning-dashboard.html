@@ -235,7 +235,7 @@ select.input-field{background-image:url("data:image/svg+xml,%3Csvg xmlns='http:/
 .photo-gallery-filter{display:flex;gap:8px;margin-bottom:12px;align-items:center}
 .photo-gallery-filter select{flex:1}
 .photo-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
-.photo-card{background:#fff;border:1px solid var(--gray-border);border-radius:var(--rs);overflow:hidden;cursor:pointer;box-shadow:var(--sh)}
+.photo-card{background:#fff;border:1px solid var(--gray-border);border-radius:var(--rs);overflow:hidden;cursor:pointer;box-shadow:var(--sh);-webkit-tap-highlight-color:rgba(0,0,0,0.1)}
 .photo-card-img{width:100%;aspect-ratio:1/1;object-fit:cover;display:block}
 .photo-card-body{padding:7px 9px}
 .photo-card-store{font-size:.78rem;font-weight:700;color:var(--blue-dark);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -671,7 +671,7 @@ function renderView() {
   if(!S.gasUrl){app.innerHTML=renderSetup();return;}
   const views={dashboard:renderDashboard,'item-detail':renderItemDetail,stores:renderStores,'store-detail':renderStoreDetail,submit:renderSubmitForm,analysis:renderAnalysis,admin:renderAdmin,photos:renderPhotos};
   app.innerHTML=(views[S.view]||renderDashboard)()+renderNav();
-  if(S.view==='photos'||S.view==='admin') requestAnimationFrame(autoLoadThumbnails);
+  if(S.view==='photos'||S.view==='admin') setTimeout(autoLoadThumbnails,300);
 }
 
 // ============================================================
@@ -1010,8 +1010,10 @@ async function showSubDetail(settingId,storeId,itemId) {
       hint.style.cssText='text-align:center;font-size:.75rem;color:var(--blue);padding:5px 0;font-weight:600';
       hint.textContent='タップで拡大表示';
       area.appendChild(hint);
-      // タップ → 写真モーダルを開く（直接イベント登録で確実に動作）
-      area.onclick=function(){showPhotoModal(imageData);};
+      // タップ → 写真モーダルを開く（iOS Safari対応: cursor:pointer + ontouchend必須）
+      area.style.cursor='pointer';
+      area.onclick=function(e){e.stopPropagation();showPhotoModal(imageData);};
+      area.ontouchend=function(e){e.preventDefault();e.stopPropagation();showPhotoModal(imageData);};
     }else{
       area.innerHTML='<span style="font-size:.82rem;color:var(--gray-text);padding:16px">📷 写真なし</span>';
     }
@@ -1219,7 +1221,7 @@ function renderAdmin() {
             <div class="submission-item-header">
               <div><div class="submission-item-title">${store?.storeName||'?'} ／ ${item?.itemName||'?'}</div>
                 <div class="submission-item-meta">${setting?.unitLabel||''}<br>${sub.improvedBy}（${sub.role}）${sub.improvedDate}${sub.managerConfirmedBy?` ／ 店長確認: ${sub.managerConfirmedBy}`:''}</div></div>
-              ${sub.imageData?`<div onclick="loadAndOpenPhoto('${sub.submissionId}',this)" style="width:44px;height:44px;border-radius:6px;background:var(--gray-bg);display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;overflow:hidden" id="pgw-${sub.submissionId}"><span>📷</span></div>`:''}</div>
+              ${sub.imageData?`<div onclick="loadAndOpenPhoto('${sub.submissionId}')" style="width:44px;height:44px;border-radius:6px;background:var(--gray-bg);display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;overflow:hidden;-webkit-tap-highlight-color:rgba(0,0,0,0.1)" id="pgw-${sub.submissionId}"><span>📷</span></div>`:''}</div>
             <div class="submission-item-actions">
               ${!sub.managerConfirmedBy?`<button class="btn-secondary btn-sm" onclick="openManagerModal('${sub.submissionId}')">店長確認</button>`:''}
               <button class="btn-danger btn-sm" onclick="confirmDeleteSub('${sub.submissionId}')">削除</button>
@@ -1364,8 +1366,8 @@ function renderPhotos() {
     .slice().sort((a,b)=>new Date(b.submittedAt||b.improvedDate)-new Date(a.submittedAt||a.improvedDate));
 
   function makeCard(sub,primaryLine,secondaryLine){
-    return`<div class="photo-card" onclick="loadAndOpenPhoto('${sub.submissionId}',this)">
-      <div style="position:relative;aspect-ratio:1/1;background:var(--gray-bg);display:flex;align-items:center;justify-content:center;overflow:hidden" id="pgw-${sub.submissionId}">
+    return`<div class="photo-card" onclick="loadAndOpenPhoto('${sub.submissionId}')">
+      <div style="position:relative;aspect-ratio:1/1;background:var(--gray-bg);display:flex;align-items:center;justify-content:center;overflow:hidden;cursor:pointer" id="pgw-${sub.submissionId}">
         <span style="font-size:2rem">📷</span>
       </div>
       <div class="photo-card-body">
@@ -1464,9 +1466,10 @@ function _showPhotoInWrap(wrap,imageData){
   var imgs=parseImages(imageData);
   if(!imgs.length)return;
   wrap.style.padding='0';
+  wrap.style.cursor='pointer';
   var img=document.createElement('img');
   img.src=imgs[0];
-  img.style.cssText='width:100%;height:100%;object-fit:cover;display:block';
+  img.style.cssText='width:100%;height:100%;object-fit:cover;display:block;pointer-events:none';
   wrap.innerHTML='';
   wrap.appendChild(img);
   if(imgs.length>1){
@@ -1475,11 +1478,12 @@ function _showPhotoInWrap(wrap,imageData){
     badge.textContent='+'+(imgs.length-1);
     wrap.appendChild(badge);
   }
-  // wrapにイベントを直接登録（inline onclickに依存しない）
-  wrap.onclick=function(e){
-    e.stopPropagation();
-    showPhotoModal(imageData);
-  };
+  // wrapにイベントを直接登録（inline onclickに依存しない、iOS Safari対応）
+  wrap.onclick=null;
+  wrap.ontouchend=null;
+  function _openModal(e){e.preventDefault();e.stopPropagation();showPhotoModal(imageData);}
+  wrap.ontouchend=_openModal;
+  wrap.onclick=function(e){e.stopPropagation();showPhotoModal(imageData);};
 }
 
 // ── サムネイルのみ取得（モーダルを開かない）
@@ -1500,26 +1504,25 @@ async function loadThumbnailOnly(submissionId){
   }catch(e){}
 }
 
-// ── IntersectionObserverで画面内の写真カードを順次自動ロード
+// ── 写真カードを順次自動ロード（モバイル対応: IntersectionObserverを使わず逐次処理）
 function autoLoadThumbnails(){
-  var cards=document.querySelectorAll('[id^="pgw-"]');
+  var cards=Array.prototype.slice.call(document.querySelectorAll('[id^="pgw-"]'));
   if(!cards.length)return;
-  var loading=0,queue=[];
-  function next(){
-    if(!queue.length||loading>=3)return;
-    loading++;
-    loadThumbnailOnly(queue.shift()).then(function(){loading--;next();},function(){loading--;next();});
+  var idx=0;
+  function loadNext(){
+    if(idx>=cards.length)return;
+    var card=cards[idx++];
+    var id=card.id.replace('pgw-','');
+    if(_photoCache[id]){
+      _showPhotoInWrap(card,_photoCache[id]);
+      setTimeout(loadNext,0);
+    }else{
+      loadThumbnailOnly(id).then(function(){setTimeout(loadNext,50);},function(){setTimeout(loadNext,50);});
+    }
   }
-  var obs=new IntersectionObserver(function(entries){
-    entries.forEach(function(entry){
-      if(!entry.isIntersecting)return;
-      obs.unobserve(entry.target);
-      var id=entry.target.id.replace('pgw-','');
-      if(_photoCache[id])_showPhotoInWrap(entry.target,_photoCache[id]);
-      else{queue.push(id);next();}
-    });
-  },{rootMargin:'400px'});
-  cards.forEach(function(w){obs.observe(w);});
+  // 先頭2枚を並行ロードしてあとは逐次
+  loadNext();
+  setTimeout(loadNext,10);
 }
 
 // ── 写真カードタップ（ギャラリー・管理画面など）
