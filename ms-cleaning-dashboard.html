@@ -359,8 +359,8 @@ const CFG = {
   IMPROVEMENT_DL:'2026-07-20',
   MS_START:      '2026-07-28',
   MS_END:        '2026-08-31',
-  IMG_MAX_W:     600,
-  IMG_QUALITY:   0.65,
+  IMG_MAX_W:     400,
+  IMG_QUALITY:   0.5,
   CACHE_KEY:     'msCleaningCache_v3',
   CACHE_TTL_MS:  5 * 60 * 1000,
   GAS_URL:       'https://script.google.com/macros/s/AKfycbzEcgQyhtO4wZ4MTOc9HjPnGrYkQUllxzF7TALstWJdqeHxOZzFwqPC-NDv-cAPPdvd7g/exec'
@@ -853,7 +853,7 @@ function renderItemDetail() {
             ${best.comment?`<div class="ssr-comment">"${best.comment}"</div>`:''}
           </div>
           <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px;flex-shrink:0">
-            ${best.imageData&&best.imageData!=='[IMAGE]'?imgWidget(best.imageData,'ssr-thumb'):''}
+            ${best.imageData?`<span style="font-size:1.1rem;cursor:pointer" onclick="showSubDetail('${best.settingId}','${best.storeId}','${item.itemId}')">📷</span>`:''}
             <button class="subitem-action" onclick="showSubDetail('${best.settingId}','${best.storeId}','${item.itemId}')">詳細 →</button>
           </div>
         </div></div>`:
@@ -966,28 +966,45 @@ function toggleItem(id) {
   document.getElementById('sw-'+id)?.classList.toggle('open');
   document.querySelector(`#is-${id} .item-chevron`)?.classList.toggle('open');
 }
-function showSubDetail(settingId,storeId,itemId) {
+async function showSubDetail(settingId,storeId,itemId) {
   const sub=latestSub(settingId); if(!sub)return;
   const setting=S.storeSettings.find(s=>String(s.settingId)===String(settingId));
   const item=S.cleaningItems.find(i=>String(i.itemId)===String(itemId));
-  const hasPhoto=sub.imageData&&sub.imageData!=='[IMAGE]';
-  const imgs=hasPhoto?parseImages(sub.imageData):[];
-  const safe=hasPhoto?sub.imageData.replace(/&/g,'&amp;').replace(/"/g,'&quot;'):'';
+  const metaHtml=`<div style="font-size:.87rem;line-height:1.75;color:var(--gray-dark)">
+    <div><span style="color:var(--gray-text)">改善者: </span><strong>${sub.improvedBy}</strong>（${sub.role}）</div>
+    <div><span style="color:var(--gray-text)">改善日: </span>${sub.improvedDate}</div>
+    ${sub.comment?`<div style="margin-top:6px;padding:8px 10px;background:var(--gray-bg);border-radius:var(--rs);font-size:.82rem">${sub.comment}</div>`:''}
+    ${sub.managerConfirmedBy?
+      `<div style="margin-top:10px;padding:8px 12px;background:var(--green-light);border-radius:var(--rs);color:var(--green);font-weight:700;font-size:.83rem">★ 店長確認済: ${sub.managerConfirmedBy}（${sub.managerConfirmedDate}）</div>`:
+      `<div style="margin-top:10px"><button class='btn-link' onclick='openManagerModal("${sub.submissionId}")'>店長確認を記録する →</button></div>`}
+  </div>`;
+  // 写真エリアはローディング表示で先にモーダルを開く
   showConfirmModal(`${item?.itemName} ／ ${setting?.unitLabel}`,
-    `${hasPhoto?`<div data-imgs="${safe}" onclick="openPhotoModal(this.dataset.imgs)" style="cursor:pointer;margin:-4px 0 14px;border-radius:var(--rs);overflow:hidden;position:relative">
-      <img src="${imgs[0]}" style="width:100%;max-height:240px;object-fit:cover;display:block" onerror="this.parentNode.style.display='none'">
-      ${imgs.length>1?`<span class="photo-count-badge" style="font-size:.75rem;padding:4px 10px">📷 ${imgs.length}枚</span>`:''}
-      <div style="position:absolute;bottom:8px;right:8px;background:rgba(0,0,0,.5);color:#fff;font-size:.7rem;padding:3px 9px;border-radius:99px">タップで拡大</div>
-    </div>`:'<div style="background:var(--gray-bg);border-radius:var(--rs);padding:20px;text-align:center;color:var(--gray-text);font-size:.8rem;margin-bottom:12px">📷 写真なし</div>'}
-    <div style="font-size:.87rem;line-height:1.75;color:var(--gray-dark)">
-      <div><span style="color:var(--gray-text)">改善者: </span><strong>${sub.improvedBy}</strong>（${sub.role}）</div>
-      <div><span style="color:var(--gray-text)">改善日: </span>${sub.improvedDate}</div>
-      ${sub.comment?`<div style="margin-top:6px;padding:8px 10px;background:var(--gray-bg);border-radius:var(--rs);font-size:.82rem">${sub.comment}</div>`:''}
-      ${sub.managerConfirmedBy?
-        `<div style="margin-top:10px;padding:8px 12px;background:var(--green-light);border-radius:var(--rs);color:var(--green);font-weight:700;font-size:.83rem">★ 店長確認済: ${sub.managerConfirmedBy}（${sub.managerConfirmedDate}）</div>`:
-        `<div style="margin-top:10px"><button class='btn-link' onclick='openManagerModal("${sub.submissionId}")'>店長確認を記録する →</button></div>`}
-    </div>`,
+    `<div id="sub-photo-area" style="margin:-4px 0 14px;border-radius:var(--rs);min-height:72px;background:var(--gray-bg);display:flex;align-items:center;justify-content:center">
+      <span style="font-size:.82rem;color:var(--gray-text)">📷 写真を読み込み中...</span>
+    </div>${metaHtml}`,
     null,null,'閉じる');
+  // 非同期で写真取得
+  try {
+    const r=await apiGet('getSubmissionImage',{submissionId:sub.submissionId});
+    const imageData=r?.imageData||'';
+    const area=document.getElementById('sub-photo-area'); if(!area)return;
+    if(imageData&&imageData!=='[IMAGE]'&&imageData!==''){
+      const imgs=parseImages(imageData);
+      const safe=imageData.replace(/&/g,'&amp;').replace(/"/g,'&quot;');
+      area.style.background='none'; area.style.minHeight='auto'; area.style.display='block';
+      area.innerHTML=`<div data-imgs="${safe}" onclick="openPhotoModal(this.dataset.imgs)" style="cursor:pointer;position:relative;border-radius:var(--rs);overflow:hidden">
+        <img src="${imgs[0]}" style="width:100%;max-height:240px;object-fit:cover;display:block" onerror="this.parentNode.style.display='none'">
+        ${imgs.length>1?`<span class="photo-count-badge" style="font-size:.75rem;padding:4px 10px">📷 ${imgs.length}枚</span>`:''}
+        <div style="position:absolute;bottom:8px;right:8px;background:rgba(0,0,0,.5);color:#fff;font-size:.7rem;padding:3px 9px;border-radius:99px">タップで拡大</div>
+      </div>`;
+    } else {
+      area.innerHTML='<span style="font-size:.82rem;color:var(--gray-text);padding:16px">📷 写真なし</span>';
+    }
+  } catch(e) {
+    const area=document.getElementById('sub-photo-area');
+    if(area)area.innerHTML='<span style="font-size:.8rem;color:var(--red);padding:16px">写真の読み込みに失敗しました</span>';
+  }
 }
 
 // ============================================================
@@ -1044,12 +1061,13 @@ function renderSubmitForm() {
         </div>
         <div class="form-section">
           <label class="form-label">改善後写真 <span class="required">*</span></label>
-          <div id="photo-previews"></div>
-          <div class="photo-upload-box" id="photo-box" onclick="document.getElementById('photo-input').click()">
-            <div class="photo-upload-icon">📷</div>
-            <div class="photo-upload-text" id="photo-box-text">タップして写真を選択（複数可）</div>
+          <div id="photo-previews">
+            <div class="photo-upload-box" onclick="document.getElementById('photo-input').click()">
+              <div class="photo-upload-icon">📷</div>
+              <div class="photo-upload-text">タップして写真を選択</div>
+            </div>
           </div>
-          <input type="file" id="photo-input" accept="image/*" multiple style="display:none" onchange="handlePhotoSelect(this)">
+          <input type="file" id="photo-input" accept="image/*" style="display:none" onchange="handlePhotoSelect(this)">
         </div>
         <div class="form-section">
           <label class="form-label">コメント（任意）</label>
@@ -1077,14 +1095,24 @@ async function handlePhotoSelect(input) {
 }
 function renderPhotoPreview() {
   const wrap=document.getElementById('photo-previews'); if(!wrap)return;
-  if(!selectedPhotos.length){wrap.innerHTML='';const t=document.getElementById('photo-box-text');if(t)t.textContent='タップして写真を選択（複数可）';return;}
+  if(!selectedPhotos.length){
+    wrap.innerHTML=`<div class="photo-upload-box" onclick="document.getElementById('photo-input').click()">
+      <div class="photo-upload-icon">📷</div>
+      <div class="photo-upload-text">タップして写真を選択</div>
+    </div>`;
+    return;
+  }
+  const addTile=`<div class="multi-photo-thumb" onclick="document.getElementById('photo-input').click()"
+    style="border:2px dashed var(--gray-border);border-radius:var(--rs);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;cursor:pointer;background:var(--gray-bg)">
+    <span style="font-size:1.5rem;line-height:1">＋</span>
+    <span style="font-size:.65rem;color:var(--gray-text);font-weight:600">追加</span>
+  </div>`;
   wrap.innerHTML=`<div class="multi-photo-preview">${selectedPhotos.map((src,i)=>`
     <div class="multi-photo-thumb">
       <img src="${src}" onclick="openPhotoModal(JSON.stringify(selectedPhotos),${i})">
       <button type="button" class="multi-photo-del" onclick="removePhoto(${i})">✕</button>
-    </div>`).join('')}</div>`;
-  const t=document.getElementById('photo-box-text');
-  if(t)t.textContent=`さらに追加（現在 ${selectedPhotos.length} 枚）`;
+    </div>`).join('')}${addTile}</div>
+  <div style="font-size:.75rem;color:var(--gray-text);margin-top:4px;text-align:right">${selectedPhotos.length}枚選択中</div>`;
 }
 function removePhoto(i) {
   selectedPhotos.splice(i,1);
@@ -1177,7 +1205,7 @@ function renderAdmin() {
             <div class="submission-item-header">
               <div><div class="submission-item-title">${store?.storeName||'?'} ／ ${item?.itemName||'?'}</div>
                 <div class="submission-item-meta">${setting?.unitLabel||''}<br>${sub.improvedBy}（${sub.role}）${sub.improvedDate}${sub.managerConfirmedBy?` ／ 店長確認: ${sub.managerConfirmedBy}`:''}</div></div>
-              ${sub.imageData&&sub.imageData!=='[IMAGE]'?imgWidget(sub.imageData,'','width:44px;height:44px;object-fit:cover;border-radius:6px;flex-shrink:0'):''}</div>
+              ${sub.imageData?`<div onclick="loadAndOpenPhoto('${sub.submissionId}',this)" style="width:44px;height:44px;border-radius:6px;background:var(--gray-bg);display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;overflow:hidden" id="pgw-${sub.submissionId}"><span>📷</span></div>`:''}</div>
             <div class="submission-item-actions">
               ${!sub.managerConfirmedBy?`<button class="btn-secondary btn-sm" onclick="openManagerModal('${sub.submissionId}')">店長確認</button>`:''}
               <button class="btn-danger btn-sm" onclick="confirmDeleteSub('${sub.submissionId}')">削除</button>
@@ -1316,17 +1344,15 @@ function renderPhotos() {
   const filterStore=S.photoFilterStore||'';
   const filterItem=S.photoFilterItem||'';
 
+  // imageData==='[IMAGE]' は写真あり（GASが通信量削減のため置換）。空文字は写真なし
   const allSubs=S.submissions
-    .filter(sub=>sub.imageData&&sub.imageData!=='[IMAGE]')
+    .filter(sub=>sub.imageData&&sub.imageData!==''&&sub.role!=='除外')
     .slice().sort((a,b)=>new Date(b.submittedAt||b.improvedDate)-new Date(a.submittedAt||a.improvedDate));
 
   function makeCard(sub,primaryLine,secondaryLine){
-    const imgs=parseImages(sub.imageData);
-    const safe=sub.imageData.replace(/&/g,'&amp;').replace(/"/g,'&quot;');
-    return`<div class="photo-card" data-imgs="${safe}" onclick="openPhotoModal(this.dataset.imgs)">
-      <div style="position:relative">
-        <img class="photo-card-img" src="${imgs[0]||''}" loading="lazy" onerror="this.style.display='none'">
-        ${imgs.length>1?`<span class="photo-count-badge">+${imgs.length-1}</span>`:''}
+    return`<div class="photo-card" onclick="loadAndOpenPhoto('${sub.submissionId}',this)">
+      <div style="position:relative;aspect-ratio:1/1;background:var(--gray-bg);display:flex;align-items:center;justify-content:center;overflow:hidden" id="pgw-${sub.submissionId}">
+        <span style="font-size:2rem">📷</span>
       </div>
       <div class="photo-card-body">
         <div class="photo-card-store">${primaryLine}</div>
@@ -1398,6 +1424,30 @@ function renderPhotos() {
   </div>`;
 }
 
+async function loadAndOpenPhoto(submissionId,cardEl) {
+  const wrap=document.getElementById('pgw-'+submissionId);
+  if(wrap)wrap.innerHTML='<span style="font-size:.65rem;color:var(--gray-text)">読込中</span>';
+  try {
+    const r=await apiGet('getSubmissionImage',{submissionId});
+    const imageData=r?.imageData||'';
+    if(imageData&&imageData!=='[IMAGE]'&&imageData!==''){
+      const imgs=parseImages(imageData);
+      if(wrap){
+        wrap.style.padding='0';
+        wrap.innerHTML=`<img src="${imgs[0]}" style="width:100%;height:100%;object-fit:cover;display:block" onerror="this.parentNode.innerHTML='<span>📷</span>'">`;
+        if(imgs.length>1)wrap.innerHTML+=`<span class="photo-count-badge">+${imgs.length-1}</span>`;
+      }
+      openPhotoModal(imageData);
+    } else {
+      if(wrap)wrap.innerHTML='<span style="font-size:.75rem;color:var(--gray-text)">なし</span>';
+      showToast('写真が見つかりません','error');
+    }
+  } catch(e) {
+    if(wrap)wrap.innerHTML='<span>📷</span>';
+    showToast('読み込み失敗: '+e.message,'error');
+  }
+}
+
 function renderNav() {
   const v=S.view;
   return`<nav class="bottom-nav">
@@ -1422,10 +1472,21 @@ function closeConfirmModal(){document.getElementById('modal-confirm').classList.
 function confirmCancel(){closeConfirmModal();}
 function confirmOk(){const cb=S.confirmCallback;closeConfirmModal();if(cb)cb();}
 // 画像データ（単一base64 or JSON配列文字列）→ 配列
+function _fixDriveUrl(u){
+  // drive.google.com/uc?export=view は img src 非対応 → thumbnail形式に変換
+  if(u&&u.includes('drive.google.com')){
+    const m=u.match(/[?&]id=([a-zA-Z0-9_\-]+)/);
+    if(m)return'https://drive.google.com/thumbnail?id='+m[1]+'&sz=w600';
+  }
+  return u;
+}
 function parseImages(data){
   if(!data||data==='[IMAGE]')return[];
-  if(typeof data==='string'&&data.trimStart().startsWith('[')){try{return JSON.parse(data);}catch(e){}}
-  return[data];
+  let urls;
+  if(typeof data==='string'&&data.trimStart().startsWith('[')){
+    try{urls=JSON.parse(data);}catch(e){urls=[data];}
+  }else{urls=[data];}
+  return urls.map(_fixDriveUrl);
 }
 // 複数画像対応サムネイルWidget HTML
 function imgWidget(data,thumbCls,extraStyle){
