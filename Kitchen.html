@@ -546,7 +546,7 @@ function drawOverallCharts(){
     o.scales.y.grid={color:function(ctx){return Math.abs(ctx.tick.value-15)<0.01?'rgba(239,68,68,0.5)':'rgba(0,0,0,0.05)';}};
     o.plugins.tooltip.callbacks.label=function(c){return c.dataset.label+': '+(c.raw!=null?c.raw.toFixed(1):'-')+'%';};
     return o;
-  })());
+  })()});
 }
 
 function drawCards(){
