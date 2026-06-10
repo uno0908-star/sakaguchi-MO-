@@ -221,7 +221,7 @@ select.input-field{background-image:url("data:image/svg+xml,%3Csvg xmlns='http:/
 /* ── モーダル ── */
 .modal-overlay{position:fixed;inset:0;z-index:200;background:rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center;padding:20px}
 .modal-overlay.hidden{display:none}
-.modal-box{background:#fff;border-radius:var(--r);padding:22px;width:100%;max-width:400px;box-shadow:var(--sh-lg)}
+.modal-box{background:#fff;border-radius:var(--r);padding:22px;width:100%;max-width:400px;box-shadow:var(--sh-lg);max-height:88vh;overflow-y:auto}
 .modal-title{font-size:1.05rem;font-weight:700;margin-bottom:14px}
 .modal-msg{font-size:.88rem;color:var(--gray-text);margin-bottom:18px;line-height:1.6}
 .modal-actions{display:flex;gap:10px;justify-content:flex-end;margin-top:18px}
@@ -241,6 +241,14 @@ select.input-field{background-image:url("data:image/svg+xml,%3Csvg xmlns='http:/
 .photo-card-item{font-size:.72rem;color:var(--gray-text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:2px}
 .photo-card-date{font-size:.68rem;color:var(--gray-text);margin-top:2px}
 .photo-gallery-empty{text-align:center;padding:40px 0;color:var(--gray-text);font-size:.88rem}
+.multi-photo-preview{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-top:8px}
+.multi-photo-thumb{position:relative;aspect-ratio:1/1}
+.multi-photo-thumb img{width:100%;height:100%;object-fit:cover;border-radius:var(--rs);display:block;cursor:pointer}
+.multi-photo-del{position:absolute;top:3px;right:3px;background:rgba(0,0,0,.55);color:#fff;border:none;border-radius:50%;width:22px;height:22px;font-size:.72rem;cursor:pointer;line-height:22px;text-align:center;padding:0;font-family:var(--font)}
+.photo-count-badge{position:absolute;bottom:4px;right:4px;background:rgba(0,0,0,.65);color:#fff;font-size:.65rem;font-weight:700;padding:2px 6px;border-radius:99px;pointer-events:none}
+.photo-gallery-nav{display:flex;align-items:center;gap:12px;margin-top:10px}
+.photo-gallery-nav button{background:rgba(255,255,255,.9);border:none;border-radius:var(--rs);padding:8px 18px;font-size:.88rem;font-weight:700;cursor:pointer;font-family:var(--font)}
+.photo-gallery-counter{color:#fff;font-size:.85rem;min-width:52px;text-align:center}
 
 /* ── セットアップ ── */
 .setup-view{min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px}
@@ -329,9 +337,14 @@ select.input-field{background-image:url("data:image/svg+xml,%3Csvg xmlns='http:/
 </div>
 
 <!-- 写真モーダル -->
-<div id="modal-photo" class="modal-overlay hidden" onclick="closePhotoModal()">
-  <div class="photo-modal-inner">
-    <img id="modal-photo-img" src="" alt="写真">
+<div id="modal-photo" class="modal-overlay hidden" onclick="closePhotoModal(event)">
+  <div class="photo-modal-inner" onclick="event.stopPropagation()">
+    <img id="modal-photo-img" src="" alt="写真" style="max-width:100%;max-height:70vh;object-fit:contain;border-radius:var(--rs)">
+    <div class="photo-gallery-nav">
+      <button id="modal-photo-prev" style="display:none" onclick="photoNavStep(-1)">‹ 前へ</button>
+      <span class="photo-gallery-counter" id="modal-photo-counter"></span>
+      <button id="modal-photo-next" style="display:none" onclick="photoNavStep(1)">次へ ›</button>
+    </div>
     <button class="photo-close-btn" onclick="closePhotoModal()">✕ 閉じる</button>
   </div>
 </div>
@@ -834,9 +847,16 @@ function renderItemDetail() {
         </div>
       </div>
       ${best?`<div class="ssr-detail">
-        <div class="ssr-meta">改善: ${best.improvedBy}（${best.role}）${best.improvedDate}${best.managerConfirmedBy?` ／ 店長確認: ${best.managerConfirmedBy}`:''}</div>
-        ${best.comment?`<div class="ssr-comment">"${best.comment}"</div>`:''}
-        ${best.imageData&&best.imageData!=='[IMAGE]'?`<img src="${best.imageData}" class="ssr-thumb" onclick="openPhotoModal('${best.imageData}')">`:''}</div>`:
+        <div style="display:flex;align-items:flex-start;gap:8px">
+          <div style="flex:1">
+            <div class="ssr-meta">改善: ${best.improvedBy}（${best.role}）${best.improvedDate}${best.managerConfirmedBy?` ／ 店長確認: ${best.managerConfirmedBy}`:''}</div>
+            ${best.comment?`<div class="ssr-comment">"${best.comment}"</div>`:''}
+          </div>
+          <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px;flex-shrink:0">
+            ${best.imageData&&best.imageData!=='[IMAGE]'?imgWidget(best.imageData,'ssr-thumb'):''}
+            <button class="subitem-action" onclick="showSubDetail('${best.settingId}','${best.storeId}','${item.itemId}')">詳細 →</button>
+          </div>
+        </div></div>`:
       `<div class="ssr-no-sub">
         <span style="font-size:.78rem;color:var(--gray-text)">未提出</span>
         <button class="btn-link" style="font-size:.78rem" data-nav="submit" data-store="${st.storeId}">報告する →</button>
@@ -950,19 +970,30 @@ function showSubDetail(settingId,storeId,itemId) {
   const sub=latestSub(settingId); if(!sub)return;
   const setting=S.storeSettings.find(s=>String(s.settingId)===String(settingId));
   const item=S.cleaningItems.find(i=>String(i.itemId)===String(itemId));
+  const hasPhoto=sub.imageData&&sub.imageData!=='[IMAGE]';
+  const imgs=hasPhoto?parseImages(sub.imageData):[];
+  const safe=hasPhoto?sub.imageData.replace(/&/g,'&amp;').replace(/"/g,'&quot;'):'';
   showConfirmModal(`${item?.itemName} ／ ${setting?.unitLabel}`,
-    `改善者: ${sub.improvedBy}（${sub.role}）<br>改善日: ${sub.improvedDate}<br>
-    ${sub.comment?'コメント: '+sub.comment+'<br>':''}
-    ${sub.managerConfirmedBy?`店長確認: ${sub.managerConfirmedBy} ${sub.managerConfirmedDate}`:
-      `<br><button class='btn-link' onclick='openManagerModal("${sub.submissionId}")'>店長確認を記録する</button>`}
-    ${sub.imageData&&sub.imageData!=='[IMAGE]'?`<br><br><img src="${sub.imageData}" onclick="openPhotoModal('${sub.imageData}')" style="max-width:100%;border-radius:8px;cursor:pointer">`:''}`,
+    `${hasPhoto?`<div data-imgs="${safe}" onclick="openPhotoModal(this.dataset.imgs)" style="cursor:pointer;margin:-4px 0 14px;border-radius:var(--rs);overflow:hidden;position:relative">
+      <img src="${imgs[0]}" style="width:100%;max-height:240px;object-fit:cover;display:block" onerror="this.parentNode.style.display='none'">
+      ${imgs.length>1?`<span class="photo-count-badge" style="font-size:.75rem;padding:4px 10px">📷 ${imgs.length}枚</span>`:''}
+      <div style="position:absolute;bottom:8px;right:8px;background:rgba(0,0,0,.5);color:#fff;font-size:.7rem;padding:3px 9px;border-radius:99px">タップで拡大</div>
+    </div>`:'<div style="background:var(--gray-bg);border-radius:var(--rs);padding:20px;text-align:center;color:var(--gray-text);font-size:.8rem;margin-bottom:12px">📷 写真なし</div>'}
+    <div style="font-size:.87rem;line-height:1.75;color:var(--gray-dark)">
+      <div><span style="color:var(--gray-text)">改善者: </span><strong>${sub.improvedBy}</strong>（${sub.role}）</div>
+      <div><span style="color:var(--gray-text)">改善日: </span>${sub.improvedDate}</div>
+      ${sub.comment?`<div style="margin-top:6px;padding:8px 10px;background:var(--gray-bg);border-radius:var(--rs);font-size:.82rem">${sub.comment}</div>`:''}
+      ${sub.managerConfirmedBy?
+        `<div style="margin-top:10px;padding:8px 12px;background:var(--green-light);border-radius:var(--rs);color:var(--green);font-weight:700;font-size:.83rem">★ 店長確認済: ${sub.managerConfirmedBy}（${sub.managerConfirmedDate}）</div>`:
+        `<div style="margin-top:10px"><button class='btn-link' onclick='openManagerModal("${sub.submissionId}")'>店長確認を記録する →</button></div>`}
+    </div>`,
     null,null,'閉じる');
 }
 
 // ============================================================
 // 改善報告フォーム
 // ============================================================
-let selectedPhoto=null;
+let selectedPhotos=[];
 function renderSubmitForm() {
   const preStore=S.selStoreId?S.stores.find(s=>String(s.storeId)===String(S.selStoreId)):null;
   const preSetting=S.selSettingId?S.storeSettings.find(s=>String(s.settingId)===String(S.selSettingId)):null;
@@ -1013,15 +1044,12 @@ function renderSubmitForm() {
         </div>
         <div class="form-section">
           <label class="form-label">改善後写真 <span class="required">*</span></label>
+          <div id="photo-previews"></div>
           <div class="photo-upload-box" id="photo-box" onclick="document.getElementById('photo-input').click()">
             <div class="photo-upload-icon">📷</div>
-            <div class="photo-upload-text">タップして写真を撮影・選択</div>
+            <div class="photo-upload-text" id="photo-box-text">タップして写真を選択（複数可）</div>
           </div>
-          <input type="file" id="photo-input" accept="image/*" style="display:none" onchange="handlePhotoSelect(this)">
-          <div id="photo-preview-wrap" style="display:none;margin-top:8px">
-            <img id="photo-preview" class="photo-preview" src="" alt="プレビュー" onclick="openPhotoModal(this.src)">
-            <button type="button" class="photo-remove-btn" onclick="removePhoto()">✕ 写真を削除</button>
-          </div>
+          <input type="file" id="photo-input" accept="image/*" multiple style="display:none" onchange="handlePhotoSelect(this)">
         </div>
         <div class="form-section">
           <label class="form-label">コメント（任意）</label>
@@ -1041,15 +1069,26 @@ function onItemChange(itemId) {
   sel.disabled=false;
 }
 async function handlePhotoSelect(input) {
-  if(!input.files[0])return;
-  selectedPhoto=await compressImage(input.files[0]);
-  document.getElementById('photo-box').style.display='none';
-  document.getElementById('photo-preview-wrap').style.display='block';
-  document.getElementById('photo-preview').src=selectedPhoto;
+  if(!input.files.length)return;
+  const compressed=await Promise.all(Array.from(input.files).map(f=>compressImage(f)));
+  selectedPhotos=[...selectedPhotos,...compressed];
+  input.value='';
+  renderPhotoPreview();
 }
-function removePhoto() {
-  selectedPhoto=null; document.getElementById('photo-input').value='';
-  document.getElementById('photo-box').style.display=''; document.getElementById('photo-preview-wrap').style.display='none';
+function renderPhotoPreview() {
+  const wrap=document.getElementById('photo-previews'); if(!wrap)return;
+  if(!selectedPhotos.length){wrap.innerHTML='';const t=document.getElementById('photo-box-text');if(t)t.textContent='タップして写真を選択（複数可）';return;}
+  wrap.innerHTML=`<div class="multi-photo-preview">${selectedPhotos.map((src,i)=>`
+    <div class="multi-photo-thumb">
+      <img src="${src}" onclick="openPhotoModal(JSON.stringify(selectedPhotos),${i})">
+      <button type="button" class="multi-photo-del" onclick="removePhoto(${i})">✕</button>
+    </div>`).join('')}</div>`;
+  const t=document.getElementById('photo-box-text');
+  if(t)t.textContent=`さらに追加（現在 ${selectedPhotos.length} 枚）`;
+}
+function removePhoto(i) {
+  selectedPhotos.splice(i,1);
+  renderPhotoPreview();
 }
 async function handleSubmit(e) {
   e.preventDefault();
@@ -1059,11 +1098,12 @@ async function handleSubmit(e) {
   const name=document.getElementById('f-name').value.trim(), role=document.getElementById('f-role').value;
   const date=document.getElementById('f-date').value, comment=document.getElementById('f-comment').value.trim();
   if(!storeId||!settingId||!name||!role||!date){showToast('必須項目をすべて入力してください','error');return;}
-  if(!selectedPhoto){showToast('写真を撮影してください','error');return;}
+  if(!selectedPhotos.length){showToast('写真を選択してください','error');return;}
   const btn=document.getElementById('submit-btn'); btn.disabled=true; btn.textContent='送信中...';
+  const imageData=selectedPhotos.length===1?selectedPhotos[0]:JSON.stringify(selectedPhotos);
   try {
-    await apiPost('addSubmission',{settingId,storeId,itemId,improvedBy:name,role,improvedDate:date,comment,imageData:selectedPhoto});
-    clearCache(); await loadData(true); selectedPhoto=null;
+    await apiPost('addSubmission',{settingId,storeId,itemId,improvedBy:name,role,improvedDate:date,comment,imageData});
+    clearCache(); await loadData(true); selectedPhotos=[];
     document.getElementById('app').innerHTML=`<div class="success-view">
       <div class="success-icon">✅</div>
       <div class="success-title">登録完了！</div>
@@ -1137,7 +1177,7 @@ function renderAdmin() {
             <div class="submission-item-header">
               <div><div class="submission-item-title">${store?.storeName||'?'} ／ ${item?.itemName||'?'}</div>
                 <div class="submission-item-meta">${setting?.unitLabel||''}<br>${sub.improvedBy}（${sub.role}）${sub.improvedDate}${sub.managerConfirmedBy?` ／ 店長確認: ${sub.managerConfirmedBy}`:''}</div></div>
-              ${sub.imageData&&sub.imageData!=='[IMAGE]'?`<img src="${sub.imageData}" style="width:44px;height:44px;object-fit:cover;border-radius:6px;cursor:pointer;flex-shrink:0" onclick="openPhotoModal('${sub.imageData}')">`:''}</div>
+              ${sub.imageData&&sub.imageData!=='[IMAGE]'?imgWidget(sub.imageData,'','width:44px;height:44px;object-fit:cover;border-radius:6px;flex-shrink:0'):''}</div>
             <div class="submission-item-actions">
               ${!sub.managerConfirmedBy?`<button class="btn-secondary btn-sm" onclick="openManagerModal('${sub.submissionId}')">店長確認</button>`:''}
               <button class="btn-danger btn-sm" onclick="confirmDeleteSub('${sub.submissionId}')">削除</button>
@@ -1272,43 +1312,89 @@ function exportCSV(){
 // 写真一覧
 // ============================================================
 function renderPhotos() {
+  const tab=S.photoTab||'store'; // 'store' or 'item'
   const filterStore=S.photoFilterStore||'';
-  const subs=S.submissions
+  const filterItem=S.photoFilterItem||'';
+
+  const allSubs=S.submissions
     .filter(sub=>sub.imageData&&sub.imageData!=='[IMAGE]')
-    .filter(sub=>!filterStore||String(sub.storeId)===filterStore)
     .slice().sort((a,b)=>new Date(b.submittedAt||b.improvedDate)-new Date(a.submittedAt||a.improvedDate));
 
-  const storeOptions=S.stores.map(s=>`<option value="${s.storeId}" ${filterStore===String(s.storeId)?'selected':''}>${s.storeName}</option>`).join('');
-
-  const cards=subs.map(sub=>{
-    const store=S.stores.find(s=>String(s.storeId)===String(sub.storeId));
-    const item=S.cleaningItems.find(i=>String(i.itemId)===String(sub.itemId));
-    const setting=S.storeSettings.find(s=>String(s.settingId)===String(sub.settingId));
-    const storeName=store?.storeName||'不明';
-    const itemLabel=item?`${item.itemId}. ${item.itemName}`:'';
-    const unitLabel=setting?.unitLabel||'';
-    return`<div class="photo-card" onclick="openPhotoModal('${sub.imageData.replace(/'/g,"\\'")}')">
-      <img class="photo-card-img" src="${sub.imageData}" loading="lazy" alt="${itemLabel}" onerror="this.style.display='none'">
+  function makeCard(sub,primaryLine,secondaryLine){
+    const imgs=parseImages(sub.imageData);
+    const safe=sub.imageData.replace(/&/g,'&amp;').replace(/"/g,'&quot;');
+    return`<div class="photo-card" data-imgs="${safe}" onclick="openPhotoModal(this.dataset.imgs)">
+      <div style="position:relative">
+        <img class="photo-card-img" src="${imgs[0]||''}" loading="lazy" onerror="this.style.display='none'">
+        ${imgs.length>1?`<span class="photo-count-badge">+${imgs.length-1}</span>`:''}
+      </div>
       <div class="photo-card-body">
-        <div class="photo-card-store">${storeName}</div>
-        <div class="photo-card-item">${itemLabel}${unitLabel?' / '+unitLabel:''}</div>
+        <div class="photo-card-store">${primaryLine}</div>
+        <div class="photo-card-item">${secondaryLine}</div>
         <div class="photo-card-date">${sub.improvedDate} ／ ${sub.improvedBy}</div>
       </div>
     </div>`;
-  }).join('');
+  }
+
+  let bodyHtml='';
+
+  if(tab==='store'){
+    const subs=allSubs.filter(sub=>!filterStore||String(sub.storeId)===filterStore);
+    const storeOptions=S.stores.map(s=>`<option value="${s.storeId}" ${filterStore===String(s.storeId)?'selected':''}>${s.storeName}</option>`).join('');
+    const cards=subs.map(sub=>{
+      const store=S.stores.find(s=>String(s.storeId)===String(sub.storeId));
+      const item=S.cleaningItems.find(i=>String(i.itemId)===String(sub.itemId));
+      const setting=S.storeSettings.find(s=>String(s.settingId)===String(sub.settingId));
+      return makeCard(sub,store?.storeName||'不明',(item?`${item.itemId}. ${item.itemName}`:'')+(setting?.unitLabel?' / '+setting.unitLabel:''));
+    }).join('');
+    bodyHtml=`<div class="photo-gallery-filter">
+      <select class="input-field" onchange="S.photoFilterStore=this.value;renderView()">
+        <option value="">全店舗</option>${storeOptions}
+      </select>
+      <span style="font-size:.78rem;color:var(--gray-text);white-space:nowrap">${subs.length}件</span>
+    </div>
+    ${subs.length?`<div class="photo-grid">${cards}</div>`:'<div class="photo-gallery-empty">📷 写真付き提出がありません</div>'}`;
+
+  } else {
+    // 項目別：清掃項目ごとにセクション
+    const subs=allSubs.filter(sub=>!filterItem||String(sub.itemId)===filterItem);
+    const itemOptions=S.cleaningItems.sort((a,b)=>a.sortOrder-b.sortOrder)
+      .map(i=>`<option value="${i.itemId}" ${filterItem===String(i.itemId)?'selected':''}>${i.itemId}. ${i.itemName}</option>`).join('');
+
+    const sections=S.cleaningItems.slice().sort((a,b)=>a.sortOrder-b.sortOrder).map(item=>{
+      if(filterItem&&String(item.itemId)!==filterItem)return'';
+      const itemSubs=subs.filter(sub=>String(sub.itemId)===String(item.itemId));
+      if(!itemSubs.length)return'';
+      const cards=itemSubs.map(sub=>{
+        const store=S.stores.find(s=>String(s.storeId)===String(sub.storeId));
+        const setting=S.storeSettings.find(s=>String(s.settingId)===String(sub.settingId));
+        return makeCard(sub,store?.storeName||'不明',setting?.unitLabel||'');
+      }).join('');
+      return`<div style="margin-bottom:18px">
+        <div style="font-size:.8rem;font-weight:700;color:var(--blue-dark);background:var(--blue-light);border-radius:var(--rs);padding:6px 12px;margin-bottom:8px">${item.itemId}. ${item.itemName} <span style="font-weight:400;color:var(--gray-text)">(${itemSubs.length}件)</span></div>
+        <div class="photo-grid">${cards}</div>
+      </div>`;
+    }).join('');
+
+    bodyHtml=`<div class="photo-gallery-filter">
+      <select class="input-field" onchange="S.photoFilterItem=this.value;renderView()">
+        <option value="">全項目</option>${itemOptions}
+      </select>
+      <span style="font-size:.78rem;color:var(--gray-text);white-space:nowrap">${subs.length}件</span>
+    </div>
+    ${subs.length?sections:'<div class="photo-gallery-empty">📷 写真付き提出がありません</div>'}`;
+  }
 
   return`<div class="app-header">
     <div class="header-title">写真一覧</div>
     <button class="header-action" onclick="refreshData()">↻</button>
   </div>
   <div class="view-content">
-    <div class="photo-gallery-filter">
-      <select class="input-field" onchange="S.photoFilterStore=this.value;renderView()">
-        <option value="">全店舗</option>${storeOptions}
-      </select>
-      <span style="font-size:.78rem;color:var(--gray-text);white-space:nowrap">${subs.length}件</span>
+    <div class="tabs">
+      <button class="tab-btn ${tab==='store'?'active':''}" onclick="S.photoTab='store';S.photoFilterItem='';renderView()">店舗別</button>
+      <button class="tab-btn ${tab==='item'?'active':''}" onclick="S.photoTab='item';S.photoFilterStore='';renderView()">項目別</button>
     </div>
-    ${subs.length?`<div class="photo-grid">${cards}</div>`:'<div class="photo-gallery-empty">📷 写真付き提出がありません</div>'}
+    ${bodyHtml}
   </div>`;
 }
 
@@ -1335,8 +1421,40 @@ function showConfirmModal(title,msg,okCb,okLbl,cancelLbl){document.getElementByI
 function closeConfirmModal(){document.getElementById('modal-confirm').classList.add('hidden');S.confirmCallback=null;}
 function confirmCancel(){closeConfirmModal();}
 function confirmOk(){const cb=S.confirmCallback;closeConfirmModal();if(cb)cb();}
-function openPhotoModal(src){document.getElementById('modal-photo').classList.remove('hidden');document.getElementById('modal-photo-img').src=src;}
-function closePhotoModal(){document.getElementById('modal-photo').classList.add('hidden');}
+// 画像データ（単一base64 or JSON配列文字列）→ 配列
+function parseImages(data){
+  if(!data||data==='[IMAGE]')return[];
+  if(typeof data==='string'&&data.trimStart().startsWith('[')){try{return JSON.parse(data);}catch(e){}}
+  return[data];
+}
+// 複数画像対応サムネイルWidget HTML
+function imgWidget(data,thumbCls,extraStyle){
+  const imgs=parseImages(data); if(!imgs.length)return'';
+  const safe=data.replace(/&/g,'&amp;').replace(/"/g,'&quot;');
+  return`<div style="position:relative;display:inline-block;cursor:pointer" data-imgs="${safe}" onclick="openPhotoModal(this.dataset.imgs)">
+    <img src="${imgs[0]}" class="${thumbCls||''}" style="${extraStyle||''}" onerror="this.parentNode.style.display='none'">
+    ${imgs.length>1?`<span class="photo-count-badge">+${imgs.length-1}</span>`:''}
+  </div>`;
+}
+let _gallery=[],_gIdx=0;
+function openPhotoModal(data,startIdx){
+  if(typeof data==='string'&&data.trimStart().startsWith('[')){try{_gallery=JSON.parse(data);}catch(e){_gallery=[data];}}
+  else if(Array.isArray(data)){_gallery=data;}
+  else{_gallery=[data];}
+  _gIdx=startIdx||0;
+  _syncPhotoModal();
+  document.getElementById('modal-photo').classList.remove('hidden');
+}
+function _syncPhotoModal(){
+  document.getElementById('modal-photo-img').src=_gallery[_gIdx]||'';
+  const multi=_gallery.length>1;
+  document.getElementById('modal-photo-prev').style.display=multi?'':'none';
+  document.getElementById('modal-photo-next').style.display=multi?'':'none';
+  document.getElementById('modal-photo-counter').textContent=multi?(_gIdx+1)+' / '+_gallery.length:'';
+}
+function photoNavStep(d){_gIdx=(_gIdx+d+_gallery.length)%_gallery.length;_syncPhotoModal();}
+function closePhotoModal(e){if(e&&e.target!==document.getElementById('modal-photo'))return;document.getElementById('modal-photo').classList.add('hidden');}
+
 
 // ============================================================
 // イベント & 初期化
