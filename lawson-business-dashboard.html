@@ -388,84 +388,63 @@ function initMonthSelector(){
 }
 
 // ============================================================
-//  着地予測エンジン v1（差分方式）
-//  予測 = 予算店利益 + 粗利要因 - 人件費要因 - 有給 - 経費補正 + 特殊要因
-//  ※ 係数は予測パラメータシートで調整可能（ロジック改善前提）
+//  着地予測エンジン v2（精算書ベース）
+//  確定月  = 精算書実績（予算実績シートの実績）をそのまま使用
+//  未確定月 = 予算店利益 - 人件費見込差 - 有給 - 経費補正 + 特殊要因
+//  ※ DEPT速報は計算に使わず、検証用の参考表示のみ（進捗/前年比/ロス率/厨房比率）
 // ============================================================
 function forecast(code, mi){
   const ym = ymOf(mi);
-  const p = DB.params || {};
   const budProfit = b(code, K.PROFIT, '予算', mi);
   const actProfit = b(code, K.PROFIT, '実績', mi);
   const budSales  = b(code, K.SALES, '予算', mi);
-  const budGross  = b(code, K.GROSS, '予算', mi);
-  const budGRate  = b(code, K.GRATE, '予算', mi);
   const budLabor  = b(code, K.LABOR, '予算', mi);
-  const budCharge = b(code, K.CHARGE, '予算', mi);
-  const mid = IDX.mid[ym+'|'+code];
+  const mid = IDX.mid[ym+'|'+code] || null;   // 検証用（計算には不使用）
   const inp = IDX.inp[ym+'|'+code] || {};
   const dTotal = daysInMonth(mi);
 
-  // --- 確定月（実績あり）---
+  // --- 確定月（精算書実績あり）---
   if(actProfit !== null){
     const actSales = b(code, K.SALES, '実績', mi);
     return { status:'fixed', profit:actProfit, sales:actSales, bud:budProfit, budSales,
       rate: budProfit ? actProfit/budProfit*100 : null,
       nippan: actSales !== null ? actSales/dTotal : null, detail:null, mid, inp };
   }
-  // --- データなし → 予算ベース ---
-  if(!mid || !mid.cum){
-    return { status:'nodata', profit:budProfit, sales:budSales, bud:budProfit, budSales,
-      rate: budProfit ? 100 : null,
-      nippan: budSales !== null ? budSales/dTotal : null, detail:null, mid:null, inp };
-  }
-  // --- 月中予測 ---
-  const trendCoef = num(p.trendCoef, 1.0);
-  const prevMonthSales = b(code, K.SALES, '前年', mi);   // 前年同月の月商(千円)
-  let salesFC;
-  if(prevMonthSales !== null && mid.prevCum > 0){
-    const prevRemain = Math.max(prevMonthSales - mid.prevCum, 0);
-    const yoy = mid.cum / mid.prevCum;
-    salesFC = mid.cum + prevRemain * yoy * trendCoef;
-  }else{
-    const remain = Math.max(dTotal - mid.days, 0);
-    salesFC = mid.cum + (mid.days > 0 ? mid.cum / mid.days : 0) * remain;
-  }
-  // 粗利率
-  let gRate = budGRate;
-  if(String(p.grossAdjMode) === 'margin' && mid.margin){
-    gRate = mid.margin - num(p.marginToGross, 2.0);
-  }
-  const grossFC = gRate !== null ? salesFC * gRate / 100 : (budGross || 0);
-  const chargeRate = (budCharge !== null && budGross) ? budCharge / budGross : 0.5;
 
-  const fGross  = (budGross !== null) ? (grossFC - budGross) * (1 - chargeRate) : 0;
-  const fLabor  = (inp.labor !== null && inp.labor !== undefined && budLabor !== null) ? -(inp.labor - budLabor) : 0;
-  const fPaid   = -(num(inp.paid, 0));
-  const fExp    = -(num(inp.expAdj, 0));
-  const fSpec   = num(inp.special, 0);
-  const profitFC = (budProfit || 0) + fGross + fLabor + fPaid + fExp + fSpec;
+  // --- 未確定月: 予算 + 手入力補正 ---
+  const fLabor = (inp.labor !== null && inp.labor !== undefined && budLabor !== null) ? -(inp.labor - budLabor) : 0;
+  const fPaid  = -(num(inp.paid, 0));
+  const fExp   = -(num(inp.expAdj, 0));
+  const fSpec  = num(inp.special, 0);
+  const profitFC = (budProfit || 0) + fLabor + fPaid + fExp + fSpec;
 
   return {
-    status:'forecast', profit:profitFC, sales:salesFC, bud:budProfit, budSales,
+    status:'forecast', profit:profitFC, sales:budSales, bud:budProfit, budSales,
     rate: budProfit ? profitFC/budProfit*100 : null,
-    nippan: salesFC/dTotal,
-    detail:{ fGross, fLabor, fPaid, fExp, fSpec, grossFC, gRate, chargeRate, salesFC,
-      progress: mid.days/dTotal*100, yoy: mid.prevCum > 0 ? mid.cum/mid.prevCum*100 : null },
+    nippan: budSales !== null ? budSales/dTotal : null,
+    detail:{ fLabor, fPaid, fExp, fSpec,
+      progress: mid ? mid.days/dTotal*100 : null,
+      yoy: mid && mid.prevCum > 0 ? mid.cum/mid.prevCum*100 : null },
     mid, inp
   };
 }
 
+// 店舗×月に「動き」があるか（確定 or 補正入力あり）。チャートの着地線表示判定に使用
+function hasInput(inp){
+  return inp && [inp.labor, inp.paid, inp.expAdj, inp.special].some(v => v !== null && v !== undefined && v !== '');
+}
+function isManaged(f){ return f.status === 'fixed' || hasInput(f.inp); }
+
 // 集計予測（全社/SC）
 function forecastAgg(codes, mi){
-  let profit = 0, bud = 0, sales = 0, budSales = 0, fixed = 0, fc = 0, nodata = 0;
+  let profit = 0, bud = 0, sales = 0, budSales = 0, fixed = 0, adjusted = 0, plain = 0;
   codes.forEach(c => {
     const f = forecast(c, mi);
     profit += f.profit || 0; bud += f.bud || 0;
     sales += f.sales || 0; budSales += f.budSales || 0;
-    if(f.status === 'fixed') fixed++; else if(f.status === 'forecast') fc++; else nodata++;
+    if(f.status === 'fixed') fixed++; else if(hasInput(f.inp)) adjusted++; else plain++;
   });
-  return { profit, bud, sales, budSales, rate: bud ? profit/bud*100 : null, fixed, fc, nodata };
+  return { profit, bud, sales, budSales, rate: bud ? profit/bud*100 : null, fixed, adjusted, plain };
 }
 
 // DEPT速報のデータ基準日（経過営業日数から導出。例: 6月で14日分→「6/14時点」）
@@ -521,10 +500,10 @@ function renderCompany(){
   }
   // 危険店舗
   const dangers = codes.map(c => ({c, f:forecast(c, mi)}))
-    .filter(x => statusOf(x.f.rate) === 'bad' && x.f.status !== 'nodata')
+    .filter(x => statusOf(x.f.rate) === 'bad')
     .sort((a, b2) => (a.f.rate||0) - (b2.f.rate||0));
 
-  const statusMix = `確定 ${f.fixed} / 予測 ${f.fc} / 未着地 ${f.nodata}`;
+  const statusMix = `確定 ${f.fixed} / 補正済 ${f.adjusted} / 予算ベース ${f.plain}`;
   const asOf = dataAsOf(mi);
 
   el.innerHTML = `
@@ -588,7 +567,7 @@ function drawMonthlyChart(id, codes){
   for(let i = 0; i < 12; i++){
     const fa = forecastAgg(codes, i);
     buds.push(fa.bud);
-    lands.push((fa.fixed + fa.fc) > 0 ? fa.profit : null);
+    lands.push((fa.fixed + fa.adjusted) > 0 ? fa.profit : null);
     prevs.push(bSum(codes, K.PROFIT, '前年', i));
   }
   charts[id] = new Chart(document.getElementById(id), {
@@ -686,7 +665,7 @@ function renderStore(){
   const mid = f.mid;
   const dTotal = daysInMonth(mi);
 
-  const stLabel = f.status === 'fixed' ? '実績（確定）' : f.status === 'forecast' ? '着地予測' : '予算（月中データなし）';
+  const stLabel = f.status === 'fixed' ? '実績（精算書確定）' : '着地予測（予算＋補正）';
 
   el.innerHTML = `
   <div class="fld mb"><select onchange="state.store=this.value;renderStore()">
@@ -752,9 +731,7 @@ function monthInputHtml(f, code, mi, ym, inp){
   </div>`;
   }
 
-  const noteTop = f.status === 'forecast'
-    ? '人が判断する数値を入力すると着地予測に即反映されます。空欄は予算値を使用します。単位: 千円'
-    : 'この月はまだDEPT速報が未取込のため、着地は予算ベース表示です。先に入力しておくと、DEPT速報取込後の着地予測に自動反映されます。単位: 千円';
+  const noteTop = '着地予測は精算書ベース（予算＋補正）で計算します。入力すると即反映、空欄は予算値を使用。DEPT速報は検証用の参考表示で、計算には使用しません。単位: 千円';
 
   return `
   <h2 class="sec">月中入力（${ymd} 着地予測の補正）</h2>
@@ -776,7 +753,6 @@ function drawWaterfall(id, f){
   const d = f.detail;
   const steps = [
     {l:'予算', v:f.bud||0, type:'base'},
-    {l:'粗利要因', v:d.fGross, type:'delta'},
     {l:'人件費', v:d.fLabor, type:'delta'},
     {l:'有給', v:d.fPaid, type:'delta'},
     {l:'経費補正', v:d.fExp, type:'delta'},
@@ -811,11 +787,11 @@ function drawStoreTrend(id, code){
     if(isNippan){
       buds.push(b(code, K.NIPPAN, '予算', i));
       prevs.push(b(code, K.NIPPAN, '前年', i));
-      lands.push(fx.status !== 'nodata' ? fx.nippan : null);
+      lands.push(isManaged(fx) ? fx.nippan : null);
     }else{
       buds.push(fx.bud);
       prevs.push(b(code, K.PROFIT, '前年', i));
-      lands.push(fx.status !== 'nodata' ? fx.profit : null);
+      lands.push(isManaged(fx) ? fx.profit : null);
     }
   }
   charts[id] = new Chart(document.getElementById(id), {
@@ -1057,19 +1033,14 @@ function renderSettings(){
     <div class="flex" style="padding:13px 0"><button class="btn" onclick="saveAssign()">担当を保存</button></div>
   </div>
 
-  <h2 class="sec">着地予測パラメータ</h2>
+  <h2 class="sec">判定パラメータ</h2>
   <div class="card">
     <div class="form-grid">
-      <div class="fld"><label>残期間トレンド係数</label><input type="number" step="0.01" id="p-trend" value="${num(p.trendCoef,1)}"></div>
       <div class="fld"><label>注意ライン（達成率%）</label><input type="number" id="p-warn" value="${num(p.warnLine,100)}"></div>
       <div class="fld"><label>危険ライン（達成率%）</label><input type="number" id="p-danger" value="${num(p.dangerLine,95)}"></div>
-      <div class="fld"><label>粗利率モード</label>
-        <select id="p-gmode"><option value="budget" ${p.grossAdjMode!=='margin'?'selected':''}>予算粗利率を使用</option>
-        <option value="margin" ${p.grossAdjMode==='margin'?'selected':''}>値入率-補正を使用</option></select></div>
-      <div class="fld"><label>値入率→粗利率 補正(pt)</label><input type="number" step="0.1" id="p-m2g" value="${num(p.marginToGross,2)}"></div>
     </div>
     <div class="flex mt"><button class="btn" onclick="saveParamsUi()">パラメータを保存</button></div>
-    <div class="note mt">計算ロジック改善はここで調整。予測と確定実績の乖離を見ながらチューニングしてください。</div>
+    <div class="note mt">着地予測は精算書ベース（予算＋手入力補正）。DEPT速報は検証用表示のみで、着地計算には使用しません。</div>
   </div>
 
   <h2 class="sec">データ取込の手順</h2>
@@ -1159,11 +1130,8 @@ async function saveAssign(){
 }
 async function saveParamsUi(){
   const params = {
-    trendCoef: Number(document.getElementById('p-trend').value) || 1,
     warnLine: Number(document.getElementById('p-warn').value) || 100,
-    dangerLine: Number(document.getElementById('p-danger').value) || 95,
-    grossAdjMode: document.getElementById('p-gmode').value,
-    marginToGross: Number(document.getElementById('p-m2g').value) || 2
+    dangerLine: Number(document.getElementById('p-danger').value) || 95
   };
   Object.assign(DB.params, params);
   await post({action:'saveParams', params}, 'パラメータを保存しました');
@@ -1268,7 +1236,7 @@ function makeDemoData(){
     budget.push([s.code, K.PROFIT, '実績', null, ...actProfit]);
   });
   function daysFor(fy2, mi){ const m = FISCAL[mi]; const y = m >= 10 ? fy2 : fy2 + 1; return new Date(y, m, 0).getDate(); }
-  return { fy, settings:{}, params:{trendCoef:1, warnLine:100, dangerLine:95, grossAdjMode:'budget', marginToGross:2},
+  return { fy, settings:{}, params:{warnLine:100, dangerLine:95},
     stores, scs, assign, budget, mid, inputs, evals:[], ts:new Date().toISOString() };
 }
 </script>
