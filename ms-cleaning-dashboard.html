@@ -377,8 +377,8 @@ const CFG = {
   IMPROVEMENT_DL:'2026-07-20',
   MS_START:      '2026-07-28',
   MS_END:        '2026-08-31',
-  IMG_MAX_W:     320,
-  IMG_QUALITY:   0.35,
+  IMG_MAX_W:     1000,
+  IMG_QUALITY:   0.7,
   CACHE_KEY:     'msCleaningCache_v3',
   CACHE_TTL_MS:  5 * 60 * 1000,
   GAS_URL:       'https://script.google.com/macros/s/AKfycbzEcgQyhtO4wZ4MTOc9HjPnGrYkQUllxzF7TALstWJdqeHxOZzFwqPC-NDv-cAPPdvd7g/exec'
@@ -1679,7 +1679,7 @@ function _fixDriveUrl(u){
   // drive.google.com/uc?export=view は img src 非対応 → thumbnail形式に変換
   if(u&&u.includes('drive.google.com')){
     const m=u.match(/[?&]id=([a-zA-Z0-9_\-]+)/);
-    if(m)return'https://drive.google.com/thumbnail?id='+m[1]+'&sz=w600';
+    if(m)return'https://drive.google.com/thumbnail?id='+m[1]+'&sz=w1000';
   }
   return u;
 }
