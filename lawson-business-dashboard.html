@@ -246,6 +246,8 @@ hr.sep{border:none;border-top:1px solid var(--line);margin:14px 0}
   <section class="view" id="v-store"></section>
   <!-- ===== ④ ランキング ===== -->
   <section class="view" id="v-rank"></section>
+  <!-- ===== ④b DEPT分析 ===== -->
+  <section class="view" id="v-dept"></section>
   <!-- ===== ⑤ 評価 ===== -->
   <section class="view" id="v-eval"></section>
   <!-- ===== ⑥ 設定 ===== -->
@@ -257,6 +259,7 @@ hr.sep{border:none;border-top:1px solid var(--line);margin:14px 0}
   <button data-v="sc"><svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.2"/><path d="M3.5 20c0-3 2.5-5 5.5-5s5.5 2 5.5 5"/><circle cx="17" cy="9" r="2.4"/><path d="M16 15c2.8 0 4.8 1.8 4.8 4.5"/></svg>SC別</button>
   <button data-v="store"><svg viewBox="0 0 24 24"><path d="M4 9l1.5-5h13L20 9M4 9v11h16V9M4 9h16M10 20v-6h4v6"/></svg>店舗</button>
   <button data-v="rank"><svg viewBox="0 0 24 24"><path d="M8 21V10M16 21v-7M12 21V4M12 4l-2.5 2.5M12 4l2.5 2.5"/></svg>順位</button>
+  <button data-v="dept"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="7.5" height="7.5" rx="1"/><rect x="13.5" y="3" width="7.5" height="7.5" rx="1"/><rect x="3" y="13.5" width="7.5" height="7.5" rx="1"/><rect x="13.5" y="13.5" width="7.5" height="7.5" rx="1"/></svg>DEPT</button>
   <button data-v="eval"><svg viewBox="0 0 24 24"><path d="M12 3l2.7 5.6 6.3.8-4.6 4.3 1.2 6.1L12 16.9 6.4 19.8l1.2-6.1L3 9.4l6.3-.8z"/></svg>評価</button>
   <button data-v="settings"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3.2"/><path d="M19 12c0-.5 0-1-.1-1.4l2-1.6-2-3.4-2.4 1a7 7 0 0 0-2.4-1.4L13.7 2h-3.4l-.4 2.6a7 7 0 0 0-2.4 1.4l-2.4-1-2 3.4 2 1.6a7 7 0 0 0 0 2.8l-2 1.6 2 3.4 2.4-1a7 7 0 0 0 2.4 1.4l.4 2.6h3.4l.4-2.6a7 7 0 0 0 2.4-1.4l2.4 1 2-3.4-2-1.6c.1-.4.1-.9.1-1.4z"/></svg>設定</button>
 </nav>
@@ -285,7 +288,7 @@ const EVAL_ITEMS = {
 // ---------- 状態 ----------
 let DB = null;            // GASから取得した生データ
 let IDX = null;           // インデックス済みデータ
-let state = { view:'company', mi:0, sc:null, store:null, rankKey:'profitRate', evalTab:'SC' };
+let state = { view:'company', mi:0, sc:null, store:null, rankKey:'profitRate', evalTab:'SC', deptStore:'all' };
 let charts = {};
 
 const GAS_URL_KEY = 'lbd_gas_url';
@@ -348,6 +351,12 @@ function buildIndex(){
   });
   (DB.inputs||[]).forEach(r => {
     IDX.inp[r[0]+'|'+r[1]] = {labor:r[2], paid:r[3], expAdj:r[4], special:r[5], mh:r[6], memo:r[7]};
+  });
+  IDX.dept = {};
+  (DB.dept||[]).forEach(r => {
+    // [ym, code, 部門, 売上, 前年売上, 売変, 仕入売価, 仕入原価]（千円）
+    (IDX.dept[r[0]] = IDX.dept[r[0]] || []).push(
+      {code:r[1], dept:r[2], sales:num(r[3],0), prev:num(r[4],0), hengaku:num(r[5],0), uri:num(r[6],0), gen:num(r[7],0)});
   });
 }
 
@@ -481,7 +490,7 @@ function renderAll(){
 }
 function renderView(v){
   ({company:renderCompany, sc:renderSc, store:renderStore,
-    rank:renderRank, eval:renderEval, settings:renderSettings})[v]();
+    rank:renderRank, dept:renderDept, eval:renderEval, settings:renderSettings})[v]();
 }
 function destroyCharts(ids){ ids.forEach(id => { if(charts[id]){ charts[id].destroy(); delete charts[id]; } }); }
 
@@ -870,6 +879,81 @@ function renderRank(){
   </table></div>`;
 }
 
+// ---------- ④b DEPT分析（検証用: DEPT速報の部門別データ） ----------
+const KITCHEN_DEPT_NAMES = ['店内厨房'];
+function renderDept(){
+  const el = document.getElementById('v-dept');
+  const mi = state.mi, ym = ymOf(mi);
+  const all = IDX.dept[ym] || [];
+  let sel = state.deptStore || 'all';
+  if(sel !== 'all' && !DB.stores.some(s => s.code === sel)){ sel = 'all'; state.deptStore = 'all'; }
+  const src = sel === 'all' ? all : all.filter(r => r.code === sel);
+
+  // 部門で集計（全社選択時は店舗合算）
+  const map = {};
+  src.forEach(r => {
+    const a = map[r.dept] || (map[r.dept] = {dept:r.dept, sales:0, prev:0, hengaku:0, uri:0, gen:0});
+    a.sales += r.sales; a.prev += r.prev; a.hengaku += r.hengaku; a.uri += r.uri; a.gen += r.gen;
+  });
+  const list = Object.values(map).sort((a, b2) => b2.sales - a.sales);
+  const total    = list.reduce((s,r) => s + r.sales, 0);
+  const totalPrev = list.reduce((s,r) => s + r.prev, 0);
+  const totalHen  = list.reduce((s,r) => s + r.hengaku, 0);
+  const kitchenSales = list.filter(r => KITCHEN_DEPT_NAMES.indexOf(r.dept) >= 0)
+    .reduce((s,r) => s + r.sales, 0);
+  const asOf = dataAsOf(mi);
+  const maxS = Math.max(...list.map(r => Math.max(r.sales, 0)), 1);
+  const monthsWithData = FISCAL.map((m,i) => i).filter(i => (IDX.dept[ymOf(i)]||[]).length);
+
+  const storeSel = `
+  <div class="fld mb"><select onchange="state.deptStore=this.value;renderDept()">
+    <option value="all" ${sel==='all'?'selected':''}>全社（全店舗合算）</option>
+    ${DB.stores.map(s => `<option value="${s.code}" ${s.code===sel?'selected':''}>${s.name}（${storeSc(s.code)}）</option>`).join('')}
+  </select></div>`;
+
+  if(!list.length){
+    el.innerHTML = `${storeSel}
+    <div class="hero">
+      <div class="lbl">DEPT別分析 - ${ym.replace('-','/')}</div>
+      <div class="empty-note" style="padding:18px 0">この月のDEPT速報は未取込です。スプレッドシートの「貼付_DEPT」にITEMDATAを貼り付けて「店利益管理 → DEPT速報取込」を実行してください。</div>
+      ${monthsWithData.length ? `<div class="note">取込済みの月: ${monthsWithData.map(i => ymOf(i).replace('-','/')).join(' / ')}（右上の月セレクタで切替できます）</div>` : ''}
+    </div>`;
+    return;
+  }
+
+  el.innerHTML = `${storeSel}
+  <div class="hero">
+    <div class="lbl">${sel==='all' ? '全社' : storeName(sel)} - ${ym.replace('-','/')} DEPT別売上${asOf ? `（DEPT速報 ${asOf}時点）` : ''}</div>
+    <div class="num">${fmt(total)}<span class="unit"> 千円</span></div>
+    <div class="hero-meta">
+      <span class="chip">前年比 <b class="${totalPrev>0 ? (total/totalPrev>=1?'t-ok':'t-bad') : ''}">${pct(totalPrev>0 ? total/totalPrev*100 : null)}</b></span>
+      <span class="chip">ロス率(売変) <b>${pct(total>0 ? totalHen/total*100 : null)}</b></span>
+      <span class="chip">厨房比率 <b>${pct(total>0 ? kitchenSales/total*100 : null)}</b></span>
+      <span class="chip">部門数 <b>${list.length}</b></span>
+    </div>
+  </div>
+
+  <h2 class="sec">部門別内訳（売上順）</h2>
+  <div class="tbl-wrap"><table>
+    <tr><th>部門</th><th>売上(千円)</th><th>構成比</th><th>前年比</th><th>売変率</th><th>値入率</th><th style="width:110px"></th></tr>
+    ${list.map(r => {
+      const yoy = r.prev > 0 ? r.sales/r.prev*100 : null;
+      const henritsu = r.sales > 0 ? r.hengaku/r.sales*100 : null;
+      const neire = r.uri > 0 ? (r.uri - r.gen)/r.uri*100 : null;
+      const isKit = KITCHEN_DEPT_NAMES.indexOf(r.dept) >= 0;
+      return `<tr>
+        <td><b${isKit ? ' style="color:var(--accent)"' : ''}>${r.dept}</b></td>
+        <td><b>${fmt(r.sales)}</b></td>
+        <td>${pct(total>0 ? r.sales/total*100 : null)}</td>
+        <td class="${yoy===null ? '' : yoy>=100 ? 't-ok' : 't-bad'}">${pct(yoy)}</td>
+        <td>${pct(henritsu)}</td>
+        <td>${pct(neire)}</td>
+        <td><div class="rank-bar" style="width:${Math.max(r.sales,0)/maxS*100}%"></div></td></tr>`;
+    }).join('')}
+  </table></div>
+  <div class="note mt">DEPT速報の月内累計に基づく検証用データです（着地予測の計算には使用しません）。売変率＝売変高÷売上、値入率＝(仕入売価−仕入原価)÷仕入売価。前年比が赤の部門は前年割れです。</div>`;
+}
+
 // ---------- ⑤ 評価 ----------
 function renderEval(){
   const el = document.getElementById('v-eval');
@@ -1192,7 +1276,8 @@ function makeDemoData(){
   const now = new Date();
   const curYm = now.getFullYear() + '-' + String(now.getMonth()+1).padStart(2,'0');
   const fy = 2025;
-  const mid = [], inputs = [];
+  const mid = [], inputs = [], dept = [];
+  const DEMO_DEPTS = ['米飯','調理パン','麺類','店内厨房','デザート','チルド飲料','ソフトドリンク','酒類','菓子','タバコ','雑誌','日用品'];
   stores.forEach((s,si) => {
     const r = rng(si + 7);
     const baseSales = 12000 + Math.round(r() * 9000);      // 月商(千円)
@@ -1229,6 +1314,13 @@ function makeDemoData(){
         mid.push([ym, s.code, days, cum, Math.round(cum * (0.9 + r() * .16)),
           Math.round(cum * (0.015 + r() * .02)), Math.round((grate + 2) * 100) / 100,
           Math.round(cum * (0.04 + r() * .05))]);
+        let rem = cum;
+        DEMO_DEPTS.forEach((d, di) => {
+          const share = di === DEMO_DEPTS.length - 1 ? Math.max(rem, 0) : Math.round(cum * (0.03 + r() * .1));
+          rem -= share;
+          dept.push([ym, s.code, d, share, Math.round(share * (0.85 + r() * .28)),
+            Math.round(share * (0.01 + r() * .03)), Math.round(share * .62), Math.round(share * .42)]);
+        });
         if(r() > .6) inputs.push([ym, s.code, Math.round(budSales[4+i] * .078), Math.round(r()*80), null, r() > .8 ? -150 : null, Math.round(1300 + r()*500), 'デモ入力']);
       }
     }
@@ -1237,7 +1329,7 @@ function makeDemoData(){
   });
   function daysFor(fy2, mi){ const m = FISCAL[mi]; const y = m >= 10 ? fy2 : fy2 + 1; return new Date(y, m, 0).getDate(); }
   return { fy, settings:{}, params:{warnLine:100, dangerLine:95},
-    stores, scs, assign, budget, mid, inputs, evals:[], ts:new Date().toISOString() };
+    stores, scs, assign, budget, mid, dept, inputs, evals:[], ts:new Date().toISOString() };
 }
 </script>
 </body>
