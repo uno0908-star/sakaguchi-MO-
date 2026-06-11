@@ -289,7 +289,9 @@ let state = { view:'company', mi:0, sc:null, store:null, rankKey:'profitRate', e
 let charts = {};
 
 const GAS_URL_KEY = 'lbd_gas_url';
-const gasUrl = () => localStorage.getItem(GAS_URL_KEY) || '';
+// 標準接続先（設定画面で上書き可能）
+const DEFAULT_GAS_URL = 'https://script.google.com/macros/s/AKfycbwIhX0VhNZDLUthbkLNyTUa1ypGx7-oyPrP40a99Zf2MY4iVkJZCqYgSUwT2tX5sgz-FA/exec';
+const gasUrl = () => localStorage.getItem(GAS_URL_KEY) || DEFAULT_GAS_URL;
 
 // ---------- 起動 ----------
 document.addEventListener('DOMContentLoaded', () => {
