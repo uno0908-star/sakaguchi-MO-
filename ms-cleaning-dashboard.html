@@ -630,6 +630,10 @@ function overallProgress() {
 function storeRanking() { return S.stores.map(s=>({...s,prog:storeProgress(s.storeId)})).sort((a,b)=>b.prog.pct-a.prog.pct); }
 function roleStats(storeId) { const subs=storeId?S.submissions.filter(s=>String(s.storeId)===String(storeId)):S.submissions; return ROLES.reduce((acc,r)=>{acc[r]=subs.filter(s=>s.role===r).length;return acc;},{}); }
 function daysLeft() { return Math.ceil((new Date(CFG.IMPROVEMENT_DL+'T23:59:59')-new Date())/86400000); }
+// 日付表示（日本時間）: "2026/6/10"
+function fmtD(v){if(!v)return'';const d=new Date(v);return isNaN(d)?v:d.toLocaleDateString('ja-JP',{timeZone:'Asia/Tokyo'});}
+// 日時表示（日本時間）: "2026/6/10 14:23"
+function fmtDT(v){if(!v)return'';const d=new Date(v);return isNaN(d)?v:d.toLocaleString('ja-JP',{timeZone:'Asia/Tokyo',year:'numeric',month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit'});}
 function isOverdue() { return daysLeft()<0; }
 
 // ============================================================
@@ -653,8 +657,8 @@ function exportCSV() {
     const item=S.cleaningItems.find(i=>String(i.itemId)===String(sub.itemId));
     const setting=S.storeSettings.find(s=>String(s.settingId)===String(sub.settingId));
     return[sub.submissionId,store?.storeName||'',item?.itemName||'',setting?.unitLabel||'',
-      sub.improvedBy,sub.role,sub.improvedDate,sub.comment||'',
-      sub.submittedAt?.substring(0,16)||'',sub.managerConfirmedBy||'',sub.managerConfirmedDate||''
+      sub.improvedBy,sub.role,fmtD(sub.improvedDate),sub.comment||'',
+      fmtDT(sub.submittedAt),sub.managerConfirmedBy||'',fmtD(sub.managerConfirmedDate)
     ].map(v=>'"'+String(v).replace(/"/g,'""')+'"');
   });
   const csv='\uFEFF'+[h,...rows].map(r=>r.join(',')).join('\r\n');
@@ -869,7 +873,7 @@ function renderItemDetail() {
       ${best?`<div class="ssr-detail">
         <div style="display:flex;align-items:flex-start;gap:8px">
           <div style="flex:1">
-            <div class="ssr-meta">改善: ${best.improvedBy}（${best.role}）${best.improvedDate}${best.managerConfirmedBy?` ／ 店長確認: ${best.managerConfirmedBy}`:''}</div>
+            <div class="ssr-meta">改善: ${best.improvedBy}（${best.role}）${fmtD(best.improvedDate)}${best.managerConfirmedBy?` ／ 店長確認: ${best.managerConfirmedBy}`:''}</div>
             ${best.comment?`<div class="ssr-comment">"${best.comment}"</div>`:''}
           </div>
           <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px;flex-shrink:0">
@@ -941,7 +945,7 @@ function renderStoreDetail() {
           <div class="subitem-label">${setting.unitLabel}</div>
           ${isExcl?`<div class="subitem-meta" style="color:var(--blue-dark)">除外設定済</div>`:
             isRej?`<div class="subitem-meta" style="color:var(--red)">⚠ 差し戻し: ${sub.rejectionComment||''}</div>`:
-            isDone?`<div class="subitem-meta">${sub.improvedBy}（${sub.role}）${sub.improvedDate}${isConf?` ／ 店長確認: ${sub.managerConfirmedBy}`:''}</div>`:''}
+            isDone?`<div class="subitem-meta">${sub.improvedBy}（${sub.role}）${fmtD(sub.improvedDate)}${isConf?` ／ 店長確認: ${sub.managerConfirmedBy}`:''}</div>`:''}
         </div>
         ${isExcl?
           (S.isAdmin?`<button class="subitem-action" style="color:var(--blue)" onclick="unExcludeSetting('${sub.submissionId}')">除外解除</button>`:'<span class="subitem-action" style="color:var(--blue);font-size:.72rem">除外</span>'):
@@ -994,7 +998,8 @@ async function showSubDetail(settingId,storeId,itemId) {
   const sid=sub.submissionId;
   const metaHtml=`<div style="font-size:.87rem;line-height:1.75;color:var(--gray-dark)">
     <div><span style="color:var(--gray-text)">改善者: </span><strong>${sub.improvedBy}</strong>（${sub.role}）</div>
-    <div><span style="color:var(--gray-text)">改善日: </span>${sub.improvedDate}</div>
+    <div><span style="color:var(--gray-text)">改善日: </span>${fmtD(sub.improvedDate)}</div>
+    ${sub.submittedAt?`<div><span style="color:var(--gray-text)">送信日時: </span>${fmtDT(sub.submittedAt)}</div>`:''}
     ${sub.comment?`<div style="margin-top:6px;padding:8px 10px;background:var(--gray-bg);border-radius:var(--rs);font-size:.82rem">${sub.comment}</div>`:''}
     ${sub.rejectedBy?
       `<div style="margin-top:10px;padding:10px 12px;background:#fff5f5;border:1px solid var(--red);border-radius:var(--rs);color:var(--red);font-size:.83rem">
@@ -1003,7 +1008,7 @@ async function showSubDetail(settingId,storeId,itemId) {
       </div>
       ${S.isAdmin?`<div style="margin-top:8px"><button class='btn-link' style='color:var(--gray-text);font-size:.78rem' onclick='confirmDeleteSub("${sub.submissionId}")'>この報告を削除して再提出させる →</button></div>`:''}`:
       sub.managerConfirmedBy?
-      `<div style="margin-top:10px;padding:8px 12px;background:var(--green-light);border-radius:var(--rs);color:var(--green);font-weight:700;font-size:.83rem">★ 店長確認済: ${sub.managerConfirmedBy}（${sub.managerConfirmedDate}）</div>
+      `<div style="margin-top:10px;padding:8px 12px;background:var(--green-light);border-radius:var(--rs);color:var(--green);font-weight:700;font-size:.83rem">★ 店長確認済: ${sub.managerConfirmedBy}（${fmtD(sub.managerConfirmedDate)}）</div>
       ${S.isAdmin?`<div style="margin-top:8px"><button class='btn-link' style='color:var(--red)' onclick='openRejectModal("${sub.submissionId}",true)'>⚠ 差し戻す →</button></div>`:''}`:
       `<div style="margin-top:10px"><button class='btn-link' onclick='openManagerModal("${sub.submissionId}")'>店長確認を記録する →</button></div>
       ${S.isAdmin?`<div style="margin-top:2px"><button class='btn-link' style='color:var(--red)' onclick='openRejectModal("${sub.submissionId}",false)'>⚠ 差し戻す →</button></div>`:''}`}
@@ -1236,8 +1241,11 @@ function renderAdmin() {
     </div>
     ${tab==='submissions'?`
       <div class="flex justify-between items-center mb-8">
-        <div class="text-sm text-gray">全${allSubs.length}件</div>
-        <button class="btn-secondary btn-sm" onclick="exportCSV()">📊 CSV出力</button>
+        <div class="text-sm text-gray">全${allSubs.length}件（未確認${allSubs.filter(s=>!s.managerConfirmedBy&&!s.rejectedBy&&s.role!=='除外').length}件）</div>
+        <div style="display:flex;gap:6px">
+          <button class="btn-primary btn-sm" onclick="bulkManagerConfirm()">✔ 一括店長確認</button>
+          <button class="btn-secondary btn-sm" onclick="exportCSV()">📊 CSV出力</button>
+        </div>
       </div>
       ${allSubs.length===0?'<div class="empty-state"><div class="empty-state-icon">📋</div><div>報告はありません</div></div>':
         allSubs.slice(0,50).map(sub=>{
@@ -1247,10 +1255,10 @@ function renderAdmin() {
           return`<div class="submission-item">
             <div class="submission-item-header">
               <div><div class="submission-item-title">${store?.storeName||'?'} ／ ${item?.itemName||'?'}${sub.rejectedBy?` <span style="color:var(--red);font-size:.75rem;font-weight:700">⚠ 差し戻し済</span>`:sub.managerConfirmedBy?` <span style="color:var(--green);font-size:.75rem">★確認済</span>`:''}</div>
-                <div class="submission-item-meta">${setting?.unitLabel||''}<br>${sub.improvedBy}（${sub.role}）${sub.improvedDate}${sub.rejectedBy?` ／ 差し戻し: ${sub.rejectionComment||''}`:sub.managerConfirmedBy?` ／ 店長確認: ${sub.managerConfirmedBy}`:''}</div></div>
+                <div class="submission-item-meta">${setting?.unitLabel||''}<br>${sub.improvedBy}（${sub.role}）改善日:${fmtD(sub.improvedDate)} ／ 送信:${fmtDT(sub.submittedAt)}${sub.rejectedBy?` ／ 差し戻し: ${sub.rejectionComment||''}`:sub.managerConfirmedBy?` ／ 店長確認: ${sub.managerConfirmedBy}`:''}</div></div>
               ${sub.imageData?`<div onclick="loadAndOpenPhoto('${sub.submissionId}')" style="width:44px;height:44px;border-radius:6px;background:var(--gray-bg);display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;overflow:hidden;-webkit-tap-highlight-color:rgba(0,0,0,0.1)" id="pgw-${sub.submissionId}"><span>📷</span></div>`:''}</div>
             <div class="submission-item-actions">
-              ${!sub.rejectedBy&&!sub.managerConfirmedBy?`<button class="btn-secondary btn-sm" onclick="openManagerModal('${sub.submissionId}')">店長確認</button>`:''}
+              ${!sub.rejectedBy&&!sub.managerConfirmedBy?`<button class="btn-secondary btn-sm" onclick="quickManagerConfirm('${sub.submissionId}')">✔ 店長確認</button><button class="btn-secondary btn-sm" title="名前・日付を指定して確認" onclick="openManagerModal('${sub.submissionId}')">✎</button>`:''}
               ${!sub.rejectedBy?`<button class="btn-secondary btn-sm" style="color:var(--red);border-color:var(--red)" onclick="openRejectModal('${sub.submissionId}',${!!sub.managerConfirmedBy})">差し戻し</button>`:''}
               <button class="btn-danger btn-sm" onclick="confirmDeleteSub('${sub.submissionId}')">削除</button>
             </div></div>`;}).join('')}` : ''}
@@ -1401,7 +1409,7 @@ function renderPhotos() {
       <div class="photo-card-body">
         <div class="photo-card-store">${primaryLine}</div>
         <div class="photo-card-item">${secondaryLine}</div>
-        <div class="photo-card-date">${sub.improvedDate} ／ ${sub.improvedBy}</div>
+        <div class="photo-card-date">${fmtD(sub.improvedDate)} ／ ${sub.improvedBy}</div>
       </div>
     </div>`;
   }
@@ -1598,9 +1606,38 @@ function renderNav() {
 function openAdminModal(){document.getElementById('modal-admin-login').classList.remove('hidden');document.getElementById('admin-password-input').value='';document.getElementById('admin-login-error').classList.add('hidden');setTimeout(()=>document.getElementById('admin-password-input').focus(),100);}
 function closeAdminModal(){document.getElementById('modal-admin-login').classList.add('hidden');}
 function doAdminLogin(){const pw=document.getElementById('admin-password-input').value;if(pw===CFG.ADMIN_PASS){S.isAdmin=true;closeAdminModal();navigate('admin');}else document.getElementById('admin-login-error').classList.remove('hidden');}
-function openManagerModal(id){S.pendingManagerId=id;document.getElementById('modal-manager-confirm').classList.remove('hidden');document.getElementById('manager-name-input').value='';document.getElementById('manager-date-input').value=new Date().toISOString().substring(0,10);closeConfirmModal();}
+function openManagerModal(id){S.pendingManagerId=id;document.getElementById('modal-manager-confirm').classList.remove('hidden');document.getElementById('manager-name-input').value=localStorage.getItem('ms_mgr_name')||'';document.getElementById('manager-date-input').value=new Date().toISOString().substring(0,10);closeConfirmModal();}
 function closeManagerModal(){document.getElementById('modal-manager-confirm').classList.add('hidden');S.pendingManagerId=null;}
-async function doManagerConfirm(){const name=document.getElementById('manager-name-input').value.trim(),date=document.getElementById('manager-date-input').value;if(!name||!date){showToast('名前と日付を入力してください','error');return;}try{await apiPost('updateManagerConfirm',{submissionId:S.pendingManagerId,confirmedBy:name,confirmedDate:date});clearCache();await loadData(true);closeManagerModal();renderView();showToast('店長確認を記録しました');}catch(e){showToast('失敗: '+e.message,'error');}}
+// 確認結果をローカルに即反映（毎回の全データ再取得を不要に）
+function _applyManagerConfirmLocal(id,name,date){const sub=S.submissions.find(s=>String(s.submissionId)===String(id));if(sub){sub.managerConfirmedBy=name;sub.managerConfirmedDate=date;}saveCache(S.submissions);_clearSubIdx();}
+async function doManagerConfirm(){const name=document.getElementById('manager-name-input').value.trim(),date=document.getElementById('manager-date-input').value;if(!name||!date){showToast('名前と日付を入力してください','error');return;}try{localStorage.setItem('ms_mgr_name',name);await apiPost('updateManagerConfirm',{submissionId:S.pendingManagerId,confirmedBy:name,confirmedDate:date});_applyManagerConfirmLocal(S.pendingManagerId,name,date);closeManagerModal();renderView();showToast('店長確認を記録しました');}catch(e){showToast('失敗: '+e.message,'error');}}
+// ワンタップ確認: 記憶した名前+今日の日付で即確認（名前未登録時はモーダルへ）
+async function quickManagerConfirm(id){
+  const name=localStorage.getItem('ms_mgr_name');
+  if(!name){openManagerModal(id);return;}
+  const date=new Date().toISOString().substring(0,10);
+  try{
+    await apiPost('updateManagerConfirm',{submissionId:id,confirmedBy:name,confirmedDate:date});
+    _applyManagerConfirmLocal(id,name,date);renderView();showToast(`✔ ${name} で確認しました`);
+  }catch(e){showToast('失敗: '+e.message,'error');}
+}
+// 一括確認: 未確認の報告をまとめて店長確認
+async function bulkManagerConfirm(){
+  let name=prompt('店長確認者の名前',localStorage.getItem('ms_mgr_name')||'');
+  if(name===null)return; name=name.trim();
+  if(!name){showToast('名前を入力してください','error');return;}
+  localStorage.setItem('ms_mgr_name',name);
+  const targets=S.submissions.filter(s=>!s.managerConfirmedBy&&!s.rejectedBy&&s.role!=='除外');
+  if(!targets.length){showToast('未確認の報告はありません');return;}
+  if(!confirm(`未確認 ${targets.length}件 をまとめて店長確認します。\n確認者: ${name}\n\nよろしいですか？`))return;
+  const date=new Date().toISOString().substring(0,10);
+  showToast(`一括確認中...（${targets.length}件）`);
+  let ok=0;
+  for(const s of targets){
+    try{await apiPost('updateManagerConfirm',{submissionId:s.submissionId,confirmedBy:name,confirmedDate:date});_applyManagerConfirmLocal(s.submissionId,name,date);ok++;}catch(e){}
+  }
+  renderView();showToast(ok===targets.length?`✔ ${ok}件すべて確認しました`:`${ok}/${targets.length}件確認（一部失敗）`,'success');
+}
 function showConfirmModal(title,msg,okCb,okLbl,cancelLbl){document.getElementById('modal-confirm').classList.remove('hidden');document.getElementById('confirm-title').textContent=title;document.getElementById('confirm-msg').innerHTML=msg;const btn=document.getElementById('confirm-ok-btn');if(okCb){btn.style.display='';btn.textContent=okLbl||'実行する';S.confirmCallback=okCb;}else{btn.style.display='none';S.confirmCallback=null;}document.querySelectorAll('#modal-confirm .btn-secondary').forEach(b=>b.textContent=cancelLbl||'キャンセル');}
 function closeConfirmModal(){document.getElementById('modal-confirm').classList.add('hidden');S.confirmCallback=null;}
 function confirmCancel(){closeConfirmModal();}
