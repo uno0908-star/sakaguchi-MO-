@@ -1,0 +1,1183 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>LAWSON Business Dashboard | 店利益管理</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=Noto+Sans+JP:wght@400;500;700;900&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+<style>
+:root{
+  --bg:#070c18; --bg2:#0b1224; --panel:rgba(18,28,54,.72); --panel2:rgba(26,38,70,.55);
+  --line:rgba(120,160,255,.14); --line2:rgba(120,160,255,.28);
+  --txt:#e8eefc; --sub:#8da2c8; --dim:#5a6b8f;
+  --accent:#38e1ff; --accent2:#6f8bff;
+  --ok:#2dd4a7; --warn:#ffc24b; --bad:#ff5d73;
+  --r:16px;
+}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html{font-size:15px}
+body{
+  font-family:'Inter','Noto Sans JP',sans-serif;background:var(--bg);color:var(--txt);
+  min-height:100vh;padding-bottom:84px;
+  background-image:
+    radial-gradient(900px 500px at 85% -10%,rgba(56,120,255,.16),transparent 60%),
+    radial-gradient(700px 420px at -10% 30%,rgba(56,225,255,.07),transparent 60%);
+  background-attachment:fixed;
+}
+/* ---------- header ---------- */
+header{
+  position:sticky;top:0;z-index:50;display:flex;align-items:center;gap:12px;
+  padding:12px 18px;background:rgba(7,12,24,.82);backdrop-filter:blur(14px);
+  border-bottom:1px solid var(--line);
+}
+.logo{display:flex;flex-direction:column;line-height:1.1;min-width:0}
+.logo .t1{font-weight:800;font-size:1.02rem;letter-spacing:.04em;white-space:nowrap}
+.logo .t1 b{color:var(--accent)}
+.logo .t2{font-size:.62rem;color:var(--dim);letter-spacing:.28em;text-transform:uppercase}
+.head-right{margin-left:auto;display:flex;align-items:center;gap:8px}
+.fy-badge{
+  font-size:.7rem;font-weight:700;color:var(--accent);border:1px solid rgba(56,225,255,.4);
+  border-radius:99px;padding:4px 12px;letter-spacing:.06em;white-space:nowrap;cursor:pointer;
+  background:rgba(56,225,255,.06);
+}
+select.month-sel{
+  background:var(--bg2);color:var(--txt);border:1px solid var(--line2);border-radius:10px;
+  padding:7px 10px;font-size:.85rem;font-weight:700;font-family:inherit;outline:none;
+}
+.icon-btn{
+  width:36px;height:36px;border-radius:10px;border:1px solid var(--line2);background:var(--bg2);
+  color:var(--sub);display:grid;place-items:center;cursor:pointer;flex:none;
+}
+.icon-btn:active{transform:scale(.94)}
+/* ---------- nav ---------- */
+nav{
+  position:fixed;bottom:0;left:0;right:0;z-index:60;display:flex;
+  background:rgba(8,13,26,.92);backdrop-filter:blur(16px);border-top:1px solid var(--line);
+  padding:6px 4px calc(6px + env(safe-area-inset-bottom));
+}
+nav button{
+  flex:1;background:none;border:none;color:var(--dim);font-family:inherit;cursor:pointer;
+  display:flex;flex-direction:column;align-items:center;gap:3px;padding:6px 0;font-size:.6rem;
+  font-weight:700;letter-spacing:.02em;
+}
+nav button svg{width:21px;height:21px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+nav button.on{color:var(--accent)}
+nav button.on svg{filter:drop-shadow(0 0 6px rgba(56,225,255,.7))}
+/* ---------- layout ---------- */
+main{max-width:1180px;margin:0 auto;padding:16px 14px 30px}
+.view{display:none;animation:fadein .25s ease}
+.view.on{display:block}
+@keyframes fadein{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+h2.sec{
+  font-size:.72rem;font-weight:800;color:var(--sub);letter-spacing:.22em;text-transform:uppercase;
+  margin:22px 2px 10px;display:flex;align-items:center;gap:10px;
+}
+h2.sec::after{content:'';flex:1;height:1px;background:var(--line)}
+.grid{display:grid;gap:12px}
+.g2{grid-template-columns:repeat(2,1fr)}
+.g3{grid-template-columns:repeat(3,1fr)}
+.g4{grid-template-columns:repeat(4,1fr)}
+@media(max-width:760px){.g4{grid-template-columns:repeat(2,1fr)}.g3{grid-template-columns:repeat(2,1fr)}}
+.card{
+  background:var(--panel);border:1px solid var(--line);border-radius:var(--r);
+  padding:16px;backdrop-filter:blur(8px);position:relative;overflow:hidden;
+}
+.card .lbl{font-size:.68rem;font-weight:700;color:var(--sub);letter-spacing:.08em;margin-bottom:6px}
+.card .big{font-size:1.7rem;font-weight:800;letter-spacing:-.01em;font-variant-numeric:tabular-nums}
+.card .unit{font-size:.7rem;color:var(--dim);font-weight:600;margin-left:3px}
+.card .sub{font-size:.7rem;color:var(--sub);margin-top:5px;font-variant-numeric:tabular-nums}
+/* hero */
+.hero{
+  border:1px solid rgba(56,225,255,.25);border-radius:20px;padding:22px 20px;
+  background:linear-gradient(150deg,rgba(20,40,86,.85),rgba(10,18,38,.85));
+  position:relative;overflow:hidden;
+}
+.hero::before{
+  content:'';position:absolute;inset:-40% -20% auto auto;width:340px;height:340px;border-radius:50%;
+  background:radial-gradient(circle,rgba(56,225,255,.18),transparent 65%);pointer-events:none;
+}
+.hero .lbl{font-size:.72rem;font-weight:800;color:var(--accent);letter-spacing:.2em}
+.hero .num{font-size:3.1rem;font-weight:800;letter-spacing:-.03em;line-height:1.05;font-variant-numeric:tabular-nums;margin:6px 0 2px}
+.hero .num .unit{font-size:1rem;color:var(--sub);font-weight:700}
+.hero-meta{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+.chip{
+  font-size:.72rem;font-weight:700;padding:5px 11px;border-radius:99px;
+  background:rgba(255,255,255,.05);border:1px solid var(--line2);color:var(--sub);
+  font-variant-numeric:tabular-nums;
+}
+.chip b{color:var(--txt)}
+/* gauge */
+.gauge-wrap{display:flex;align-items:center;gap:18px;flex-wrap:wrap}
+.gauge{position:relative;width:128px;height:128px;flex:none}
+.gauge svg{transform:rotate(-90deg)}
+.gauge .gv{position:absolute;inset:0;display:grid;place-items:center;font-weight:800;font-size:1.45rem;font-variant-numeric:tabular-nums}
+.gauge .gv small{font-size:.65rem;color:var(--sub);font-weight:700;display:block;text-align:center}
+/* status */
+.dot{width:9px;height:9px;border-radius:50%;display:inline-block;flex:none}
+.s-ok{background:var(--ok);box-shadow:0 0 8px var(--ok)}
+.s-warn{background:var(--warn);box-shadow:0 0 8px var(--warn)}
+.s-bad{background:var(--bad);box-shadow:0 0 8px var(--bad)}
+.s-na{background:var(--dim)}
+.t-ok{color:var(--ok)}.t-warn{color:var(--warn)}.t-bad{color:var(--bad)}.t-na{color:var(--dim)}
+/* store tiles / heatmap */
+.tiles{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:9px}
+.tile{
+  border-radius:13px;padding:11px 12px;cursor:pointer;border:1px solid var(--line);
+  background:var(--panel2);transition:transform .12s;
+}
+.tile:active{transform:scale(.97)}
+.tile .nm{font-size:.74rem;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tile .vl{font-size:1.06rem;font-weight:800;margin-top:3px;font-variant-numeric:tabular-nums}
+.tile .mt{font-size:.62rem;color:var(--sub);margin-top:2px;display:flex;align-items:center;gap:5px}
+/* alert list */
+.alert-row{
+  display:flex;align-items:center;gap:11px;padding:11px 13px;border-radius:12px;cursor:pointer;
+  background:rgba(255,93,115,.07);border:1px solid rgba(255,93,115,.25);margin-bottom:8px;
+}
+.alert-row .nm{font-weight:700;font-size:.86rem}
+.alert-row .ds{font-size:.7rem;color:var(--sub);margin-top:1px}
+.alert-row .vl{margin-left:auto;font-weight:800;color:var(--bad);font-variant-numeric:tabular-nums;font-size:.95rem}
+.empty-note{color:var(--dim);font-size:.78rem;padding:14px;text-align:center}
+/* tabs / pills */
+.pills{display:flex;gap:7px;overflow-x:auto;padding:2px;margin-bottom:13px;scrollbar-width:none}
+.pills::-webkit-scrollbar{display:none}
+.pill{
+  flex:none;padding:8px 16px;border-radius:99px;border:1px solid var(--line2);cursor:pointer;
+  background:var(--bg2);color:var(--sub);font-size:.78rem;font-weight:700;font-family:inherit;white-space:nowrap;
+}
+.pill.on{background:linear-gradient(135deg,rgba(56,225,255,.18),rgba(111,139,255,.18));color:var(--accent);border-color:rgba(56,225,255,.5)}
+/* table */
+.tbl-wrap{overflow-x:auto;border-radius:var(--r);border:1px solid var(--line)}
+table{width:100%;border-collapse:collapse;font-size:.78rem;min-width:560px;background:var(--panel)}
+th{
+  text-align:right;padding:10px 11px;color:var(--sub);font-size:.66rem;font-weight:700;
+  letter-spacing:.05em;border-bottom:1px solid var(--line2);white-space:nowrap;background:rgba(10,16,32,.6);
+}
+th:first-child,td:first-child{text-align:left;position:sticky;left:0;background:var(--bg2)}
+td{padding:9px 11px;text-align:right;border-bottom:1px solid var(--line);font-variant-numeric:tabular-nums;white-space:nowrap}
+tr:last-child td{border-bottom:none}
+tr.clickable{cursor:pointer}
+tr.clickable:hover td{background:rgba(56,225,255,.04)}
+.rank-bar{height:5px;border-radius:3px;background:linear-gradient(90deg,var(--accent2),var(--accent));min-width:2px}
+/* charts */
+.chart-card{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);padding:14px}
+.chart-card h3{font-size:.78rem;font-weight:700;color:var(--sub);margin-bottom:8px}
+.chart-box{position:relative;height:240px}
+@media(max-width:560px){.chart-box{height:200px}}
+/* forms */
+.form-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:11px}
+.fld label{display:block;font-size:.66rem;font-weight:700;color:var(--sub);margin-bottom:5px;letter-spacing:.04em}
+.fld input,.fld select,.fld textarea{
+  width:100%;background:var(--bg2);border:1px solid var(--line2);border-radius:10px;color:var(--txt);
+  padding:10px 11px;font-size:.9rem;font-family:inherit;outline:none;font-variant-numeric:tabular-nums;
+}
+.fld input:focus,.fld select:focus{border-color:var(--accent)}
+.btn{
+  border:none;border-radius:11px;padding:11px 22px;font-family:inherit;font-weight:800;font-size:.84rem;
+  cursor:pointer;background:linear-gradient(135deg,#19c8e8,#4f6dff);color:#04101e;letter-spacing:.03em;
+}
+.btn:active{transform:scale(.97)}
+.btn.ghost{background:var(--bg2);color:var(--sub);border:1px solid var(--line2)}
+.btn:disabled{opacity:.5;cursor:default}
+/* sc assign matrix */
+.assign-row{display:flex;align-items:center;gap:8px;padding:8px 10px;border-bottom:1px solid var(--line);flex-wrap:wrap}
+.assign-row .nm{width:150px;font-size:.78rem;font-weight:700;flex:none}
+.assign-row label{
+  display:flex;align-items:center;gap:4px;font-size:.7rem;color:var(--sub);cursor:pointer;
+  padding:4px 9px;border-radius:8px;border:1px solid var(--line);
+}
+.assign-row label:has(input:checked){border-color:rgba(56,225,255,.6);color:var(--accent);background:rgba(56,225,255,.07)}
+.assign-row input{accent-color:var(--accent)}
+/* toast */
+#toast{
+  position:fixed;left:50%;bottom:96px;transform:translateX(-50%) translateY(20px);z-index:99;
+  background:#0e1930;border:1px solid rgba(56,225,255,.45);color:var(--txt);padding:11px 22px;
+  border-radius:99px;font-size:.8rem;font-weight:700;opacity:0;transition:.25s;pointer-events:none;
+  box-shadow:0 8px 30px rgba(0,0,0,.5);white-space:nowrap;
+}
+#toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+/* loading */
+#loader{position:fixed;inset:0;z-index:200;background:var(--bg);display:grid;place-items:center;transition:opacity .4s}
+#loader.hide{opacity:0;pointer-events:none}
+.spin{
+  width:46px;height:46px;border-radius:50%;border:3px solid rgba(56,225,255,.15);
+  border-top-color:var(--accent);animation:sp 1s linear infinite;
+}
+@keyframes sp{to{transform:rotate(360deg)}}
+.note{font-size:.72rem;color:var(--dim);line-height:1.7}
+.demo-banner{
+  font-size:.7rem;font-weight:700;color:var(--warn);background:rgba(255,194,75,.08);
+  border:1px solid rgba(255,194,75,.35);border-radius:10px;padding:8px 13px;margin-bottom:13px;
+}
+.mb{margin-bottom:12px}.mt{margin-top:12px}
+.flex{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.right{margin-left:auto}
+hr.sep{border:none;border-top:1px solid var(--line);margin:14px 0}
+</style>
+</head>
+<body>
+
+<div id="loader"><div style="text-align:center"><div class="spin" style="margin:0 auto 14px"></div><div style="font-size:.72rem;color:var(--sub);letter-spacing:.2em">LOADING</div></div></div>
+
+<header>
+  <div class="logo">
+    <span class="t1">LAWSON <b>BUSINESS</b></span>
+    <span class="t2">Profit Control</span>
+  </div>
+  <div class="head-right">
+    <span class="fy-badge" id="fyBadge" onclick="go('settings')">FY----</span>
+    <select class="month-sel" id="monthSel" onchange="state.mi=+this.value;renderAll()"></select>
+    <button class="icon-btn" onclick="loadData(true)" title="更新">
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 12a9 9 0 1 1-2.6-6.3"/><path d="M21 3v6h-6"/></svg>
+    </button>
+  </div>
+</header>
+
+<main>
+  <div id="demoBanner" class="demo-banner" style="display:none">デモデータ表示中 - 設定画面でGAS URLを登録すると実データに切り替わります</div>
+
+  <!-- ===== ① 全社 ===== -->
+  <section class="view" id="v-company"></section>
+  <!-- ===== ② SC別 ===== -->
+  <section class="view" id="v-sc"></section>
+  <!-- ===== ③ 店舗別 ===== -->
+  <section class="view" id="v-store"></section>
+  <!-- ===== ④ ランキング ===== -->
+  <section class="view" id="v-rank"></section>
+  <!-- ===== ⑤ 評価 ===== -->
+  <section class="view" id="v-eval"></section>
+  <!-- ===== ⑥ 設定 ===== -->
+  <section class="view" id="v-settings"></section>
+</main>
+
+<nav id="nav">
+  <button data-v="company" class="on"><svg viewBox="0 0 24 24"><path d="M3 21h18M5 21V8l7-5 7 5v13M9 21v-6h6v6"/></svg>全社</button>
+  <button data-v="sc"><svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.2"/><path d="M3.5 20c0-3 2.5-5 5.5-5s5.5 2 5.5 5"/><circle cx="17" cy="9" r="2.4"/><path d="M16 15c2.8 0 4.8 1.8 4.8 4.5"/></svg>SC別</button>
+  <button data-v="store"><svg viewBox="0 0 24 24"><path d="M4 9l1.5-5h13L20 9M4 9v11h16V9M4 9h16M10 20v-6h4v6"/></svg>店舗</button>
+  <button data-v="rank"><svg viewBox="0 0 24 24"><path d="M8 21V10M16 21v-7M12 21V4M12 4l-2.5 2.5M12 4l2.5 2.5"/></svg>順位</button>
+  <button data-v="eval"><svg viewBox="0 0 24 24"><path d="M12 3l2.7 5.6 6.3.8-4.6 4.3 1.2 6.1L12 16.9 6.4 19.8l1.2-6.1L3 9.4l6.3-.8z"/></svg>評価</button>
+  <button data-v="settings"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3.2"/><path d="M19 12c0-.5 0-1-.1-1.4l2-1.6-2-3.4-2.4 1a7 7 0 0 0-2.4-1.4L13.7 2h-3.4l-.4 2.6a7 7 0 0 0-2.4 1.4l-2.4-1-2 3.4 2 1.6a7 7 0 0 0 0 2.8l-2 1.6 2 3.4 2.4-1a7 7 0 0 0 2.4 1.4l.4 2.6h3.4l.4-2.6a7 7 0 0 0 2.4-1.4l2.4 1 2-3.4-2-1.6c.1-.4.1-.9.1-1.4z"/></svg>設定</button>
+</nav>
+
+<div id="toast"></div>
+
+<script>
+/* ============================================================
+   LAWSON Business Dashboard - フロントエンド
+   データ: GAS WebApp (gas-business-dashboard.gs) と連携
+   ============================================================ */
+
+// ---------- 定数 ----------
+const FISCAL = [10,11,12,1,2,3,4,5,6,7,8,9];        // 会計月順
+const K = {                                          // 科目名
+  NIPPAN:'平均日販', GROSS:'総粗利益高', GRATE:'総粗利率', FC:'フランチャイジー収入',
+  PROFIT:'店利益', SALES:'商品売上高', CHARGE:'ローソンチャージ',
+  LABOR:'[ 人 件 費 小 計 ]', PART:'パート給与', EXP:'[ その他経費小計 ]',
+  OPPROFIT:'【 営 業 利 益 】'
+};
+const EVAL_ITEMS = {
+  SI:    ['QSC','衛生','5S','認定店長育成'],
+  TENCHO:['QSC','人材育成']
+};
+
+// ---------- 状態 ----------
+let DB = null;            // GASから取得した生データ
+let IDX = null;           // インデックス済みデータ
+let state = { view:'company', mi:0, sc:null, store:null, rankKey:'profitRate', evalTab:'SC' };
+let charts = {};
+
+const GAS_URL_KEY = 'lbd_gas_url';
+const gasUrl = () => localStorage.getItem(GAS_URL_KEY) || '';
+
+// ---------- 起動 ----------
+document.addEventListener('DOMContentLoaded', () => {
+  document.querySelectorAll('#nav button').forEach(b => b.onclick = () => go(b.dataset.v));
+  loadData(false);
+});
+
+function go(v){
+  state.view = v;
+  document.querySelectorAll('#nav button').forEach(b => b.classList.toggle('on', b.dataset.v === v));
+  document.querySelectorAll('.view').forEach(s => s.classList.toggle('on', s.id === 'v-' + v));
+  renderView(v);
+  window.scrollTo(0,0);
+}
+
+// ---------- データ取得 ----------
+async function loadData(isRefresh){
+  if(isRefresh) toast('更新中...');
+  try{
+    if(gasUrl()){
+      const res = await fetch(gasUrl() + '?action=dashboard', {redirect:'follow'});
+      const data = await res.json();
+      if(data.error) throw new Error(data.error);
+      DB = data;
+      document.getElementById('demoBanner').style.display = 'none';
+    }else{
+      DB = makeDemoData();
+      document.getElementById('demoBanner').style.display = 'block';
+    }
+    buildIndex();
+    initMonthSelector();
+    renderAll();
+    if(isRefresh) toast('更新しました');
+  }catch(err){
+    console.error(err);
+    toast('取得エラー: ' + err.message);
+    if(!DB){ DB = makeDemoData(); buildIndex(); initMonthSelector(); renderAll();
+      document.getElementById('demoBanner').style.display = 'block'; }
+  }finally{
+    document.getElementById('loader').classList.add('hide');
+  }
+}
+
+// ---------- インデックス構築 ----------
+function buildIndex(){
+  IDX = { b:{}, mid:{}, inp:{}, evals:DB.evals || [] };
+  (DB.budget||[]).forEach(r => {
+    // [code, 科目, 区分, 年間, 月12(10月→9月)]
+    IDX.b[r[0]+'|'+r[1]+'|'+r[2]] = r.slice(3);  // [年間, m0..m11]
+  });
+  (DB.mid||[]).forEach(r => {
+    // [ym, code, days, cum, prevCum, hengaku, margin, kitchen]
+    IDX.mid[r[0]+'|'+r[1]] = {days:r[2], cum:r[3], prevCum:r[4], hengaku:r[5], margin:r[6], kitchen:r[7]};
+  });
+  (DB.inputs||[]).forEach(r => {
+    IDX.inp[r[0]+'|'+r[1]] = {labor:r[2], paid:r[3], expAdj:r[4], special:r[5], mh:r[6], memo:r[7]};
+  });
+}
+
+// b(code, 科目, 区分, mi)  mi=-1で年間
+function b(code, komoku, kind, mi){
+  const a = IDX.b[code+'|'+komoku+'|'+kind];
+  if(!a) return null;
+  const v = mi === -1 ? a[0] : a[mi+1];
+  return (v === null || v === undefined || v === '') ? null : Number(v);
+}
+function bSum(codes, komoku, kind, mi){
+  let s = 0, has = false;
+  codes.forEach(c => { const v = b(c, komoku, kind, mi); if(v !== null){ s += v; has = true; } });
+  return has ? s : null;
+}
+
+// ---------- 会計カレンダー ----------
+function ymOf(mi){ const m = FISCAL[mi]; return (m >= 10 ? DB.fy : DB.fy + 1) + '-' + String(m).padStart(2,'0'); }
+function monthLabel(mi){ return FISCAL[mi] + '月'; }
+function daysInMonth(mi){ const m = FISCAL[mi]; const y = m >= 10 ? DB.fy : DB.fy + 1; return new Date(y, m, 0).getDate(); }
+function currentMi(){
+  const now = new Date(); const ym = now.getFullYear() + '-' + String(now.getMonth()+1).padStart(2,'0');
+  for(let i = 0; i < 12; i++) if(ymOf(i) === ym) return i;
+  // 期間外: データのある最後の月
+  for(let i = 11; i >= 0; i--){
+    const ym2 = ymOf(i);
+    if((DB.mid||[]).some(r => r[0] === ym2)) return i;
+    if(DB.stores.some(s => b(s.code, K.SALES, '実績', i) !== null)) return i;
+  }
+  return 0;
+}
+function initMonthSelector(){
+  const sel = document.getElementById('monthSel');
+  sel.innerHTML = FISCAL.map((m,i) => `<option value="${i}">${ymOf(i).replace('-','/')}</option>`).join('');
+  state.mi = currentMi();
+  sel.value = state.mi;
+  document.getElementById('fyBadge').textContent = 'FY' + DB.fy + (DB.fy < 2026 ? ' TEST' : '');
+}
+
+// ============================================================
+//  着地予測エンジン v1（差分方式）
+//  予測 = 予算店利益 + 粗利要因 - 人件費要因 - 有給 - 経費補正 + 特殊要因
+//  ※ 係数は予測パラメータシートで調整可能（ロジック改善前提）
+// ============================================================
+function forecast(code, mi){
+  const ym = ymOf(mi);
+  const p = DB.params || {};
+  const budProfit = b(code, K.PROFIT, '予算', mi);
+  const actProfit = b(code, K.PROFIT, '実績', mi);
+  const budSales  = b(code, K.SALES, '予算', mi);
+  const budGross  = b(code, K.GROSS, '予算', mi);
+  const budGRate  = b(code, K.GRATE, '予算', mi);
+  const budLabor  = b(code, K.LABOR, '予算', mi);
+  const budCharge = b(code, K.CHARGE, '予算', mi);
+  const mid = IDX.mid[ym+'|'+code];
+  const inp = IDX.inp[ym+'|'+code] || {};
+  const dTotal = daysInMonth(mi);
+
+  // --- 確定月（実績あり）---
+  if(actProfit !== null){
+    const actSales = b(code, K.SALES, '実績', mi);
+    return { status:'fixed', profit:actProfit, sales:actSales, bud:budProfit, budSales,
+      rate: budProfit ? actProfit/budProfit*100 : null,
+      nippan: actSales !== null ? actSales/dTotal : null, detail:null, mid, inp };
+  }
+  // --- データなし → 予算ベース ---
+  if(!mid || !mid.cum){
+    return { status:'nodata', profit:budProfit, sales:budSales, bud:budProfit, budSales,
+      rate: budProfit ? 100 : null,
+      nippan: budSales !== null ? budSales/dTotal : null, detail:null, mid:null, inp };
+  }
+  // --- 月中予測 ---
+  const trendCoef = num(p.trendCoef, 1.0);
+  const prevMonthSales = b(code, K.SALES, '前年', mi);   // 前年同月の月商(千円)
+  let salesFC;
+  if(prevMonthSales !== null && mid.prevCum > 0){
+    const prevRemain = Math.max(prevMonthSales - mid.prevCum, 0);
+    const yoy = mid.cum / mid.prevCum;
+    salesFC = mid.cum + prevRemain * yoy * trendCoef;
+  }else{
+    const remain = Math.max(dTotal - mid.days, 0);
+    salesFC = mid.cum + (mid.days > 0 ? mid.cum / mid.days : 0) * remain;
+  }
+  // 粗利率
+  let gRate = budGRate;
+  if(String(p.grossAdjMode) === 'margin' && mid.margin){
+    gRate = mid.margin - num(p.marginToGross, 2.0);
+  }
+  const grossFC = gRate !== null ? salesFC * gRate / 100 : (budGross || 0);
+  const chargeRate = (budCharge !== null && budGross) ? budCharge / budGross : 0.5;
+
+  const fGross  = (budGross !== null) ? (grossFC - budGross) * (1 - chargeRate) : 0;
+  const fLabor  = (inp.labor !== null && inp.labor !== undefined && budLabor !== null) ? -(inp.labor - budLabor) : 0;
+  const fPaid   = -(num(inp.paid, 0));
+  const fExp    = -(num(inp.expAdj, 0));
+  const fSpec   = num(inp.special, 0);
+  const profitFC = (budProfit || 0) + fGross + fLabor + fPaid + fExp + fSpec;
+
+  return {
+    status:'forecast', profit:profitFC, sales:salesFC, bud:budProfit, budSales,
+    rate: budProfit ? profitFC/budProfit*100 : null,
+    nippan: salesFC/dTotal,
+    detail:{ fGross, fLabor, fPaid, fExp, fSpec, grossFC, gRate, chargeRate, salesFC,
+      progress: mid.days/dTotal*100, yoy: mid.prevCum > 0 ? mid.cum/mid.prevCum*100 : null },
+    mid, inp
+  };
+}
+
+// 集計予測（全社/SC）
+function forecastAgg(codes, mi){
+  let profit = 0, bud = 0, sales = 0, budSales = 0, fixed = 0, fc = 0, nodata = 0;
+  codes.forEach(c => {
+    const f = forecast(c, mi);
+    profit += f.profit || 0; bud += f.bud || 0;
+    sales += f.sales || 0; budSales += f.budSales || 0;
+    if(f.status === 'fixed') fixed++; else if(f.status === 'forecast') fc++; else nodata++;
+  });
+  return { profit, bud, sales, budSales, rate: bud ? profit/bud*100 : null, fixed, fc, nodata };
+}
+
+function statusOf(rate){
+  const p = DB.params || {};
+  if(rate === null) return 'na';
+  if(rate >= num(p.warnLine, 100)) return 'ok';
+  if(rate >= num(p.dangerLine, 95)) return 'warn';
+  return 'bad';
+}
+const ST_LBL = {ok:'順調', warn:'注意', bad:'危険', na:'-'};
+
+// ---------- SC ----------
+function scStores(sc){ return DB.stores.filter(s => DB.assign[s.code] === sc).map(s => s.code); }
+function allCodes(){ return DB.stores.map(s => s.code); }
+function storeName(code){ const s = DB.stores.find(x => x.code === code); return s ? s.name : code; }
+function storeSc(code){ return DB.assign[code] || '未設定'; }
+
+// ============================================================
+//  画面描画
+// ============================================================
+function renderAll(){
+  document.getElementById('monthSel').value = state.mi;
+  renderView(state.view);
+}
+function renderView(v){
+  ({company:renderCompany, sc:renderSc, store:renderStore,
+    rank:renderRank, eval:renderEval, settings:renderSettings})[v]();
+}
+function destroyCharts(ids){ ids.forEach(id => { if(charts[id]){ charts[id].destroy(); delete charts[id]; } }); }
+
+// ---------- ① 全社 ----------
+function renderCompany(){
+  const el = document.getElementById('v-company');
+  const mi = state.mi, codes = allCodes();
+  const f = forecastAgg(codes, mi);
+  const st = statusOf(f.rate);
+
+  // 年間: 確定実績累計 + 予測 + 未来予算
+  let annProfit = 0, annBud = 0;
+  for(let i = 0; i < 12; i++){
+    const fa = forecastAgg(codes, i);
+    annProfit += fa.profit; annBud += fa.bud;
+  }
+  // 危険店舗
+  const dangers = codes.map(c => ({c, f:forecast(c, mi)}))
+    .filter(x => statusOf(x.f.rate) === 'bad' && x.f.status !== 'nodata')
+    .sort((a, b2) => (a.f.rate||0) - (b2.f.rate||0));
+
+  const statusMix = `確定 ${f.fixed} / 予測 ${f.fc} / 未着地 ${f.nodata}`;
+
+  el.innerHTML = `
+  <div class="hero">
+    <div class="lbl">店利益着地見込 - ${monthLabel(mi)} 全社</div>
+    <div class="num">${fmt(f.profit)}<span class="unit"> 千円</span></div>
+    <div class="hero-meta">
+      <span class="chip">予算 <b>${fmt(f.bud)}</b></span>
+      <span class="chip">差異 <b class="${f.profit-f.bud>=0?'t-ok':'t-bad'}">${fmtSign(f.profit-f.bud)}</b></span>
+      <span class="chip">達成率 <b class="t-${st}">${pct(f.rate)}</b></span>
+      <span class="chip">${statusMix}</span>
+    </div>
+  </div>
+
+  <div class="grid g4 mt">
+    ${kpiCard('売上着地', fmt(f.sales), '千円', '予算 '+fmt(f.budSales)+' / '+pct(f.budSales?f.sales/f.budSales*100:null))}
+    ${kpiCard('日販着地(平均)', fmt(f.sales/daysInMonth(mi)/codes.length, 0), '千円', '全店平均')}
+    ${kpiCard('年間店利益見込', fmt(annProfit), '千円', '年間予算 '+fmt(annBud)+' / '+pct(annBud?annProfit/annBud*100:null))}
+    ${kpiCard('危険店舗', dangers.length + ' <span class="unit">店</span>', '', '達成率'+num((DB.params||{}).dangerLine,95)+'%未満')}
+  </div>
+
+  <h2 class="sec">危険店舗アラート</h2>
+  ${dangers.length ? dangers.map(x => `
+    <div class="alert-row" onclick="openStore('${x.c}')">
+      <span class="dot s-bad"></span>
+      <div><div class="nm">${storeName(x.c)}</div><div class="ds">${storeSc(x.c)} / 着地 ${fmt(x.f.profit)}千円 (予算 ${fmt(x.f.bud)})</div></div>
+      <div class="vl">${pct(x.f.rate)}</div>
+    </div>`).join('')
+    : '<div class="empty-note">危険水準の店舗はありません</div>'}
+
+  <h2 class="sec">月次推移（全社店利益）</h2>
+  <div class="chart-card"><div class="chart-box"><canvas id="chMonthly"></canvas></div></div>
+
+  <h2 class="sec">店舗ヒートマップ（${monthLabel(mi)} 達成率）</h2>
+  <div class="tiles">
+    ${codes.map(c => { const fx = forecast(c, mi); const s2 = statusOf(fx.rate);
+      return `<div class="tile" onclick="openStore('${c}')" style="border-color:${tileColor(s2,.45)};background:${tileColor(s2,.07)}">
+        <div class="nm">${storeName(c)}</div>
+        <div class="vl t-${s2}">${pct(fx.rate)}</div>
+        <div class="mt"><span class="dot s-${s2}"></span>${fx.status==='fixed'?'確定':fx.status==='forecast'?'予測':'予算'} ${fmt(fx.profit)}千円</div>
+      </div>`; }).join('')}
+  </div>`;
+
+  drawMonthlyChart('chMonthly', codes);
+}
+
+function tileColor(st, a){
+  return {ok:`rgba(45,212,167,${a})`, warn:`rgba(255,194,75,${a})`,
+          bad:`rgba(255,93,115,${a})`, na:`rgba(90,107,143,${a})`}[st];
+}
+function kpiCard(lbl, val, unit, sub){
+  return `<div class="card"><div class="lbl">${lbl}</div>
+    <div class="big">${val}${unit?`<span class="unit">${unit}</span>`:''}</div>
+    <div class="sub">${sub||''}</div></div>`;
+}
+
+function drawMonthlyChart(id, codes){
+  destroyCharts([id]);
+  const buds = [], lands = [], prevs = [];
+  for(let i = 0; i < 12; i++){
+    const fa = forecastAgg(codes, i);
+    buds.push(fa.bud);
+    lands.push((fa.fixed + fa.fc) > 0 ? fa.profit : null);
+    prevs.push(bSum(codes, K.PROFIT, '前年', i));
+  }
+  charts[id] = new Chart(document.getElementById(id), {
+    type:'bar',
+    data:{ labels:FISCAL.map(m => m + '月'),
+      datasets:[
+        {type:'line', label:'着地/実績', data:lands, borderColor:'#38e1ff', backgroundColor:'#38e1ff',
+         tension:.3, pointRadius:4, borderWidth:2.5},
+        {type:'line', label:'前年', data:prevs, borderColor:'rgba(141,162,200,.6)', borderDash:[5,4],
+         tension:.3, pointRadius:0, borderWidth:1.5},
+        {label:'予算', data:buds, backgroundColor:'rgba(111,139,255,.28)', borderRadius:5}
+      ]},
+    options: chartOpts()
+  });
+}
+function chartOpts(extra){
+  return Object.assign({
+    responsive:true, maintainAspectRatio:false,
+    plugins:{ legend:{labels:{color:'#8da2c8', boxWidth:14, font:{size:10, family:'Inter'}}} },
+    scales:{ x:{ticks:{color:'#5a6b8f', font:{size:10}}, grid:{color:'rgba(120,160,255,.06)'}},
+             y:{ticks:{color:'#5a6b8f', font:{size:10}}, grid:{color:'rgba(120,160,255,.08)'}} }
+  }, extra || {});
+}
+
+// ---------- ② SC別 ----------
+function renderSc(){
+  const el = document.getElementById('v-sc');
+  const mi = state.mi;
+  if(!state.sc || !DB.scs.includes(state.sc)) state.sc = DB.scs[0];
+
+  // SC比較
+  const rows = DB.scs.map(sc => {
+    const codes = scStores(sc);
+    const f = forecastAgg(codes, mi);
+    return {sc, n:codes.length, f, st:statusOf(f.rate)};
+  });
+
+  const codes = scStores(state.sc);
+  const f = forecastAgg(codes, mi);
+  const st = statusOf(f.rate);
+
+  el.innerHTML = `
+  <div class="pills">${DB.scs.map(sc =>
+    `<button class="pill ${sc===state.sc?'on':''}" onclick="state.sc='${sc}';renderSc()">${sc}</button>`).join('')}</div>
+
+  <div class="hero">
+    <div class="lbl">${state.sc} - ${monthLabel(mi)} 店利益着地（${codes.length}店）</div>
+    <div class="num">${fmt(f.profit)}<span class="unit"> 千円</span></div>
+    <div class="hero-meta">
+      <span class="chip">予算 <b>${fmt(f.bud)}</b></span>
+      <span class="chip">差異 <b class="${f.profit-f.bud>=0?'t-ok':'t-bad'}">${fmtSign(f.profit-f.bud)}</b></span>
+      <span class="chip">達成率 <b class="t-${st}">${pct(f.rate)}</b></span>
+    </div>
+  </div>
+
+  <h2 class="sec">担当店舗</h2>
+  ${codes.length ? `<div class="tiles">
+    ${codes.map(c => { const fx = forecast(c, mi); const s2 = statusOf(fx.rate);
+      return `<div class="tile" onclick="openStore('${c}')" style="border-color:${tileColor(s2,.45)};background:${tileColor(s2,.07)}">
+        <div class="nm">${storeName(c)}</div>
+        <div class="vl t-${s2}">${pct(fx.rate)}</div>
+        <div class="mt"><span class="dot s-${s2}"></span>${fmt(fx.profit)}千円</div>
+      </div>`; }).join('')}
+  </div>` : '<div class="empty-note">担当店舗が未設定です。設定画面のSC担当でチェックしてください。</div>'}
+
+  <h2 class="sec">SC比較（${monthLabel(mi)}）</h2>
+  <div class="tbl-wrap"><table>
+    <tr><th>SC</th><th>店舗数</th><th>店利益着地</th><th>予算</th><th>差異</th><th>達成率</th><th>状態</th></tr>
+    ${rows.map(r => `<tr class="clickable" onclick="state.sc='${r.sc}';renderSc()">
+      <td><b>${r.sc}</b></td><td>${r.n}</td><td>${fmt(r.f.profit)}</td><td>${fmt(r.f.bud)}</td>
+      <td class="${r.f.profit-r.f.bud>=0?'t-ok':'t-bad'}">${fmtSign(r.f.profit-r.f.bud)}</td>
+      <td class="t-${r.st}"><b>${pct(r.f.rate)}</b></td>
+      <td><span class="dot s-${r.st}"></span> ${ST_LBL[r.st]}</td></tr>`).join('')}
+  </table></div>
+
+  <h2 class="sec">月次推移（${state.sc}）</h2>
+  <div class="chart-card"><div class="chart-box"><canvas id="chScMonthly"></canvas></div></div>`;
+
+  drawMonthlyChart('chScMonthly', codes);
+}
+
+// ---------- ③ 店舗別 ----------
+function openStore(code){ state.store = code; go('store'); }
+
+function renderStore(){
+  const el = document.getElementById('v-store');
+  const mi = state.mi;
+  if(!state.store) state.store = DB.stores[0].code;
+  const code = state.store;
+  const f = forecast(code, mi);
+  const st = statusOf(f.rate);
+  const ym = ymOf(mi);
+  const inp = f.inp || {};
+  const mid = f.mid;
+  const dTotal = daysInMonth(mi);
+
+  const stLabel = f.status === 'fixed' ? '実績（確定）' : f.status === 'forecast' ? '着地予測' : '予算（月中データなし）';
+
+  el.innerHTML = `
+  <div class="fld mb"><select onchange="state.store=this.value;renderStore()">
+    ${DB.stores.map(s => `<option value="${s.code}" ${s.code===code?'selected':''}>${s.name}（${storeSc(s.code)}）</option>`).join('')}
+  </select></div>
+
+  <div class="hero">
+    <div class="lbl">${storeName(code)} - ${monthLabel(mi)} ${stLabel}</div>
+    <div class="num">${fmt(f.profit)}<span class="unit"> 千円</span></div>
+    <div class="hero-meta">
+      <span class="chip">予算 <b>${fmt(f.bud)}</b></span>
+      <span class="chip">前年 <b>${fmt(b(code,K.PROFIT,'前年',mi))}</b></span>
+      <span class="chip">達成率 <b class="t-${st}">${pct(f.rate)}</b></span>
+      <span class="chip"><span class="dot s-${st}"></span> ${ST_LBL[st]}</span>
+    </div>
+  </div>
+
+  <div class="grid g4 mt">
+    ${kpiCard('売上着地', fmt(f.sales), '千円', '予算 '+fmt(f.budSales))}
+    ${kpiCard('日販着地', fmt(f.nippan,0), '千円', '予算 '+fmt(b(code,K.NIPPAN,'予算',mi),0)+' / 前年 '+fmt(b(code,K.NIPPAN,'前年',mi),0))}
+    ${mid ? kpiCard('月内進捗', fmt(mid.days,0)+' <span class="unit">/ '+dTotal+'日</span>', '',
+        '前年比 ' + (f.detail && f.detail.yoy ? pct(f.detail.yoy) : '-')) : kpiCard('月内進捗','-','','DEPT速報未取込')}
+    ${mid && mid.cum ? kpiCard('ロス率(売変)', pct(mid.hengaku/mid.cum*100), '',
+        '厨房比率 ' + pct(mid.kitchen/mid.cum*100)) : kpiCard('ロス率(売変)','-','','')}
+  </div>
+
+  ${f.detail ? `
+  <h2 class="sec">着地要因分解（予算 → 着地）</h2>
+  <div class="chart-card"><div class="chart-box"><canvas id="chWf"></canvas></div></div>` : ''}
+
+  <h2 class="sec">月次推移（${storeName(code)}）</h2>
+  <div class="chart-card">
+    <div class="pills" style="margin-bottom:8px">
+      <button class="pill ${state.trendKey!=='nippan'?'on':''}" onclick="state.trendKey='profit';renderStore()">店利益</button>
+      <button class="pill ${state.trendKey==='nippan'?'on':''}" onclick="state.trendKey='nippan';renderStore()">日販</button>
+    </div>
+    <div class="chart-box"><canvas id="chStMonthly"></canvas></div>
+  </div>
+
+  <h2 class="sec">月中入力（${ym.replace('-','/')} 着地予測の補正）</h2>
+  <div class="card">
+    <div class="note mb">人が判断する数値を入力すると着地予測に即反映されます。空欄は予算値を使用します。単位: 千円</div>
+    <div class="form-grid">
+      <div class="fld"><label>人件費 月末見込</label><input type="number" id="in-labor" value="${nv(inp.labor)}" placeholder="予算 ${fmt(b(code,K.LABOR,'予算',mi))}"></div>
+      <div class="fld"><label>有給取得 見込額</label><input type="number" id="in-paid" value="${nv(inp.paid)}" placeholder="0"></div>
+      <div class="fld"><label>経費補正（+で利益減）</label><input type="number" id="in-exp" value="${nv(inp.expAdj)}" placeholder="0"></div>
+      <div class="fld"><label>特殊要因（+で利益増）</label><input type="number" id="in-spec" value="${nv(inp.special)}" placeholder="0"></div>
+      <div class="fld"><label>MH実績（h）</label><input type="number" id="in-mh" value="${nv(inp.mh)}" placeholder="評価連動用"></div>
+      <div class="fld" style="grid-column:1/-1"><label>メモ（特殊要因の内容など）</label><input type="text" id="in-memo" value="${esc(inp.memo||'')}" placeholder="例: 工事による客数減 / 催事売上"></div>
+    </div>
+    <div class="flex mt"><button class="btn" onclick="saveMonthInput()">保存して再計算</button></div>
+  </div>`;
+
+  if(f.detail) drawWaterfall('chWf', f);
+  drawStoreTrend('chStMonthly', code);
+}
+
+function drawWaterfall(id, f){
+  destroyCharts([id]);
+  const d = f.detail;
+  const steps = [
+    {l:'予算', v:f.bud||0, type:'base'},
+    {l:'粗利要因', v:d.fGross, type:'delta'},
+    {l:'人件費', v:d.fLabor, type:'delta'},
+    {l:'有給', v:d.fPaid, type:'delta'},
+    {l:'経費補正', v:d.fExp, type:'delta'},
+    {l:'特殊要因', v:d.fSpec, type:'delta'},
+    {l:'着地', v:f.profit, type:'total'}
+  ];
+  let run = 0;
+  const data = steps.map(s => {
+    if(s.type === 'base'){ run = s.v; return [0, s.v]; }
+    if(s.type === 'total'){ return [0, s.v]; }
+    const from = run; run += s.v; return [from, run];
+  });
+  const colors = steps.map(s =>
+    s.type === 'base' ? 'rgba(111,139,255,.55)' :
+    s.type === 'total' ? 'rgba(56,225,255,.7)' :
+    s.v >= 0 ? 'rgba(45,212,167,.65)' : 'rgba(255,93,115,.65)');
+  charts[id] = new Chart(document.getElementById(id), {
+    type:'bar',
+    data:{labels:steps.map(s => s.l), datasets:[{data, backgroundColor:colors, borderRadius:5, borderSkipped:false}]},
+    options: chartOpts({plugins:{legend:{display:false},
+      tooltip:{callbacks:{label:c => { const s = steps[c.dataIndex];
+        return s.type === 'delta' ? fmtSign(s.v) + ' 千円' : fmt(s.v) + ' 千円'; }}}}})
+  });
+}
+
+function drawStoreTrend(id, code){
+  destroyCharts([id]);
+  const isNippan = state.trendKey === 'nippan';
+  const buds = [], lands = [], prevs = [];
+  for(let i = 0; i < 12; i++){
+    const fx = forecast(code, i);
+    if(isNippan){
+      buds.push(b(code, K.NIPPAN, '予算', i));
+      prevs.push(b(code, K.NIPPAN, '前年', i));
+      lands.push(fx.status !== 'nodata' ? fx.nippan : null);
+    }else{
+      buds.push(fx.bud);
+      prevs.push(b(code, K.PROFIT, '前年', i));
+      lands.push(fx.status !== 'nodata' ? fx.profit : null);
+    }
+  }
+  charts[id] = new Chart(document.getElementById(id), {
+    type:'bar',
+    data:{labels:FISCAL.map(m => m + '月'), datasets:[
+      {type:'line', label:'着地/実績', data:lands, borderColor:'#38e1ff', backgroundColor:'#38e1ff', tension:.3, pointRadius:4, borderWidth:2.5},
+      {type:'line', label:'前年', data:prevs, borderColor:'rgba(141,162,200,.6)', borderDash:[5,4], tension:.3, pointRadius:0, borderWidth:1.5},
+      {label:'予算', data:buds, backgroundColor:'rgba(111,139,255,.28)', borderRadius:5}
+    ]},
+    options: chartOpts()
+  });
+}
+
+async function saveMonthInput(){
+  const code = state.store, ym = ymOf(state.mi);
+  const values = {
+    '人件費見込': gv('in-labor'), '有給見込': gv('in-paid'), '経費補正': gv('in-exp'),
+    '特殊要因': gv('in-spec'), 'MH実績': gv('in-mh'),
+    'メモ': document.getElementById('in-memo').value
+  };
+  // ローカル即反映
+  IDX.inp[ym+'|'+code] = {labor:values['人件費見込'], paid:values['有給見込'], expAdj:values['経費補正'],
+    special:values['特殊要因'], mh:values['MH実績'], memo:values['メモ']};
+  renderStore();
+  await post({action:'saveInput', ym, code, values}, '月中入力を保存しました');
+}
+function gv(id){ const v = document.getElementById(id).value; return v === '' ? null : Number(v); }
+
+// ---------- ④ ランキング ----------
+const RANK_DEFS = {
+  profitRate:{l:'店利益達成率', u:'%', f:(c,mi)=>forecast(c,mi).rate, fmt:v=>pct(v), desc:true},
+  profitAmt:{l:'店利益着地額', u:'千円', f:(c,mi)=>forecast(c,mi).profit, fmt:v=>fmt(v), desc:true},
+  profitDiff:{l:'店利益 予算差異', u:'千円', f:(c,mi)=>{const x=forecast(c,mi);return (x.profit||0)-(x.bud||0);}, fmt:v=>fmtSign(v), desc:true},
+  nippan:{l:'日販着地', u:'千円', f:(c,mi)=>forecast(c,mi).nippan, fmt:v=>fmt(v,0), desc:true},
+  salesYoy:{l:'売上前年比(月中)', u:'%', f:(c,mi)=>{const m=IDX.mid[ymOf(mi)+'|'+c];return m&&m.prevCum>0?m.cum/m.prevCum*100:null;}, fmt:v=>pct(v), desc:true},
+  loss:{l:'ロス率(売変)', u:'%', f:(c,mi)=>{const m=IDX.mid[ymOf(mi)+'|'+c];return m&&m.cum>0?m.hengaku/m.cum*100:null;}, fmt:v=>pct(v), desc:false},
+  kitchen:{l:'厨房比率', u:'%', f:(c,mi)=>{const m=IDX.mid[ymOf(mi)+'|'+c];return m&&m.cum>0?m.kitchen/m.cum*100:null;}, fmt:v=>pct(v), desc:true}
+};
+
+function renderRank(){
+  const el = document.getElementById('v-rank');
+  const def = RANK_DEFS[state.rankKey];
+  const mi = state.mi;
+  const rows = allCodes().map(c => ({c, v:def.f(c, mi)}))
+    .filter(r => r.v !== null && r.v !== undefined && isFinite(r.v));
+  rows.sort((a, b2) => def.desc ? b2.v - a.v : a.v - b2.v);
+  const max = Math.max(...rows.map(r => Math.abs(r.v)), 1);
+
+  el.innerHTML = `
+  <div class="pills">${Object.keys(RANK_DEFS).map(k =>
+    `<button class="pill ${k===state.rankKey?'on':''}" onclick="state.rankKey='${k}';renderRank()">${RANK_DEFS[k].l}</button>`).join('')}</div>
+  <div class="tbl-wrap"><table>
+    <tr><th style="width:36px">#</th><th>店舗</th><th>SC</th><th>${def.l}</th><th style="width:130px"></th></tr>
+    ${rows.map((r,i) => {
+      const fx = forecast(r.c, mi); const s2 = statusOf(fx.rate);
+      return `<tr class="clickable" onclick="openStore('${r.c}')">
+      <td style="color:${i<3?'var(--accent)':'var(--dim)'};font-weight:800">${i+1}</td>
+      <td><span class="dot s-${s2}"></span> <b>${storeName(r.c)}</b></td>
+      <td style="color:var(--sub)">${storeSc(r.c)}</td>
+      <td><b>${def.fmt(r.v)}</b></td>
+      <td><div class="rank-bar" style="width:${Math.abs(r.v)/max*100}%"></div></td></tr>`; }).join('')}
+    ${!rows.length ? '<tr><td colspan="5" class="empty-note">データがありません（DEPT速報取込後に表示されます）</td></tr>' : ''}
+  </table></div>`;
+}
+
+// ---------- ⑤ 評価 ----------
+function renderEval(){
+  const el = document.getElementById('v-eval');
+  const tab = state.evalTab;
+  el.innerHTML = `
+  <div class="pills">
+    ${['SC','SI','店長'].map(t => `<button class="pill ${t===tab?'on':''}" onclick="state.evalTab='${t}';renderEval()">${t}評価</button>`).join('')}
+  </div>
+  <div id="evalBody"></div>`;
+  const body = document.getElementById('evalBody');
+  if(tab === 'SC') body.innerHTML = evalScHtml();
+  else body.innerHTML = evalInputHtml(tab);
+}
+
+// SC評価: 実績データから自動算出（店利益/日販/厨房比率/MH/ロス率）
+function evalScHtml(){
+  const mi = state.mi, ym = ymOf(mi);
+  const rows = DB.scs.map(sc => {
+    const codes = scStores(sc);
+    const f = forecastAgg(codes, mi);
+    let cum = 0, prevCum = 0, hengaku = 0, kitchen = 0, mh = 0;
+    codes.forEach(c => {
+      const m = IDX.mid[ym+'|'+c]; if(m){ cum += m.cum; prevCum += m.prevCum; hengaku += m.hengaku; kitchen += m.kitchen; }
+      const inp = IDX.inp[ym+'|'+c]; if(inp && inp.mh) mh += inp.mh;
+    });
+    return { sc, n:codes.length,
+      profitRate: f.rate,
+      nippanYoy: prevCum > 0 ? cum/prevCum*100 : null,
+      kitchen: cum > 0 ? kitchen/cum*100 : null,
+      mh: mh || null,
+      loss: cum > 0 ? hengaku/cum*100 : null };
+  });
+  return `
+  <div class="note mb">SC評価指標は予算・DEPT速報・月中入力から自動算出されます（${ym.replace('-','/')}時点）。</div>
+  <div class="tbl-wrap"><table>
+    <tr><th>SC</th><th>店舗数</th><th>店利益達成率</th><th>日販前年比</th><th>厨房比率</th><th>MH(h)</th><th>ロス率</th></tr>
+    ${rows.map(r => `<tr>
+      <td><b>${r.sc}</b></td><td>${r.n}</td>
+      <td class="t-${statusOf(r.profitRate)}"><b>${pct(r.profitRate)}</b></td>
+      <td class="${r.nippanYoy>=100?'t-ok':r.nippanYoy!==null?'t-bad':''}">${pct(r.nippanYoy)}</td>
+      <td>${pct(r.kitchen)}</td><td>${r.mh!==null?fmt(r.mh,0):'-'}</td><td>${pct(r.loss)}</td></tr>`).join('')}
+  </table></div>
+  <div class="note mt">MHは店舗別画面の月中入力「MH実績」の担当店舗合計です。</div>`;
+}
+
+// SI / 店長評価: 手入力（評価データシートへ保存）
+function evalInputHtml(tab){
+  const mi = state.mi, ym = ymOf(mi);
+  const items = tab === 'SI' ? EVAL_ITEMS.SI : EVAL_ITEMS.TENCHO;
+  const kind = tab === 'SI' ? 'SI' : '店長';
+  // 店長は店舗単位 / SIは対象者名を自由入力（既存データから候補）
+  const targets = tab === '店長'
+    ? DB.stores.map(s => ({key:s.code, name:s.name}))
+    : [...new Set(IDX.evals.filter(e => e[1] === 'SI').map(e => e[2]))].map(n => ({key:n, name:n}));
+
+  const getVal = (target, item) => {
+    const e = IDX.evals.find(e2 => e2[0] === ym && e2[1] === kind &&
+      (tab === '店長' ? e2[3] === target : e2[2] === target) && e2[4] === item);
+    return e ? e[5] : '';
+  };
+
+  let auto = '';
+  if(tab === '店長'){
+    auto = `<div class="note mb">店利益・日販は自動算出。QSC・人材育成を入力してください（0～100点推奨）。</div>`;
+  }else{
+    auto = `<div class="note mb">SI評価項目（QSC/衛生/5S/認定店長育成）を入力してください（0～100点推奨）。対象者は下の欄で追加できます。</div>`;
+  }
+
+  return `${auto}
+  <div class="tbl-wrap"><table id="evalTable">
+    <tr><th>${tab === '店長' ? '店舗' : '対象者'}</th>
+      ${tab === '店長' ? '<th>店利益達成率</th><th>日販前年比</th>' : ''}
+      ${items.map(i => `<th>${i}</th>`).join('')}</tr>
+    ${targets.map(t => {
+      let autoTd = '';
+      if(tab === '店長'){
+        const f = forecast(t.key, mi);
+        const m = IDX.mid[ym+'|'+t.key];
+        const yoy = m && m.prevCum > 0 ? m.cum/m.prevCum*100 : null;
+        autoTd = `<td class="t-${statusOf(f.rate)}">${pct(f.rate)}</td><td>${pct(yoy)}</td>`;
+      }
+      return `<tr><td><b>${t.name}</b></td>${autoTd}
+        ${items.map(i => `<td><input type="number" style="width:72px;background:var(--bg2);border:1px solid var(--line2);border-radius:7px;color:var(--txt);padding:6px;text-align:right"
+          data-target="${esc(t.key)}" data-item="${esc(i)}" value="${getVal(t.key, i)}"></td>`).join('')}</tr>`;
+    }).join('')}
+    ${!targets.length ? `<tr><td colspan="9" class="empty-note">対象者がいません。下の欄から追加してください。</td></tr>` : ''}
+  </table></div>
+  ${tab === 'SI' ? `<div class="flex mt"><div class="fld" style="flex:1;max-width:260px"><input type="text" id="newSi" placeholder="SI対象者名を追加"></div>
+    <button class="btn ghost" onclick="addSiTarget()">追加</button></div>` : ''}
+  <div class="flex mt"><button class="btn" onclick="saveEvalData('${kind}')">評価を保存（${ym.replace('-','/')}）</button></div>`;
+}
+
+function addSiTarget(){
+  const name = document.getElementById('newSi').value.trim();
+  if(!name) return;
+  IDX.evals.push([ymOf(state.mi), 'SI', name, '', EVAL_ITEMS.SI[0], '']);
+  renderEval();
+}
+
+async function saveEvalData(kind){
+  const ym = ymOf(state.mi);
+  const rows = [];
+  document.querySelectorAll('#evalTable input[data-item]').forEach(inp => {
+    if(inp.value === '') return;
+    const target = inp.dataset.target, item = inp.dataset.item;
+    if(kind === '店長') rows.push([ym, kind, storeName(target), target, item, Number(inp.value)]);
+    else rows.push([ym, kind, target, '', item, Number(inp.value)]);
+  });
+  if(!rows.length){ toast('入力がありません'); return; }
+  // ローカル反映
+  rows.forEach(r => {
+    const i = IDX.evals.findIndex(e => e[0] === r[0] && e[1] === r[1] && e[2] === r[2] && e[3] === r[3] && e[4] === r[4]);
+    if(i >= 0) IDX.evals[i] = r; else IDX.evals.push(r);
+  });
+  await post({action:'saveEval', rows}, '評価データを保存しました（' + rows.length + '件）');
+}
+
+// ---------- ⑥ 設定 ----------
+function renderSettings(){
+  const el = document.getElementById('v-settings');
+  const p = DB.params || {};
+  el.innerHTML = `
+  <h2 class="sec">接続設定</h2>
+  <div class="card">
+    <div class="fld"><label>GAS ウェブアプリURL</label>
+      <input type="text" id="set-url" value="${esc(gasUrl())}" placeholder="https://script.google.com/macros/s/.../exec"></div>
+    <div class="flex mt">
+      <button class="btn" onclick="saveUrl()">保存して再読込</button>
+      <button class="btn ghost" onclick="testConn()">接続テスト</button>
+    </div>
+  </div>
+
+  <h2 class="sec">運用年度</h2>
+  <div class="card">
+    <div class="flex">
+      <button class="pill ${DB.fy===2025?'on':''}" onclick="switchFy(2025)">FY2025（テスト運用）</button>
+      <button class="pill ${DB.fy===2026?'on':''}" onclick="switchFy(2026)">FY2026（本番）</button>
+    </div>
+    <div class="note mt">25年10月～26年9月のデータでテスト運用し、本番は26年10月～27年9月。切替はスプレッドシートにも保存されます。</div>
+  </div>
+
+  <h2 class="sec">SCマスタ（名前を編集）</h2>
+  <div class="card">
+    <div class="form-grid" id="scNames">
+      ${DB.scs.map((sc,i) => `<div class="fld"><label>SC ${i+1}</label><input type="text" value="${esc(sc)}" data-old="${esc(sc)}"></div>`).join('')}
+    </div>
+    <div class="flex mt"><button class="btn" onclick="saveScNames()">SC名を保存</button></div>
+    <div class="note mt">名前を変更すると担当店舗の割当も引き継がれます。</div>
+  </div>
+
+  <h2 class="sec">SC担当店舗（チェックで切替）</h2>
+  <div class="card" style="padding:6px 14px">
+    ${DB.stores.map(s => `<div class="assign-row">
+      <span class="nm">${s.name}</span>
+      ${DB.scs.map(sc => `<label><input type="radio" name="as-${s.code}" value="${esc(sc)}"
+        ${DB.assign[s.code]===sc?'checked':''} onchange="DB.assign['${s.code}']='${esc(sc)}'">${sc}</label>`).join('')}
+    </div>`).join('')}
+    <div class="flex" style="padding:13px 0"><button class="btn" onclick="saveAssign()">担当を保存</button></div>
+  </div>
+
+  <h2 class="sec">着地予測パラメータ</h2>
+  <div class="card">
+    <div class="form-grid">
+      <div class="fld"><label>残期間トレンド係数</label><input type="number" step="0.01" id="p-trend" value="${num(p.trendCoef,1)}"></div>
+      <div class="fld"><label>注意ライン（達成率%）</label><input type="number" id="p-warn" value="${num(p.warnLine,100)}"></div>
+      <div class="fld"><label>危険ライン（達成率%）</label><input type="number" id="p-danger" value="${num(p.dangerLine,95)}"></div>
+      <div class="fld"><label>粗利率モード</label>
+        <select id="p-gmode"><option value="budget" ${p.grossAdjMode!=='margin'?'selected':''}>予算粗利率を使用</option>
+        <option value="margin" ${p.grossAdjMode==='margin'?'selected':''}>値入率-補正を使用</option></select></div>
+      <div class="fld"><label>値入率→粗利率 補正(pt)</label><input type="number" step="0.1" id="p-m2g" value="${num(p.marginToGross,2)}"></div>
+    </div>
+    <div class="flex mt"><button class="btn" onclick="saveParamsUi()">パラメータを保存</button></div>
+    <div class="note mt">計算ロジック改善はここで調整。予測と確定実績の乖離を見ながらチューニングしてください。</div>
+  </div>
+
+  <h2 class="sec">データ取込の手順</h2>
+  <div class="card note">
+    <b style="color:var(--txt)">■ 予算・実績（年度Excel）</b><br>
+    1. Excelの「店舗」シート全体をコピー → スプレッドシート「貼付_予算」のA1へ値貼付け<br>
+    2. メニュー「店利益管理 &gt; 予算Excel取込」を実行（年度・区分を指定）<br>
+    3. 月次で実績が更新されたら同じ手順で「実績」を再取込<br><br>
+    <b style="color:var(--txt)">■ DEPT速報（月中実績）</b><br>
+    1. DEPT速報xlsの「ITEMDATA_DEPT速報」シート全体をコピー → 「貼付_DEPT」のA1へ貼付け<br>
+    2. メニュー「店利益管理 &gt; DEPT速報取込」を実行（対象年月を指定）<br>
+    3. 取込後、本画面右上の更新ボタンで再読込
+  </div>`;
+}
+
+function saveUrl(){
+  const url = document.getElementById('set-url').value.trim();
+  if(url) localStorage.setItem(GAS_URL_KEY, url); else localStorage.removeItem(GAS_URL_KEY);
+  toast('保存しました。再読込します');
+  DB = null;
+  setTimeout(() => loadData(false), 400);
+}
+async function testConn(){
+  const url = document.getElementById('set-url').value.trim();
+  if(!url){ toast('URLを入力してください'); return; }
+  try{
+    const r = await fetch(url + '?action=ping', {redirect:'follow'});
+    const d = await r.json();
+    toast(d.ok ? '接続成功' : '応答が不正です');
+  }catch(e){ toast('接続失敗: ' + e.message); }
+}
+async function switchFy(fy){
+  await post({action:'saveSettings', settings:{'運用年度':fy}}, null);
+  if(gasUrl()){ DB = null; loadData(true); }
+  else { DB.fy = fy; initMonthSelector(); renderAll(); toast('FY' + fy + 'に切替（デモ）'); }
+}
+async function saveScNames(){
+  const inputs = [...document.querySelectorAll('#scNames input')];
+  const newNames = inputs.map(i => i.value.trim()).filter(Boolean);
+  // 割当の引継ぎ
+  inputs.forEach(i => {
+    const oldN = i.dataset.old, newN = i.value.trim();
+    if(oldN !== newN) Object.keys(DB.assign).forEach(c => { if(DB.assign[c] === oldN) DB.assign[c] = newN; });
+  });
+  DB.scs = newNames;
+  await post({action:'saveScMaster', scs:newNames}, null);
+  await post({action:'saveScAssign', assign:DB.assign}, 'SC名と担当を保存しました');
+  renderSettings();
+}
+async function saveAssign(){
+  await post({action:'saveScAssign', assign:DB.assign}, 'SC担当を保存しました');
+}
+async function saveParamsUi(){
+  const params = {
+    trendCoef: Number(document.getElementById('p-trend').value) || 1,
+    warnLine: Number(document.getElementById('p-warn').value) || 100,
+    dangerLine: Number(document.getElementById('p-danger').value) || 95,
+    grossAdjMode: document.getElementById('p-gmode').value,
+    marginToGross: Number(document.getElementById('p-m2g').value) || 2
+  };
+  Object.assign(DB.params, params);
+  await post({action:'saveParams', params}, 'パラメータを保存しました');
+}
+
+// ---------- 通信 ----------
+async function post(payload, successMsg){
+  if(!gasUrl()){ if(successMsg) toast(successMsg + '（デモ: ローカルのみ）'); return {ok:true}; }
+  try{
+    const res = await fetch(gasUrl(), {
+      method:'POST', redirect:'follow',
+      headers:{'Content-Type':'text/plain;charset=utf-8'},
+      body: JSON.stringify(payload)
+    });
+    const d = await res.json();
+    if(d.error) throw new Error(d.error);
+    if(successMsg) toast(successMsg);
+    return d;
+  }catch(e){ toast('保存エラー: ' + e.message); return {error:String(e)}; }
+}
+
+// ---------- ユーティリティ ----------
+function fmt(v, dec){
+  if(v === null || v === undefined || v === '' || isNaN(v)) return '-';
+  return Number(v).toLocaleString('ja-JP', {maximumFractionDigits: dec === undefined ? 0 : dec});
+}
+function fmtSign(v){
+  if(v === null || v === undefined || isNaN(v)) return '-';
+  return (v >= 0 ? '+' : '') + fmt(v);
+}
+function pct(v){
+  if(v === null || v === undefined || isNaN(v) || !isFinite(v)) return '-';
+  return Number(v).toFixed(1) + '%';
+}
+function num(v, def){ const n = Number(v); return isNaN(n) || v === null || v === undefined || v === '' ? def : n; }
+function nv(v){ return (v === null || v === undefined) ? '' : v; }
+function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;'); }
+function toast(msg){
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  clearTimeout(t._tm); t._tm = setTimeout(() => t.classList.remove('show'), 2600);
+}
+
+// ============================================================
+//  デモデータ（GAS未接続時のみ。実データ接続で消えます）
+// ============================================================
+function makeDemoData(){
+  const names = ['吹田警察署前','南金田二丁目','新御堂筋上新田','東淀川大道南','豊中服部西町三丁目',
+    '江坂駅南口','吹田豊津中学校前','豊里六丁目','吹田青山台三丁目','豊中服部元町一丁目',
+    '江坂東','五月ケ丘東','吹田垂水三丁目','池田市役所前','豊中原田南一丁目',
+    '豊中利倉東一丁目','箕面白島二丁目','大道南一丁目','吹田朝日町','東淀川豊里五丁目'];
+  const scs = ['プラカス','ビスワス','ダハル','フィ','スラズ','サントス'];
+  const stores = names.map((n,i) => ({code:'S'+String(i+1).padStart(2,'0'), name:n, order:i+1}));
+  const assign = {};
+  stores.forEach((s,i) => assign[s.code] = scs[i % 6]);
+  const rng = seed => () => (seed = (seed * 9301 + 49297) % 233280) / 233280;
+  const budget = [];
+  const now = new Date();
+  const curYm = now.getFullYear() + '-' + String(now.getMonth()+1).padStart(2,'0');
+  const fy = 2025;
+  const mid = [], inputs = [];
+  stores.forEach((s,si) => {
+    const r = rng(si + 7);
+    const baseSales = 12000 + Math.round(r() * 9000);      // 月商(千円)
+    const grate = 31 + r() * 3;
+    const mk = komoku => budget.filter(x => x[0] === s.code && x[1] === komoku);
+    [['予算',1.04],['前年',1.0]].forEach(([kind, coef]) => {
+      const sales  = FISCAL.map(() => Math.round(baseSales * coef * (0.92 + r() * .16)));
+      const gross  = sales.map(v => Math.round(v * grate / 100));
+      const charge = gross.map(v => Math.round(v * .5));
+      const labor  = sales.map(v => Math.round(v * .075));
+      const profit = sales.map((v,i2) => Math.round(gross[i2] - charge[i2] - labor[i2] - v * .035));
+      const push = (kom, arr, annSum) => budget.push([s.code, kom, kind, annSum ? arr.reduce((a,b2)=>a+b2,0) : null, ...arr]);
+      push(K.SALES, sales, true); push(K.GROSS, gross, true); push(K.CHARGE, charge, true);
+      push(K.LABOR, labor, true); push(K.PROFIT, profit, true);
+      push(K.NIPPAN, sales.map((v,i2) => Math.round(v / daysFor(fy, i2))), false);
+      push(K.GRATE, sales.map(() => Math.round(grate * 100) / 100), false);
+    });
+    // 実績: 過去月
+    const budSales = mk(K.SALES).find(x => x[2] === '予算');
+    const actSales = [], actProfit = [];
+    for(let i = 0; i < 12; i++){
+      const m = FISCAL[i]; const y = m >= 10 ? fy : fy + 1;
+      const ym = y + '-' + String(m).padStart(2,'0');
+      if(ym < curYm){
+        const sv = Math.round(budSales[4 + i] * (0.9 + r() * .18));
+        actSales.push(sv);
+        const bp = mk(K.PROFIT).find(x => x[2] === '予算')[4 + i];
+        actProfit.push(Math.round(bp * (0.82 + r() * .35)));
+      }else{ actSales.push(null); actProfit.push(null); }
+      if(ym === curYm){
+        const dT = daysFor(fy, i); const days = Math.max(Math.min(now.getDate() - 1, dT), 5);
+        const dailyBud = budSales[4 + i] / dT;
+        const cum = Math.round(dailyBud * days * (0.88 + r() * .22));
+        mid.push([ym, s.code, days, cum, Math.round(cum * (0.9 + r() * .16)),
+          Math.round(cum * (0.015 + r() * .02)), Math.round((grate + 2) * 100) / 100,
+          Math.round(cum * (0.04 + r() * .05))]);
+        if(r() > .6) inputs.push([ym, s.code, Math.round(budSales[4+i] * .078), Math.round(r()*80), null, r() > .8 ? -150 : null, Math.round(1300 + r()*500), 'デモ入力']);
+      }
+    }
+    budget.push([s.code, K.SALES, '実績', null, ...actSales]);
+    budget.push([s.code, K.PROFIT, '実績', null, ...actProfit]);
+  });
+  function daysFor(fy2, mi){ const m = FISCAL[mi]; const y = m >= 10 ? fy2 : fy2 + 1; return new Date(y, m, 0).getDate(); }
+  return { fy, settings:{}, params:{trendCoef:1, warnLine:100, dangerLine:95, grossAdjMode:'budget', marginToGross:2},
+    stores, scs, assign, budget, mid, inputs, evals:[], ts:new Date().toISOString() };
+}
+</script>
+</body>
+</html>
