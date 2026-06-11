@@ -549,7 +549,7 @@ const Storage=(()=>{
 
   /* 認証モジュール */
   const AUTH={
-    _pw:{管理者:'Lawson3963',SI:'Lawson3963',SC:'Lawson3963','店舗責任者':'Lawson3963','一般クルー':null},
+    _pw:{管理者:'3272885',SI:'Lawson3963',SC:'Lawson3963','店舗責任者':'Lawson3963','一般クルー':null},
     verify(name,role,password,store){
       if(!name||!role)return{ok:false,error:'氏名と役職を入力してください'};
       const users=getUsers();
@@ -666,7 +666,7 @@ const SERVICE_ITEMS=[
 ];
 
 const CREW_ROLES=['ルーキー（新人）','レギュラー','サブリーダー','リーダー'];
-const CERTIFICATIONS=['ファンタジスタ（接客）','ファンタジスタ（FF）','ファンタジスタ（厨房）','ファンタジスタ（マチカフェ）','グランドファンタジスタ（接客）','グランドファンタジスタ（FF）','グランドファンタジスタ（厨房）','グランドファンタジスタ（マチカフェ）','認定店長'];
+const CERTIFICATIONS=['ファンタジスタ（接客）','ファンタジスタ（FF）','ファンタジスタ（厨房）','ファンタジスタ（マチカフェ）','グランドファンタジスタ（接客）','グランドファンタジスタ（FF）','グランドファンタジスタ（厨房）','グランドファンタジスタ（マチカフェ）','認定店長','SC','SI'];
 const RANKS=['◎','○','△','✕'];
 
 const INITIAL_EMPLOYEES=[
@@ -931,7 +931,7 @@ const App={
     const pass=document.getElementById('login-pass')?.value||'';
     const store=document.getElementById('login-store').value;
     if(!name){this.showToast('お名前を入力してください','error');return}
-    if(role!=='SI'&&role!=='一般クルー'&&!store){this.showToast('担当店舗を選択してください','error');return}
+    if(role!=='管理者'&&role!=='SI'&&role!=='SC'&&role!=='一般クルー'&&!store){this.showToast('担当店舗を選択してください','error');return}
     const result=Storage.AUTH.verify(name,role,pass,store);
     if(!result.ok){this.showToast(result.error,'error');return}
     Storage.saveUser(result.user);this._applyUser(result.user);this.showView('dashboard');
@@ -1399,7 +1399,7 @@ const App={
     const crewRoles=Array.isArray(e.crewRoles)?e.crewRoles:[];
     const certs=Array.isArray(e.certifications)?e.certifications:[];
     const roles=crewRoles.map(r=>`<span class="badge ${{ルーキー:'badge-rookie',レギュラー:'badge-regular',サブリーダー:'badge-sub',リーダー:'badge-leader'}[r.replace('（新人）','')]||'badge-crew'}">${r}</span>`);
-    const certBadges=certs.map(c=>{const cls=c.includes('グランドファンタジスタ')?'badge-grand':c==='認定店長'?'badge-store-mgr':'badge-fanta';const s=c.replace('グランドファンタジスタ','GF').replace('ファンタジスタ','F');return`<span class="badge ${cls}">${s}</span>`});
+    const certBadges=certs.map(c=>{const cls=c.includes('グランドファンタジスタ')?'badge-grand':c==='認定店長'?'badge-store-mgr':c==='SI'?'badge-si':c==='SC'?'badge-sc':'badge-fanta';const s=c.replace('グランドファンタジスタ','GF').replace('ファンタジスタ','F');return`<span class="badge ${cls}">${s}</span>`});
     return[...roles,...certBadges].join('');
   },
   async _fileToBase64(file){return new Promise(r=>{const fr=new FileReader();fr.onload=e=>r(e.target.result);fr.readAsDataURL(file)})},
