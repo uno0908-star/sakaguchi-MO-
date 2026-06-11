@@ -428,19 +428,18 @@ const Storage=(()=>{
           // ローカルの方が新しい → GAS書き込みが失敗していた → 保持して再送
           map[key]=l;toResync.push(l);
         }else{
-          // リモートが新しいまたは同タイムスタンプの場合:
-          // GASはスプレッドシートの制約で配列フィールド(crewRoles/certifications)を
-          // 正しく保存・返却できないケースがあるため、これらのフィールドは常にローカル優先
+          // リモートが新しいまたは同タイムスタンプの場合: リモート優先
+          // _normalizeEmp/_parseArr でGASの配列フィールドは正しくパース済みのため
+          // GASに保存されている値（remoteCrew/remoteCert）が空でなければそちらを使う
+          // 空の場合のみローカルをフォールバックとして使用（GAS保存失敗ケース）
           var remoteEntry=map[key];
           var localCrew=l.crewRoles||[];
           var localCert=l.certifications||[];
           var remoteCrew=remoteEntry.crewRoles||[];
           var remoteCert=remoteEntry.certifications||[];
-          var arrsDiffer=JSON.stringify(localCrew.slice().sort())!==JSON.stringify(remoteCrew.slice().sort())||
-                         JSON.stringify(localCert.slice().sort())!==JSON.stringify(remoteCert.slice().sort());
-          map[key]=Object.assign({},remoteEntry,{crewRoles:localCrew,certifications:localCert});
-          // 配列フィールドに差異がある場合はGASへ再送して修正を試みる
-          if(arrsDiffer)toResync.push(map[key]);
+          var mergedCrew=remoteCrew.length>0?remoteCrew:localCrew;
+          var mergedCert=remoteCert.length>0?remoteCert:localCert;
+          map[key]=Object.assign({},remoteEntry,{crewRoles:mergedCrew,certifications:mergedCert});
         }
       }
     });
@@ -624,7 +623,7 @@ const Storage=(()=>{
     getDiscussions,upsertDiscussion,
     getStoreList,exportAll,downloadBackup,importBackup};
 })();
-Storage.init();
+// Storage.init() による二重同期を廃止。App.init() 内で await syncNow() を呼ぶため不要
 </script>
 
 <script>
@@ -849,16 +848,18 @@ const DB={employees(){return Storage.getEmployees()},evaluations(){return Storag
 const App={
   _view:'login',_history:[],_currentEmpId:null,_currentFormEmpId:null,
 
-  init(){
-    if(!Storage.getEmployees().length){
-      const seeded=INITIAL_EMPLOYEES.map(e=>({...e,status:'在籍中',joinDate:'',leaveDate:'',notes:'',crewRoles:['ルーキー（新人）'],certifications:[],createdAt:new Date().toISOString()}));
-      Storage.saveEmployees(seeded);
-      // GASのEmployeesシートが空なら一括登録
-      Storage.seedGas(seeded);
-    }
+  async init(){
     this._buildStoreSelects();
     const roleEl=document.getElementById('login-role');
     if(roleEl){roleEl.addEventListener('change',()=>this._toggleStoreWrap());this._toggleStoreWrap()}
+    // GAS同期を先に完了させてから初期シード判定する（新端末でGASの最新データを上書きしない）
+    await Storage.syncNow();
+    if(!Storage.getEmployees().length){
+      const seeded=INITIAL_EMPLOYEES.map(e=>({...e,status:'在籍中',joinDate:'',leaveDate:'',notes:'',crewRoles:['ルーキー（新人）'],certifications:[],createdAt:new Date().toISOString()}));
+      Storage.saveEmployees(seeded);
+      // GASも空の場合のみ初期データを一括登録
+      Storage.seedGas(seeded);
+    }
     const user=DB.user();
     if(user){this._applyUser(user);this.showView('dashboard')}else{this.showView('login')}
   },
