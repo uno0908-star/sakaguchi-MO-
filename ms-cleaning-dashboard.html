@@ -341,6 +341,19 @@ select.input-field{background-image:url("data:image/svg+xml,%3Csvg xmlns='http:/
   </div>
 </div>
 
+<!-- ワンポイントアドバイス -->
+<div id="modal-advice" class="modal-overlay hidden">
+  <div class="modal-box">
+    <div class="modal-title" style="color:#b45309">💡 ワンポイントアドバイス</div>
+    <p style="font-size:.85rem;color:var(--gray-text);margin:0 0 10px">写真はOKのまま、改善してほしいポイントを店舗に伝えます。店舗詳細にも表示されます。</p>
+    <textarea id="advice-comment-input" class="input-field" rows="3" placeholder="例: きれいに清掃できています。次回は奥の角のホコリも合わせて拭くとさらに良くなります。" style="resize:vertical;min-height:80px;font-size:.88rem"></textarea>
+    <div class="modal-actions">
+      <button class="btn-secondary" onclick="closeAdviceModal()">キャンセル</button>
+      <button class="btn-primary" style="width:auto;padding:11px 20px;background:#d97706" onclick="doSaveAdvice()">保存する</button>
+    </div>
+  </div>
+</div>
+
 <!-- 店長確認 -->
 <div id="modal-manager-confirm" class="modal-overlay hidden">
   <div class="modal-box">
@@ -528,7 +541,7 @@ const S = {
   selStoreId: null, selSettingId: null, selItemId: null,
   openItems: new Set(), adminTab: 'submissions',
   confirmCallback: null, pendingManagerId: null, storeFilter: '',
-  bulkSelected: new Set()
+  bulkSelected: new Set(), subFilter: 'all', subLimit: 50
 };
 
 // ============================================================
@@ -987,7 +1000,7 @@ function renderStoreDetail() {
           <div class="subitem-label">${setting.unitLabel}</div>
           ${isExcl?`<div class="subitem-meta" style="color:var(--blue-dark)">除外設定済</div>`:
             isRej?`<div class="subitem-meta" style="color:var(--red)">⚠ 差し戻し: ${sub.rejectionComment||''}</div>`:
-            isDone?`<div class="subitem-meta">${sub.improvedBy}（${sub.role}）${fmtD(sub.improvedDate)}${isConf?` ／ 店長確認: ${sub.managerConfirmedBy}`:''}</div>`:''}
+            isDone?`<div class="subitem-meta">${sub.improvedBy}（${sub.role}）${fmtD(sub.improvedDate)}${isConf?` ／ 店長確認: ${sub.managerConfirmedBy}`:''}</div>${sub.adviceComment?`<div class="subitem-meta" style="color:#b45309">💡 ${sub.adviceComment}</div>`:''}`:''}
         </div>
         ${isExcl?
           (S.isAdmin?`<button class="subitem-action" style="color:var(--blue)" onclick="unExcludeSetting('${sub.submissionId}')">除外解除</button>`:'<span class="subitem-action" style="color:var(--blue);font-size:.72rem">除外</span>'):
@@ -1043,6 +1056,11 @@ async function showSubDetail(settingId,storeId,itemId) {
     <div><span style="color:var(--gray-text)">改善日: </span>${fmtD(sub.improvedDate)}</div>
     ${sub.submittedAt?`<div><span style="color:var(--gray-text)">送信日時: </span>${fmtDT(sub.submittedAt)}</div>`:''}
     ${sub.comment?`<div style="margin-top:6px;padding:8px 10px;background:var(--gray-bg);border-radius:var(--rs);font-size:.82rem">${sub.comment}</div>`:''}
+    ${sub.adviceComment?`<div style="margin-top:10px;padding:10px 12px;background:#fffbeb;border:1px solid #f59e0b;border-radius:var(--rs);color:#b45309;font-size:.83rem">
+      <div style="font-weight:700;margin-bottom:4px">💡 ワンポイントアドバイス${sub.adviceAt?`（${sub.adviceAt}）`:''}</div>
+      <div>${sub.adviceComment}</div>
+    </div>`:''}
+    ${S.isAdmin&&!sub.rejectedBy?`<div style="margin-top:6px"><button class='btn-link' style='color:#b45309' onclick='openAdviceModal("${sub.submissionId}")'>💡 アドバイスを${sub.adviceComment?'編集する':'入力する'} →</button></div>`:''}
     ${sub.rejectedBy?
       `<div style="margin-top:10px;padding:10px 12px;background:#fff5f5;border:1px solid var(--red);border-radius:var(--rs);color:var(--red);font-size:.83rem">
         <div style="font-weight:700;margin-bottom:4px">⚠ 差し戻し済（${sub.rejectedAt||''}）</div>
@@ -1281,29 +1299,40 @@ function renderAdmin() {
     <div class="tabs">
       ${['submissions:報告一覧','stores:店舗管理','settings:除外設定','system:システム'].map(t=>{const[v,l]=t.split(':');return`<button class="tab-btn ${tab===v?'active':''}" onclick="adminTab('${v}')">${l}</button>`;}).join('')}
     </div>
-    ${tab==='submissions'?`
+    ${tab==='submissions'?(()=>{
+      const isUnconf=s=>!s.managerConfirmedBy&&!s.rejectedBy&&s.role!=='除外';
+      const cnt={all:allSubs.length,unconf:allSubs.filter(isUnconf).length,conf:allSubs.filter(s=>!!s.managerConfirmedBy&&!s.rejectedBy).length,rej:allSubs.filter(s=>!!s.rejectedBy).length};
+      const filtered=S.subFilter==='unconf'?allSubs.filter(isUnconf):S.subFilter==='conf'?allSubs.filter(s=>!!s.managerConfirmedBy&&!s.rejectedBy):S.subFilter==='rej'?allSubs.filter(s=>!!s.rejectedBy):allSubs;
+      const shownSubs=filtered.slice(0,S.subLimit);
+      return`
       <div class="flex justify-between items-center mb-8">
-        <div class="text-sm text-gray">全${allSubs.length}件（未確認${allSubs.filter(s=>!s.managerConfirmedBy&&!s.rejectedBy&&s.role!=='除外').length}件）</div>
+        <div class="text-sm text-gray">全${allSubs.length}件（未確認${cnt.unconf}件）</div>
         <div style="display:flex;gap:6px">
           <button class="btn-primary btn-sm" onclick="bulkManagerConfirm()">✔ 一括店長確認</button>
           <button class="btn-secondary btn-sm" onclick="exportCSV()">📊 CSV出力</button>
         </div>
       </div>
-      ${allSubs.length===0?'<div class="empty-state"><div class="empty-state-icon">📋</div><div>報告はありません</div></div>':
-        allSubs.slice(0,50).map(sub=>{
+      <div style="display:flex;gap:6px;margin-bottom:10px;flex-wrap:wrap">
+        ${[['all','すべて',cnt.all],['unconf','未確認',cnt.unconf],['conf','確認済',cnt.conf],['rej','差し戻し',cnt.rej]].map(([v,l,c])=>
+          `<button class="btn-sm ${S.subFilter===v?'btn-primary':'btn-secondary'}" onclick="setSubFilter('${v}')">${l} ${c}</button>`).join('')}
+      </div>
+      ${filtered.length===0?'<div class="empty-state"><div class="empty-state-icon">📋</div><div>'+(S.subFilter==='unconf'?'未確認の報告はありません':'報告はありません')+'</div></div>':
+        shownSubs.map(sub=>{
           const store=S.stores.find(s=>String(s.storeId)===String(sub.storeId));
           const item=S.cleaningItems.find(i=>String(i.itemId)===String(sub.itemId));
           const setting=S.storeSettings.find(s=>String(s.settingId)===String(sub.settingId));
           return`<div class="submission-item">
             <div class="submission-item-header">
               <div><div class="submission-item-title">${store?.storeName||'?'} ／ ${item?.itemName||'?'}${sub.rejectedBy?` <span style="color:var(--red);font-size:.75rem;font-weight:700">⚠ 差し戻し済</span>`:sub.managerConfirmedBy?` <span style="color:var(--green);font-size:.75rem">★確認済</span>`:''}</div>
-                <div class="submission-item-meta">${setting?.unitLabel||''}<br>${sub.improvedBy}（${sub.role}）改善日:${fmtD(sub.improvedDate)} ／ 送信:${fmtDT(sub.submittedAt)}${sub.rejectedBy?` ／ 差し戻し: ${sub.rejectionComment||''}`:sub.managerConfirmedBy?` ／ 店長確認: ${sub.managerConfirmedBy}`:''}</div></div>
+                <div class="submission-item-meta">${setting?.unitLabel||''}<br>${sub.improvedBy}（${sub.role}）改善日:${fmtD(sub.improvedDate)} ／ 送信:${fmtDT(sub.submittedAt)}${sub.rejectedBy?` ／ 差し戻し: ${sub.rejectionComment||''}`:sub.managerConfirmedBy?` ／ 店長確認: ${sub.managerConfirmedBy}`:''}${sub.adviceComment?`<br><span style="color:#b45309">💡 ${sub.adviceComment}</span>`:''}</div></div>
               ${sub.imageData?`<div onclick="loadAndOpenPhoto('${sub.submissionId}')" style="width:44px;height:44px;border-radius:6px;background:var(--gray-bg);display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;overflow:hidden;-webkit-tap-highlight-color:rgba(0,0,0,0.1)" id="pgw-${sub.submissionId}"><span>📷</span></div>`:''}</div>
             <div class="submission-item-actions">
               ${!sub.rejectedBy&&!sub.managerConfirmedBy?`<button class="btn-secondary btn-sm" onclick="quickManagerConfirm('${sub.submissionId}')">✔ 店長確認</button><button class="btn-secondary btn-sm" title="名前・日付を指定して確認" onclick="openManagerModal('${sub.submissionId}')">✎</button>`:''}
+              ${!sub.rejectedBy?`<button class="btn-secondary btn-sm" style="color:#b45309;border-color:#d97706" onclick="openAdviceModal('${sub.submissionId}')">💡 ${sub.adviceComment?'アドバイス編集':'アドバイス'}</button>`:''}
               ${!sub.rejectedBy?`<button class="btn-secondary btn-sm" style="color:var(--red);border-color:var(--red)" onclick="openRejectModal('${sub.submissionId}',${!!sub.managerConfirmedBy})">差し戻し</button>`:''}
               <button class="btn-danger btn-sm" onclick="confirmDeleteSub('${sub.submissionId}')">削除</button>
-            </div></div>`;}).join('')}` : ''}
+            </div></div>`;}).join('')}
+      ${filtered.length>S.subLimit?`<button class="btn-secondary btn-sm" style="width:100%;margin-top:8px" onclick="S.subLimit+=100;renderView()">さらに表示（残り${filtered.length-S.subLimit}件）</button>`:''}`;})() : ''}
     ${tab==='stores'?`
       <button class="admin-action-btn" onclick="addStorePrompt()"><span>🏪</span> 店舗を追加する</button>
       ${S.stores.map(st=>{const p=storeProgress(st.storeId);return`<div class="submission-item"><div class="flex items-center justify-between"><div><div class="submission-item-title">${st.storeName}</div><div class="submission-item-meta">進捗: ${p.pct}%（${p.done}/${p.total}箇所）</div></div><span class="badge badge-blue">ID:${st.storeId}</span></div></div>`;}).join('')}` : ''}
@@ -1347,7 +1376,8 @@ function renderAdmin() {
       <div class="text-sm text-gray">最終取得: ${S.lastFetch?new Date(S.lastFetch).toLocaleString('ja-JP'):'未取得'}</div>` : ''}
   </div>`;
 }
-function adminTab(t){S.adminTab=t;renderView();}
+function adminTab(t){S.adminTab=t;S.subLimit=50;renderView();}
+function setSubFilter(v){S.subFilter=v;S.subLimit=50;renderView();}
 function adminLogout(){S.isAdmin=false;renderView();}
 function adminSelectStore(v){S.selStoreId=v;S.bulkSelected.clear();renderView();}
 // 除外設定（設備なし）
@@ -1714,6 +1744,30 @@ async function doRejectSubmission(){
     await apiPost('rejectSubmission',{submissionId:id,rejectedBy:'管理者',rejectionComment:comment,clearManagerConfirm:clearManager});
     _applyRejectLocal(id,comment,clearManager);renderView();
     showToast('差し戻しました');
+  }catch(e){showToast('失敗: '+e.message,'error');}
+}
+// ワンポイントアドバイス
+function openAdviceModal(id){
+  S.pendingAdviceId=id;
+  document.getElementById('modal-confirm').classList.add('hidden'); // 詳細モーダルから開いた場合は閉じる
+  const sub=S.submissions.find(s=>String(s.submissionId)===String(id));
+  document.getElementById('advice-comment-input').value=(sub&&sub.adviceComment)||'';
+  document.getElementById('modal-advice').classList.remove('hidden');
+}
+function closeAdviceModal(){document.getElementById('modal-advice').classList.add('hidden');S.pendingAdviceId=null;}
+function _applyAdviceLocal(id,comment){
+  const sub=S.submissions.find(s=>String(s.submissionId)===String(id));
+  if(sub){sub.adviceComment=comment;sub.adviceBy=comment?'管理者':'';sub.adviceAt=comment?new Date().toISOString().substring(0,10):'';}
+  saveCache(S.submissions);_clearSubIdx();
+}
+async function doSaveAdvice(){
+  const id=S.pendingAdviceId;
+  const comment=document.getElementById('advice-comment-input').value.trim();
+  closeAdviceModal();
+  try{
+    await apiPost('saveAdvice',{submissionId:id,adviceComment:comment,adviceBy:'管理者'});
+    _applyAdviceLocal(id,comment);renderView();
+    showToast(comment?'アドバイスを保存しました':'アドバイスを削除しました');
   }catch(e){showToast('失敗: '+e.message,'error');}
 }
 // 画像データ（単一base64 or JSON配列文字列）→ 配列
