@@ -982,13 +982,16 @@ function renderSettings(){
     <div class="note mt">25年10月～26年9月のデータでテスト運用し、本番は26年10月～27年9月。切替はスプレッドシートにも保存されます。</div>
   </div>
 
-  <h2 class="sec">SCマスタ（名前を編集）</h2>
+  <h2 class="sec">SCマスタ（追加・削除・名前変更）</h2>
   <div class="card">
     <div class="form-grid" id="scNames">
-      ${DB.scs.map((sc,i) => `<div class="fld"><label>SC ${i+1}</label><input type="text" value="${esc(sc)}" data-old="${esc(sc)}"></div>`).join('')}
+      ${DB.scs.map((sc,i) => scNameRowHtml(sc, i)).join('')}
     </div>
-    <div class="flex mt"><button class="btn" onclick="saveScNames()">SC名を保存</button></div>
-    <div class="note mt">名前を変更すると担当店舗の割当も引き継がれます。</div>
+    <div class="flex mt">
+      <button class="btn ghost" onclick="addScRow()">SCを追加</button>
+      <button class="btn" onclick="saveScNames()">SCマスタを保存</button>
+    </div>
+    <div class="note mt">名前を変更すると担当店舗の割当も引き継がれます。SCを削除すると、その担当店舗は「未設定」になります。</div>
   </div>
 
   <h2 class="sec">SC担当店舗（チェックで切替）</h2>
@@ -1050,17 +1053,47 @@ async function switchFy(fy){
   if(gasUrl()){ DB = null; loadData(true); }
   else { DB.fy = fy; initMonthSelector(); renderAll(); toast('FY' + fy + 'に切替（デモ）'); }
 }
+function scNameRowHtml(sc, i){
+  return `<div class="fld sc-row"><label>SC ${i+1}</label>
+    <div style="display:flex;gap:6px">
+      <input type="text" value="${esc(sc)}" data-old="${esc(sc)}" placeholder="SC名" style="flex:1">
+      <button class="btn ghost" style="padding:0 13px;flex:none" onclick="removeScRow(this)" title="削除">×</button>
+    </div></div>`;
+}
+function addScRow(){
+  const wrap = document.getElementById('scNames');
+  wrap.insertAdjacentHTML('beforeend', scNameRowHtml('', wrap.querySelectorAll('.sc-row').length));
+  wrap.lastElementChild.querySelector('input').focus();
+}
+function removeScRow(btn){
+  const row = btn.closest('.sc-row');
+  const name = row.querySelector('input').value.trim();
+  const used = name ? Object.values(DB.assign).filter(s => s === name).length : 0;
+  if(used > 0 && !confirm(`「${name}」は${used}店舗を担当中です。削除すると担当は未設定になります。削除しますか？`)) return;
+  row.remove();
+  // ラベル振り直し
+  document.querySelectorAll('#scNames .sc-row label').forEach((l,i) => l.textContent = 'SC ' + (i+1));
+}
 async function saveScNames(){
   const inputs = [...document.querySelectorAll('#scNames input')];
-  const newNames = inputs.map(i => i.value.trim()).filter(Boolean);
-  // 割当の引継ぎ
+  const newNames = [];
+  inputs.forEach(i => {
+    const n = i.value.trim();
+    if(n && !newNames.includes(n)) newNames.push(n);
+  });
+  if(!newNames.length){ toast('SC名を1件以上入力してください'); return; }
+  // 名前変更分の割当引継ぎ
   inputs.forEach(i => {
     const oldN = i.dataset.old, newN = i.value.trim();
-    if(oldN !== newN) Object.keys(DB.assign).forEach(c => { if(DB.assign[c] === oldN) DB.assign[c] = newN; });
+    if(oldN && newN && oldN !== newN)
+      Object.keys(DB.assign).forEach(c => { if(DB.assign[c] === oldN) DB.assign[c] = newN; });
   });
+  // 削除されたSCの割当を解除
+  Object.keys(DB.assign).forEach(c => { if(!newNames.includes(DB.assign[c])) delete DB.assign[c]; });
   DB.scs = newNames;
+  if(state.sc && !newNames.includes(state.sc)) state.sc = newNames[0];
   await post({action:'saveScMaster', scs:newNames}, null);
-  await post({action:'saveScAssign', assign:DB.assign}, 'SC名と担当を保存しました');
+  await post({action:'saveScAssign', assign:DB.assign}, 'SCマスタと担当を保存しました');
   renderSettings();
 }
 async function saveAssign(){
