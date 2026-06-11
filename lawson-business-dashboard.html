@@ -239,7 +239,7 @@ hr.sep{border:none;border-top:1px solid var(--line);margin:14px 0}
   <div id="demoBanner" class="demo-banner" style="display:none">デモデータ表示中 - 設定画面でGAS URLを登録すると実データに切り替わります</div>
 
   <!-- ===== ① 全社 ===== -->
-  <section class="view" id="v-company"></section>
+  <section class="view on" id="v-company"></section>
   <!-- ===== ② SC別 ===== -->
   <section class="view" id="v-sc"></section>
   <!-- ===== ③ 店舗別 ===== -->
@@ -284,6 +284,17 @@ const K = {                                          // 科目名
 //   着地シュミレーションExcelのY列も(経費)側を参照しているため、(経費)を使用する。
 // 着地計算（v3）で使う部門名
 const FF_DEPTS = ['ファストフーズ','店内厨房'];   // 売変の原価換算50%対象（総平均法）
+
+// 廃棄（売変）の内訳予算基準: 部門グループごとの売上対比の基準率(%)
+const WASTE_GROUPS = [
+  {l:'AICO', d:'米飯・調理パン・調理麺・デリカ・デザート・ベーカリー・生鮮品',
+    depts:['米飯','調理パン','調理麺','デリカ','デザート','ベーカリー','生鮮品'], basis:10},
+  {l:'OPケース', d:'チルド飲料・常温和洋菓子・日配食品',
+    depts:['チルド飲料','常温和洋菓子','日配食品'], basis:5},
+  {l:'FF', d:'ファストフーズ', depts:['ファストフーズ'], basis:8},
+  {l:'厨房', d:'店内厨房', depts:['店内厨房'], basis:15},
+  {l:'ドライ・その他', d:'上記以外の全部門', depts:null, basis:0.3}  // null=残り全部
+];
 const EVAL_ITEMS = {
   SI:    ['QSC','衛生','5S','認定店長育成'],
   TENCHO:['QSC','人材育成']
@@ -573,6 +584,9 @@ function storeSc(code){ return DB.assign[code] || '未設定'; }
 // ============================================================
 function renderAll(){
   document.getElementById('monthSel').value = state.mi;
+  // 表示中ビューの切替も同期する（初回ロード時にどのsectionにも .on が無いと真っ暗になるため）
+  document.querySelectorAll('#nav button').forEach(b => b.classList.toggle('on', b.dataset.v === state.view));
+  document.querySelectorAll('.view').forEach(s => s.classList.toggle('on', s.id === 'v-' + state.view));
   renderView(state.view);
 }
 function renderView(v){
@@ -791,9 +805,12 @@ function renderStore(){
 
   ${f.detail ? `
   <h2 class="sec">着地要因分解（予算 → 着地）</h2>
-  <div class="chart-card"><div class="chart-box"><canvas id="chWf"></canvas></div></div>` : ''}
+  <div class="chart-card"><div class="chart-box"><canvas id="chWf"></canvas></div>
+    <div class="note mt">左端の紫が店利益予算（起点）、右端の水色が着地見込。間の棒は各要因による増減で、緑＝利益を押し上げ / 赤＝押し下げ。棒の高さ＝増減額、棒の位置＝その要因まで反映した後の利益水準です。</div>
+  </div>` : ''}
 
   ${f.v3 ? v3DetailHtml(f) : ''}
+  ${wasteHtml(f, code, ym)}
 
   <h2 class="sec">月次推移（${storeName(code)}）</h2>
   <div class="chart-card">
@@ -838,6 +855,59 @@ function v3DetailHtml(f){
       <tr><td><b>支援・雑益 合計</b></td><td class="num"><b>${fmt(v.AU)}</b></td><td></td></tr>
     </table></div>
     <div class="note mt">店利益着地 ＝ 店利益予算 ${fmt(f.bud)} ＋ FC収入差異 ${fmtSign(v.U)} − 見切処分差異 ${fmtSign(v.AA)} ＋ 支援・雑益 ${fmtSign(v.AU)} ＋ 手入力補正。まちかど厨房売上は専用データを使用（DEPT速報の店内厨房はGR売上込みのため計算に使いません）。</div>
+  </div>`;
+}
+
+// 見切・処分（売変）の内訳検証: 部門グループ別に基準率と比較し、どこで使いすぎているかを表示
+function wasteHtml(f, code, ym){
+  const rows = (IDX.dept[ym]||[]).filter(r => r.code === code);
+  if(!rows.length) return '';
+  const grouped = new Set(WASTE_GROUPS.flatMap(g => g.depts || []));
+  let totS = 0, totH = 0;
+  const data = WASTE_GROUPS.map(g => {
+    let s = 0, h = 0;
+    rows.forEach(r => {
+      const inG = g.depts ? g.depts.includes(r.dept) : !grouped.has(r.dept);
+      if(inG){ s += r.sales; h += r.hengaku; }
+    });
+    totS += s; totH += h;
+    return { ...g, s, h,
+      rate: s > 0 ? h/s*100 : null,
+      over: s > 0 ? h - s*g.basis/100 : null };   // +で基準超過（使いすぎ）
+  });
+
+  // 値引: 営業速報の売変Ⅲ（値引込み）− DEPT売変（商品廃棄）= 値引販売に使った分
+  const ex = IDX.ex[ym+'|'+code];
+  const mid = IDX.mid[ym+'|'+code];
+  const days = (ex && ex.days) || (mid && mid.days) || 0;
+  const nebiki = (ex && ex.hengaku3 !== null && days > 0) ? ex.hengaku3/1000*days - totH : null;
+
+  const tr = x => {
+    const overCls = x.over === null ? '' : x.over > 0 ? 't-bad' : 't-ok';
+    return `<tr>
+      <td>${x.l}<div style="font-size:.68rem;color:var(--dim)">${x.d}</div></td>
+      <td>${fmt(x.s)}</td><td>${fmt(x.h)}</td>
+      <td class="${x.rate !== null && x.rate > x.basis ? 't-bad' : 't-ok'}">${pct(x.rate)}</td>
+      <td>${x.basis}%</td>
+      <td class="${overCls}">${x.over === null ? '-' : fmtSign(Math.round(x.over))}</td>
+    </tr>`;
+  };
+  const totRate = totS > 0 ? totH/totS*100 : null;
+  const totOver = data.reduce((a, x) => a + (x.over || 0), 0);
+
+  return `
+  <h2 class="sec">見切・処分の内訳検証（${ym.replace('-','/')} 累計・千円）</h2>
+  <div class="card">
+    <div class="tbl-wrap"><table>
+      <tr><th>区分</th><th>売上</th><th>売変高(廃棄)</th><th>売変率</th><th>基準</th><th>基準差異額</th></tr>
+      ${data.map(tr).join('')}
+      <tr style="font-weight:700"><td>商品廃棄 合計</td><td>${fmt(totS)}</td><td>${fmt(totH)}</td>
+        <td class="${totOver > 0 ? 't-bad' : 't-ok'}">${pct(totRate)}</td><td>-</td>
+        <td class="${totOver > 0 ? 't-bad' : 't-ok'}">${fmtSign(Math.round(totOver))}</td></tr>
+      ${nebiki !== null ? `<tr><td>値引（売変Ⅲ−商品廃棄）</td><td>-</td><td>${fmt(Math.round(nebiki))}</td>
+        <td>${totS > 0 ? pct(nebiki/totS*100) : '-'}</td><td>-</td><td>-</td></tr>` : ''}
+    </table></div>
+    <div class="note mt">基準差異額 ＝ 売変高 −（売上 × 基準率）。プラス（赤）は基準より廃棄を使いすぎ。基準率: AICO 10% / OPケース 5% / FF 8% / 厨房 15% / ドライ 0.3%。値引は営業速報の売変ⅢとDEPT速報の商品廃棄の差額で、値引販売に使った分です。${nebiki === null ? ' 値引は営業速報の取込後に表示されます。' : ''}</div>
   </div>`;
 }
 
@@ -909,10 +979,16 @@ function drawWaterfall(id, f){
     s.v >= 0 ? 'rgba(45,212,167,.65)' : 'rgba(255,93,115,.65)');
   charts[id] = new Chart(document.getElementById(id), {
     type:'bar',
-    data:{labels:steps.map(s => s.l), datasets:[{data, backgroundColor:colors, borderRadius:5, borderSkipped:false}]},
+    // ラベルは2行表示: 要因名 + 金額（増減は±付き）で、棒だけ見ても基準が分かるようにする
+    data:{labels:steps.map(s => [s.l, s.type === 'delta' ? fmtSign(Math.round(s.v)) : fmt(s.v)]),
+      datasets:[{data, backgroundColor:colors, borderRadius:5, borderSkipped:false}]},
     options: chartOpts({plugins:{legend:{display:false},
-      tooltip:{callbacks:{label:c => { const s = steps[c.dataIndex];
-        return s.type === 'delta' ? fmtSign(s.v) + ' 千円' : fmt(s.v) + ' 千円'; }}}}})
+      tooltip:{callbacks:{
+        title:c => steps[c[0].dataIndex].l,
+        label:c => { const s = steps[c.dataIndex];
+        if(s.type === 'delta'){ let run2 = steps[0].v; for(let i = 1; i <= c.dataIndex; i++) run2 += steps[i].v;
+          return fmtSign(s.v) + ' 千円（反映後 ' + fmt(run2) + '）'; }
+        return fmt(s.v) + ' 千円'; }}}}})
   });
 }
 
