@@ -326,6 +326,17 @@ input,select,textarea,button{font-family:inherit;font-size:14px}
   </div>
 </div>
 
+<div id="modal-quick-edit" class="modal hidden">
+  <div class="modal-header">
+    <h2 id="modal-quick-edit-title">役職・資格を編集</h2>
+    <button onclick="App.closeModal()">✕</button>
+  </div>
+  <div class="modal-body">
+    <div id="modal-quick-edit-body"></div>
+    <button class="btn btn-primary btn-full" style="margin-top:16px" onclick="App.saveQuickEdit()">保存する</button>
+  </div>
+</div>
+
 <div id="modal-standards" class="modal hidden">
   <div class="modal-header">
     <h2 id="modal-standards-title"></h2>
@@ -1030,11 +1041,13 @@ const App={
     if(q)emps=emps.filter(e=>e.name.includes(q)||e.store.includes(q));
     emps=emps.filter(e=>e.status!=='退職');
     const evals=DB.evaluations();
+    const canEdit=this._canEdit();
     document.getElementById('employee-list-content').innerHTML=emps.length?emps.map(e=>{
       const badges=this._roleBadges(e);
       const done=SERVICE_ITEMS.every(item=>this._getFinalRank(evals,e.id,item.key));
       const tag=done?'<span class="badge" style="background:#D1FAE5;color:#065F46">評価済</span>':'<span class="badge badge-crew">未評価</span>';
-      return`<div class="emp-card" onclick="App.openEmployee('${e.id}')"><div class="emp-avatar">${e.name.charAt(0)}</div><div class="emp-info"><div class="emp-name">${e.name}</div><div class="emp-sub">${e.store}｜${this._typeName(e.type)}</div><div class="emp-badges">${badges}${tag}</div></div><div style="color:var(--gray)">›</div></div>`;
+      const editBtn=canEdit?`<button class="btn btn-secondary btn-sm" style="flex-shrink:0" onclick="event.stopPropagation();App.openQuickEdit('${e.id}')">✏️</button>`:'';
+      return`<div class="emp-card" onclick="App.openEmployee('${e.id}')"><div class="emp-avatar">${e.name.charAt(0)}</div><div class="emp-info"><div class="emp-name">${e.name}</div><div class="emp-sub">${e.store}｜${this._typeName(e.type)}</div><div class="emp-badges">${badges}${tag}</div></div>${editBtn}<div style="color:var(--gray)">›</div></div>`;
     }).join(''):'<div class="empty-state"><p>該当するクルーが見つかりません</p></div>';
   },
 
@@ -1300,6 +1313,30 @@ const App={
   },
 
   editEmployee(id){this._currentFormEmpId=id;this.showView('employee-form')},
+
+  openQuickEdit(id){
+    const e=DB.employees().find(x=>x.id===id);if(!e)return;
+    this._quickEditEmpId=id;
+    const roleChecks=CREW_ROLES.map(r=>`<label class="checkbox-item"><input type="checkbox" name="qe-role" value="${r}" ${(e.crewRoles||[]).includes(r)?'checked':''}>${r}</label>`).join('');
+    const certChecks=CERTIFICATIONS.map(c=>`<label class="checkbox-item"><input type="checkbox" name="qe-cert" value="${c}" ${(e.certifications||[]).includes(c)?'checked':''}>${c}</label>`).join('');
+    document.getElementById('modal-quick-edit-title').textContent=`${e.name}｜役職・資格`;
+    document.getElementById('modal-quick-edit-body').innerHTML=`
+      <div style="font-weight:700;margin-bottom:8px">クルー役職</div>
+      <div class="checkbox-group" style="margin-bottom:16px">${roleChecks}</div>
+      <div style="font-weight:700;margin-bottom:8px">資格・認定</div>
+      <div class="checkbox-group">${certChecks}</div>`;
+    this._openModal('modal-quick-edit');
+  },
+
+  saveQuickEdit(){
+    const id=this._quickEditEmpId;const emp=Storage.getEmployee(id);if(!emp)return;
+    const crewRoles=[...document.querySelectorAll('input[name=qe-role]:checked')].map(i=>i.value);
+    const certifications=[...document.querySelectorAll('input[name=qe-cert]:checked')].map(i=>i.value);
+    Storage.upsertEmployee({...emp,crewRoles,certifications});
+    this.closeModal();this._quickEditEmpId=null;
+    this.filterEmployees();
+    this.showToast('保存しました','success');
+  },
 
   renderEmployeeForm(){
     const id=this._currentFormEmpId;const emps=DB.employees();const e=id?emps.find(x=>x.id===id):null;
