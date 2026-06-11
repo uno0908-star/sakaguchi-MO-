@@ -278,8 +278,10 @@ const K = {                                          // 科目名
   NIPPAN:'平均日販', GROSS:'総粗利益高', GRATE:'総粗利率', FC:'フランチャイジー収入',
   PROFIT:'店利益', SALES:'商品売上高', CHARGE:'ローソンチャージ',
   LABOR:'[ 人 件 費 小 計 ]', PART:'パート給与', EXP:'[ その他経費小計 ]',
-  OPPROFIT:'【 営 業 利 益 】'
+  OPPROFIT:'【 営 業 利 益 】', MIKIRI:'見切・処分(原価)'
 };
+// 着地計算（v3）で使う部門名
+const FF_DEPTS = ['ファストフーズ','店内厨房'];   // 売変の原価換算50%対象（総平均法）
 const EVAL_ITEMS = {
   SI:    ['QSC','衛生','5S','認定店長育成'],
   TENCHO:['QSC','人材育成']
@@ -358,6 +360,17 @@ function buildIndex(){
     (IDX.dept[r[0]] = IDX.dept[r[0]] || []).push(
       {code:r[1], dept:r[2], sales:num(r[3],0), prev:num(r[4],0), hengaku:num(r[5],0), uri:num(r[6],0), gen:num(r[7],0)});
   });
+  IDX.ex = {};
+  (DB.ex||[]).forEach(r => {
+    // [ym, code, 営業日数, 平均日販(円), 日販前年比, 売変Ⅲ PSA/D(円), 本部支援確定(円), 支援集計日数, 厨房日販(円)]
+    IDX.ex[r[0]+'|'+r[1]] = {days:num(r[2],null), nippan:num(r[3],null), yoy:num(r[4],null),
+      hengaku3:num(r[5],null), shien:num(r[6],null), shienDays:num(r[7],null), kitchen:num(r[8],null)};
+  });
+  IDX.ct = {};
+  (DB.contracts||[]).forEach(r => {
+    // [code, 雑益区分(CN/TS), チャージ率1, 率2, 率3]（小数）
+    IDX.ct[r[0]] = {kubun:r[1]||'', d:num(r[2],null), e:num(r[3],null), f:num(r[4],null)};
+  });
 }
 
 // b(code, 科目, 区分, mi)  mi=-1で年間
@@ -397,19 +410,86 @@ function initMonthSelector(){
 }
 
 // ============================================================
-//  着地予測エンジン v2（精算書ベース）
+//  着地予測エンジン v3（精算書＋速報連動 / 店利益着地シュミレーションExcel準拠）
 //  確定月  = 精算書実績（予算実績シートの実績）をそのまま使用
-//  未確定月 = 予算店利益 - 人件費見込差 - 有給 - 経費補正 + 特殊要因
-//  ※ DEPT速報は計算に使わず、検証用の参考表示のみ（進捗/前年比/ロス率/厨房比率）
+//  未確定月（速報あり）= 店利益予算 + FC収入差異 − 見切処分差異 + 支援・雑益 + 手入力補正
+//    ・FC収入差異: 営業速報の平均日販×30日→荒利→チャージ3段階スライド（契約マスタの料率）
+//    ・見切処分差異: (値引+FF厨房以外売変)×70% + (FF+店内厨房売変)×50% を30日換算 − 予算
+//    ・支援・雑益: 本部支援(÷集計日数×28) + 厨房支援金(まちかど厨房日販×率×30)
+//                  + CN雑益(ロス差異×50%) or TS雑益(荒利差異×5%) + 最低保証(FC収入1900未満)
+//    ・まちかど厨房売上は専用データから取得（DEPT速報の厨房はGR売上込みのため使わない）
+//  未確定月（速報なし）= 予算 + 手入力補正（v2と同じ）
 // ============================================================
+
+// チャージ3段階スライドからFC収入を計算（gross: 荒利 千円, ct: {d,e,f} チャージ率）
+function chargeFC(gross, ct){
+  if(gross <= 3000) return gross * (1 - ct.d);
+  if(gross <= 4500) return 3000 * (1 - ct.d) + (gross - 3000) * (1 - ct.e);
+  return 3000 * (1 - ct.d) + 1500 * (1 - ct.e) + (gross - 4500) * (1 - ct.f);
+}
+
+// 速報連動の着地要素を計算。データ不足時は null（v2へフォールバック）
+function calcV3(code, mi, ym, ex, mid){
+  if(!ex || ex.nippan === null) return null;
+  const G = ex.nippan / 1000;                       // 平均日販（千円/日）
+  const budN  = b(code, K.NIPPAN, '予算', mi);
+  const prevN = b(code, K.NIPPAN, '前年', mi);
+  const R = b(code, K.GRATE, '予算', mi);           // 荒利率予算(%)
+  if(R === null) return null;
+  const L = G * 30;                                 // 売上着地（30日換算）
+  // 売上予算（30日換算）: 前年日販（速報の前年比から逆算）× 予算前年比
+  const J = (budN !== null && prevN) ? budN / prevN * 100 : null;
+  const H = ex.yoy ? G / ex.yoy * 100 : prevN;
+  const M = (H !== null && J !== null) ? H * J * 30 / 100 : (budN !== null ? budN * 30 : null);
+  if(M === null) return null;
+
+  const O = L * R / 100, P = M * R / 100;           // 荒利着地 / 荒利予算
+  const ct = IDX.ct[code];
+  const hasCt = !!(ct && ct.d !== null && ct.e !== null && ct.f !== null);
+  const S = hasCt ? chargeFC(O, ct) : null;         // FC収入着地
+  const T = hasCt ? chargeFC(P, ct) : null;
+  const U = hasCt ? S - T : 0;                      // FC収入差異
+
+  // 見切・処分（売変の原価換算）
+  const Y = num(b(code, K.MIKIRI, '予算', mi), 0);  // 見切処分予算
+  const days = ex.days || (mid ? mid.days : 0);
+  let Z = null, AA = 0;
+  if(days > 0 && ex.hengaku3 !== null){
+    const rows = (IDX.dept[ym] || []).filter(r => r.code === code);
+    if(rows.length){
+      let tot = 0, ff = 0;
+      rows.forEach(r => { tot += r.hengaku; if(FF_DEPTS.includes(r.dept)) ff += r.hengaku; });
+      const AC = tot / days, AEF = ff / days;       // DEPT売変 千円/日
+      const AB = ex.hengaku3 / 1000;                // 営業速報 売変Ⅲ 千円/日
+      const AH = AB - AC;                           // 値引（売変Ⅲ − DEPT売変）
+      Z = ((AH + (AC - AEF)) * 0.7 + AEF * 0.5) * 30;
+      AA = Z - Y;                                   // 見切処分差異
+    }
+  }
+
+  // 支援・雑益
+  const AN = ex.shien !== null ? (ex.shien / 1000) / (ex.shienDays || 20) * 28 : 0;  // 本部支援/月
+  const AO = ex.kitchen !== null ? ex.kitchen / 1000 : 0;                            // 厨房日販 千円
+  const AQ = AO < 10 ? 0 : AO < 20 ? .07 : AO < 30 ? .08 : .10;                      // 厨房支援率
+  const AP = AO * AQ * 30;                                                           // 厨房支援金/月
+  const AR = (ct && ct.kubun === 'CN') ? AA * .5 : 0;                                // CN雑益
+  const AS = (ct && ct.kubun === 'TS') ? (O - P) * .05 : 0;                          // TS雑益
+  const AT = S !== null ? Math.max(0, 1900 - S) : 0;                                 // 最低保証
+  const AU = AP + AR + AS + AT + AN;
+
+  return { L, M, O, P, S, T, U, Y, Z, AA, AN, AO, AP, AQ, AR, AS, AT, AU,
+    hasCt, hasLoss: Z !== null, kubun: ct ? ct.kubun : '' };
+}
+
 function forecast(code, mi){
   const ym = ymOf(mi);
   const budProfit = b(code, K.PROFIT, '予算', mi);
   const actProfit = b(code, K.PROFIT, '実績', mi);
   const budSales  = b(code, K.SALES, '予算', mi);
   const budLabor  = b(code, K.LABOR, '予算', mi);
-  const mid = IDX.mid[ym+'|'+code] || null;   // 検証用（計算には不使用）
+  const mid = IDX.mid[ym+'|'+code] || null;
   const inp = IDX.inp[ym+'|'+code] || {};
+  const ex = IDX.ex[ym+'|'+code] || null;
   const dTotal = daysInMonth(mi);
 
   // --- 確定月（精算書実績あり）---
@@ -417,24 +497,29 @@ function forecast(code, mi){
     const actSales = b(code, K.SALES, '実績', mi);
     return { status:'fixed', profit:actProfit, sales:actSales, bud:budProfit, budSales,
       rate: budProfit ? actProfit/budProfit*100 : null,
-      nippan: actSales !== null ? actSales/dTotal : null, detail:null, mid, inp };
+      nippan: actSales !== null ? actSales/dTotal : null, detail:null, mid, inp, v3:null };
   }
 
-  // --- 未確定月: 予算 + 手入力補正 ---
+  // --- 未確定月: 手入力補正（v2/v3共通） ---
   const fLabor = (inp.labor !== null && inp.labor !== undefined && budLabor !== null) ? -(inp.labor - budLabor) : 0;
   const fPaid  = -(num(inp.paid, 0));
   const fExp   = -(num(inp.expAdj, 0));
   const fSpec  = num(inp.special, 0);
-  const profitFC = (budProfit || 0) + fLabor + fPaid + fExp + fSpec;
+
+  // --- 速報連動（v3） ---
+  const v3 = calcV3(code, mi, ym, ex, mid);
+  const fAuto = v3 ? v3.U - v3.AA + v3.AU : 0;
+  const profitFC = (budProfit || 0) + fAuto + fLabor + fPaid + fExp + fSpec;
 
   return {
-    status:'forecast', profit:profitFC, sales:budSales, bud:budProfit, budSales,
+    status:'forecast', profit:profitFC,
+    sales: v3 ? v3.L : budSales, bud:budProfit, budSales,
     rate: budProfit ? profitFC/budProfit*100 : null,
-    nippan: budSales !== null ? budSales/dTotal : null,
-    detail:{ fLabor, fPaid, fExp, fSpec,
+    nippan: v3 ? v3.L/30 : (budSales !== null ? budSales/dTotal : null),
+    detail:{ fLabor, fPaid, fExp, fSpec, mode: v3 ? 'v3' : 'v2',
       progress: mid ? mid.days/dTotal*100 : null,
       yoy: mid && mid.prevCum > 0 ? mid.cum/mid.prevCum*100 : null },
-    mid, inp
+    mid, inp, v3
   };
 }
 
@@ -442,7 +527,7 @@ function forecast(code, mi){
 function hasInput(inp){
   return inp && [inp.labor, inp.paid, inp.expAdj, inp.special].some(v => v !== null && v !== undefined && v !== '');
 }
-function isManaged(f){ return f.status === 'fixed' || hasInput(f.inp); }
+function isManaged(f){ return f.status === 'fixed' || hasInput(f.inp) || !!f.v3; }
 
 // 集計予測（全社/SC）
 function forecastAgg(codes, mi){
@@ -674,7 +759,8 @@ function renderStore(){
   const mid = f.mid;
   const dTotal = daysInMonth(mi);
 
-  const stLabel = f.status === 'fixed' ? '実績（精算書確定）' : '着地予測（予算＋補正）';
+  const stLabel = f.status === 'fixed' ? '実績（精算書確定）'
+    : f.v3 ? '着地予測（速報連動）' : '着地予測（予算＋補正）';
 
   el.innerHTML = `
   <div class="fld mb"><select onchange="state.store=this.value;renderStore()">
@@ -705,6 +791,8 @@ function renderStore(){
   <h2 class="sec">着地要因分解（予算 → 着地）</h2>
   <div class="chart-card"><div class="chart-box"><canvas id="chWf"></canvas></div></div>` : ''}
 
+  ${f.v3 ? v3DetailHtml(f) : ''}
+
   <h2 class="sec">月次推移（${storeName(code)}）</h2>
   <div class="chart-card">
     <div class="pills" style="margin-bottom:8px">
@@ -718,6 +806,37 @@ function renderStore(){
 
   if(f.detail) drawWaterfall('chWf', f);
   drawStoreTrend('chStMonthly', code);
+}
+
+// 速報連動（v3）の計算内訳カード
+function v3DetailHtml(f){
+  const v = f.v3;
+  const warn = [];
+  if(!v.hasCt) warn.push('契約マスタ（雑益区分・チャージ率）が未設定のため、FC収入差異と最低保証は0として計算しています。スプレッドシートの「契約マスタ」を入力してください。');
+  if(!v.hasLoss) warn.push('DEPT速報または営業速報の売変データが未取込のため、見切処分差異は0として計算しています。');
+  const row = (l, a, b2, d) => `<tr><td>${l}</td><td class="num">${a}</td><td class="num">${b2}</td><td class="num">${d}</td></tr>`;
+  return `
+  <h2 class="sec">速報連動の計算内訳（30日換算・千円）</h2>
+  <div class="card">
+    ${warn.map(w => `<div class="note mb" style="color:var(--warn)">注意: ${w}</div>`).join('')}
+    <div class="tbl-wrap"><table>
+      <tr><th></th><th>着地見込</th><th>予算</th><th>差異</th></tr>
+      ${row('商品売上高', fmt(v.L), fmt(v.M), fmtSign(v.L - v.M))}
+      ${row('総荒利益高', fmt(v.O), fmt(v.P), fmtSign(v.O - v.P))}
+      ${v.hasCt ? row('FC収入（チャージ後）', fmt(v.S), fmt(v.T), fmtSign(v.U)) : ''}
+      ${row('見切・処分（原価換算）', v.Z !== null ? fmt(v.Z) : '-', fmt(v.Y), fmtSign(-v.AA))}
+    </table></div>
+    <div class="tbl-wrap mt"><table>
+      <tr><th>支援・雑益の内訳</th><th>金額</th><th>備考</th></tr>
+      <tr><td>本部支援</td><td class="num">${fmt(v.AN)}</td><td>確定額÷集計日数×28日</td></tr>
+      <tr><td>厨房支援金</td><td class="num">${fmt(v.AP)}</td><td>まちかど厨房 ${fmt(v.AO,1)}千円/日 × ${Math.round(v.AQ*100)}% × 30日</td></tr>
+      ${v.kubun === 'CN' ? `<tr><td>雑益追加（CN）</td><td class="num">${fmt(v.AR)}</td><td>見切処分差異×50%</td></tr>` : ''}
+      ${v.kubun === 'TS' ? `<tr><td>雑益追加（TS）</td><td class="num">${fmt(v.AS)}</td><td>荒利差異×5%</td></tr>` : ''}
+      <tr><td>最低保証</td><td class="num">${fmt(v.AT)}</td><td>FC収入1900千円未満の補填</td></tr>
+      <tr><td><b>支援・雑益 合計</b></td><td class="num"><b>${fmt(v.AU)}</b></td><td></td></tr>
+    </table></div>
+    <div class="note mt">店利益着地 ＝ 店利益予算 ${fmt(f.bud)} ＋ FC収入差異 ${fmtSign(v.U)} − 見切処分差異 ${fmtSign(v.AA)} ＋ 支援・雑益 ${fmtSign(v.AU)} ＋ 手入力補正。まちかど厨房売上は専用データを使用（DEPT速報の店内厨房はGR売上込みのため計算に使いません）。</div>
+  </div>`;
 }
 
 // 月の状態に応じた入力欄の出し分け
@@ -740,7 +859,9 @@ function monthInputHtml(f, code, mi, ym, inp){
   </div>`;
   }
 
-  const noteTop = '着地予測は精算書ベース（予算＋補正）で計算します。入力すると即反映、空欄は予算値を使用。DEPT速報は検証用の参考表示で、計算には使用しません。単位: 千円';
+  const noteTop = f.v3
+    ? '着地予測は速報連動（営業速報・DEPT速報・本部支援・まちかど厨房）で自動計算しています。ここの入力は追加の補正として着地に上乗せされます。空欄は補正なし。単位: 千円'
+    : '速報データ未取込のため、着地予測は予算＋補正で計算しています。営業速報等を取込むと自動計算に切り替わります。入力すると即反映、空欄は予算値を使用。単位: 千円';
 
   return `
   <h2 class="sec">月中入力（${ymd} 着地予測の補正）</h2>
@@ -760,8 +881,14 @@ function monthInputHtml(f, code, mi, ym, inp){
 function drawWaterfall(id, f){
   destroyCharts([id]);
   const d = f.detail;
+  const v = f.v3;
   const steps = [
     {l:'予算', v:f.bud||0, type:'base'},
+    ...(v ? [
+      {l:'FC収入差異', v:v.U, type:'delta'},
+      {l:'見切処分差異', v:-v.AA, type:'delta'},
+      {l:'支援・雑益', v:v.AU, type:'delta'}
+    ] : []),
     {l:'人件費', v:d.fLabor, type:'delta'},
     {l:'有給', v:d.fPaid, type:'delta'},
     {l:'経費補正', v:d.fExp, type:'delta'},
@@ -951,7 +1078,7 @@ function renderDept(){
         <td><div class="rank-bar" style="width:${Math.max(r.sales,0)/maxS*100}%"></div></td></tr>`;
     }).join('')}
   </table></div>
-  <div class="note mt">DEPT速報の月内累計に基づく検証用データです（着地予測の計算には使用しません）。売変率＝売変高÷売上、値入率＝(仕入売価−仕入原価)÷仕入売価。前年比が赤の部門は前年割れです。</div>`;
+  <div class="note mt">DEPT速報の月内累計に基づくデータです。売変高は着地予測（見切処分差異の原価換算）にも使用します。売変率＝売変高÷売上、値入率＝(仕入売価−仕入原価)÷仕入売価。前年比が赤の部門は前年割れです。</div>`;
 }
 
 // ---------- ⑤ 評価 ----------
@@ -1124,7 +1251,7 @@ function renderSettings(){
       <div class="fld"><label>危険ライン（達成率%）</label><input type="number" id="p-danger" value="${num(p.dangerLine,95)}"></div>
     </div>
     <div class="flex mt"><button class="btn" onclick="saveParamsUi()">パラメータを保存</button></div>
-    <div class="note mt">着地予測は精算書ベース（予算＋手入力補正）。DEPT速報は検証用表示のみで、着地計算には使用しません。</div>
+    <div class="note mt">着地予測: 確定月＝精算書実績。未確定月＝速報連動（営業速報・DEPT速報・本部支援・まちかど厨房から自動計算）＋手入力補正。速報未取込の月は予算＋手入力補正で計算します。</div>
   </div>
 
   <h2 class="sec">データ取込の手順</h2>
@@ -1141,7 +1268,14 @@ function renderSettings(){
     <b style="color:var(--txt)">■ 過去月のDEPT速報を取り込む場合</b><br>
     月ごとに「貼付け → 取込（その月の年月を指定）」を繰り返すだけです。<br>
     取込は年月単位で上書き保存されるため、同じ月は最新の貼付けが有効になります。<br>
-    各月のデータが何日時点かは、画面上に「DEPT速報 ◯/◯時点」と自動表示されます。
+    各月のデータが何日時点かは、画面上に「DEPT速報 ◯/◯時点」と自動表示されます。<br><br>
+    <b style="color:var(--txt)">■ 着地予測の自動計算に使うデータ（いずれも貼付け → メニューから取込）</b><br>
+    ・営業速報レポート全体 → 「貼付_営業速報」 → 「営業速報取込」（平均日販・前年比・売変Ⅲ）<br>
+    ・本部支援額(カテゴリ別) → 「貼付_支援」 → 「本部支援取込」（取込時に集計日数を入力）<br>
+    ・まちかど厨房販売高データ → 「貼付_厨房」 → 「まちかど厨房取込」<br>
+    　※DEPT速報の店内厨房はGR（ゴーストレストラン）売上込みのため、厨房支援金の計算には専用データを使います<br>
+    ・スプレッドシート「契約マスタ」に各店の雑益区分（CN/TS）とチャージ率3段階を入力（初回のみ）<br>
+    営業速報が取込まれた月は、着地予測が自動で「速報連動」に切り替わります。
   </div>`;
 }
 
@@ -1276,7 +1410,8 @@ function makeDemoData(){
   const now = new Date();
   const curYm = now.getFullYear() + '-' + String(now.getMonth()+1).padStart(2,'0');
   const fy = 2025;
-  const mid = [], inputs = [], dept = [];
+  const mid = [], inputs = [], dept = [], ex = [];
+  const contracts = stores.map((s,i) => [s.code, i % 3 === 0 ? 'TS' : 'CN', .42, .68, .54]);
   const DEMO_DEPTS = ['米飯','調理パン','麺類','店内厨房','デザート','チルド飲料','ソフトドリンク','酒類','菓子','タバコ','雑誌','日用品'];
   stores.forEach((s,si) => {
     const r = rng(si + 7);
@@ -1294,6 +1429,7 @@ function makeDemoData(){
       push(K.LABOR, labor, true); push(K.PROFIT, profit, true);
       push(K.NIPPAN, sales.map((v,i2) => Math.round(v / daysFor(fy, i2))), false);
       push(K.GRATE, sales.map(() => Math.round(grate * 100) / 100), false);
+      push(K.MIKIRI, sales.map(v => Math.round(v * .012)), true);
     });
     // 実績: 過去月
     const budSales = mk(K.SALES).find(x => x[2] === '予算');
@@ -1322,6 +1458,12 @@ function makeDemoData(){
             Math.round(share * (0.01 + r() * .03)), Math.round(share * .62), Math.round(share * .42)]);
         });
         if(r() > .6) inputs.push([ym, s.code, Math.round(budSales[4+i] * .078), Math.round(r()*80), null, r() > .8 ? -150 : null, Math.round(1300 + r()*500), 'デモ入力']);
+        // 月中速報（営業速報・本部支援・まちかど厨房）
+        ex.push([ym, s.code, days, Math.round(cum / days * 1000),
+          Math.round((88 + r() * 24) * 100) / 100,
+          Math.round(cum * (0.022 + r() * .01) / days * 1000),
+          Math.round(r() * 100) * 1000, 20,
+          Math.round((8 + r() * 28) * 1000)]);
       }
     }
     budget.push([s.code, K.SALES, '実績', null, ...actSales]);
@@ -1329,7 +1471,7 @@ function makeDemoData(){
   });
   function daysFor(fy2, mi){ const m = FISCAL[mi]; const y = m >= 10 ? fy2 : fy2 + 1; return new Date(y, m, 0).getDate(); }
   return { fy, settings:{}, params:{warnLine:100, dangerLine:95},
-    stores, scs, assign, budget, mid, dept, inputs, evals:[], ts:new Date().toISOString() };
+    stores, scs, assign, budget, mid, dept, ex, contracts, inputs, evals:[], ts:new Date().toISOString() };
 }
 </script>
 </body>
