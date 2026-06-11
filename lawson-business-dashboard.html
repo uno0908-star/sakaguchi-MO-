@@ -713,22 +713,49 @@ function renderStore(){
     <div class="chart-box"><canvas id="chStMonthly"></canvas></div>
   </div>
 
-  <h2 class="sec">月中入力（${ym.replace('-','/')} 着地予測の補正）</h2>
+  ${monthInputHtml(f, code, mi, ym, inp)}`;
+
+  if(f.detail) drawWaterfall('chWf', f);
+  drawStoreTrend('chStMonthly', code);
+}
+
+// 月の状態に応じた入力欄の出し分け
+//  確定月: 補正は不要 → 評価連動用（MH・メモ）のみ
+//  月中(予測): 全補正項目
+//  未着地(データなし): 全項目入力可（DEPT速報取込後に着地へ反映）
+function monthInputHtml(f, code, mi, ym, inp){
+  const ymd = ym.replace('-','/');
+  const mhMemo = `
+      <div class="fld"><label>MH実績（h）</label><input type="number" id="in-mh" value="${nv(inp.mh)}" placeholder="評価連動用"></div>
+      <div class="fld" style="grid-column:1/-1"><label>メモ</label><input type="text" id="in-memo" value="${esc(inp.memo||'')}" placeholder="例: 工事による客数減 / 催事売上"></div>`;
+
+  if(f.status === 'fixed'){
+    return `
+  <h2 class="sec">評価連動用入力（${ymd} 実績確定済み）</h2>
   <div class="card">
-    <div class="note mb">人が判断する数値を入力すると着地予測に即反映されます。空欄は予算値を使用します。単位: 千円</div>
+    <div class="note mb">この月は実績が確定しているため、着地予測の補正はできません。評価制度に使うMH実績とメモのみ入力できます。</div>
+    <div class="form-grid">${mhMemo}</div>
+    <div class="flex mt"><button class="btn" onclick="saveMonthInput(true)">保存</button></div>
+  </div>`;
+  }
+
+  const noteTop = f.status === 'forecast'
+    ? '人が判断する数値を入力すると着地予測に即反映されます。空欄は予算値を使用します。単位: 千円'
+    : 'この月はまだDEPT速報が未取込のため、着地は予算ベース表示です。先に入力しておくと、DEPT速報取込後の着地予測に自動反映されます。単位: 千円';
+
+  return `
+  <h2 class="sec">月中入力（${ymd} 着地予測の補正）</h2>
+  <div class="card">
+    <div class="note mb">${noteTop}</div>
     <div class="form-grid">
       <div class="fld"><label>人件費 月末見込</label><input type="number" id="in-labor" value="${nv(inp.labor)}" placeholder="予算 ${fmt(b(code,K.LABOR,'予算',mi))}"></div>
       <div class="fld"><label>有給取得 見込額</label><input type="number" id="in-paid" value="${nv(inp.paid)}" placeholder="0"></div>
       <div class="fld"><label>経費補正（+で利益減）</label><input type="number" id="in-exp" value="${nv(inp.expAdj)}" placeholder="0"></div>
       <div class="fld"><label>特殊要因（+で利益増）</label><input type="number" id="in-spec" value="${nv(inp.special)}" placeholder="0"></div>
-      <div class="fld"><label>MH実績（h）</label><input type="number" id="in-mh" value="${nv(inp.mh)}" placeholder="評価連動用"></div>
-      <div class="fld" style="grid-column:1/-1"><label>メモ（特殊要因の内容など）</label><input type="text" id="in-memo" value="${esc(inp.memo||'')}" placeholder="例: 工事による客数減 / 催事売上"></div>
+      ${mhMemo}
     </div>
     <div class="flex mt"><button class="btn" onclick="saveMonthInput()">保存して再計算</button></div>
   </div>`;
-
-  if(f.detail) drawWaterfall('chWf', f);
-  drawStoreTrend('chStMonthly', code);
 }
 
 function drawWaterfall(id, f){
@@ -789,9 +816,15 @@ function drawStoreTrend(id, code){
   });
 }
 
-async function saveMonthInput(){
+async function saveMonthInput(mhOnly){
   const code = state.store, ym = ymOf(state.mi);
-  const values = {
+  const prev = IDX.inp[ym+'|'+code] || {};
+  const values = mhOnly ? {
+    // 確定月: 補正値は既存を維持し、MH・メモのみ更新
+    '人件費見込': nvNull(prev.labor), '有給見込': nvNull(prev.paid),
+    '経費補正': nvNull(prev.expAdj), '特殊要因': nvNull(prev.special),
+    'MH実績': gv('in-mh'), 'メモ': document.getElementById('in-memo').value
+  } : {
     '人件費見込': gv('in-labor'), '有給見込': gv('in-paid'), '経費補正': gv('in-exp'),
     '特殊要因': gv('in-spec'), 'MH実績': gv('in-mh'),
     'メモ': document.getElementById('in-memo').value
@@ -802,7 +835,8 @@ async function saveMonthInput(){
   renderStore();
   await post({action:'saveInput', ym, code, values}, '月中入力を保存しました');
 }
-function gv(id){ const v = document.getElementById(id).value; return v === '' ? null : Number(v); }
+function gv(id){ const el = document.getElementById(id); if(!el || el.value === '') return null; return Number(el.value); }
+function nvNull(v){ return (v === undefined || v === '') ? null : v; }
 
 // ---------- ④ ランキング ----------
 const RANK_DEFS = {
