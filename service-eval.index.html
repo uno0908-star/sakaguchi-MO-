@@ -590,6 +590,7 @@ const Storage=(()=>{
     _write(STORAGE_KEYS.EMPLOYEES,arr);_postGas('upsertEmployee',{employee:entry});return true;
   }
   function deleteEmployee(id){_write(STORAGE_KEYS.EMPLOYEES,getEmployees().filter(e=>e.id!==id));_postGas('deleteEmployee',{id});return true}
+  function addRetirement(rec){_postGas('addRetirement',{retirement:rec});return true}
   function transferEmployee(id,newStore){const e=getEmployee(id);if(!e)return false;return upsertEmployee({...e,store:newStore,transferDate:new Date().toISOString().slice(0,10)})}
   function reinstateEmployee(id){const e=getEmployee(id);if(!e)return false;return upsertEmployee({...e,status:'在籍中',leaveDate:'',reinstatedAt:new Date().toISOString().slice(0,10)})}
 
@@ -649,7 +650,7 @@ const Storage=(()=>{
   }
 
   return{init,syncNow,testConnection,seedGas,AUTH,showToast,
-    getEmployees,saveEmployees,getEmployee,upsertEmployee,deleteEmployee,transferEmployee,reinstateEmployee,
+    getEmployees,saveEmployees,getEmployee,upsertEmployee,deleteEmployee,addRetirement,transferEmployee,reinstateEmployee,
     getEvaluations,addEvaluation,getEvalsByEmployee,
     getObservations,addObservation,getCoachings,addCoaching,getCoachingsByEmployee,
     getUsers,saveUsers,upsertUser,deleteUser,
@@ -1375,9 +1376,19 @@ const App={
   },
 
   deleteEmployee(id){
-    if(!confirm('退職処理を行いますか？'))return;
-    const emp=Storage.getEmployee(id);
-    if(emp)Storage.upsertEmployee({...emp,status:'退職',leaveDate:new Date().toISOString().slice(0,10)});
+    const leaveDate=document.getElementById('f-leave')?.value||'';
+    if(!leaveDate){alert('⚠️ 退職日が未入力です。\n\n退職日を入力してから退職処理を行ってください。');document.getElementById('f-leave')?.focus();return}
+    const emp=Storage.getEmployee(id);if(!emp)return;
+    if(!confirm(`${emp.name} さんを退職日 ${leaveDate} で退職処理します。\n\n退職者一覧（スプレッドシート）に履歴が記録されます。\nよろしいですか？`))return;
+    Storage.upsertEmployee({...emp,status:'退職',leaveDate});
+    const u=DB.user()||{};
+    Storage.addRetirement({
+      id:Date.now().toString(36),
+      employeeId:emp.id,name:emp.name,store:emp.store,type:this._typeName(emp.type),
+      joinDate:emp.joinDate||'',leaveDate,
+      processedBy:u.name||'',processedRole:u.role||'',
+      createdAt:new Date().toISOString()
+    });
     alert('退職処理しました');this._history=[];this.navTo('employees');
   },
 
