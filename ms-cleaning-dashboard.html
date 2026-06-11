@@ -628,6 +628,20 @@ function overallProgress() {
   return{total,done,excluded,active,overdue,pct:active?Math.round(done/active*100):0};
 }
 function storeRanking() { return S.stores.map(s=>({...s,prog:storeProgress(s.storeId)})).sort((a,b)=>b.prog.pct-a.prog.pct); }
+// 差し戻し中（最新提出が差し戻し済で再提出待ち）の一覧
+function rejectedPending(){
+  const list=[];
+  S.storeSettings.forEach(set=>{
+    const sub=latestSub(set.settingId);
+    if(sub&&isRejected(sub)&&!isExcluded(sub)){
+      const store=S.stores.find(s=>String(s.storeId)===String(set.storeId));
+      const item=S.cleaningItems.find(i=>String(i.itemId)===String(set.itemId));
+      list.push({storeId:set.storeId,storeName:store?.storeName||'?',itemName:item?.itemName||'?',
+        unitLabel:set.unitLabel||'',comment:sub.rejectionComment||'',rejectedAt:sub.rejectedAt||''});
+    }
+  });
+  return list.sort((a,b)=>new Date(b.rejectedAt||0)-new Date(a.rejectedAt||0));
+}
 function roleStats(storeId) { const subs=storeId?S.submissions.filter(s=>String(s.storeId)===String(storeId)):S.submissions; return ROLES.reduce((acc,r)=>{acc[r]=subs.filter(s=>s.role===r).length;return acc;},{}); }
 function daysLeft() { return Math.ceil((new Date(CFG.IMPROVEMENT_DL+'T23:59:59')-new Date())/86400000); }
 // 日付表示（日本時間）: "2026/6/10"
@@ -774,6 +788,7 @@ function renderDashboard() {
   </div>
   <div class="view-content">
     <div class="alert ${alertCls}">${alertTxt}</div>
+    ${renderRejectedAlert()}
     <div class="ms-banner"><div class="ms-banner-label">MSチェック期間</div><div class="ms-banner-date">${CFG.MS_START} ～ ${CFG.MS_END}</div></div>
     <div class="card">
       <div class="card-title">全体進捗</div>
@@ -801,6 +816,33 @@ function renderDashboard() {
     <div class="card-title" style="margin:4px 0 8px">清掃項目別 改善進捗（タップで詳細）</div>
     <div class="item-progress-list">${cards}</div>
     <button class="btn-primary mt-12" data-nav="submit">＋ 改善を報告する</button>
+  </div>`;
+}
+
+// ============================================================
+// 差し戻しアラート（ホーム上部・再提出待ち一覧）
+// ============================================================
+function renderRejectedAlert(){
+  const rejects=rejectedPending();
+  if(!rejects.length)return'';
+  const MAX=5;
+  const shown=S.showAllRejects?rejects:rejects.slice(0,MAX);
+  return`<div class="card card-danger" style="background:var(--red-light)">
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
+      <span style="font-size:1.2rem">⚠</span>
+      <div style="font-weight:900;color:var(--red);font-size:.95rem">差し戻し ${rejects.length}件（再提出待ち）</div>
+    </div>
+    ${shown.map(r=>`
+    <div data-nav="store-detail" data-store="${r.storeId}" style="background:#fff;border:1px solid var(--red);border-radius:var(--rs);padding:10px 12px;margin-bottom:8px;cursor:pointer">
+      <div style="display:flex;align-items:center;gap:6px">
+        <div style="font-weight:700;font-size:.88rem;flex:1">${r.storeName}</div>
+        <div style="font-size:.7rem;color:var(--gray-text)">${fmtD(r.rejectedAt)}</div>
+      </div>
+      <div style="font-size:.78rem;color:var(--gray-dark);margin-top:2px">${r.itemName}${r.unitLabel?` ／ ${r.unitLabel}`:''}</div>
+      ${r.comment?`<div style="font-size:.75rem;color:var(--red);margin-top:4px">理由: ${r.comment}</div>`:''}
+      <div style="font-size:.7rem;color:var(--blue);margin-top:4px;text-align:right">店舗詳細へ →</div>
+    </div>`).join('')}
+    ${rejects.length>MAX?`<button class="btn-secondary btn-sm" style="width:100%" onclick="S.showAllRejects=!S.showAllRejects;renderView()">${S.showAllRejects?'閉じる':`残り${rejects.length-MAX}件を表示`}</button>`:''}
   </div>`;
 }
 
