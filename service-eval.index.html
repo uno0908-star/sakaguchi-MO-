@@ -62,6 +62,7 @@ input,select,textarea,button{font-family:inherit;font-size:14px}
 .badge-crew{background:var(--gray-light);color:var(--gray)}
 .badge-contract{background:#E0F2FE;color:#0369A1}
 .badge-full{background:#DCFCE7;color:#15803D}
+.badge-admin{background:#7C3AED;color:#fff}
 .badge-si{background:#1E40AF;color:#fff}
 .badge-sc{background:#0369A1;color:#fff}
 .badge-sm{background:#065F46;color:#fff}
@@ -160,6 +161,7 @@ input,select,textarea,button{font-family:inherit;font-size:14px}
       <div class="form-group">
         <label>役職</label>
         <select id="login-role">
+          <option value="管理者">管理者</option>
           <option value="SI">SI</option>
           <option value="SC">SC</option>
           <option value="店舗責任者">店舗責任者</option>
@@ -256,6 +258,11 @@ input,select,textarea,button{font-family:inherit;font-size:14px}
         <button class="btn btn-primary btn-full" onclick="App.syncNow()">今すぐ同期</button>
       </div>
       <div id="s-test-result" style="margin-top:10px;font-size:13px"></div>
+    </div>
+    <div class="card">
+      <div style="font-weight:700;margin-bottom:4px">🔄 データ復旧（管理者用）</div>
+      <div class="text-sub" style="margin-bottom:12px;font-size:12px">他の端末でステータスがルーキーにリセットされている場合、このデバイスの正しいデータをGASに強制送信して全端末に反映できます。送信後、他の端末で「今すぐ同期」を押してください。</div>
+      <button class="btn btn-full" style="background:#FF6B35;color:#fff" onclick="App.forceUploadToGas()">このデバイスのデータをGASに強制上書き送信</button>
     </div>
     <div class="card">
       <div style="font-weight:700;margin-bottom:12px">👥 ユーザー管理</div>
@@ -542,7 +549,7 @@ const Storage=(()=>{
 
   /* 認証モジュール */
   const AUTH={
-    _pw:{SI:'Lawson3963',SC:'Lawson3963','店舗責任者':'Lawson3963','一般クルー':null},
+    _pw:{管理者:'Lawson3963',SI:'Lawson3963',SC:'Lawson3963','店舗責任者':'Lawson3963','一般クルー':null},
     verify(name,role,password,store){
       if(!name||!role)return{ok:false,error:'氏名と役職を入力してください'};
       const users=getUsers();
@@ -551,11 +558,12 @@ const Storage=(()=>{
       if(!(role in this._pw))return{ok:false,error:'無効な役職です'};
       if(role==='一般クルー')return{ok:true,user:{userId:_genId(),name,role,store,password:''}};
       if(password!==this._pw[role])return{ok:false,error:'パスワードが違います'};
-      return{ok:true,user:{userId:_genId(),name,role,store:(role==='SI'||role==='SC')?'':store,password}};
+      return{ok:true,user:{userId:_genId(),name,role,store:(role==='管理者'||role==='SI'||role==='SC')?'':store,password}};
     },
     can(user,perm){
       if(!user)return false;
       const r=user.role;
+      if(r==='管理者')return true; // 管理者は全権限
       const P={evalWrite:['SI','SC','店舗責任者'],empEdit:['SI','SC'],empManage:['SI'],memoWrite:['SI','SC','店舗責任者'],certEdit:['SI','SC','店舗責任者'],userManage:['SI'],sysAdmin:['SI'],backup:['SI'],allStores:['SI','SC']};
       return(P[perm]||[]).includes(r);
     }
@@ -614,6 +622,21 @@ const Storage=(()=>{
   function downloadBackup(){const d=exportAll();const b=new Blob([JSON.stringify(d,null,2)],{type:'application/json'});const u=URL.createObjectURL(b);const a=document.createElement('a');a.href=u;a.download=`backup-${new Date().toISOString().slice(0,10)}.json`;a.click();URL.revokeObjectURL(u)}
   function importBackup(jsonStr){try{const d=JSON.parse(jsonStr);if(d.employees)_write(STORAGE_KEYS.EMPLOYEES,d.employees);if(d.evaluations)_write(STORAGE_KEYS.EVALUATIONS,d.evaluations);if(d.coachings)_write(STORAGE_KEYS.COACHINGS,d.coachings);if(d.observations)_write(STORAGE_KEYS.OBSERVATIONS,d.observations);if(d.users)_write(STORAGE_KEYS.USERS,d.users);if(d.discussions)_write(STORAGE_KEYS.DISCUSSIONS,d.discussions);return true}catch(e){return false}}
 
+  /* このデバイスの従業員データをGASに強制上書き送信（全端末への復旧用） */
+  async function forceUploadEmployeesToGas(){
+    const now=new Date().toISOString();
+    // updatedAtを現在時刻に更新して「このデータが最新」とマークする
+    const emps=getEmployees().map(e=>({...e,updatedAt:now}));
+    _write(STORAGE_KEYS.EMPLOYEES,emps);
+    try{
+      showToast('GASにデータを送信中...','info');
+      const res=await fetch(GAS_URL,{method:'POST',redirect:'follow',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify({action:'bulkUpsertEmployees',employees:emps})});
+      const d=await res.json();
+      if(d.ok){showToast(`${emps.length}名のデータをGASに上書き送信しました。他の端末で「今すぐ同期」を押してください。`,'success');return true}
+      else{showToast('送信エラー: '+d.error,'error');return false}
+    }catch(e){showToast('送信失敗: '+e.message,'error');return false}
+  }
+
   return{init,syncNow,testConnection,seedGas,AUTH,showToast,
     getEmployees,saveEmployees,getEmployee,upsertEmployee,deleteEmployee,transferEmployee,reinstateEmployee,
     getEvaluations,addEvaluation,getEvalsByEmployee,
@@ -621,7 +644,7 @@ const Storage=(()=>{
     getUsers,saveUsers,upsertUser,deleteUser,
     getUser,saveUser,clearUser,
     getDiscussions,upsertDiscussion,
-    getStoreList,exportAll,downloadBackup,importBackup};
+    getStoreList,exportAll,downloadBackup,importBackup,forceUploadEmployeesToGas};
 })();
 // Storage.init() による二重同期を廃止。App.init() 内で await syncNow() を呼ぶため不要
 </script>
@@ -860,8 +883,9 @@ const App={
       // GASも空の場合のみ初期データを一括登録
       Storage.seedGas(seeded);
     }
-    const user=DB.user();
-    if(user){this._applyUser(user);this.showView('dashboard')}else{this.showView('login')}
+    // 自動ログインなし: 毎回ログイン画面を表示
+    Storage.clearUser();
+    this.showView('login');
   },
 
   showToast(msg,type='info'){
@@ -885,18 +909,18 @@ const App={
 
   _toggleStoreWrap(){
     const role=document.getElementById('login-role')?.value;
-    document.getElementById('login-store-wrap').style.display=role==='SI'?'none':'';
+    document.getElementById('login-store-wrap').style.display=(role==='管理者'||role==='SI'||role==='SC')?'none':'';
     document.getElementById('login-pass-wrap').style.display=role==='一般クルー'?'none':'';
   },
 
   _applyUser(user){
     document.getElementById('app-header').classList.remove('hidden');
     document.getElementById('bottom-nav').classList.remove('hidden');
-    const lbl={SI:'SI',SC:'SC','店舗責任者':'責任者','一般クルー':'クルー'}[user.role]||user.role;
+    const lbl={管理者:'管理者',SI:'SI',SC:'SC','店舗責任者':'責任者','一般クルー':'クルー'}[user.role]||user.role;
     document.getElementById('header-user').textContent=`${user.name}｜${lbl}`;
-    // SI専用: 設定ナビを表示
+    // 管理者・SI: 設定ナビを表示
     const navSettings=document.getElementById('nav-settings');
-    if(navSettings)navSettings.style.display=user.role==='SI'?'flex':'none';
+    if(navSettings)navSettings.style.display=(user.role==='管理者'||user.role==='SI')?'flex':'none';
     // 一般クルー: クルー追加ボタン(FAB)を隠す
     this._currentUser=user;
   },
@@ -1369,7 +1393,7 @@ const App={
   _canEdit(){return Storage.AUTH.can(DB.user(),'evalWrite')},
   _canEditRole(role){const r=DB.user()?.role;return Storage.AUTH.can(DB.user(),'evalWrite')&&r===role},
   _typeName(type){return{Crew:'クルー',ContractEmployee:'契約社員',FullTimeEmployee:'正社員'}[type]||type},
-  _roleClass(role){return{SI:'si',SC:'sc','店舗責任者':'sm'}[role]||'crew'},
+  _roleClass(role){return{管理者:'admin',SI:'si',SC:'sc','店舗責任者':'sm'}[role]||'crew'},
   _chip(rank){return rank?`<span class="rank-chip ${rank}">${rank}</span>`:'<span class="rank-chip 未">未</span>'},
   _roleBadges(e){
     const crewRoles=Array.isArray(e.crewRoles)?e.crewRoles:[];
@@ -1424,6 +1448,11 @@ const App={
   async syncNow(){
     await Storage.syncNow();
     if(this._view==='dashboard')this.renderDashboard();
+  },
+
+  async forceUploadToGas(){
+    if(!confirm('このデバイスのクルーステータス（役職・資格）をGASに強制上書きします。\n\n他のデバイスは次回同期時に、このデバイスのデータに更新されます。\n\nよろしいですか？'))return;
+    await Storage.forceUploadEmployeesToGas();
   },
 
   importBackup(){
