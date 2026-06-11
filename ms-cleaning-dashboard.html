@@ -1321,7 +1321,7 @@ async function excludeSetting(settingId,storeId,itemId){
 // 除外解除（既存の除外報告を削除）
 function unExcludeSetting(submissionId){
   showConfirmModal('除外解除','除外設定を解除します。未提出に戻ります。',async()=>{
-    try{await apiPost('deleteSubmission',{submissionId});clearCache();await loadData(true);renderView();showToast('除外を解除しました');}
+    try{await apiPost('deleteSubmission',{submissionId});_removeSubLocal(submissionId);renderView();showToast('除外を解除しました');}
     catch(e){showToast('失敗: '+e.message,'error');}
   },'解除する');
 }
@@ -1364,14 +1364,14 @@ async function bulkUnexclude(){
   if(!toUnexclude.length){showToast('除外解除する箇所がありません','error');return;}
   showConfirmModal('一括除外解除',`${toUnexclude.length}件の除外を解除します。`,async()=>{
     try{
-      for(const settingId of toUnexclude){const s=sets.find(st=>String(st.settingId)===settingId);if(!s)continue;const sub=latestSub(s.settingId);if(!sub)continue;await apiPost('deleteSubmission',{submissionId:sub.submissionId});}
-      S.bulkSelected.clear();clearCache();await loadData(true);renderView();showToast(`${toUnexclude.length}件の除外を解除しました`);
+      for(const settingId of toUnexclude){const s=sets.find(st=>String(st.settingId)===settingId);if(!s)continue;const sub=latestSub(s.settingId);if(!sub)continue;await apiPost('deleteSubmission',{submissionId:sub.submissionId});_removeSubLocal(sub.submissionId);}
+      S.bulkSelected.clear();renderView();showToast(`${toUnexclude.length}件の除外を解除しました`);
     }catch(e){showToast('失敗: '+e.message,'error');}
   },'一括で解除する');
 }
 function bulkSelectGroup(ids,select){ids.forEach(id=>select?S.bulkSelected.add(String(id)):S.bulkSelected.delete(String(id)));renderView();_updateBulkActionsUI();}
 function clearBulkSelect(){S.bulkSelected.clear();renderView();}
-function confirmDeleteSub(id){showConfirmModal('報告を削除','この改善報告を削除します。元に戻せません。',async()=>{try{await apiPost('deleteSubmission',{submissionId:id});clearCache();await loadData(true);renderView();showToast('削除しました');}catch(e){showToast('失敗: '+e.message,'error');}});}
+function confirmDeleteSub(id){showConfirmModal('報告を削除','この改善報告を削除します。元に戻せません。',async()=>{try{await apiPost('deleteSubmission',{submissionId:id});_removeSubLocal(id);renderView();showToast('削除しました');}catch(e){showToast('失敗: '+e.message,'error');}});}
 async function refreshData(){clearCache();await loadData(true);renderView();showToast('データを更新しました');}
 function exportCSV(){
   const rows=[['submissionId','settingId','storeId','storeName','itemId','itemName','unitLabel','improvedBy','role','improvedDate','comment','submittedAt','managerConfirmedBy','managerConfirmedDate']];
@@ -1494,6 +1494,7 @@ function showPhotoModal(imageData){
   document.getElementById('modal-photo-counter').textContent=multi?'1 / '+imgs.length:'';
   modal.style.display='flex';          // classList操作に頼らず直接指定
   modal.classList.remove('hidden');
+  if(window._resetPhotoZoom)_resetPhotoZoom();
 }
 
 // ── サムネイルをwrap内に描画し、タップで拡大できるようにする
@@ -1650,6 +1651,17 @@ function openRejectModal(submissionId,hasManagerConfirm){
   closeConfirmModal();
 }
 function closeRejectModal(){document.getElementById('modal-reject').classList.add('hidden');S.pendingRejectId=null;}
+// 差し戻し結果をローカルに即反映（全データ再取得を不要に）
+function _applyRejectLocal(id,comment,clearManager){
+  const sub=S.submissions.find(s=>String(s.submissionId)===String(id));
+  if(sub){sub.rejectedBy='管理者';sub.rejectionComment=comment;sub.rejectedAt=new Date().toISOString();if(clearManager){sub.managerConfirmedBy='';sub.managerConfirmedDate='';}}
+  saveCache(S.submissions);_clearSubIdx();
+}
+// 削除結果をローカルに即反映
+function _removeSubLocal(id){
+  S.submissions=S.submissions.filter(s=>String(s.submissionId)!==String(id));
+  saveCache(S.submissions);_clearSubIdx();
+}
 async function doRejectSubmission(){
   const id=S.pendingRejectId;
   const comment=document.getElementById('reject-comment-input').value.trim();
@@ -1658,7 +1670,7 @@ async function doRejectSubmission(){
   closeRejectModal();
   try{
     await apiPost('rejectSubmission',{submissionId:id,rejectedBy:'管理者',rejectionComment:comment,clearManagerConfirm:clearManager});
-    clearCache();await loadData(true);renderView();
+    _applyRejectLocal(id,comment,clearManager);renderView();
     showToast('差し戻しました');
   }catch(e){showToast('失敗: '+e.message,'error');}
 }
@@ -1699,13 +1711,70 @@ function _syncPhotoModal(){
   document.getElementById('modal-photo-next').style.display=multi?'':'none';
   document.getElementById('modal-photo-counter').textContent=multi?(_gIdx+1)+' / '+_gallery.length:'';
 }
-function photoNavStep(d){_gIdx=(_gIdx+d+_gallery.length)%_gallery.length;_syncPhotoModal();}
+function photoNavStep(d){_gIdx=(_gIdx+d+_gallery.length)%_gallery.length;_syncPhotoModal();if(window._resetPhotoZoom)_resetPhotoZoom();}
 function closePhotoModal(e){
   var modal=document.getElementById('modal-photo');
   if(e&&e.target!==modal)return;
   modal.style.display='';
   modal.classList.add('hidden');
+  if(window._resetPhotoZoom)_resetPhotoZoom();
 }
+
+// ── 写真ズーム（スマホ: ピンチで拡大縮小・ドラッグ移動・ダブルタップ／PC: ホイールで拡大縮小・ダブルクリック）
+(function(){
+  var img=document.getElementById('modal-photo-img');
+  if(!img)return;
+  var scale=1,tx=0,ty=0;
+  var ptrs=new Map(),lastDist=0,lastTap=0;
+  function apply(){img.style.transform=scale===1?'':'translate('+tx+'px,'+ty+'px) scale('+scale+')';img.style.cursor=scale>1?'grab':'';}
+  function reset(){scale=1;tx=0;ty=0;apply();}
+  window._resetPhotoZoom=reset;
+  img.style.touchAction='none';
+  img.style.transformOrigin='center center';
+  img.style.willChange='transform';
+  // PC: マウスホイールで拡大縮小（カーソル位置中心）
+  img.addEventListener('wheel',function(e){
+    e.preventDefault();
+    var f=e.deltaY<0?1.15:1/1.15;
+    var ns=Math.min(6,Math.max(1,scale*f));
+    var r=img.getBoundingClientRect();
+    var cx=e.clientX-(r.left+r.width/2),cy=e.clientY-(r.top+r.height/2);
+    tx-=cx*(ns/scale-1);ty-=cy*(ns/scale-1);
+    scale=ns;if(scale===1){tx=0;ty=0;}
+    apply();
+  },{passive:false});
+  img.addEventListener('pointerdown',function(e){
+    e.preventDefault();
+    ptrs.set(e.pointerId,{x:e.clientX,y:e.clientY});
+    try{img.setPointerCapture(e.pointerId);}catch(_){}
+    if(ptrs.size===2){var a=Array.from(ptrs.values());lastDist=Math.hypot(a[0].x-a[1].x,a[0].y-a[1].y);}
+    if(ptrs.size===1){
+      var now=Date.now();
+      if(now-lastTap<300){if(scale>1){reset();}else{scale=2.5;apply();}}
+      lastTap=now;
+    }
+  });
+  img.addEventListener('pointermove',function(e){
+    if(!ptrs.has(e.pointerId))return;
+    var p=ptrs.get(e.pointerId);
+    ptrs.set(e.pointerId,{x:e.clientX,y:e.clientY});
+    if(ptrs.size===2){
+      // ピンチで拡大縮小
+      var a=Array.from(ptrs.values());
+      var d=Math.hypot(a[0].x-a[1].x,a[0].y-a[1].y);
+      if(lastDist>0){scale=Math.min(6,Math.max(1,scale*d/lastDist));if(scale===1){tx=0;ty=0;}apply();}
+      lastDist=d;
+    }else if(ptrs.size===1&&scale>1){
+      // 拡大中はドラッグで移動
+      tx+=e.clientX-p.x;ty+=e.clientY-p.y;
+      apply();
+    }
+  });
+  function _up(e){ptrs.delete(e.pointerId);lastDist=0;}
+  img.addEventListener('pointerup',_up);
+  img.addEventListener('pointercancel',_up);
+  img.addEventListener('dragstart',function(e){e.preventDefault();});
+})();
 
 
 // ============================================================
