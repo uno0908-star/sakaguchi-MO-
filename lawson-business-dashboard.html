@@ -151,6 +151,12 @@ h2.sec::after{content:'';flex:1;height:1px;background:var(--line)}
 /* table */
 .tbl-wrap{overflow-x:auto;border-radius:var(--r);border:1px solid var(--line)}
 table{width:100%;border-collapse:collapse;font-size:.78rem;min-width:560px;background:var(--panel)}
+.tbl-fit table{min-width:0}  /* 列数が少ない表は横に伸ばさない */
+/* スマホ: 560px固定をやめ自然幅に。画面に収まる表はスクロール不要、超える分だけ横スクロール */
+@media(max-width:640px){
+  table{min-width:0;font-size:.72rem}
+  th,td{padding:8px 7px}
+}
 th{
   text-align:right;padding:10px 11px;color:var(--sub);font-size:.66rem;font-weight:700;
   letter-spacing:.05em;border-bottom:1px solid var(--line2);white-space:nowrap;background:rgba(10,16,32,.6);
@@ -285,6 +291,9 @@ const K = {                                          // 科目名
 // 着地計算（v3）で使う部門名
 const FF_DEPTS = ['ファストフーズ','店内厨房'];   // 売変の原価換算50%対象（総平均法）
 
+// 月中入力（着地予測の補正フォーム）の表示切替。現段階では未使用のため非表示
+const SHOW_MONTH_INPUT = false;
+
 // 廃棄（売変）の内訳予算基準: 部門グループごとの売上対比の基準率(%)
 const WASTE_GROUPS = [
   {l:'AICO', d:'米飯・調理パン・調理麺・デリカ・デザート・ベーカリー・生鮮品',
@@ -292,7 +301,7 @@ const WASTE_GROUPS = [
   {l:'OPケース', d:'チルド飲料・常温和洋菓子・日配食品',
     depts:['チルド飲料','常温和洋菓子','日配食品'], basis:5},
   {l:'FF', d:'ファストフーズ', depts:['ファストフーズ'], basis:8},
-  {l:'厨房', d:'店内厨房', depts:['店内厨房'], basis:15},
+  {l:'厨房', d:'店内厨房 ※GR(ゴーストレストラン)売上込み', depts:['店内厨房'], basis:15},
   {l:'ドライ・その他', d:'上記以外の全部門', depts:null, basis:0.3}  // null=残り全部
 ];
 const EVAL_ITEMS = {
@@ -616,6 +625,16 @@ function renderCompany(){
   const statusMix = `確定 ${f.fixed} / 補正済 ${f.adjusted} / 予算ベース ${f.plain}`;
   const asOf = dataAsOf(mi);
 
+  // 売上高前年比（新店=前年売上なしの店舗を除外。例: 箕面白島二丁目）
+  let yoyCur = 0, yoyPrev = 0; const yoyEx = [];
+  codes.forEach(c => {
+    const pv = b(c, K.SALES, '前年', mi);
+    if(pv === null || pv === 0){ yoyEx.push(storeName(c)); return; }
+    const fx = forecast(c, mi);
+    if(fx.sales !== null && fx.sales !== undefined){ yoyCur += fx.sales; yoyPrev += pv; }
+  });
+  const yoyRate = yoyPrev ? yoyCur/yoyPrev*100 : null;
+
   el.innerHTML = `
   <div class="hero">
     <div class="lbl">店利益着地見込 - ${monthLabel(mi)} 全社</div>
@@ -624,6 +643,7 @@ function renderCompany(){
       <span class="chip">予算 <b>${fmt(f.bud)}</b></span>
       <span class="chip">差異 <b class="${f.profit-f.bud>=0?'t-ok':'t-bad'}">${fmtSign(f.profit-f.bud)}</b></span>
       <span class="chip">達成率 <b class="t-${st}">${pct(f.rate)}</b></span>
+      ${yoyRate !== null ? `<span class="chip">売上高前年比 <b class="${yoyRate>=100?'t-ok':'t-bad'}">${pct(yoyRate)}</b>${yoyEx.length?` 新店除く(${yoyEx.join('・')})`:''}</span>` : ''}
       <span class="chip">${statusMix}</span>
       ${asOf ? `<span class="chip">DEPT速報 <b>${asOf}時点</b></span>` : ''}
     </div>
@@ -799,14 +819,14 @@ function renderStore(){
     ${kpiCard('日販着地', fmt(f.nippan,0), '千円', '予算 '+fmt(b(code,K.NIPPAN,'予算',mi),0)+' / 前年 '+fmt(b(code,K.NIPPAN,'前年',mi),0))}
     ${mid ? kpiCard('月内進捗', fmt(mid.days,0)+' <span class="unit">/ '+dTotal+'日</span>', '',
         'DEPT速報 ' + (dataAsOf(mi) || '-') + '時点 / 前年比 ' + (f.detail && f.detail.yoy ? pct(f.detail.yoy) : '-')) : kpiCard('月内進捗','-','','DEPT速報未取込')}
-    ${mid && mid.cum ? kpiCard('ロス率(売変)', pct(mid.hengaku/mid.cum*100), '',
-        '厨房比率 ' + pct(mid.kitchen/mid.cum*100)) : kpiCard('ロス率(売変)','-','','')}
+    ${mid && mid.cum ? kpiCard('売変率(値引除く)', pct(mid.hengaku/mid.cum*100), '',
+        '厨房比率 ' + pct(mid.kitchen/mid.cum*100)) : kpiCard('売変率(値引除く)','-','','')}
   </div>
 
   ${f.detail ? `
   <h2 class="sec">着地要因分解（予算 → 着地）</h2>
   <div class="chart-card"><div class="chart-box"><canvas id="chWf"></canvas></div>
-    <div class="note mt">左端の紫が店利益予算（起点）、右端の水色が着地見込。間の棒は各要因による増減で、緑＝利益を押し上げ / 赤＝押し下げ。棒の高さ＝増減額、棒の位置＝その要因まで反映した後の利益水準です。</div>
+    <div class="note mt">左端の紫が店利益予算、右端の水色が着地見込。間の棒は各要因の増減額で、0を基準にプラスは上（緑＝押し上げ）、マイナスは下（赤＝押し下げ）に伸びます。予算に各要因を足し引きしたものが着地です（棒にカーソルで反映後の利益水準を表示）。</div>
   </div>` : ''}
 
   ${f.v3 ? v3DetailHtml(f) : ''}
@@ -838,7 +858,7 @@ function v3DetailHtml(f){
   <h2 class="sec">速報連動の計算内訳（30日換算・千円）</h2>
   <div class="card">
     ${warn.map(w => `<div class="note mb" style="color:var(--warn)">注意: ${w}</div>`).join('')}
-    <div class="tbl-wrap"><table>
+    <div class="tbl-wrap tbl-fit"><table>
       <tr><th></th><th>着地見込</th><th>予算</th><th>差異</th></tr>
       ${row('商品売上高', fmt(v.L), fmt(v.M), fmtSign(v.L - v.M))}
       ${row('総荒利益高', fmt(v.O), fmt(v.P), fmtSign(v.O - v.P))}
@@ -885,7 +905,7 @@ function wasteHtml(f, code, ym){
   const tr = x => {
     const overCls = x.over === null ? '' : x.over > 0 ? 't-bad' : 't-ok';
     return `<tr>
-      <td>${x.l}<div style="font-size:.68rem;color:var(--dim)">${x.d}</div></td>
+      <td style="white-space:normal;min-width:110px;max-width:160px">${x.l}<div style="font-size:.68rem;color:var(--dim)">${x.d}</div></td>
       <td>${fmt(x.s)}</td><td>${fmt(x.h)}</td>
       <td class="${x.rate !== null && x.rate > x.basis ? 't-bad' : 't-ok'}">${pct(x.rate)}</td>
       <td>${x.basis}%</td>
@@ -907,7 +927,7 @@ function wasteHtml(f, code, ym){
       ${nebiki !== null ? `<tr><td>値引（売変Ⅲ−商品廃棄）</td><td>-</td><td>${fmt(Math.round(nebiki))}</td>
         <td>${totS > 0 ? pct(nebiki/totS*100) : '-'}</td><td>-</td><td>-</td></tr>` : ''}
     </table></div>
-    <div class="note mt">基準差異額 ＝ 売変高 −（売上 × 基準率）。プラス（赤）は基準より廃棄を使いすぎ。基準率: AICO 10% / OPケース 5% / FF 8% / 厨房 15% / ドライ 0.3%。値引は営業速報の売変ⅢとDEPT速報の商品廃棄の差額で、値引販売に使った分です。${nebiki === null ? ' 値引は営業速報の取込後に表示されます。' : ''}</div>
+    <div class="note mt">基準差異額 ＝ 売変高 −（売上 × 基準率）。プラス（赤）は基準より廃棄を使いすぎ。基準率: AICO 10% / OPケース 5% / FF 8% / 厨房 15% / ドライ 0.3%。この表はDEPT速報ベースのため、厨房の売上・売変にはGR（ゴーストレストラン）分が含まれます（着地計算の厨房支援金はまちかど厨房専用データを使用）。値引は営業速報の売変ⅢとDEPT速報の商品廃棄の差額で、値引販売に使った分です。${nebiki === null ? ' 値引は営業速報の取込後に表示されます。' : ''}</div>
   </div>`;
 }
 
@@ -930,6 +950,9 @@ function monthInputHtml(f, code, mi, ym, inp){
     <div class="flex mt"><button class="btn" onclick="saveMonthInput(true)">保存</button></div>
   </div>`;
   }
+
+  // 現段階では月中入力（着地予測の補正）は運用しないため非表示（再開時は true に戻す）
+  if(!SHOW_MONTH_INPUT) return '';
 
   const noteTop = f.v3
     ? '着地予測は速報連動（営業速報・DEPT速報・本部支援・まちかど厨房）で自動計算しています。ここの入力は追加の補正として着地に上乗せされます。空欄は補正なし。単位: 千円'
@@ -966,13 +989,9 @@ function drawWaterfall(id, f){
     {l:'経費補正', v:d.fExp, type:'delta'},
     {l:'特殊要因', v:d.fSpec, type:'delta'},
     {l:'着地', v:f.profit, type:'total'}
-  ];
-  let run = 0;
-  const data = steps.map(s => {
-    if(s.type === 'base'){ run = s.v; return [0, s.v]; }
-    if(s.type === 'total'){ return [0, s.v]; }
-    const from = run; run += s.v; return [from, run];
-  });
+  ].filter(s => s.type !== 'delta' || s.v !== 0);  // 値ゼロの増減要因は表示しない
+  // 予算・着地は0からの棒、増減要因は0基準でプラスは上・マイナスは下に伸ばす
+  const data = steps.map(s => [0, s.v]);
   const colors = steps.map(s =>
     s.type === 'base' ? 'rgba(111,139,255,.55)' :
     s.type === 'total' ? 'rgba(56,225,255,.7)' :
@@ -1052,7 +1071,7 @@ const RANK_DEFS = {
     if(a!==null && p) return a/p*100;                       // 確定月は実績ベース
     const m=IDX.mid[ymOf(mi)+'|'+c];                        // 未確定月はDEPT速報ベース
     return m&&m.prevCum>0?m.cum/m.prevCum*100:null;}, fmt:v=>pct(v), desc:true},
-  loss:{l:'ロス率(売変)', u:'%', f:(c,mi)=>{const m=IDX.mid[ymOf(mi)+'|'+c];return m&&m.cum>0?m.hengaku/m.cum*100:null;}, fmt:v=>pct(v), desc:false},
+  loss:{l:'売変率(値引除く)', u:'%', f:(c,mi)=>{const m=IDX.mid[ymOf(mi)+'|'+c];return m&&m.cum>0?m.hengaku/m.cum*100:null;}, fmt:v=>pct(v), desc:false},
   kitchen:{l:'厨房比率', u:'%', f:(c,mi)=>{const m=IDX.mid[ymOf(mi)+'|'+c];return m&&m.cum>0?m.kitchen/m.cum*100:null;}, fmt:v=>pct(v), desc:true}
 };
 
@@ -1132,7 +1151,7 @@ function renderDept(){
     <div class="num">${fmt(total)}<span class="unit"> 千円</span></div>
     <div class="hero-meta">
       <span class="chip">前年比 <b class="${totalPrev>0 ? (total/totalPrev>=1?'t-ok':'t-bad') : ''}">${pct(totalPrev>0 ? total/totalPrev*100 : null)}</b></span>
-      <span class="chip">ロス率(売変) <b>${pct(total>0 ? totalHen/total*100 : null)}</b></span>
+      <span class="chip">売変率(値引除く) <b>${pct(total>0 ? totalHen/total*100 : null)}</b></span>
       <span class="chip">厨房比率 <b>${pct(total>0 ? kitchenSales/total*100 : null)}</b></span>
       <span class="chip">部門数 <b>${list.length}</b></span>
     </div>
@@ -1173,7 +1192,7 @@ function renderEval(){
   else body.innerHTML = evalInputHtml(tab);
 }
 
-// SC評価: 実績データから自動算出（店利益/日販/厨房比率/MH/ロス率）
+// SC評価: 実績データから自動算出（店利益/日販/厨房比率/MH/売変率）
 function evalScHtml(){
   const mi = state.mi, ym = ymOf(mi);
   const rows = DB.scs.map(sc => {
@@ -1194,7 +1213,7 @@ function evalScHtml(){
   return `
   <div class="note mb">SC評価指標は予算・DEPT速報・月中入力から自動算出されます（${ym.replace('-','/')}時点）。</div>
   <div class="tbl-wrap"><table>
-    <tr><th>SC</th><th>店舗数</th><th>店利益達成率</th><th>日販前年比</th><th>厨房比率</th><th>MH(h)</th><th>ロス率</th></tr>
+    <tr><th>SC</th><th>店舗数</th><th>店利益達成率</th><th>日販前年比</th><th>厨房比率</th><th>MH(h)</th><th>売変率</th></tr>
     ${rows.map(r => `<tr>
       <td><b>${r.sc}</b></td><td>${r.n}</td>
       <td class="t-${statusOf(r.profitRate)}"><b>${pct(r.profitRate)}</b></td>
