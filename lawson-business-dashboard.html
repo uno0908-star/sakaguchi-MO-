@@ -309,6 +309,23 @@ const EVAL_ITEMS = {
   TENCHO:['QSC','人材育成']
 };
 
+// ---- 最終評価（Excel「評価計算&経費申請シート」の計算ロジック準拠） ----
+const SHIFT_SLOTS = ['店長①','店長②','一般','SC'];          // 人員配置の枠
+const STAFF_ROLES = ['店長','一般','SC'];                     // 社員マスタの役職
+const ROLE_W = {                                              // 役職別ウェイト
+  '店長': {ar:.5, q:.3, t:.2},
+  '一般': {ar:.3, q:.5, t:.2},
+  'SC':   {ar:.6, q:.3, t:.1}
+};
+const TEISEI_ITEMS = {                                        // 定性評価項目（○=20点×5項目）
+  'SC':   ['店長離職率','支店牽引','課題解決','店長育成','就業規則'],
+  '店長': ['クルーアンケート','支店牽引','課題解決','クルー育成','就業規則'],
+  '一般': ['接客姿勢','支店牽引','改善提案','クルー育成','就業規則']
+};
+// 店舗品質・補正の入力項目（評価データシートに 種別=最終店舗 で保存）
+const FINAL_STORE_ITEMS = ['QSC_SC','QSC_SI','衛生','5S','クレーム件数','数字の質','残業','リスク案件'];
+const RANK_TH = [[97,1],[94,2],[90,3],[85,4],[80,5],[75,6],[70,7]];  // スコア下限→級（それ未満=8級）
+
 // ---------- 状態 ----------
 let DB = null;            // GASから取得した生データ
 let IDX = null;           // インデックス済みデータ
@@ -392,6 +409,12 @@ function buildIndex(){
   (DB.contracts||[]).forEach(r => {
     // [code, 雑益区分(CN/TS), チャージ率1, 率2, 率3]（小数）
     IDX.ct[r[0]] = {kubun:r[1]||'', d:num(r[2],null), e:num(r[3],null), f:num(r[4],null)};
+  });
+  IDX.shift = {};
+  (DB.shifts||[]).forEach(r => {
+    // [ym, code, 区分(店長①/店長②/一般/SC), 氏名, 週時間]
+    const o = (IDX.shift[r[0]] = IDX.shift[r[0]] || {});
+    (o[r[1]] = o[r[1]] || {})[r[2]] = {name:r[3], h:num(r[4],null)};
   });
 }
 
@@ -1185,10 +1208,14 @@ function renderEval(){
   el.innerHTML = `
   <div class="pills">
     ${['SC','SI','店長'].map(t => `<button class="pill ${t===tab?'on':''}" onclick="state.evalTab='${t}';renderEval()">${t}評価</button>`).join('')}
+    <button class="pill ${tab==='最終'?'on':''}" onclick="state.evalTab='最終';renderEval()">最終評価</button>
+    <button class="pill ${tab==='半期'?'on':''}" onclick="state.evalTab='半期';renderEval()">半期総合</button>
   </div>
   <div id="evalBody"></div>`;
   const body = document.getElementById('evalBody');
   if(tab === 'SC') body.innerHTML = evalScHtml();
+  else if(tab === '最終') body.innerHTML = evalFinalHtml();
+  else if(tab === '半期') body.innerHTML = evalHankiHtml();
   else body.innerHTML = evalInputHtml(tab);
 }
 
@@ -1295,6 +1322,355 @@ async function saveEvalData(kind){
   await post({action:'saveEval', rows}, '評価データを保存しました（' + rows.length + '件）');
 }
 
+// ============================================================
+//  最終評価（月次）: 人員配置 → AR/品質/定性スコア → 総合 → 8段階ランク
+//  Excel「評価計算&経費申請シート」の計算ロジックを移植
+// ============================================================
+
+// 評価データから値を取得（''=未入力）
+function evGet(ym, kind, target, code, item){
+  const e = IDX.evals.find(e2 => e2[0] === ym && e2[1] === kind && e2[2] === target && e2[3] === code && e2[4] === item);
+  return e ? e[5] : '';
+}
+function evUpsert(rows){
+  rows.forEach(r => {
+    const i = IDX.evals.findIndex(e => e[0] === r[0] && e[1] === r[1] && e[2] === r[2] && e[3] === r[3] && e[4] === r[4]);
+    if(i >= 0) IDX.evals[i] = r; else IDX.evals.push(r);
+  });
+}
+function avgN(arr){
+  const a = arr.filter(v => v !== null && v !== undefined && v !== '' && !isNaN(v));
+  return a.length ? a.reduce((s,v) => s + Number(v), 0) / a.length : null;
+}
+function rankOf(score){
+  for(const [t,r] of RANK_TH) if(score >= t) return r;
+  return 8;
+}
+function staffRole(name){
+  const p = (DB.staff||[]).find(x => x[0] === name);
+  return p ? p[1] : '店長';
+}
+
+/**
+ * 月次最終評価の計算
+ *  AR: PF=店利益予算−社員給与−法定福利18% / PA=店利益実績(なければ着地予測)−給与−福利−残業
+ *      給与=300000/(55/7*30)×(合計週時間/7*30)/1000（週55h=月30万円換算・千円）
+ *  ARスコア: <70%→AR×40/70 / 70~100→40+(AR-70)×39/29 / 100~120→80+(AR-100) / >120→100
+ *  品質: MAX(0,MIN(100, AVG(QSC平均,衛生,5S) + クレーム補正(≥3:-5/≥1:-1) + 数字の質))
+ *  定性: ○の数×20 / 総合: 役職別ウェイト / SC個人=担当店舗のSCウェイトスコア平均
+ *  特別フラグ: 衛生≤80→3階級ダウン / QSC平均<80→上限6級 / リスク案件→8級（自動適用＋手動上書き可）
+ */
+function calcFinalEval(mi){
+  const ym = ymOf(mi);
+  const shifts = IDX.shift[ym] || {};
+  const storeCalc = {};
+
+  DB.stores.forEach(s => {
+    const code = s.code;
+    const sh = shifts[code] || {};
+    let totalH = 0;
+    SHIFT_SLOTS.forEach(k => { if(sh[k] && sh[k].h) totalH += Number(sh[k].h); });
+    const salary = totalH > 0 ? 300000/(55/7*30)*(totalH/7*30)/1000 : 0;  // 千円
+    const fukuri = salary * .18;
+    const budP = b(code, K.PROFIT, '予算', mi);
+    const actP = b(code, K.PROFIT, '実績', mi);
+    const isFixed = actP !== null;
+    const profit = isFixed ? actP : forecast(code, mi).profit;
+
+    const g = it => { const v = evGet(ym, '最終店舗', s.name, code, it); return v === '' ? null : Number(v); };
+    const zangyo = g('残業') || 0, claims = g('クレーム件数') || 0, sujitsu = g('数字の質') || 0;
+    const risk = g('リスク案件') === 1;
+    const qscSC = g('QSC_SC'), qscSI = g('QSC_SI'), eisei = g('衛生'), s5 = g('5S');
+    const qscAvg = avgN([qscSC, qscSI]);
+
+    const PF = budP !== null ? budP - salary - fukuri : null;
+    const PA = profit !== null && profit !== undefined ? profit - salary - fukuri - zangyo : null;
+    const AR = (PF !== null && PF > 0 && PA !== null) ? PA/PF*100 : null;
+    const arScore = AR === null ? null :
+      AR < 70 ? AR*(40/70) : AR < 100 ? 40+(AR-70)*(39/29) : AR <= 120 ? 80+(AR-100) : 100;
+
+    const qBase = avgN([qscAvg, eisei, s5]);
+    const qScore = qBase === null ? null :
+      Math.max(0, Math.min(100, qBase + (claims >= 3 ? -5 : claims >= 1 ? -1 : 0) + sujitsu));
+
+    storeCalc[code] = { sh, totalH, salary, fukuri, budP, profit, isFixed, PF, PA, AR, arScore,
+      qscAvg, eisei, s5, claims, sujitsu, zangyo, qScore,
+      flags: { eisei: eisei !== null && eisei <= 80, qsc: qscAvg !== null && qscAvg < 80, risk } };
+  });
+
+  // 個人別（人員配置から対象者を抽出。役職は社員マスタの役職で評価）
+  const persons = {};
+  DB.stores.forEach(s => {
+    const sh = shifts[s.code] || {};
+    SHIFT_SLOTS.forEach(slot => {
+      const nm = sh[slot] && sh[slot].name;
+      if(!nm) return;
+      (persons[nm] = persons[nm] || { name:nm, role:staffRole(nm), stores:[] }).stores.push({code:s.code, slot});
+    });
+  });
+
+  Object.values(persons).forEach(p => {
+    const items = TEISEI_ITEMS[p.role] || TEISEI_ITEMS['店長'];
+    let marks = 0;
+    items.forEach(it => { if(Number(evGet(ym, '最終定性', p.name, '', it)) === 1) marks++; });
+    p.teisei = marks * 20;
+    const w = ROLE_W[p.role] || ROLE_W['店長'];
+    // SCは担当SC枠の店舗平均、店長・一般は配置店舗（複数なら平均）
+    const list = p.role === 'SC' ? (p.stores.filter(x => x.slot === 'SC').length ? p.stores.filter(x => x.slot === 'SC') : p.stores) : p.stores;
+    const scoreList = list.map(x => {
+      const sc = storeCalc[x.code];
+      return (sc && sc.arScore !== null && sc.qScore !== null) ? sc.arScore*w.ar + sc.qScore*w.q + p.teisei*w.t : null;
+    }).filter(v => v !== null);
+    p.score = scoreList.length ? scoreList.reduce((a,v) => a+v, 0) / scoreList.length : null;
+    p.storeList = list;
+
+    const fl = {eisei:false, qsc:false, risk:false};
+    list.forEach(x => { const sc = storeCalc[x.code];
+      if(sc){ fl.eisei = fl.eisei || sc.flags.eisei; fl.qsc = fl.qsc || sc.flags.qsc; fl.risk = fl.risk || sc.flags.risk; } });
+    p.flags = fl;
+
+    if(p.score !== null){
+      p.rank = rankOf(p.score);                     // 変更前
+      let r = p.rank;
+      if(fl.eisei) r = Math.min(8, r + 3);          // 衛生≤80: 3階級ダウン
+      if(fl.qsc)   r = Math.max(r, 6);              // QSC平均<80: 上限6級
+      if(fl.risk)  r = 8;                           // リスク案件: 8級
+      p.autoAdj = r;                                // 自動修正後
+      const ov = evGet(ym, '最終修正', p.name, '', '修正後ランク');
+      p.override = ov === '' ? null : Number(ov);
+      p.final = p.override !== null ? p.override : r;  // 変更後（手動上書き優先）
+    }
+  });
+
+  return { ym, storeCalc, persons };
+}
+
+// 最終評価タブの描画
+function evalFinalHtml(){
+  const mi = state.mi, ym = ymOf(mi), ymd = ym.replace('-','/');
+  const staff = DB.staff || [];
+  const calc = calcFinalEval(mi);
+  const shifts = IDX.shift[ym] || {};
+
+  if(!staff.length){
+    return `<div class="card"><div class="empty-note">社員マスタが未登録です。設定画面の「社員マスタ」で氏名と役職（店長/一般/SC）を登録してください。</div></div>`;
+  }
+
+  const nameSel = (code, slot, cur) => `<select data-code="${code}" data-slot="${esc(slot)}"
+    style="width:110px;background:var(--bg2);border:1px solid var(--line2);border-radius:7px;color:var(--txt);padding:6px">
+    <option value=""></option>
+    ${staff.map(p => `<option value="${esc(p[0])}" ${p[0]===cur?'selected':''}>${esc(p[0])}</option>`).join('')}
+  </select>`;
+  const hourIn = (code, slot, cur) => `<input type="number" data-code="${code}" data-slot="${esc(slot)}" value="${nv(cur)}"
+    style="width:58px;background:var(--bg2);border:1px solid var(--line2);border-radius:7px;color:var(--txt);padding:6px;text-align:right" placeholder="h">`;
+
+  // ① 人員配置
+  const shiftHtml = `
+  <h2 class="sec">① 人員配置（${ymd}）</h2>
+  <div class="card">
+    <div class="note mb">店舗ごとに配置社員と週勤務時間（休憩除く）を入力。給与は週55h=月30万円換算で自動計算します。SC枠はSC担当設定から初期表示します。</div>
+    <div class="tbl-wrap"><table id="shiftTable">
+      <tr><th>店舗</th>${SHIFT_SLOTS.map(sl => `<th>${sl}</th><th>週h</th>`).join('')}</tr>
+      ${DB.stores.map(s => {
+        const sh = shifts[s.code] || {};
+        return `<tr><td><b>${s.name}</b></td>${SHIFT_SLOTS.map(sl => {
+          const cur = sh[sl] || (sl === 'SC' ? {name: DB.assign[s.code] || '', h: null} : {name:'', h:null});
+          return `<td>${nameSel(s.code, sl, cur.name)}</td><td>${hourIn(s.code, sl, cur.h)}</td>`;
+        }).join('')}</tr>`;
+      }).join('')}
+    </table></div>
+    <div class="flex mt"><button class="btn" onclick="saveShiftData()">人員配置を保存（${ymd}）</button></div>
+  </div>`;
+
+  // ② 店舗品質・補正入力
+  const qIn = (code, item, cur, w) => `<input type="number" data-code="${code}" data-item="${esc(item)}" value="${cur}"
+    style="width:${w||62}px;background:var(--bg2);border:1px solid var(--line2);border-radius:7px;color:var(--txt);padding:6px;text-align:right">`;
+  const storeInputHtml = `
+  <h2 class="sec">② 店舗品質・補正入力（${ymd}）</h2>
+  <div class="card">
+    <div class="note mb">QSCはSC・SIそれぞれの採点（0-100）。数字の質は−10～+15。残業は契約超過分（千円）。リスク案件はチェックで該当。</div>
+    <div class="tbl-wrap"><table id="finalStoreTable">
+      <tr><th>店舗</th><th>QSC(SC)</th><th>QSC(SI)</th><th>衛生(SI)</th><th>5S(SI)</th><th>クレーム件数</th><th>数字の質</th><th>残業(千円)</th><th>リスク案件</th></tr>
+      ${DB.stores.map(s => {
+        const gv2 = it => { const v = evGet(ym, '最終店舗', s.name, s.code, it); return v === '' ? '' : v; };
+        return `<tr><td><b>${s.name}</b></td>
+          <td>${qIn(s.code,'QSC_SC',gv2('QSC_SC'))}</td><td>${qIn(s.code,'QSC_SI',gv2('QSC_SI'))}</td>
+          <td>${qIn(s.code,'衛生',gv2('衛生'))}</td><td>${qIn(s.code,'5S',gv2('5S'))}</td>
+          <td>${qIn(s.code,'クレーム件数',gv2('クレーム件数'),52)}</td><td>${qIn(s.code,'数字の質',gv2('数字の質'),52)}</td>
+          <td>${qIn(s.code,'残業',gv2('残業'),68)}</td>
+          <td style="text-align:center"><input type="checkbox" data-code="${s.code}" data-item="リスク案件" ${gv2('リスク案件')===1?'checked':''} style="accent-color:var(--bad);width:17px;height:17px"></td>
+        </tr>`;
+      }).join('')}
+    </table></div>
+    <div class="flex mt"><button class="btn" onclick="saveFinalStore()">品質・補正を保存（${ymd}）</button></div>
+  </div>`;
+
+  // ③ 定性評価（役職別○×）
+  const personList = Object.values(calc.persons);
+  const teiseiHtml = `
+  <h2 class="sec">③ 定性評価（${ymd} ○×）</h2>
+  <div class="card" id="teiseiWrap">
+    ${personList.length ? STAFF_ROLES.map(role => {
+      const ps = personList.filter(p => p.role === role);
+      if(!ps.length) return '';
+      const items = TEISEI_ITEMS[role];
+      return `<div class="note mb" style="color:var(--accent);font-weight:700">${role}（○=20点）</div>
+      <div class="tbl-wrap mb"><table>
+        <tr><th>氏名</th>${items.map(i => `<th>${i}</th>`).join('')}</tr>
+        ${ps.map(p => `<tr><td><b>${esc(p.name)}</b></td>
+          ${items.map(i => `<td style="text-align:center"><input type="checkbox" data-name="${esc(p.name)}" data-item="${esc(i)}"
+            ${Number(evGet(ym,'最終定性',p.name,'',i))===1?'checked':''} style="accent-color:var(--accent);width:17px;height:17px"></td>`).join('')}
+        </tr>`).join('')}
+      </table></div>`;
+    }).join('') : '<div class="empty-note">人員配置を保存すると対象者が表示されます。</div>'}
+    ${personList.length ? `<div class="flex mt"><button class="btn" onclick="saveFinalTeisei()">定性評価を保存（${ymd}）</button></div>` : ''}
+  </div>`;
+
+  // ④ 店舗別スコア内訳
+  const storeDetailHtml = `
+  <h2 class="sec">④ 店舗別スコア内訳（${ymd}）</h2>
+  <div class="tbl-wrap"><table>
+    <tr><th>店舗</th><th>給与+福利</th><th>PF(予測純利益)</th><th>PA(実績純利益)</th><th>AR達成率</th><th>ARスコア</th><th>品質スコア</th><th>フラグ</th></tr>
+    ${DB.stores.map(s => {
+      const sc = calc.storeCalc[s.code];
+      const flagTxt = [sc.flags.qsc?'QSC<80':null, sc.flags.eisei?'衛生≤80':null, sc.flags.risk?'リスク':null].filter(Boolean).join(' / ');
+      return `<tr><td><b>${s.name}</b>${sc.isFixed?'':' <span style="color:var(--warn);font-size:.62rem">予測</span>'}</td>
+        <td>${sc.totalH>0?fmt(sc.salary+sc.fukuri,0):'-'}</td>
+        <td>${sc.PF!==null?fmt(sc.PF,0):'-'}</td><td>${sc.PA!==null?fmt(sc.PA,0):'-'}</td>
+        <td class="${sc.AR===null?'':sc.AR>=100?'t-ok':sc.AR>=70?'t-warn':'t-bad'}">${pct(sc.AR)}</td>
+        <td>${sc.arScore!==null?fmt(sc.arScore,1):'-'}</td><td>${sc.qScore!==null?fmt(sc.qScore,1):'-'}</td>
+        <td class="t-bad" style="font-size:.68rem">${flagTxt||''}</td></tr>`;
+    }).join('')}
+  </table></div>
+  <div class="note mt">PA欄が「予測」表示の店舗は精算書実績が未確定のため着地予測値で計算しています。実績取込後に自動で確定値に切り替わります。</div>`;
+
+  // ⑤ 最終評価（個人別ランク）
+  const rk = r => r ? r + '級' : '-';
+  const resultHtml = `
+  <h2 class="sec">⑤ 最終評価（${ymd} 個人別）</h2>
+  <div class="card">
+    <div class="note mb">総合スコア＝役職別ウェイト（店長 AR50/品質30/定性20、一般 AR30/品質50/定性20、SC AR60/品質30/定性10）。SCは担当店舗の平均。フラグ該当時は自動でランク修正（衛生≤80→3階級ダウン / QSC<80→上限6級 / リスク→8級）。手動上書きで個別調整できます。</div>
+    <div class="tbl-wrap"><table id="finalResultTable">
+      <tr><th>氏名</th><th>役職</th><th>店舗</th><th>ARスコア</th><th>品質</th><th>定性</th><th>総合スコア</th><th>ランク</th><th>フラグ</th><th>修正後</th><th>手動上書き</th></tr>
+      ${personList.length ? personList.sort((a,b2) => (a.score===null)-(b2.score===null) || (b2.score||0)-(a.score||0)).map(p => {
+        const w = ROLE_W[p.role] || ROLE_W['店長'];
+        const ars = avgN(p.storeList.map(x => calc.storeCalc[x.code] ? calc.storeCalc[x.code].arScore : null));
+        const qs  = avgN(p.storeList.map(x => calc.storeCalc[x.code] ? calc.storeCalc[x.code].qScore : null));
+        const flagTxt = [p.flags.qsc?'QSC':null, p.flags.eisei?'衛生':null, p.flags.risk?'リスク':null].filter(Boolean).join('/');
+        const stNames = p.storeList.map(x => storeName(x.code)).join('・');
+        return `<tr><td><b>${esc(p.name)}</b></td><td>${p.role}</td>
+          <td style="font-size:.68rem;color:var(--sub)">${stNames}</td>
+          <td>${ars!==null?fmt(ars,1):'-'}</td><td>${qs!==null?fmt(qs,1):'-'}</td><td>${p.teisei}</td>
+          <td><b>${p.score!==null?fmt(p.score,1):'-'}</b></td>
+          <td><b>${rk(p.rank)}</b></td>
+          <td class="t-bad" style="font-size:.68rem">${flagTxt}</td>
+          <td class="${p.autoAdj!==p.rank?'t-warn':''}"><b>${rk(p.autoAdj)}</b></td>
+          <td><input type="number" min="1" max="8" data-name="${esc(p.name)}" value="${p.override!==null&&p.override!==undefined?p.override:''}"
+            style="width:52px;background:var(--bg2);border:1px solid var(--line2);border-radius:7px;color:var(--txt);padding:6px;text-align:right" placeholder="${p.autoAdj||''}"></td>
+        </tr>`;
+      }).join('') : `<tr><td colspan="11" class="empty-note">人員配置を入力・保存すると評価対象者が表示されます。</td></tr>`}
+    </table></div>
+    ${personList.length ? `<div class="flex mt"><button class="btn" onclick="saveFinalOverride()">手動上書きを保存（${ymd}）</button></div>` : ''}
+  </div>`;
+
+  return shiftHtml + storeInputHtml + teiseiHtml + storeDetailHtml + resultHtml;
+}
+
+async function saveShiftData(){
+  const ym = ymOf(state.mi);
+  const rows = [];
+  document.querySelectorAll('#shiftTable select[data-slot]').forEach(sel => {
+    if(!sel.value) return;
+    const code = sel.dataset.code, slot = sel.dataset.slot;
+    const hEl = document.querySelector(`#shiftTable input[data-code="${code}"][data-slot="${slot}"]`);
+    rows.push([code, slot, sel.value, hEl && hEl.value !== '' ? Number(hEl.value) : null]);
+  });
+  const o = {};
+  rows.forEach(r => { (o[r[0]] = o[r[0]] || {})[r[1]] = {name:r[2], h:r[3]}; });
+  IDX.shift[ym] = o;
+  renderEval();
+  await post({action:'saveShift', ym, rows}, '人員配置を保存しました（' + rows.length + '件）');
+}
+
+async function saveFinalStore(){
+  const ym = ymOf(state.mi);
+  const rows = [];
+  document.querySelectorAll('#finalStoreTable [data-item]').forEach(el => {
+    const code = el.dataset.code, item = el.dataset.item;
+    let v;
+    if(el.type === 'checkbox') v = el.checked ? 1 : 0;
+    else { if(el.value === '') return; v = Number(el.value); }
+    rows.push([ym, '最終店舗', storeName(code), code, item, v]);
+  });
+  if(!rows.length){ toast('入力がありません'); return; }
+  evUpsert(rows);
+  renderEval();
+  await post({action:'saveEval', rows}, '品質・補正を保存しました（' + rows.length + '件）');
+}
+
+async function saveFinalTeisei(){
+  const ym = ymOf(state.mi);
+  const rows = [];
+  document.querySelectorAll('#teiseiWrap input[data-item]').forEach(el => {
+    rows.push([ym, '最終定性', el.dataset.name, '', el.dataset.item, el.checked ? 1 : 0]);
+  });
+  if(!rows.length){ toast('対象者がいません'); return; }
+  evUpsert(rows);
+  renderEval();
+  await post({action:'saveEval', rows}, '定性評価を保存しました');
+}
+
+async function saveFinalOverride(){
+  const ym = ymOf(state.mi);
+  const rows = [];
+  document.querySelectorAll('#finalResultTable input[data-name]').forEach(el => {
+    rows.push([ym, '最終修正', el.dataset.name, '', '修正後ランク', el.value === '' ? '' : Number(el.value)]);
+  });
+  evUpsert(rows);
+  renderEval();
+  await post({action:'saveEval', rows}, '手動上書きを保存しました');
+}
+
+// ---------- 半期総合（個人別6ヶ月平均ランク） ----------
+function evalHankiHtml(){
+  if(!state.hanki) state.hanki = state.mi < 6 ? '上期' : '下期';
+  const half = state.hanki;
+  const mis = half === '上期' ? [0,1,2,3,4,5] : [6,7,8,9,10,11];
+  const calcs = mis.map(mi => calcFinalEval(mi));
+
+  // 対象者: 期間内に1度でも配置された人（社員マスタ順）
+  const names = [];
+  (DB.staff||[]).forEach(p => { if(calcs.some(c => c.persons[p[0]])) names.push(p[0]); });
+  calcs.forEach(c => Object.keys(c.persons).forEach(n => { if(!names.includes(n)) names.push(n); }));
+
+  const rows = names.map(name => {
+    const cells = calcs.map(c => {
+      const p = c.persons[name];
+      return p && p.score !== null ? {pre:p.rank, post:p.final, ov:p.override !== null} : null;
+    });
+    return { name, role: staffRole(name),
+      cells,
+      avgPre: avgN(cells.map(c => c ? c.pre : null)),
+      avgPost: avgN(cells.map(c => c ? c.post : null)) };
+  });
+
+  return `
+  <div class="pills">
+    <button class="pill ${half==='上期'?'on':''}" onclick="state.hanki='上期';renderEval()">上期（10～3月）</button>
+    <button class="pill ${half==='下期'?'on':''}" onclick="state.hanki='下期';renderEval()">下期（4～9月）</button>
+  </div>
+  <div class="note mb">各月の「変更前→変更後」ランクと半期平均です。変更後はフラグ自動修正・手動上書きを反映（橙=上書きあり）。評価がない月（休暇等）は平均から除外されます。</div>
+  <div class="tbl-wrap"><table>
+    <tr><th>氏名</th><th>役職</th>${mis.map(mi => `<th>${monthLabel(mi)}</th>`).join('')}<th>平均(前)</th><th>平均(後)</th></tr>
+    ${rows.length ? rows.map(r => `<tr>
+      <td><b>${esc(r.name)}</b></td><td>${r.role}</td>
+      ${r.cells.map(c => c ? `<td>${c.pre}→<b class="${c.ov?'t-warn':c.post>c.pre?'t-bad':c.post<c.pre?'t-ok':''}">${c.post}</b></td>` : '<td style="color:var(--dim)">*</td>').join('')}
+      <td>${r.avgPre!==null?fmt(r.avgPre,1):'-'}</td><td><b>${r.avgPost!==null?fmt(r.avgPost,1):'-'}</b></td>
+    </tr>`).join('') : `<tr><td colspan="${mis.length+4}" class="empty-note">評価データがありません。最終評価タブで月次の入力・保存をしてください。</td></tr>`}
+  </table></div>
+  <div class="note mt">数値はランク級（1=最高、8=最低）。Excel運用と同じく月次ランクの単純平均で算出しています。</div>`;
+}
+
 // ---------- ⑥ 設定 ----------
 function renderSettings(){
   const el = document.getElementById('v-settings');
@@ -1339,6 +1715,18 @@ function renderSettings(){
         ${DB.assign[s.code]===sc?'checked':''} onchange="DB.assign['${s.code}']='${esc(sc)}'">${sc}</label>`).join('')}
     </div>`).join('')}
     <div class="flex" style="padding:13px 0"><button class="btn" onclick="saveAssign()">担当を保存</button></div>
+  </div>
+
+  <h2 class="sec">社員マスタ（最終評価の対象者）</h2>
+  <div class="card">
+    <div class="form-grid" id="staffRows">
+      ${(DB.staff||[]).map((st,i) => staffRowHtml(st, i)).join('')}
+    </div>
+    <div class="flex mt">
+      <button class="btn ghost" onclick="addStaffRow()">社員を追加</button>
+      <button class="btn" onclick="saveStaffMaster()">社員マスタを保存</button>
+    </div>
+    <div class="note mt">最終評価タブの人員配置・定性評価で使用します。役職（店長/一般/SC）でスコアの重みが変わります。</div>
   </div>
 
   <h2 class="sec">判定パラメータ</h2>
@@ -1438,6 +1826,37 @@ async function saveScNames(){
   if(state.sc && !newNames.includes(state.sc)) state.sc = newNames[0];
   await post({action:'saveScMaster', scs:newNames}, null);
   await post({action:'saveScAssign', assign:DB.assign}, 'SCマスタと担当を保存しました');
+  renderSettings();
+}
+function staffRowHtml(st, i){
+  const name = st ? st[0] : '', role = st ? st[1] : '店長';
+  return `<div class="fld staff-row"><label>社員 ${i+1}</label>
+    <div style="display:flex;gap:6px">
+      <input type="text" value="${esc(name)}" placeholder="氏名" style="flex:1">
+      <select style="flex:none;width:90px">${STAFF_ROLES.map(r =>
+        `<option value="${r}" ${r===role?'selected':''}>${r}</option>`).join('')}</select>
+      <button class="btn ghost" style="padding:0 13px;flex:none" onclick="removeStaffRow(this)" title="削除">×</button>
+    </div></div>`;
+}
+function addStaffRow(){
+  const wrap = document.getElementById('staffRows');
+  wrap.insertAdjacentHTML('beforeend', staffRowHtml(null, wrap.querySelectorAll('.staff-row').length));
+  wrap.lastElementChild.querySelector('input').focus();
+}
+function removeStaffRow(btn){
+  btn.closest('.staff-row').remove();
+  document.querySelectorAll('#staffRows .staff-row label').forEach((l,i) => l.textContent = '社員 ' + (i+1));
+}
+async function saveStaffMaster(){
+  const rows = [...document.querySelectorAll('#staffRows .staff-row')];
+  const staff = [];
+  rows.forEach(r => {
+    const name = r.querySelector('input').value.trim();
+    const role = r.querySelector('select').value;
+    if(name && !staff.some(s => s[0] === name)) staff.push([name, role]);
+  });
+  DB.staff = staff;
+  await post({action:'saveStaff', staff}, '社員マスタを保存しました');
   renderSettings();
 }
 async function saveAssign(){
@@ -1568,7 +1987,7 @@ function makeDemoData(){
   });
   function daysFor(fy2, mi){ const m = FISCAL[mi]; const y = m >= 10 ? fy2 : fy2 + 1; return new Date(y, m, 0).getDate(); }
   return { fy, settings:{}, params:{warnLine:100, dangerLine:95},
-    stores, scs, assign, budget, mid, dept, ex, contracts, inputs, evals:[], ts:new Date().toISOString() };
+    stores, scs, assign, budget, mid, dept, ex, contracts, inputs, evals:[], staff:[], shifts:[], ts:new Date().toISOString() };
 }
 </script>
 </body>
