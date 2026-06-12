@@ -1364,10 +1364,12 @@ function staffRole(name){
  * 月次最終評価の計算
  *  AR: PF=店利益予算−社員給与−法定福利18% / PA=店利益実績(なければ着地予測)−給与−福利−残業
  *      給与=300000/(55/7*30)×(合計週時間/7*30)/1000（週55h=月30万円換算・千円）
- *  ARスコア: <70%→AR×40/70 / 70~100→40+(AR-70)×39/29 / 100~120→80+(AR-100) / >120→100
+ *      PF≤0（赤字予測店）は改善率方式: AR=(PA−PF)÷|PF|×100
+ *  ARスコア: <0→0 / <70%→AR×40/70 / 70~100→40+(AR-70)×39/29 / 100~120→80+(AR-100) / >120→100
  *  品質: MAX(0,MIN(100, AVG(QSC平均,衛生,5S) + クレーム補正(≥3:-5/≥1:-1) + 数字の質))
- *  定性: ○の数×20 / 総合: 役職別ウェイト / SC個人=担当店舗のSCウェイトスコア平均
- *  特別フラグ: 衛生≤80→3階級ダウン / QSC平均<80→上限6級 / リスク案件→8級（自動適用＋手動上書き可）
+ *  定性: ○数÷記入済項目数×100（空欄項目は分母から除外）/ 総合: 役職別ウェイト / SC個人=担当店舗平均
+ *  役職: その月のシフト枠から判定（SC枠→SC / 店長枠→店長 / 他→一般）
+ *  特別フラグ: 表示のみ。降級は「修正後ランク」手入力（Excel運用準拠）。評価対象外フラグで除外可
  */
 function calcFinalEval(mi){
   const ym = ymOf(mi);
@@ -1394,8 +1396,10 @@ function calcFinalEval(mi){
 
     const PF = budP !== null ? budP - salary - fukuri : null;
     const PA = profit !== null && profit !== undefined ? profit - salary - fukuri - zangyo : null;
-    const AR = (PF !== null && PF > 0 && PA !== null) ? PA/PF*100 : null;
-    const arScore = AR === null ? null :
+    // AR: PF>0は通常の達成率(PA/PF)。PF<0は改善率方式 (PA−PF)÷|PF|×100（統一ルール・2026-06決定）
+    let AR = null;
+    if(PF !== null && PA !== null && PF !== 0) AR = PF > 0 ? PA/PF*100 : (PA-PF)/Math.abs(PF)*100;
+    const arScore = AR === null ? null : AR < 0 ? 0 :
       AR < 70 ? AR*(40/70) : AR < 100 ? 40+(AR-70)*(39/29) : AR <= 120 ? 80+(AR-100) : 100;
 
     const qBase = avgN([qscAvg, eisei, s5]);
@@ -1407,24 +1411,34 @@ function calcFinalEval(mi){
       flags: { eisei: eisei !== null && eisei <= 80, qsc: qscAvg !== null && qscAvg < 80, risk } };
   });
 
-  // 個人別（人員配置から対象者を抽出。役職は社員マスタの役職で評価）
+  // 個人別（人員配置から対象者を抽出。役職はその月のシフト枠から判定: SC枠→SC / 店長枠→店長 / それ以外→一般）
   const persons = {};
   DB.stores.forEach(s => {
     const sh = shifts[s.code] || {};
     SHIFT_SLOTS.forEach(slot => {
       const nm = sh[slot] && sh[slot].name;
       if(!nm) return;
-      (persons[nm] = persons[nm] || { name:nm, role:staffRole(nm), stores:[] }).stores.push({code:s.code, slot});
+      (persons[nm] = persons[nm] || { name:nm, stores:[] }).stores.push({code:s.code, slot});
     });
+  });
+  Object.values(persons).forEach(p => {
+    const slots = p.stores.map(x => x.slot);
+    p.role = slots.includes('SC') ? 'SC' : slots.some(sl => sl.indexOf('店長') === 0) ? '店長' : '一般';
   });
 
   Object.values(persons).forEach(p => {
     const items = teiseiItems(ym, p.role) || teiseiItems(ym, '店長');
     // 定性○×は店舗単位で記録（SC等は担当店ごとに採点し、店舗別総合点を平均して最終等級）
     const teiseiOf = code => {
-      let marks = 0;
-      items.forEach(it => { if(Number(evGet(ym, '最終定性', p.name, code, it)) === 1) marks++; });
-      return marks * 20;
+      // 空欄（未評価）の項目は分母から除外し、残り項目で100点満点に配点（例: 4項目なら○=25点）
+      let marks = 0, filled = 0;
+      items.forEach(it => {
+        const v = evGet(ym, '最終定性', p.name, code, it);
+        if(v === '') return;
+        filled++;
+        if(Number(v) === 1) marks++;
+      });
+      return filled ? marks / filled * 100 : 0;
     };
     const w = ROLE_W[p.role] || ROLE_W['店長'];
     // SCは担当SC枠の店舗平均、店長・一般は配置店舗（複数なら平均）
@@ -1443,16 +1457,16 @@ function calcFinalEval(mi){
       if(sc){ fl.eisei = fl.eisei || sc.flags.eisei; fl.qsc = fl.qsc || sc.flags.qsc; fl.risk = fl.risk || sc.flags.risk; } });
     p.flags = fl;
 
+    // 評価対象外（休職・帰国等）: スコア計算せず「対象外」表示
+    p.excluded = Number(evGet(ym, '最終修正', p.name, '', '評価対象外')) === 1;
+    if(p.excluded){ p.score = null; }
+
     if(p.score !== null){
-      p.rank = rankOf(p.score);                     // 変更前
-      let r = p.rank;
-      if(fl.eisei) r = Math.min(8, r + 3);          // 衛生≤80: 3階級ダウン
-      if(fl.qsc)   r = Math.max(r, 6);              // QSC平均<80: 上限6級
-      if(fl.risk)  r = 8;                           // リスク案件: 8級
-      p.autoAdj = r;                                // 自動修正後
+      p.rank = rankOf(p.score);                     // スコアによる自動ランク
+      // フラグ（衛生≤80/QSC<80/リスク）は表示のみ。降級は手動上書き欄に修正後ランクを入力（Excel運用準拠）
       const ov = evGet(ym, '最終修正', p.name, '', '修正後ランク');
       p.override = ov === '' ? null : Number(ov);
-      p.final = p.override !== null ? p.override : r;  // 変更後（手動上書き優先）
+      p.final = p.override !== null ? p.override : p.rank;  // 変更後（手動上書き優先）
     }
   });
 
@@ -1529,7 +1543,7 @@ function evalFinalHtml(){
       const ps = personList.filter(p => p.role === role);
       if(!ps.length) return '';
       const items = teiseiItems(ym, role);
-      return `<div class="note mb" style="color:var(--accent);font-weight:700">${role}（○=20点）</div>
+      return `<div class="note mb" style="color:var(--accent);font-weight:700">${role}（○の割合×100点。5項目全記入なら○=20点）</div>
       <div class="tbl-wrap mb"><table>
         <tr><th>氏名</th><th>店舗</th>${items.map(i => `<th>${i}</th>`).join('')}</tr>
         ${ps.map(p => p.storeList.map((x,xi) => `<tr>
@@ -1566,7 +1580,7 @@ function evalFinalHtml(){
   const resultHtml = `
   <h2 class="sec">⑤ 最終評価（${ymd} 個人別）</h2>
   <div class="card">
-    <div class="note mb">総合スコア＝役職別ウェイト（店長 AR50/品質30/定性20、一般 AR30/品質50/定性20、SC AR60/品質30/定性10）。SCは担当店舗の平均。フラグ該当時は自動でランク修正（衛生≤80→3階級ダウン / QSC<80→上限6級 / リスク→8級）。手動上書きで個別調整できます。</div>
+    <div class="note mb">総合スコア＝役職別ウェイト（店長 AR50/品質30/定性20、一般 AR30/品質50/定性20、SC AR60/品質30/定性10）。SCは担当店舗の平均。フラグ（衛生≤80 / QSC<80 / リスク）は表示のみ。降級する場合は「手動上書き」に修正後ランクを入力してください。</div>
     <div class="tbl-wrap"><table id="finalResultTable">
       <tr><th>氏名</th><th>役職</th><th>店舗</th><th>ARスコア</th><th>品質</th><th>定性</th><th>総合スコア</th><th>ランク</th><th>フラグ</th><th>修正後</th><th>手動上書き</th></tr>
       ${personList.length ? personList.sort((a,b2) => (a.score===null)-(b2.score===null) || (b2.score||0)-(a.score||0)).map(p => {
@@ -1575,15 +1589,19 @@ function evalFinalHtml(){
         const qs  = avgN(p.storeList.map(x => calc.storeCalc[x.code] ? calc.storeCalc[x.code].qScore : null));
         const flagTxt = [p.flags.qsc?'QSC':null, p.flags.eisei?'衛生':null, p.flags.risk?'リスク':null].filter(Boolean).join('/');
         const stNames = p.storeList.map(x => storeName(x.code)).join('・');
+        if(p.excluded) return `<tr style="opacity:.55"><td><b>${esc(p.name)}</b></td><td>${p.role}</td>
+          <td style="font-size:.68rem;color:var(--sub)">${stNames}</td>
+          <td colspan="7" style="color:var(--sub)">評価対象外</td>
+          <td></td></tr>`;
         return `<tr><td><b>${esc(p.name)}</b></td><td>${p.role}</td>
           <td style="font-size:.68rem;color:var(--sub)">${stNames}</td>
           <td>${ars!==null?fmt(ars,1):'-'}</td><td>${qs!==null?fmt(qs,1):'-'}</td><td>${fmt(p.teisei,1)}</td>
           <td><b>${p.score!==null?fmt(p.score,1):'-'}</b></td>
           <td><b>${rk(p.rank)}</b></td>
           <td class="t-bad" style="font-size:.68rem">${flagTxt}</td>
-          <td class="${p.autoAdj!==p.rank?'t-warn':''}"><b>${rk(p.autoAdj)}</b></td>
+          <td class="${p.final!==p.rank?'t-warn':''}"><b>${rk(p.final)}</b></td>
           <td><input type="number" min="1" max="8" data-name="${esc(p.name)}" value="${p.override!==null&&p.override!==undefined?p.override:''}"
-            style="width:52px;background:var(--bg2);border:1px solid var(--line2);border-radius:7px;color:var(--txt);padding:6px;text-align:right" placeholder="${p.autoAdj||''}"></td>
+            style="width:52px;background:var(--bg2);border:1px solid var(--line2);border-radius:7px;color:var(--txt);padding:6px;text-align:right" placeholder="${p.rank||''}"></td>
         </tr>`;
       }).join('') : `<tr><td colspan="11" class="empty-note">人員配置を入力・保存すると評価対象者が表示されます。</td></tr>`}
     </table></div>
@@ -1665,7 +1683,12 @@ function evalHankiHtml(){
       const p = c.persons[name];
       return p && p.score !== null ? {pre:p.rank, post:p.final, ov:p.override !== null} : null;
     });
-    return { name, role: staffRole(name),
+    // 役職は期間内で最後に配置があった月のシフト役職を表示
+    let role = staffRole(name);
+    for(let i = calcs.length - 1; i >= 0; i--){
+      if(calcs[i].persons[name]){ role = calcs[i].persons[name].role; break; }
+    }
+    return { name, role,
       cells,
       avgPre: avgN(cells.map(c => c ? c.pre : null)),
       avgPost: avgN(cells.map(c => c ? c.post : null)) };
@@ -1676,7 +1699,7 @@ function evalHankiHtml(){
     <button class="pill ${half==='上期'?'on':''}" onclick="state.hanki='上期';renderEval()">上期（10～3月）</button>
     <button class="pill ${half==='下期'?'on':''}" onclick="state.hanki='下期';renderEval()">下期（4～9月）</button>
   </div>
-  <div class="note mb">各月の「変更前→変更後」ランクと半期平均です。変更後はフラグ自動修正・手動上書きを反映（橙=上書きあり）。評価がない月（休暇等）は平均から除外されます。</div>
+  <div class="note mb">各月の「変更前→変更後」ランクと半期平均です。変更後は手動上書き（修正後ランク）を反映（橙=上書きあり）。評価がない月（休暇等）は平均から除外されます。</div>
   <div class="tbl-wrap"><table>
     <tr><th>氏名</th><th>役職</th>${mis.map(mi => `<th>${monthLabel(mi)}</th>`).join('')}<th>平均(前)</th><th>平均(後)</th></tr>
     ${rows.length ? rows.map(r => `<tr>
