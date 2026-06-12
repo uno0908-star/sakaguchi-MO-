@@ -319,11 +319,18 @@ const ROLE_W = {                                              // 役職別ウェ
   '一般': {ar:.3, q:.5, t:.2},
   'SC':   {ar:.6, q:.3, t:.1}
 };
-const TEISEI_ITEMS = {                                        // 定性評価項目（○=20点×5項目）
+const TEISEI_ITEMS = {                                        // 定性評価項目（○=20点×5項目）26.04以降
   'SC':   ['店長離職率','支店牽引','課題解決','店長育成','就業規則'],
   '店長': ['クルーアンケート','支店牽引','課題解決','クルー育成','就業規則'],
   '一般': ['接客姿勢','支店牽引','改善提案','クルー育成','就業規則']
 };
+const TEISEI_ITEMS_OLD = {                                    // 25.10〜26.03の旧項目
+  'SC':   ['店長離職率','支店牽引','改善横展開','店長育成','就業規則'],
+  '店長': ['アルバイト定着率','支店牽引','改善事例','クルー育成','就業規則'],
+  '一般': ['接客姿勢','支店牽引','改善提案','クルー育成','就業規則']
+};
+// 年月に応じた定性項目（評価制度が26.04に改定されたため）
+const teiseiItems = (ym, role) => (ym < '2026-04' ? TEISEI_ITEMS_OLD : TEISEI_ITEMS)[role];
 // 店舗品質・補正の入力項目（評価データシートに 種別=最終店舗 で保存）
 const FINAL_STORE_ITEMS = ['QSC_SC','QSC_SI','衛生','5S','クレーム件数','数字の質','残業','リスク案件'];
 const RANK_TH = [[97,1],[94,2],[90,3],[85,4],[80,5],[75,6],[70,7]];  // スコア下限→級（それ未満=8級）
@@ -1412,16 +1419,21 @@ function calcFinalEval(mi){
   });
 
   Object.values(persons).forEach(p => {
-    const items = TEISEI_ITEMS[p.role] || TEISEI_ITEMS['店長'];
-    let marks = 0;
-    items.forEach(it => { if(Number(evGet(ym, '最終定性', p.name, '', it)) === 1) marks++; });
-    p.teisei = marks * 20;
+    const items = teiseiItems(ym, p.role) || teiseiItems(ym, '店長');
+    // 定性○×は店舗単位で記録（SC等は担当店ごとに採点し、店舗別総合点を平均して最終等級）
+    const teiseiOf = code => {
+      let marks = 0;
+      items.forEach(it => { if(Number(evGet(ym, '最終定性', p.name, code, it)) === 1) marks++; });
+      return marks * 20;
+    };
     const w = ROLE_W[p.role] || ROLE_W['店長'];
     // SCは担当SC枠の店舗平均、店長・一般は配置店舗（複数なら平均）
     const list = p.role === 'SC' ? (p.stores.filter(x => x.slot === 'SC').length ? p.stores.filter(x => x.slot === 'SC') : p.stores) : p.stores;
-    const scoreList = list.map(x => {
+    const tList = list.map(x => teiseiOf(x.code));
+    p.teisei = tList.length ? tList.reduce((a,v) => a+v, 0) / tList.length : 0;
+    const scoreList = list.map((x,li) => {
       const sc = storeCalc[x.code];
-      return (sc && sc.arScore !== null && sc.qScore !== null) ? sc.arScore*w.ar + sc.qScore*w.q + p.teisei*w.t : null;
+      return (sc && sc.arScore !== null && sc.qScore !== null) ? sc.arScore*w.ar + sc.qScore*w.q + tList[li]*w.t : null;
     }).filter(v => v !== null);
     p.score = scoreList.length ? scoreList.reduce((a,v) => a+v, 0) / scoreList.length : null;
     p.storeList = list;
@@ -1510,19 +1522,22 @@ function evalFinalHtml(){
   // ③ 定性評価（役職別○×）
   const personList = Object.values(calc.persons);
   const teiseiHtml = `
-  <h2 class="sec">③ 定性評価（${ymd} ○×）</h2>
+  <h2 class="sec">③ 定性評価（${ymd} ○×・店舗ごと）</h2>
   <div class="card" id="teiseiWrap">
+    <div class="note mb">複数店舗を担当する人（SC・兼任店長）は店舗ごとに採点し、店舗別総合点の平均で最終等級が決まります。</div>
     ${personList.length ? STAFF_ROLES.map(role => {
       const ps = personList.filter(p => p.role === role);
       if(!ps.length) return '';
-      const items = TEISEI_ITEMS[role];
+      const items = teiseiItems(ym, role);
       return `<div class="note mb" style="color:var(--accent);font-weight:700">${role}（○=20点）</div>
       <div class="tbl-wrap mb"><table>
-        <tr><th>氏名</th>${items.map(i => `<th>${i}</th>`).join('')}</tr>
-        ${ps.map(p => `<tr><td><b>${esc(p.name)}</b></td>
-          ${items.map(i => `<td style="text-align:center"><input type="checkbox" data-name="${esc(p.name)}" data-item="${esc(i)}"
-            ${Number(evGet(ym,'最終定性',p.name,'',i))===1?'checked':''} style="accent-color:var(--accent);width:17px;height:17px"></td>`).join('')}
-        </tr>`).join('')}
+        <tr><th>氏名</th><th>店舗</th>${items.map(i => `<th>${i}</th>`).join('')}</tr>
+        ${ps.map(p => p.storeList.map((x,xi) => `<tr>
+          ${xi===0 ? `<td rowspan="${p.storeList.length}"><b>${esc(p.name)}</b></td>` : ''}
+          <td style="font-size:.68rem;color:var(--sub)">${storeName(x.code)}</td>
+          ${items.map(i => `<td style="text-align:center"><input type="checkbox" data-name="${esc(p.name)}" data-code="${x.code}" data-item="${esc(i)}"
+            ${Number(evGet(ym,'最終定性',p.name,x.code,i))===1?'checked':''} style="accent-color:var(--accent);width:17px;height:17px"></td>`).join('')}
+        </tr>`).join('')).join('')}
       </table></div>`;
     }).join('') : '<div class="empty-note">人員配置を保存すると対象者が表示されます。</div>'}
     ${personList.length ? `<div class="flex mt"><button class="btn" onclick="saveFinalTeisei()">定性評価を保存（${ymd}）</button></div>` : ''}
@@ -1562,7 +1577,7 @@ function evalFinalHtml(){
         const stNames = p.storeList.map(x => storeName(x.code)).join('・');
         return `<tr><td><b>${esc(p.name)}</b></td><td>${p.role}</td>
           <td style="font-size:.68rem;color:var(--sub)">${stNames}</td>
-          <td>${ars!==null?fmt(ars,1):'-'}</td><td>${qs!==null?fmt(qs,1):'-'}</td><td>${p.teisei}</td>
+          <td>${ars!==null?fmt(ars,1):'-'}</td><td>${qs!==null?fmt(qs,1):'-'}</td><td>${fmt(p.teisei,1)}</td>
           <td><b>${p.score!==null?fmt(p.score,1):'-'}</b></td>
           <td><b>${rk(p.rank)}</b></td>
           <td class="t-bad" style="font-size:.68rem">${flagTxt}</td>
@@ -1614,7 +1629,7 @@ async function saveFinalTeisei(auto){
   const ym = ymOf(state.mi);
   const rows = [];
   document.querySelectorAll('#teiseiWrap input[data-item]').forEach(el => {
-    rows.push([ym, '最終定性', el.dataset.name, '', el.dataset.item, el.checked ? 1 : 0]);
+    rows.push([ym, '最終定性', el.dataset.name, el.dataset.code || '', el.dataset.item, el.checked ? 1 : 0]);
   });
   if(!rows.length){ if(!auto) toast('対象者がいません'); return; }
   evUpsert(rows);
