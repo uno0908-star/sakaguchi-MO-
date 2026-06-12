@@ -1306,7 +1306,7 @@ function addSiTarget(){
   renderEval();
 }
 
-async function saveEvalData(kind){
+async function saveEvalData(kind, auto){
   const ym = ymOf(state.mi);
   const rows = [];
   document.querySelectorAll('#evalTable input[data-item]').forEach(inp => {
@@ -1315,13 +1315,13 @@ async function saveEvalData(kind){
     if(kind === '店長') rows.push([ym, kind, storeName(target), target, item, Number(inp.value)]);
     else rows.push([ym, kind, target, '', item, Number(inp.value)]);
   });
-  if(!rows.length){ toast('入力がありません'); return; }
+  if(!rows.length){ if(!auto) toast('入力がありません'); return; }
   // ローカル反映
   rows.forEach(r => {
     const i = IDX.evals.findIndex(e => e[0] === r[0] && e[1] === r[1] && e[2] === r[2] && e[3] === r[3] && e[4] === r[4]);
     if(i >= 0) IDX.evals[i] = r; else IDX.evals.push(r);
   });
-  await post({action:'saveEval', rows}, '評価データを保存しました（' + rows.length + '件）');
+  await post({action:'saveEval', rows}, auto ? null : '評価データを保存しました（' + rows.length + '件）');
 }
 
 // ============================================================
@@ -1578,7 +1578,7 @@ function evalFinalHtml(){
   return shiftHtml + storeInputHtml + teiseiHtml + storeDetailHtml + resultHtml;
 }
 
-async function saveShiftData(){
+async function saveShiftData(auto){
   const ym = ymOf(state.mi);
   const rows = [];
   document.querySelectorAll('#shiftTable select[data-slot]').forEach(sel => {
@@ -1590,11 +1590,11 @@ async function saveShiftData(){
   const o = {};
   rows.forEach(r => { (o[r[0]] = o[r[0]] || {})[r[1]] = {name:r[2], h:r[3]}; });
   IDX.shift[ym] = o;
-  renderEval();
-  await post({action:'saveShift', ym, rows}, '人員配置を保存しました（' + rows.length + '件）');
+  if(!auto) renderEval();
+  await post({action:'saveShift', ym, rows}, auto ? null : '人員配置を保存しました（' + rows.length + '件）');
 }
 
-async function saveFinalStore(){
+async function saveFinalStore(auto){
   const ym = ymOf(state.mi);
   const rows = [];
   document.querySelectorAll('#finalStoreTable [data-item]').forEach(el => {
@@ -1604,33 +1604,33 @@ async function saveFinalStore(){
     else { if(el.value === '') return; v = Number(el.value); }
     rows.push([ym, '最終店舗', storeName(code), code, item, v]);
   });
-  if(!rows.length){ toast('入力がありません'); return; }
+  if(!rows.length){ if(!auto) toast('入力がありません'); return; }
   evUpsert(rows);
-  renderEval();
-  await post({action:'saveEval', rows}, '品質・補正を保存しました（' + rows.length + '件）');
+  if(!auto) renderEval();
+  await post({action:'saveEval', rows}, auto ? null : '品質・補正を保存しました（' + rows.length + '件）');
 }
 
-async function saveFinalTeisei(){
+async function saveFinalTeisei(auto){
   const ym = ymOf(state.mi);
   const rows = [];
   document.querySelectorAll('#teiseiWrap input[data-item]').forEach(el => {
     rows.push([ym, '最終定性', el.dataset.name, '', el.dataset.item, el.checked ? 1 : 0]);
   });
-  if(!rows.length){ toast('対象者がいません'); return; }
+  if(!rows.length){ if(!auto) toast('対象者がいません'); return; }
   evUpsert(rows);
-  renderEval();
-  await post({action:'saveEval', rows}, '定性評価を保存しました');
+  if(!auto) renderEval();
+  await post({action:'saveEval', rows}, auto ? null : '定性評価を保存しました');
 }
 
-async function saveFinalOverride(){
+async function saveFinalOverride(auto){
   const ym = ymOf(state.mi);
   const rows = [];
   document.querySelectorAll('#finalResultTable input[data-name]').forEach(el => {
     rows.push([ym, '最終修正', el.dataset.name, '', '修正後ランク', el.value === '' ? '' : Number(el.value)]);
   });
   evUpsert(rows);
-  renderEval();
-  await post({action:'saveEval', rows}, '手動上書きを保存しました');
+  if(!auto) renderEval();
+  await post({action:'saveEval', rows}, auto ? null : '手動上書きを保存しました');
 }
 
 // ---------- 半期総合（個人別6ヶ月平均ランク） ----------
@@ -1874,11 +1874,13 @@ async function saveParamsUi(){
 }
 
 // ---------- 通信 ----------
+let _pendingSaves = 0;
 async function post(payload, successMsg){
   if(!gasUrl()){ if(successMsg) toast(successMsg + '（デモ: ローカルのみ）'); return {ok:true}; }
+  _pendingSaves++;
   try{
     const res = await fetch(gasUrl(), {
-      method:'POST', redirect:'follow',
+      method:'POST', redirect:'follow', keepalive:true,
       headers:{'Content-Type':'text/plain;charset=utf-8'},
       body: JSON.stringify(payload)
     });
@@ -1886,8 +1888,25 @@ async function post(payload, successMsg){
     if(d.error) throw new Error(d.error);
     if(successMsg) toast(successMsg);
     return d;
-  }catch(e){ toast('保存エラー: ' + e.message); return {error:String(e)}; }
+  }catch(e){ toast('保存エラー: ' + e.message + '（この入力はサーバー未保存です）'); return {error:String(e)}; }
+  finally{ _pendingSaves--; }
 }
+
+// ---------- 自動保存（入力欄を離れた時点でサーバーへ送信） ----------
+// 保存ボタンの押し忘れでデータが端末内に取り残されるのを防ぐ。
+document.addEventListener('change', e => {
+  const t = e.target;
+  if(!IDX) return;
+  if(t.closest('#shiftTable'))            saveShiftData(true);
+  else if(t.closest('#finalStoreTable'))  saveFinalStore(true);
+  else if(t.closest('#teiseiWrap'))       saveFinalTeisei(true);
+  else if(t.closest('#finalResultTable')) saveFinalOverride(true);
+  else if(t.closest('#evalTable'))        saveEvalData(state.evalTab, true);
+});
+// 保存中にページを閉じようとしたら警告
+window.addEventListener('beforeunload', e => {
+  if(_pendingSaves > 0){ e.preventDefault(); e.returnValue = ''; }
+});
 
 // ---------- ユーティリティ ----------
 function fmt(v, dec){
