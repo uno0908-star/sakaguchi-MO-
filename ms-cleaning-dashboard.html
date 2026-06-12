@@ -1279,8 +1279,13 @@ async function handleSubmit(e) {
   if(!selectedPhotos.length){showToast('写真を選択してください','error');return;}
   const btn=document.getElementById('submit-btn'); btn.disabled=true; btn.textContent='送信中...';
   const imageData=selectedPhotos.length===1?selectedPhotos[0]:JSON.stringify(selectedPhotos);
+  if(imageData.length>8*1024*1024){
+    showToast('写真の合計サイズが大きすぎます。枚数を減らして送信してください','error');
+    btn.disabled=false; btn.textContent='改善を登録する'; return;
+  }
   try {
-    await apiPost('addSubmission',{settingId,storeId,itemId,improvedBy:name,role,improvedDate:date,comment,imageData});
+    const res=await apiPost('addSubmission',{settingId,storeId,itemId,improvedBy:name,role,improvedDate:date,comment,imageData});
+    if(!res||!res.submissionId) throw new Error('サーバーに登録されませんでした');
     clearCache(); await loadData(true); selectedPhotos=[];
     document.getElementById('app').innerHTML=`<div class="success-view">
       <div class="success-icon">✅</div>
@@ -1288,7 +1293,12 @@ async function handleSubmit(e) {
       <div class="success-msg">${name}さんの改善報告を受け付けました。ありがとうございます！</div>
       <button class="btn-primary" style="max-width:280px" data-nav="${S.selStoreId?'store-detail':'dashboard'}">${S.selStoreId?'店舗詳細に戻る':'ホームに戻る'}</button>
     </div>`+renderNav();
-  } catch(err) { showToast('送信失敗: '+err.message,'error'); btn.disabled=false; btn.textContent='改善を登録する'; }
+  } catch(err) {
+    const msg=/Failed to fetch|NetworkError|load failed/i.test(err.message)
+      ?'通信エラーで送信できませんでした。電波の良い場所で再度お試しください。写真は選択されたままです。'
+      :'送信失敗: '+err.message;
+    showToast(msg,'error'); btn.disabled=false; btn.textContent='改善を登録する';
+  }
 }
 
 // ============================================================
