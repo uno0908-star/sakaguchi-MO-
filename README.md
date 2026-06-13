@@ -32,7 +32,7 @@
 | [厨房 検証＆計画ツール](https://uno0908-star.github.io/sakaguchi-MO-/Kitchen.html) | 厨房の検証・計画 |
 | [厨房検証｜販売チャンス分析](https://uno0908-star.github.io/sakaguchi-MO-/厨房検証_全店舗_販売チャンス分析ver3.html) | 全店舗の販売チャンス分析 |
 | [厨房衛生管理アンケート](https://uno0908-star.github.io/sakaguchi-MO-/kitchen_survey.html) | 衛生管理アンケート |
-| [FF・厨房販売ダッシュボード（4月イベント）](https://uno0908-star.github.io/sakaguchi-MO-/index.html) | 4月イベント結果 |
+| [FF・厨房販売ダッシュボード（4月イベント）](https://uno0908-star.github.io/sakaguchi-MO-/archive/ff-kitchen-event-202604.html) | 4月イベント結果 |
 | [26年5月 FF＋厨房イベント](https://uno0908-star.github.io/sakaguchi-MO-/lawson-event-dashboard.html) | 5月イベントダッシュボード |
 
 ## 📊 アンケート

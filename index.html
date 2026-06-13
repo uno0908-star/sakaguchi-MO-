@@ -3,869 +3,131 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>FF・厨房販売ダッシュボード｜阪口商店 4月イベント結果</title>
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<title>阪口商店 アプリポータル</title>
 <style>
-  :root {
-    --blue: #1a6fc4; --blue-light: #e8f0fb;
-    --green: #1a8a4a; --green-light: #e6f4ec; --green-mid: #2ecc71;
-    --red: #c0392b; --red-light: #fdecea;
-    --orange: #e67e22; --orange-light: #fef3e2;
-    --gray: #6c757d; --gray-light: #f8f9fa; --gray-border: #dee2e6;
-    --lawson-blue: #005bac; --lawson-pink: #e60033;
-    --shadow: 0 2px 8px rgba(0,0,0,0.10);
-    --radius: 10px;
+  :root{
+    --blue:#0068b7;
+    --blue-dark:#00529a;
+    --bg:#f2f5f9;
+    --card:#ffffff;
+    --text:#1a2733;
+    --muted:#6b7a89;
   }
-  * { box-sizing: border-box; margin: 0; padding: 0; }
-  body { font-family: 'Hiragino Sans', 'Yu Gothic UI', Meiryo, sans-serif; background: #f0f4f8; color: #222; font-size: 14px; }
-
-  /* ── Header ── */
-  .header { background: linear-gradient(135deg, var(--lawson-blue) 0%, #0080d0 100%); color: #fff; padding: 18px 20px 14px; }
-  .header h1 { font-size: 1.3rem; font-weight: 700; margin-bottom: 6px; }
-  .header .desc { font-size: 0.82rem; opacity: 0.88; line-height: 1.55; }
-  .header .date-badge { display: inline-block; background: rgba(255,255,255,0.2); border-radius: 20px; padding: 2px 12px; font-size: 0.75rem; margin-top: 8px; }
-
-  /* ── Tab Nav ── */
-  .tab-nav { display: flex; background: #fff; border-bottom: 2px solid var(--gray-border); overflow-x: auto; }
-  .tab-btn { flex: 1; min-width: 90px; padding: 12px 8px; border: none; background: none; cursor: pointer; font-size: 0.82rem; font-weight: 600; color: var(--gray); border-bottom: 3px solid transparent; margin-bottom: -2px; white-space: nowrap; transition: all .2s; }
-  .tab-btn.active { color: var(--lawson-blue); border-bottom-color: var(--lawson-blue); background: var(--blue-light); }
-  .tab-btn:hover:not(.active) { background: var(--gray-light); }
-
-  /* ── Main Layout ── */
-  .main { padding: 14px; max-width: 1200px; margin: 0 auto; }
-  .tab-panel { display: none; }
-  .tab-panel.active { display: block; }
-
-  /* ── Cards ── */
-  .card { background: #fff; border-radius: var(--radius); box-shadow: var(--shadow); padding: 16px; margin-bottom: 14px; }
-  .card-title { font-size: 0.95rem; font-weight: 700; color: var(--lawson-blue); margin-bottom: 12px; padding-bottom: 8px; border-bottom: 2px solid var(--blue-light); display: flex; align-items: center; gap: 6px; }
-
-  /* ── Verdict ── */
-  .verdict-card { background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%); color: #fff; border-radius: 14px; padding: 20px; margin-bottom: 14px; text-align: center; }
-  .verdict-mark { font-size: 5rem; line-height: 1; margin: 8px 0; }
-  .verdict-mark.maru { color: #2ecc71; text-shadow: 0 0 30px rgba(46,204,113,0.6); }
-  .verdict-mark.batsu { color: #e74c3c; text-shadow: 0 0 30px rgba(231,76,60,0.6); }
-  .verdict-label { font-size: 1.1rem; font-weight: 700; margin-top: 6px; }
-  .verdict-label.maru { color: #2ecc71; }
-  .verdict-label.batsu { color: #e74c3c; }
-  .verdict-comment { font-size: 0.9rem; opacity: 0.85; margin-top: 8px; }
-
-  /* ── KPI Grid ── */
-  .kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; margin-bottom: 14px; }
-  .kpi-box { background: #fff; border-radius: var(--radius); box-shadow: var(--shadow); padding: 14px 12px; text-align: center; border-top: 4px solid var(--blue); }
-  .kpi-box.green { border-top-color: var(--green); }
-  .kpi-box.red { border-top-color: var(--red); }
-  .kpi-box.orange { border-top-color: var(--orange); }
-  .kpi-label { font-size: 0.72rem; color: var(--gray); margin-bottom: 6px; font-weight: 600; }
-  .kpi-value { font-size: 1.6rem; font-weight: 700; line-height: 1; }
-  .kpi-sub { font-size: 0.72rem; color: var(--gray); margin-top: 4px; }
-
-  /* ── Growth Bar ── */
-  .growth-compare { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 14px; }
-  .growth-box { background: #fff; border-radius: var(--radius); padding: 14px; box-shadow: var(--shadow); }
-  .growth-box .org-name { font-size: 0.8rem; font-weight: 700; margin-bottom: 10px; }
-  .growth-box .rate-val { font-size: 2rem; font-weight: 700; margin-bottom: 8px; }
-  .growth-box .rate-bar-wrap { background: var(--gray-light); border-radius: 4px; height: 10px; overflow: hidden; }
-  .growth-box .rate-bar { height: 100%; border-radius: 4px; transition: width 1s; }
-
-  /* ── Tables ── */
-  .table-controls { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 10px; align-items: center; }
-  .search-box { padding: 6px 12px; border: 1px solid var(--gray-border); border-radius: 6px; font-size: 0.82rem; flex: 1; min-width: 150px; }
-  .filter-btn { padding: 5px 12px; border: 1px solid var(--gray-border); border-radius: 6px; font-size: 0.78rem; background: #fff; cursor: pointer; }
-  .filter-btn.active { background: var(--lawson-blue); color: #fff; border-color: var(--lawson-blue); }
-
-  .data-table { width: 100%; border-collapse: collapse; font-size: 0.8rem; }
-  .data-table th { background: var(--lawson-blue); color: #fff; padding: 8px 6px; text-align: center; cursor: pointer; white-space: nowrap; user-select: none; position: sticky; top: 0; }
-  .data-table th:hover { background: #0080d0; }
-  .data-table th .sort-icon { font-size: 0.7rem; margin-left: 3px; opacity: 0.7; }
-  .data-table td { padding: 7px 6px; border-bottom: 1px solid #f0f0f0; text-align: center; }
-  .data-table tr:hover td { background: var(--blue-light); }
-  .data-table .store-name { text-align: left; font-weight: 600; }
-  .data-table .mo-row td { background: #fffde7; font-weight: 700; border-top: 2px solid #f9a825; }
-  .data-table .branch-row td { background: #e8f5e9; font-weight: 700; border-top: 2px solid #43a047; }
-
-  .badge { display: inline-block; padding: 2px 7px; border-radius: 10px; font-size: 0.72rem; font-weight: 700; }
-  .badge-green { background: var(--green-light); color: var(--green); }
-  .badge-red { background: var(--red-light); color: var(--red); }
-  .badge-orange { background: var(--orange-light); color: var(--orange); }
-  .badge-gray { background: var(--gray-light); color: var(--gray); }
-
-  .table-wrap { overflow-x: auto; border-radius: 8px; border: 1px solid var(--gray-border); }
-
-  /* ── Ranking ── */
-  .ranking-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px; margin-bottom: 14px; }
-  .ranking-card { background: #fff; border-radius: var(--radius); box-shadow: var(--shadow); padding: 14px; }
-  .ranking-card .rank-title { font-size: 0.82rem; font-weight: 700; margin-bottom: 10px; }
-  .rank-item { display: flex; align-items: center; gap: 8px; padding: 6px 0; border-bottom: 1px solid #f5f5f5; }
-  .rank-item:last-child { border-bottom: none; }
-  .rank-num { width: 22px; height: 22px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.72rem; font-weight: 700; flex-shrink: 0; }
-  .rank-num.gold { background: #f9a825; color: #fff; }
-  .rank-num.silver { background: #9e9e9e; color: #fff; }
-  .rank-num.bronze { background: #bf8650; color: #fff; }
-  .rank-num.normal { background: var(--gray-light); color: var(--gray); font-size: 0.68rem; }
-  .rank-name { flex: 1; font-size: 0.78rem; font-weight: 600; }
-  .rank-val { font-size: 0.8rem; font-weight: 700; }
-
-  /* ── Charts ── */
-  .chart-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 14px; margin-bottom: 14px; }
-  .chart-wrap { background: #fff; border-radius: var(--radius); box-shadow: var(--shadow); padding: 14px; }
-  .chart-wrap canvas { max-height: 280px; }
-
-  /* ── Status Indicators ── */
-  .status-tag { display: inline-flex; align-items: center; gap: 4px; padding: 2px 8px; border-radius: 10px; font-size: 0.72rem; font-weight: 700; }
-  .status-good { background: #e6f4ec; color: #1a8a4a; }
-  .status-bad { background: #fdecea; color: #c0392b; }
-  .status-warn { background: #fef3e2; color: #e67e22; }
-  .status-neutral { background: #f0f0f0; color: #666; }
-
-  /* ── Diff Cell Colors ── */
-  .pos { color: var(--green); font-weight: 700; }
-  .neg { color: var(--red); font-weight: 700; }
-  .zero { color: var(--gray); }
-
-  @media (max-width: 600px) {
-    .header h1 { font-size: 1.1rem; }
-    .kpi-value { font-size: 1.3rem; }
-    .verdict-mark { font-size: 4rem; }
-    .growth-compare { grid-template-columns: 1fr; }
-    .main { padding: 10px; }
-  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{font-family:"Hiragino Kaku Gothic ProN","Hiragino Sans","Yu Gothic UI",Meiryo,sans-serif;background:var(--bg);color:var(--text);padding-bottom:48px;}
+  header{background:linear-gradient(135deg,var(--blue),var(--blue-dark));color:#fff;padding:28px 20px 22px;text-align:center;}
+  header h1{font-size:1.35rem;letter-spacing:.05em;}
+  header p{font-size:.8rem;opacity:.85;margin-top:6px;}
+  .search-wrap{max-width:680px;margin:-16px auto 0;padding:0 16px;}
+  #search{width:100%;padding:13px 18px;border:none;border-radius:30px;font-size:1rem;box-shadow:0 4px 14px rgba(0,0,0,.12);outline:none;}
+  main{max-width:680px;margin:0 auto;padding:20px 16px;}
+  .cat{margin-bottom:26px;}
+  .cat h2{font-size:1rem;color:var(--blue-dark);margin-bottom:10px;display:flex;align-items:center;gap:8px;}
+  .grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;}
+  @media(min-width:560px){.grid{grid-template-columns:repeat(3,1fr);}}
+  a.app{display:block;background:var(--card);border-radius:14px;padding:16px 12px;text-decoration:none;color:var(--text);box-shadow:0 1px 4px rgba(0,0,0,.07);transition:transform .12s,box-shadow .12s;}
+  a.app:active{transform:scale(.96);}
+  a.app .icon{font-size:1.7rem;display:block;margin-bottom:8px;}
+  a.app .name{font-size:.88rem;font-weight:700;line-height:1.35;display:block;}
+  a.app .desc{font-size:.72rem;color:var(--muted);margin-top:4px;display:block;line-height:1.4;}
+  details.archive{margin-top:8px;}
+  details.archive summary{cursor:pointer;font-size:.85rem;color:var(--muted);padding:8px 4px;}
+  details.archive .grid{margin-top:10px;}
+  .hidden{display:none!important;}
+  footer{text-align:center;font-size:.72rem;color:var(--muted);margin-top:30px;}
 </style>
 </head>
 <body>
 
-<div class="header">
-  <h1>📊 FF・厨房販売ダッシュボード｜阪口商店 4月イベント結果</h1>
-  <p class="desc">4月イベントにおけるFF販売高の2月対比伸長率を確認し、阪口商店が吹田支店の伸長率を上回って牽引できたかを判定します。あわせて、評価対象外ではありますが、まちかど厨房販売についても販売高・荒利益高の伸長を検証します。</p>
-  <span class="date-badge">集計期間：26年2月〜26年4月</span>
+<header>
+  <h1>🏪 阪口商店 アプリポータル</h1>
+  <p>ローソン阪口商店グループ 業務ツール一覧</p>
+</header>
+
+<div class="search-wrap">
+  <input type="search" id="search" placeholder="🔍 アプリを検索…">
 </div>
 
-<div class="tab-nav">
-  <button class="tab-btn active" onclick="switchTab('summary')">🎯 総合判定</button>
-  <button class="tab-btn" onclick="switchTab('ff')">🍗 FF分析</button>
-  <button class="tab-btn" onclick="switchTab('kitchen')">🍱 厨房分析</button>
-  <button class="tab-btn" onclick="switchTab('charts')">📈 グラフ</button>
-</div>
+<main>
 
-<div class="main">
+  <section class="cat">
+    <h2>📋 日常業務</h2>
+    <div class="grid">
+      <a class="app" href="service-eval.index.html"><span class="icon">🤝</span><span class="name">接客評価システム</span><span class="desc">接客の評価入力・集計</span></a>
+      <a class="app" href="ms-cleaning-dashboard.html"><span class="icon">🧹</span><span class="name">MS清掃改善管理</span><span class="desc">清掃チェック・改善管理</span></a>
+      <a class="app" href="shift-request.html"><span class="icon">📅</span><span class="name">シフト希望提出</span><span class="desc">シフト希望のフォーム</span></a>
+      <a class="app" href="todo-task.html"><span class="icon">✅</span><span class="name">タスク管理</span><span class="desc">店舗タスクのTODO</span></a>
+      <a class="app" href="skill-dashboard.html"><span class="icon">🎓</span><span class="name">業務習得チェック</span><span class="desc">スタッフの習得状況</span></a>
+      <a class="app" href="baito.html"><span class="icon">💼</span><span class="name">アルバイト採用</span><span class="desc">採用管理システム</span></a>
+      <a class="app" href="BBQ_index.html"><span class="icon">🍖</span><span class="name">BBQ CLUB</span><span class="desc">BBQクラブ アンケート</span></a>
+    </div>
+  </section>
 
-<!-- ═══════════════════════════════════════ TAB: SUMMARY ═══════════════ -->
-<div class="tab-panel active" id="tab-summary">
+  <section class="cat">
+    <h2>💰 利益・経営管理</h2>
+    <div class="grid">
+      <a class="app" href="lawson-business-dashboard.html"><span class="icon">📈</span><span class="name">店利益管理</span><span class="desc">利益管理・着地予測</span></a>
+      <a class="app" href="profit.html"><span class="icon">📊</span><span class="name">6月度 統合ダッシュボード</span><span class="desc">月次の統合実績</span></a>
+      <a class="app" href="gi-defense-offense-dashboard.html"><span class="icon">⚔️</span><span class="name">店舗別 攻守判定</span><span class="desc">25年10月〜26年3月</span></a>
+      <a class="app" href="dept-analysis.html"><span class="icon">🔍</span><span class="name">DEPT別 荒利益改善</span><span class="desc">部門別の荒利分析</span></a>
+      <a class="app" href="DEPT.html"><span class="icon">📉</span><span class="name">DEPT別売上分析</span><span class="desc">2月→3月対比</span></a>
+    </div>
+  </section>
 
-  <div class="verdict-card">
-    <div style="font-size:0.85rem;opacity:0.7;">4月イベント FF販売高伸長率 評価判定</div>
-    <div class="verdict-mark batsu" id="verdict-mark">×</div>
-    <div class="verdict-label batsu" id="verdict-label">吹田支店を下回り、牽引には届かなかった</div>
-    <div class="verdict-comment" id="verdict-comment">阪口商店の伸長率が吹田支店の伸長率を下回りました</div>
-  </div>
+  <section class="cat">
+    <h2>🍳 厨房・FF</h2>
+    <div class="grid">
+      <a class="app" href="Kitchen.html"><span class="icon">👨‍🍳</span><span class="name">厨房 検証＆計画</span><span class="desc">厨房の検証・計画ツール</span></a>
+      <a class="app" href="厨房検証_全店舗_販売チャンス分析ver3.html"><span class="icon">💡</span><span class="name">販売チャンス分析</span><span class="desc">全店舗の厨房検証</span></a>
+      <a class="app" href="kitchen_survey.html"><span class="icon">🧼</span><span class="name">厨房衛生アンケート</span><span class="desc">衛生管理アンケート</span></a>
+      <a class="app" href="lawson-event-dashboard.html"><span class="icon">🎪</span><span class="name">5月 FF＋厨房イベント</span><span class="desc">イベントダッシュボード</span></a>
+    </div>
+  </section>
 
-  <div class="growth-compare">
-    <div class="growth-box" style="border-left:4px solid #e74c3c;">
-      <div class="org-name">🏪 阪口商店（阪口清治MO）</div>
-      <div class="rate-val neg" id="hanaguchi-rate">—</div>
-      <div style="font-size:0.72rem;color:var(--gray);margin-bottom:8px;">FF販売高 2月対比伸長率</div>
-      <div class="rate-bar-wrap"><div class="rate-bar" id="hanaguchi-bar" style="background:#e74c3c;width:0%"></div></div>
-      <div style="font-size:0.72rem;color:var(--gray);margin-top:6px;">2月: <span id="h-feb">—</span> → 4月: <span id="h-apr">—</span></div>
+  <section class="cat">
+    <h2>📊 アンケート</h2>
+    <div class="grid">
+      <a class="app" href="survey-form.html"><span class="icon">📝</span><span class="name">店舗アンケート</span><span class="desc">回答フォーム</span></a>
+      <a class="app" href="survey-dashboard.html"><span class="icon">📋</span><span class="name">アンケート集計</span><span class="desc">回答の集計・閲覧</span></a>
     </div>
-    <div class="growth-box" style="border-left:4px solid #2ecc71;">
-      <div class="org-name">🏢 吹田支店（ベンチマーク）</div>
-      <div class="rate-val pos" id="suita-rate">—</div>
-      <div style="font-size:0.72rem;color:var(--gray);margin-bottom:8px;">FF販売高 2月対比伸長率</div>
-      <div class="rate-bar-wrap"><div class="rate-bar" id="suita-bar" style="background:#2ecc71;width:0%"></div></div>
-      <div style="font-size:0.72rem;color:var(--gray);margin-top:6px;">2月: <span id="s-feb">—</span> → 4月: <span id="s-apr">—</span></div>
-    </div>
-  </div>
+  </section>
 
-  <div class="kpi-grid">
-    <div class="kpi-box">
-      <div class="kpi-label">阪口商店 伸長率</div>
-      <div class="kpi-value" id="kpi-h-rate" style="font-size:1.3rem;">—</div>
-      <div class="kpi-sub">4月÷2月</div>
-    </div>
-    <div class="kpi-box green">
-      <div class="kpi-label">吹田支店 伸長率</div>
-      <div class="kpi-value" id="kpi-s-rate" style="font-size:1.3rem;">—</div>
-      <div class="kpi-sub">4月÷2月（基準）</div>
-    </div>
-    <div class="kpi-box orange">
-      <div class="kpi-label">差分ポイント</div>
-      <div class="kpi-value" id="kpi-diff" style="font-size:1.3rem;">—</div>
-      <div class="kpi-sub">阪口商店 − 吹田支店</div>
-    </div>
-    <div class="kpi-box">
-      <div class="kpi-label">阪口商店 4月FF販売高</div>
-      <div class="kpi-value" id="kpi-h-apr" style="font-size:1.1rem;">—</div>
-      <div class="kpi-sub">PSA/D (円)</div>
-    </div>
-    <div class="kpi-box">
-      <div class="kpi-label">阪口商店 2月FF販売高</div>
-      <div class="kpi-value" id="kpi-h-feb" style="font-size:1.1rem;">—</div>
-      <div class="kpi-sub">PSA/D (円)</div>
-    </div>
-    <div class="kpi-box">
-      <div class="kpi-label">所属店舗数</div>
-      <div class="kpi-value" id="kpi-store-count">—</div>
-      <div class="kpi-sub">阪口商店</div>
-    </div>
-  </div>
+  <section class="cat">
+    <h2>🗄️ 過去のイベント・キャンペーン</h2>
+    <details class="archive">
+      <summary>タップで表示（6件）</summary>
+      <div class="grid">
+        <a class="app" href="archive/FFRanking.html"><span class="icon">🍗</span><span class="name">からあげクン進捗</span><span class="desc">感謝祭ランキング</span></a>
+        <a class="app" href="archive/karaagekun-festival-pre-briefing.html"><span class="icon">📣</span><span class="name">感謝祭 事前共有</span><span class="desc">4/21〜4/27</span></a>
+        <a class="app" href="archive/karaagekun-progress-dashboard-0421.html"><span class="icon">🏁</span><span class="name">感謝祭 進捗</span><span class="desc">4/26終了時点</span></a>
+        <a class="app" href="archive/karaagekun-campaign-analysis.html"><span class="icon">🥤</span><span class="name">からあげクン×飲料</span><span class="desc">結果検証</span></a>
+        <a class="app" href="archive/からあげクン販売進捗ダッシュボード.html"><span class="icon">🍗</span><span class="name">販売進捗（旧）</span><span class="desc">旧バージョン</span></a>
+        <a class="app" href="archive/ff-kitchen-event-202604.html"><span class="icon">🌸</span><span class="name">4月イベント結果</span><span class="desc">FF・厨房販売</span></a>
+      </div>
+    </details>
+  </section>
 
-  <div class="card">
-    <div class="card-title">📋 評価基準</div>
-    <table style="width:100%;font-size:0.82rem;">
-      <tr>
-        <td style="padding:6px 4px;width:50%;border-right:1px solid #eee;">阪口商店の伸長率 <strong>&gt;</strong> 吹田支店の伸長率</td>
-        <td style="padding:6px 8px;color:var(--green);font-weight:700;font-size:1.1rem;">→ ○（上回り牽引）</td>
-      </tr>
-      <tr>
-        <td style="padding:6px 4px;border-right:1px solid #eee;">阪口商店の伸長率 <strong>≦</strong> 吹田支店の伸長率</td>
-        <td style="padding:6px 8px;color:var(--red);font-weight:700;font-size:1.1rem;">→ ×（下回り牽引届かず）</td>
-      </tr>
-      <tr>
-        <td colspan="2" style="padding:8px 4px;font-size:0.75rem;color:var(--gray);">
-          伸長率 = 26年4月 FF販売高PSA/D ÷ 26年2月 FF販売高PSA/D<br>
-          ※PSA/D = 一日当たりの販売高・荒利益高
-        </td>
-      </tr>
-    </table>
-  </div>
-
-  <div class="card">
-    <div class="card-title">📊 店舗別 FF販売高伸長率サマリー（2月→4月）</div>
-    <div class="table-controls">
-      <input class="search-box" id="summary-search" placeholder="店舗名で絞り込み..." oninput="filterSummaryTable()">
-      <span style="font-size:0.75rem;color:var(--gray);">吹田支店比: <span class="badge badge-green">↑上回り</span> <span class="badge badge-red">↓下回り</span></span>
-    </div>
-    <div class="table-wrap">
-      <table class="data-table" id="summary-table">
-        <thead>
-          <tr>
-            <th onclick="sortTable('summary-table',0)">店舗名<span class="sort-icon">⇅</span></th>
-            <th onclick="sortTable('summary-table',1)">2月販売高<br>PSA/D<span class="sort-icon">⇅</span></th>
-            <th onclick="sortTable('summary-table',2)">4月販売高<br>PSA/D<span class="sort-icon">⇅</span></th>
-            <th onclick="sortTable('summary-table',3)">伸長率<span class="sort-icon">⇅</span></th>
-            <th onclick="sortTable('summary-table',4)">吹田支店比<span class="sort-icon">⇅</span></th>
-            <th onclick="sortTable('summary-table',5)">判定<span class="sort-icon">⇅</span></th>
-          </tr>
-        </thead>
-        <tbody id="summary-tbody"></tbody>
-      </table>
-    </div>
-  </div>
-</div>
-
-<!-- ═══════════════════════════════════════ TAB: FF ═══════════════════ -->
-<div class="tab-panel" id="tab-ff">
-  <div class="card">
-    <div class="card-title">🍗 FF（ファストフーズ）個店別詳細データ</div>
-    <div class="table-controls">
-      <input class="search-box" id="ff-search" placeholder="店舗名で絞り込み..." oninput="filterFFTable()">
-      <button class="filter-btn active" onclick="setFFFilter('all',this)">全店</button>
-      <button class="filter-btn" onclick="setFFFilter('above',this)">支店超え</button>
-      <button class="filter-btn" onclick="setFFFilter('below',this)">支店未満</button>
-    </div>
-    <div class="table-wrap">
-      <table class="data-table" id="ff-table">
-        <thead>
-          <tr>
-            <th rowspan="2" onclick="sortTable('ff-table',0)">店舗名<span class="sort-icon">⇅</span></th>
-            <th colspan="3" style="background:#2c5282;">FF販売高PSA/D（円）</th>
-            <th colspan="3" style="background:#276749;">FF荒利益高PSA/D（円）</th>
-            <th colspan="3" style="background:#44337a;">FF販売高前年比（%）</th>
-            <th colspan="3" style="background:#744210;">FF荒利益高前年比（%）</th>
-            <th onclick="sortTable('ff-table',14)">販売高<br>伸長率<span class="sort-icon">⇅</span></th>
-            <th onclick="sortTable('ff-table',15)">荒利益高<br>伸長率<span class="sort-icon">⇅</span></th>
-            <th onclick="sortTable('ff-table',16)">吹田支店比<br>（伸長率差）<span class="sort-icon">⇅</span></th>
-            <th onclick="sortTable('ff-table',17)">MO平均比<br>（伸長率差）<span class="sort-icon">⇅</span></th>
-          </tr>
-          <tr>
-            <th style="background:#2c5282;">2月</th><th style="background:#2c5282;">3月</th><th style="background:#2c5282;">4月</th>
-            <th style="background:#276749;">2月</th><th style="background:#276749;">3月</th><th style="background:#276749;">4月</th>
-            <th style="background:#44337a;">2月</th><th style="background:#44337a;">3月</th><th style="background:#44337a;">4月</th>
-            <th style="background:#744210;">2月</th><th style="background:#744210;">3月</th><th style="background:#744210;">4月</th>
-            <th style="background:#1a6fc4;">(4月÷2月)</th>
-            <th style="background:#1a6fc4;">(4月÷2月)</th>
-            <th style="background:#555;">差Pt</th>
-            <th style="background:#555;">差Pt</th>
-          </tr>
-        </thead>
-        <tbody id="ff-tbody"></tbody>
-      </table>
-    </div>
-  </div>
-
-  <div class="ranking-grid" id="ff-ranking"></div>
-</div>
-
-<!-- ═══════════════════════════════════════ TAB: KITCHEN ══════════════ -->
-<div class="tab-panel" id="tab-kitchen">
-  <div class="card">
-    <div class="card-title">🍱 まちかど厨房販売 個店別詳細データ</div>
-    <div class="table-controls">
-      <input class="search-box" id="k-search" placeholder="店舗名で絞り込み..." oninput="filterKitchenTable()">
-      <button class="filter-btn active" onclick="setKFilter('all',this)">全店</button>
-      <button class="filter-btn" onclick="setKFilter('both-up',this)">販売高・荒利益両方伸びた</button>
-      <button class="filter-btn" onclick="setKFilter('sales-only',this)">販売高のみ伸びた</button>
-      <button class="filter-btn" onclick="setKFilter('margin-only',this)">荒利益のみ伸びた</button>
-    </div>
-    <div class="table-wrap">
-      <table class="data-table" id="k-table">
-        <thead>
-          <tr>
-            <th rowspan="2" onclick="sortTable('k-table',0)">店舗名<span class="sort-icon">⇅</span></th>
-            <th colspan="3" style="background:#2c5282;">厨房販売高PSA/D（円）</th>
-            <th colspan="3" style="background:#276749;">厨房荒利益高PSA/D（円）</th>
-            <th colspan="3" style="background:#44337a;">厨房販売高前年比（%）</th>
-            <th colspan="3" style="background:#744210;">厨房荒利益高前年比（%）</th>
-            <th onclick="sortTable('k-table',14)">販売高<br>伸長率<span class="sort-icon">⇅</span></th>
-            <th onclick="sortTable('k-table',15)">荒利益高<br>伸長率<span class="sort-icon">⇅</span></th>
-            <th>分類</th>
-          </tr>
-          <tr>
-            <th style="background:#2c5282;">2月</th><th style="background:#2c5282;">3月</th><th style="background:#2c5282;">4月</th>
-            <th style="background:#276749;">2月</th><th style="background:#276749;">3月</th><th style="background:#276749;">4月</th>
-            <th style="background:#44337a;">2月</th><th style="background:#44337a;">3月</th><th style="background:#44337a;">4月</th>
-            <th style="background:#744210;">2月</th><th style="background:#744210;">3月</th><th style="background:#744210;">4月</th>
-            <th style="background:#1a6fc4;">(4月÷2月)</th>
-            <th style="background:#1a6fc4;">(4月÷2月)</th>
-            <th style="background:#555;"></th>
-          </tr>
-        </thead>
-        <tbody id="k-tbody"></tbody>
-      </table>
-    </div>
-  </div>
-
-  <div class="ranking-grid" id="k-ranking"></div>
-</div>
-
-<!-- ═══════════════════════════════════════ TAB: CHARTS ══════════════ -->
-<div class="tab-panel" id="tab-charts">
-  <div class="chart-grid">
-    <div class="chart-wrap">
-      <div class="card-title" style="border:none;padding-bottom:4px;">📈 FF販売高推移：阪口商店 vs 吹田支店</div>
-      <canvas id="chart-trend"></canvas>
-    </div>
-    <div class="chart-wrap">
-      <div class="card-title" style="border:none;padding-bottom:4px;">📊 FF販売高 2月対比伸長率（全店）</div>
-      <canvas id="chart-growth"></canvas>
-    </div>
-  </div>
-  <div class="chart-grid">
-    <div class="chart-wrap">
-      <div class="card-title" style="border:none;padding-bottom:4px;">🍱 厨房 販売高・荒利益高 伸長率比較</div>
-      <canvas id="chart-kitchen-growth"></canvas>
-    </div>
-    <div class="chart-wrap">
-      <div class="card-title" style="border:none;padding-bottom:4px;">🏆 FF 4月販売高PSA/D ランキング（上位10店）</div>
-      <canvas id="chart-ranking"></canvas>
-    </div>
-  </div>
-</div>
-
-</div><!-- /main -->
+  <footer>有限会社阪口商店 | アプリの追加・修正の相談はオーナーまで</footer>
+</main>
 
 <script>
-// ═══════════════════════════════════════════════════════════
-// ■ DATA LAYER
-// ═══════════════════════════════════════════════════════════
-
-// FF（ファストフーズ）個店データ
-const FF_STORES = [
-  { name:'池田市役所前',     sales:[25182.18,25263.65,28302.03], margin:[12811.50,12828.47,12882.74], salesYY:[112.13,109.57,119.00], marginYY:[116.55,111.21,111.34] },
-  { name:'江坂駅南口',       sales:[74390.86,73688.90,75138.30], margin:[36600.20,34825.47,35778.31], salesYY:[107.80,112.99,111.63], marginYY:[101.47,100.32,101.13] },
-  { name:'江坂東',           sales:[48006.11,47889.74,46013.50], margin:[24515.12,23917.60,22654.43], salesYY:[115.26,128.25,124.59], marginYY:[122.40,124.62,119.65] },
-  { name:'五月ケ丘東',       sales:[24859.82,23070.26,25803.40], margin:[11177.25,10107.75,10806.67], salesYY:[108.93,113.71,130.08], marginYY:[117.72,104.36,119.43] },
-  { name:'新御堂筋上新田',   sales:[51237.71,49173.45,54010.93], margin:[25935.76,24174.25,27487.37], salesYY:[101.27,105.51,118.20], marginYY:[99.49,95.01,109.69] },
-  { name:'吹田青山台三丁目', sales:[45980.89,49787.84,51506.03], margin:[24321.82,25063.59,24556.98], salesYY:[98.58,114.80,118.89], marginYY:[103.99,105.69,106.53] },
-  { name:'吹田朝日町',       sales:[50450.82,48952.42,53295.60], margin:[25731.26,24260.58,26156.71], salesYY:[112.63,124.77,133.45], marginYY:[116.87,117.13,123.80] },
-  { name:'吹田警察署前',     sales:[35476.54,33658.97,34997.27], margin:[18522.39,17411.37,16399.64], salesYY:[104.11,117.09,119.10], marginYY:[110.71,115.26,106.74] },
-  { name:'吹田垂水三丁目',   sales:[21120.32,21754.29,21999.33], margin:[10842.87,10891.56,11203.59], salesYY:[103.22,127.01,126.02], marginYY:[105.66,121.72,121.11] },
-  { name:'吹田豊津中学校前', sales:[37566.61,40400.71,40913.37], margin:[18587.44,20202.49,20289.91], salesYY:[99.45,110.45,112.64], marginYY:[99.80,101.71,104.12] },
-  { name:'大道南一丁目',     sales:[35517.71,36800.94,35004.50], margin:[18154.87,18811.09,17438.07], salesYY:[109.02,111.62,117.96], marginYY:[114.39,107.90,113.86] },
-  { name:'豊里六丁目',       sales:[20897.25,19769.10,22424.90], margin:[10025.85,9333.57,11193.68], salesYY:[117.01,128.77,144.59], marginYY:[119.02,120.08,147.29] },
-  { name:'豊中利倉東一丁目', sales:[52615.43,51146.81,51800.10], margin:[27667.25,26702.87,26527.73], salesYY:[109.83,111.56,118.13], marginYY:[113.30,105.71,112.92] },
-  { name:'豊中服部西町三丁目',sales:[32265.25,31979.97,34745.77],margin:[15178.26,14998.45,16676.00], salesYY:[99.36,108.41,122.02], marginYY:[98.38,100.94,116.95] },
-  { name:'豊中服部元町一丁目',sales:[47815.93,43748.48,45856.67],margin:[23347.43,20764.36,21801.88], salesYY:[115.47,118.93,132.61], marginYY:[118.54,109.77,124.66] },
-  { name:'豊中原田南一丁目', sales:[41990.00,40891.29,45334.50], margin:[21256.32,20474.28,22409.47], salesYY:[124.81,122.01,145.26], marginYY:[124.22,110.86,132.16] },
-  { name:'東淀川大道南',     sales:[39751.07,39419.58,39838.77], margin:[18629.99,18542.21,18746.39], salesYY:[102.12,112.15,113.23], marginYY:[99.85,102.62,105.30] },
-  { name:'東淀川豊里五丁目', sales:[48089.86,47667.19,46870.70], margin:[23817.49,23198.44,22938.30], salesYY:[108.61,113.38,121.04], marginYY:[108.93,105.26,114.18] },
-  { name:'南金田二丁目',     sales:[59806.00,61480.35,60423.03], margin:[30100.79,32090.95,30850.08], salesYY:[104.87,111.42,116.98], marginYY:[107.75,109.35,115.87] },
-  { name:'箕面白島二丁目',   sales:[48987.61,50709.03,52523.80], margin:[24411.68,24911.12,25461.03], salesYY:[null,null,null],     marginYY:[null,null,null] },
-];
-
-// FF 集計行
-const FF_MO    = { name:'阪口清治 MO（阪口商店）', sales:[42100.40,41862.65,43340.13], margin:[21081.78,20675.52,21112.95], salesYY:[108.02,116.30,123.12], marginYY:[108.79,107.62,114.05] };
-const FF_SUITA = { name:'吹田支店（ベンチマーク）', sales:[41135.17,40641.20,42881.93], margin:[null,null,null], salesYY:[105.40,114.84,121.52], marginYY:[null,null,null] };
-
-// まちかど厨房販売 個店データ
-const KT_STORES = [
-  { name:'江坂駅南口',       sales:[30176.96,33497.42,30888.73], margin:[12391.78,10241.56,8736.11],  salesYY:[106.60,123.96,113.66], marginYY:[103.35,98.78,100.10] },
-  { name:'江坂東',           sales:[20572.75,20685.65,22705.87], margin:[9305.78,8480.32,8793.08],    salesYY:[120.90,117.96,112.57], marginYY:[110.47,109.53,103.19] },
-  { name:'五月ケ丘東',       sales:[0,393.13,1334.90],           margin:[-11.29,158.51,331.48],       salesYY:[0,28.36,88.09],        marginYY:[-1.73,143.87,144.61] },
-  { name:'新御堂筋上新田',   sales:[16818.00,19387.45,20045.73], margin:[6159.50,5502.13,5842.82],    salesYY:[109.56,143.59,147.19], marginYY:[98.57,98.35,125.29] },
-  { name:'吹田青山台三丁目', sales:[21620.96,20412.26,21754.90], margin:[7602.93,7597.84,8877.74],    salesYY:[93.33,94.52,105.07],   marginYY:[80.61,82.96,105.76] },
-  { name:'吹田朝日町',       sales:[22276.79,22479.06,23479.30], margin:[9399.21,7845.45,8742.67],    salesYY:[174.97,194.32,183.70], marginYY:[177.97,179.94,198.56] },
-  { name:'吹田警察署前',     sales:[11163.29,12082.35,13585.83], margin:[4814.89,4699.36,4624.86],    salesYY:[172.21,194.06,183.38], marginYY:[152.21,162.11,146.30] },
-  { name:'吹田豊津中学校前', sales:[16446.21,18698.13,19205.23], margin:[7954.17,8648.59,8911.77],    salesYY:[105.87,138.69,134.62], marginYY:[101.95,134.31,132.20] },
-  { name:'大道南一丁目',     sales:[12816.39,11238.03,11868.03], margin:[4741.52,3849.08,4353.96],    salesYY:[136.17,139.78,157.85], marginYY:[131.87,145.34,183.84] },
-  { name:'豊中利倉東一丁目', sales:[14907.14,14350.68,16366.80], margin:[5730.71,4866.15,5651.38],    salesYY:[119.02,129.41,128.81], marginYY:[95.98,105.76,115.23] },
-  { name:'豊中服部元町一丁目',sales:[16272.07,15004.29,19676.67],margin:[6782.32,5662.91,7073.08],    salesYY:[101.95,119.31,162.59], marginYY:[98.79,107.14,150.11] },
-  { name:'豊中原田南一丁目', sales:[14698.75,17500.29,17687.77], margin:[5651.25,5562.97,6285.77],    salesYY:[139.75,154.49,150.63], marginYY:[127.33,116.76,127.98] },
-  { name:'東淀川大道南',     sales:[16215.96,14692.77,14550.30], margin:[5967.28,5397.99,5361.38],    salesYY:[128.56,131.62,133.22], marginYY:[118.81,139.33,150.18] },
-  { name:'東淀川豊里五丁目', sales:[23454.79,21466.94,21381.40], margin:[9504.93,8273.63,8451.56],    salesYY:[151.08,133.19,132.49], marginYY:[134.53,115.74,131.74] },
-  { name:'南金田二丁目',     sales:[19402.11,16386.74,21104.43], margin:[7890.75,6316.23,6933.14],    salesYY:[120.23,97.08,124.84],  marginYY:[110.03,92.58,113.59] },
-  { name:'箕面白島二丁目',   sales:[23161.11,19406.35,20418.70], margin:[10329.57,7548.89,8843.80],   salesYY:[null,null,null],       marginYY:[null,null,null] },
-];
-
-const KT_MO    = { name:'阪口清治 MO（阪口商店）', sales:[14000.16,13884.08,14802.73], margin:[5710.76,5032.58,5390.73], salesYY:[123.31,132.22,136.74], marginYY:[110.09,113.79,127.17] };
-const KT_SUITA = { name:'吹田支店（ベンチマーク）', sales:[10330.29,9632.23,9941.19],   margin:[null,null,null],         salesYY:[112.89,113.66,116.69], marginYY:[null,null,null] };
-
-// ═══════════════════════════════════════════════════════════
-// ■ CALCULATION HELPERS
-// ═══════════════════════════════════════════════════════════
-
-const fmt = (v, d=0) => (v == null || isNaN(v)) ? '—' : v.toLocaleString('ja-JP', {minimumFractionDigits:d, maximumFractionDigits:d});
-const fmtY = (v) => (v == null || isNaN(v)) ? '—' : v.toFixed(1) + '%';
-const fmtPt = (v) => (v == null || isNaN(v)) ? '—' : (v >= 0 ? '+' : '') + v.toFixed(2) + 'pt';
-const fmtRate = (v) => (v == null || isNaN(v)) ? '—' : v.toFixed(2) + '%';
-
-function calcGrowth(feb, apr) {
-  if (!feb || feb === 0 || apr == null) return null;
-  return (apr / feb) * 100;
-}
-
-function diffClass(v) {
-  if (v == null || isNaN(v)) return 'zero';
-  return v > 0 ? 'pos' : v < 0 ? 'neg' : 'zero';
-}
-
-// ═══════════════════════════════════════════════════════════
-// ■ COMPUTED VALUES
-// ═══════════════════════════════════════════════════════════
-
-const hGrowth = calcGrowth(FF_MO.sales[0], FF_MO.sales[2]);
-const sGrowth = calcGrowth(FF_SUITA.sales[0], FF_SUITA.sales[2]);
-const diffPt  = (hGrowth != null && sGrowth != null) ? hGrowth - sGrowth : null;
-const verdict = (hGrowth != null && sGrowth != null) ? (hGrowth > sGrowth ? 'maru' : 'batsu') : null;
-
-// Per-store FF growth
-const ffStoreGrowths = FF_STORES.map(s => ({ ...s, salesGrowth: calcGrowth(s.sales[0], s.sales[2]), marginGrowth: calcGrowth(s.margin[0], s.margin[2]) }));
-const ffMoGrowth   = calcGrowth(FF_MO.sales[0], FF_MO.sales[2]);
-const ffSuitaGrowth = calcGrowth(FF_SUITA.sales[0], FF_SUITA.sales[2]);
-
-// Per-store Kitchen growth
-const ktStoreGrowths = KT_STORES.map(s => ({
-  ...s,
-  salesGrowth:  calcGrowth(s.sales[0]  > 0 ? s.sales[0]  : null, s.sales[2]),
-  marginGrowth: calcGrowth(s.margin[0] > 0 ? s.margin[0] : null, s.margin[2])
-}));
-const ktMoSalesGrowth   = calcGrowth(KT_MO.sales[0], KT_MO.sales[2]);
-const ktMoMarginGrowth  = calcGrowth(KT_MO.margin[0], KT_MO.margin[2]);
-
-// ═══════════════════════════════════════════════════════════
-// ■ RENDER SUMMARY TAB
-// ═══════════════════════════════════════════════════════════
-
-function renderSummary() {
-  // Verdict
-  const vm = document.getElementById('verdict-mark');
-  const vl = document.getElementById('verdict-label');
-  const vc = document.getElementById('verdict-comment');
-  if (verdict === 'maru') {
-    vm.textContent = '○'; vm.className = 'verdict-mark maru';
-    vl.textContent = '吹田支店を上回り、イベントで牽引できた'; vl.className = 'verdict-label maru';
-    vc.textContent = `阪口商店の伸長率 (${fmtRate(hGrowth)}) が吹田支店 (${fmtRate(sGrowth)}) を上回りました`;
-  } else {
-    vm.textContent = '×'; vm.className = 'verdict-mark batsu';
-    vl.textContent = '吹田支店を下回り、牽引には届かなかった'; vl.className = 'verdict-label batsu';
-    vc.textContent = `阪口商店の伸長率 (${fmtRate(hGrowth)}) が吹田支店 (${fmtRate(sGrowth)}) を下回りました`;
-  }
-
-  // Growth boxes
-  document.getElementById('hanaguchi-rate').textContent = fmtRate(hGrowth);
-  document.getElementById('suita-rate').textContent = fmtRate(sGrowth);
-  document.getElementById('h-feb').textContent = fmt(FF_MO.sales[0]);
-  document.getElementById('h-apr').textContent = fmt(FF_MO.sales[2]);
-  document.getElementById('s-feb').textContent = fmt(FF_SUITA.sales[0]);
-  document.getElementById('s-apr').textContent = fmt(FF_SUITA.sales[2]);
-
-  const base = Math.max(hGrowth || 0, sGrowth || 0, 110);
-  const hPct = Math.min(100, ((hGrowth || 0) / base) * 100);
-  const sPct = Math.min(100, ((sGrowth || 0) / base) * 100);
-  setTimeout(() => {
-    document.getElementById('hanaguchi-bar').style.width = hPct + '%';
-    document.getElementById('suita-bar').style.width = sPct + '%';
-  }, 100);
-
-  // KPIs
-  document.getElementById('kpi-h-rate').textContent = fmtRate(hGrowth);
-  document.getElementById('kpi-s-rate').textContent = fmtRate(sGrowth);
-  const diffEl = document.getElementById('kpi-diff');
-  diffEl.textContent = fmtPt(diffPt);
-  diffEl.className = 'kpi-value ' + diffClass(diffPt);
-  document.getElementById('kpi-h-apr').textContent = fmt(FF_MO.sales[2]);
-  document.getElementById('kpi-h-feb').textContent = fmt(FF_MO.sales[0]);
-  document.getElementById('kpi-store-count').textContent = FF_STORES.length + '店';
-
-  // Summary table
-  renderSummaryTable(ffStoreGrowths);
-}
-
-let summaryFilterText = '';
-function filterSummaryTable() {
-  summaryFilterText = document.getElementById('summary-search').value;
-  renderSummaryTable(ffStoreGrowths);
-}
-
-function renderSummaryTable(stores) {
-  const tbody = document.getElementById('summary-tbody');
-  const sGr = ffSuitaGrowth;
-  let rows = stores.filter(s => s.name.includes(summaryFilterText));
-  tbody.innerHTML = rows.map(s => {
-    const gr = s.salesGrowth;
-    const diff = (gr != null && sGr != null) ? gr - sGr : null;
-    const judge = (gr != null && sGr != null) ? (gr > sGr ? '<span class="badge badge-green">↑上回り</span>' : '<span class="badge badge-red">↓下回り</span>') : '—';
-    return `<tr>
-      <td class="store-name">${s.name}</td>
-      <td>${fmt(s.sales[0])}</td>
-      <td>${fmt(s.sales[2])}</td>
-      <td class="${gr >= sGr ? 'pos' : 'neg'}">${fmtRate(gr)}</td>
-      <td class="${diffClass(diff)}">${fmtPt(diff)}</td>
-      <td>${judge}</td>
-    </tr>`;
-  }).join('');
-  // Append MO and Suita rows
-  tbody.innerHTML += `
-    <tr class="mo-row">
-      <td class="store-name">★ ${FF_MO.name}</td>
-      <td>${fmt(FF_MO.sales[0])}</td>
-      <td>${fmt(FF_MO.sales[2])}</td>
-      <td class="${diffClass(diffPt)}">${fmtRate(hGrowth)}</td>
-      <td class="${diffClass(diffPt)}">${fmtPt(diffPt)}</td>
-      <td>${verdict === 'maru' ? '<span class="badge badge-green">○ 上回り</span>' : '<span class="badge badge-red">× 下回り</span>'}</td>
-    </tr>
-    <tr class="branch-row">
-      <td class="store-name">【基準】${FF_SUITA.name}</td>
-      <td>${fmt(FF_SUITA.sales[0])}</td>
-      <td>${fmt(FF_SUITA.sales[2])}</td>
-      <td>${fmtRate(sGrowth)}</td>
-      <td>—</td>
-      <td><span class="badge badge-gray">基準値</span></td>
-    </tr>`;
-}
-
-// ═══════════════════════════════════════════════════════════
-// ■ RENDER FF TABLE
-// ═══════════════════════════════════════════════════════════
-
-let ffSearchText = '', ffFilterMode = 'all';
-
-function setFFFilter(mode, btn) {
-  ffFilterMode = mode;
-  document.querySelectorAll('#tab-ff .filter-btn').forEach(b => b.classList.remove('active'));
-  btn.classList.add('active');
-  renderFFTable();
-}
-function filterFFTable() {
-  ffSearchText = document.getElementById('ff-search').value;
-  renderFFTable();
-}
-
-function renderFFTable() {
-  const sGr = ffSuitaGrowth;
-  const moGr = ffMoGrowth;
-  let stores = ffStoreGrowths.filter(s => s.name.includes(ffSearchText));
-  if (ffFilterMode === 'above') stores = stores.filter(s => s.salesGrowth != null && s.salesGrowth > sGr);
-  if (ffFilterMode === 'below') stores = stores.filter(s => s.salesGrowth != null && s.salesGrowth <= sGr);
-
-  const tbody = document.getElementById('ff-tbody');
-  tbody.innerHTML = stores.map(s => {
-    const sGrDiff = (s.salesGrowth != null && sGr != null) ? s.salesGrowth - sGr : null;
-    const moGrDiff = (s.salesGrowth != null && moGr != null) ? s.salesGrowth - moGr : null;
-    const n = v => fmt(v);
-    const y = v => v == null ? '—' : v.toFixed(1);
-    return `<tr>
-      <td class="store-name">${s.name}</td>
-      <td>${n(s.sales[0])}</td><td>${n(s.sales[1])}</td><td>${n(s.sales[2])}</td>
-      <td>${n(s.margin[0])}</td><td>${n(s.margin[1])}</td><td>${n(s.margin[2])}</td>
-      <td>${y(s.salesYY[0])}</td><td>${y(s.salesYY[1])}</td><td>${y(s.salesYY[2])}</td>
-      <td>${y(s.marginYY[0])}</td><td>${y(s.marginYY[1])}</td><td>${y(s.marginYY[2])}</td>
-      <td class="${s.salesGrowth >= sGr ? 'pos' : 'neg'}">${fmtRate(s.salesGrowth)}</td>
-      <td class="${s.marginGrowth != null && s.marginGrowth >= 100 ? 'pos' : 'neg'}">${fmtRate(s.marginGrowth)}</td>
-      <td class="${diffClass(sGrDiff)}">${fmtPt(sGrDiff)}</td>
-      <td class="${diffClass(moGrDiff)}">${fmtPt(moGrDiff)}</td>
-    </tr>`;
-  }).join('');
-  tbody.innerHTML += `
-    <tr class="mo-row">
-      <td class="store-name">★ ${FF_MO.name}</td>
-      <td>${fmt(FF_MO.sales[0])}</td><td>${fmt(FF_MO.sales[1])}</td><td>${fmt(FF_MO.sales[2])}</td>
-      <td>${fmt(FF_MO.margin[0])}</td><td>${fmt(FF_MO.margin[1])}</td><td>${fmt(FF_MO.margin[2])}</td>
-      <td>${FF_MO.salesYY[0]}</td><td>${FF_MO.salesYY[1]}</td><td>${FF_MO.salesYY[2]}</td>
-      <td>${FF_MO.marginYY[0]}</td><td>${FF_MO.marginYY[1]}</td><td>${FF_MO.marginYY[2]}</td>
-      <td class="${diffClass(diffPt)}">${fmtRate(hGrowth)}</td>
-      <td class="pos">${fmtRate(calcGrowth(FF_MO.margin[0], FF_MO.margin[2]))}</td>
-      <td class="${diffClass(diffPt)}">${fmtPt(diffPt)}</td>
-      <td>—</td>
-    </tr>
-    <tr class="branch-row">
-      <td class="store-name">【基準】${FF_SUITA.name}</td>
-      <td>${fmt(FF_SUITA.sales[0])}</td><td>${fmt(FF_SUITA.sales[1])}</td><td>${fmt(FF_SUITA.sales[2])}</td>
-      <td>—</td><td>—</td><td>—</td>
-      <td>${FF_SUITA.salesYY[0]}</td><td>${FF_SUITA.salesYY[1]}</td><td>${FF_SUITA.salesYY[2]}</td>
-      <td>—</td><td>—</td><td>—</td>
-      <td>${fmtRate(sGrowth)}</td><td>—</td><td>—</td><td>—</td>
-    </tr>`;
-
-  renderFFRanking();
-}
-
-function renderFFRanking() {
-  const sGr = ffSuitaGrowth;
-  const sorted_growth = [...ffStoreGrowths].filter(s => s.salesGrowth != null).sort((a,b) => b.salesGrowth - a.salesGrowth);
-  const sorted_apr = [...ffStoreGrowths].sort((a,b) => b.sales[2] - a.sales[2]);
-  const sorted_growth_asc = [...sorted_growth].reverse();
-
-  const container = document.getElementById('ff-ranking');
-  container.innerHTML = `
-    ${rankingCard('🏆 FF伸長率が高い店舗 TOP5', sorted_growth.slice(0,5), s => fmtRate(s.salesGrowth), 'pos')}
-    ${rankingCard('⚠️ FF伸長率が低い店舗 BOTTOM5', sorted_growth_asc.slice(0,5), s => fmtRate(s.salesGrowth), 'neg')}
-    ${rankingCard('💰 FF4月販売高TOP5', sorted_apr.slice(0,5), s => fmt(s.sales[2])+'円', 'pos')}
-  `;
-}
-
-// ═══════════════════════════════════════════════════════════
-// ■ RENDER KITCHEN TABLE
-// ═══════════════════════════════════════════════════════════
-
-let kSearchText = '', kFilterMode = 'all';
-
-function setKFilter(mode, btn) {
-  kFilterMode = mode;
-  document.querySelectorAll('#tab-kitchen .filter-btn').forEach(b => b.classList.remove('active'));
-  btn.classList.add('active');
-  renderKitchenTable();
-}
-function filterKitchenTable() {
-  kSearchText = document.getElementById('k-search').value;
-  renderKitchenTable();
-}
-
-function getKitchenCategory(s) {
-  const sg = s.salesGrowth;
-  const mg = s.marginGrowth;
-  const salesUp   = sg != null && sg > 100;
-  const marginUp  = mg != null && mg > 100;
-  if (salesUp && marginUp) return 'both-up';
-  if (salesUp && !marginUp) return 'sales-only';
-  if (!salesUp && marginUp) return 'margin-only';
-  return 'neither';
-}
-
-function getCategoryBadge(cat) {
-  const map = {
-    'both-up':    '<span class="status-tag status-good">✓ 両方伸長</span>',
-    'sales-only': '<span class="status-tag status-warn">△ 販売高のみ</span>',
-    'margin-only':'<span class="status-tag status-warn">△ 荒利益のみ</span>',
-    'neither':    '<span class="status-tag status-bad">✗ 要改善</span>',
-  };
-  return map[cat] || '—';
-}
-
-function renderKitchenTable() {
-  let stores = ktStoreGrowths.filter(s => s.name.includes(kSearchText));
-  if (kFilterMode !== 'all') stores = stores.filter(s => getKitchenCategory(s) === kFilterMode);
-
-  const tbody = document.getElementById('k-tbody');
-  tbody.innerHTML = stores.map(s => {
-    const cat = getKitchenCategory(s);
-    const n = v => (v == null) ? '—' : fmt(v);
-    const y = v => v == null ? '—' : v.toFixed(1);
-    const rateClass = (v) => v != null ? (v > 100 ? 'pos' : 'neg') : '';
-    return `<tr>
-      <td class="store-name">${s.name}</td>
-      <td>${n(s.sales[0])}</td><td>${n(s.sales[1])}</td><td>${n(s.sales[2])}</td>
-      <td>${n(s.margin[0])}</td><td>${n(s.margin[1])}</td><td>${n(s.margin[2])}</td>
-      <td>${y(s.salesYY[0])}</td><td>${y(s.salesYY[1])}</td><td>${y(s.salesYY[2])}</td>
-      <td>${y(s.marginYY[0])}</td><td>${y(s.marginYY[1])}</td><td>${y(s.marginYY[2])}</td>
-      <td class="${rateClass(s.salesGrowth)}">${fmtRate(s.salesGrowth)}</td>
-      <td class="${rateClass(s.marginGrowth)}">${fmtRate(s.marginGrowth)}</td>
-      <td>${getCategoryBadge(cat)}</td>
-    </tr>`;
-  }).join('');
-  tbody.innerHTML += `
-    <tr class="mo-row">
-      <td class="store-name">★ ${KT_MO.name}</td>
-      <td>${fmt(KT_MO.sales[0])}</td><td>${fmt(KT_MO.sales[1])}</td><td>${fmt(KT_MO.sales[2])}</td>
-      <td>${fmt(KT_MO.margin[0])}</td><td>${fmt(KT_MO.margin[1])}</td><td>${fmt(KT_MO.margin[2])}</td>
-      <td>${KT_MO.salesYY[0]}</td><td>${KT_MO.salesYY[1]}</td><td>${KT_MO.salesYY[2]}</td>
-      <td>${KT_MO.marginYY[0]}</td><td>${KT_MO.marginYY[1]}</td><td>${KT_MO.marginYY[2]}</td>
-      <td class="pos">${fmtRate(ktMoSalesGrowth)}</td>
-      <td class="${ktMoMarginGrowth >= 100 ? 'pos' : 'neg'}">${fmtRate(ktMoMarginGrowth)}</td>
-      <td><span class="status-tag status-good">MO集計</span></td>
-    </tr>
-    <tr class="branch-row">
-      <td class="store-name">【参考】${KT_SUITA.name}</td>
-      <td>${fmt(KT_SUITA.sales[0])}</td><td>${fmt(KT_SUITA.sales[1])}</td><td>${fmt(KT_SUITA.sales[2])}</td>
-      <td>—</td><td>—</td><td>—</td>
-      <td>${KT_SUITA.salesYY[0]}</td><td>${KT_SUITA.salesYY[1]}</td><td>${KT_SUITA.salesYY[2]}</td>
-      <td>—</td><td>—</td><td>—</td>
-      <td>${fmtRate(calcGrowth(KT_SUITA.sales[0], KT_SUITA.sales[2]))}</td>
-      <td>—</td>
-      <td><span class="status-tag status-neutral">支店参考</span></td>
-    </tr>`;
-
-  renderKitchenRanking();
-}
-
-function renderKitchenRanking() {
-  const sorted_both = ktStoreGrowths
-    .filter(s => s.salesGrowth != null && s.marginGrowth != null)
-    .sort((a,b) => (b.salesGrowth + b.marginGrowth) - (a.salesGrowth + a.marginGrowth));
-  const sorted_sales = ktStoreGrowths.filter(s => s.salesGrowth != null).sort((a,b) => b.salesGrowth - a.salesGrowth);
-  const need_improve = ktStoreGrowths
-    .filter(s => s.salesGrowth != null && s.marginGrowth != null)
-    .sort((a,b) => (a.salesGrowth + a.marginGrowth) - (b.salesGrowth + b.marginGrowth));
-  const sales_only = ktStoreGrowths.filter(s => getKitchenCategory(s) === 'sales-only');
-
-  document.getElementById('k-ranking').innerHTML = `
-    ${rankingCard('🏆 厨房拡販成功店舗（販売高+荒利益高 両伸長）', sorted_both.filter(s => getKitchenCategory(s) === 'both-up').slice(0,5), s => `販売 ${fmtRate(s.salesGrowth)} / 荒利 ${fmtRate(s.marginGrowth)}`, 'pos')}
-    ${rankingCard('⚠️ 改善が必要な店舗（要注意）', need_improve.slice(0,5), s => `販売 ${fmtRate(s.salesGrowth)} / 荒利 ${fmtRate(s.marginGrowth)}`, 'neg')}
-    ${rankingCard('△ 販売高は伸びたが荒利益は未達', sales_only.slice(0,5), s => `販売 ${fmtRate(s.salesGrowth)} / 荒利 ${fmtRate(s.marginGrowth)}`, 'orange')}
-  `;
-}
-
-function rankingCard(title, stores, valFn, cls) {
-  const colors = ['gold','silver','bronze','normal','normal'];
-  return `<div class="ranking-card">
-    <div class="rank-title">${title}</div>
-    ${stores.length === 0 ? '<div style="color:var(--gray);font-size:0.78rem;">該当なし</div>' :
-    stores.map((s,i) => `<div class="rank-item">
-      <div class="rank-num ${colors[i] || 'normal'}">${i+1}</div>
-      <div class="rank-name">${s.name}</div>
-      <div class="rank-val ${cls}">${valFn(s)}</div>
-    </div>`).join('')}
-  </div>`;
-}
-
-// ═══════════════════════════════════════════════════════════
-// ■ CHARTS
-// ═══════════════════════════════════════════════════════════
-
-let chartsInitialized = false;
-
-function renderCharts() {
-  if (chartsInitialized) return;
-  chartsInitialized = true;
-
-  const months = ['26年2月', '26年3月', '26年4月'];
-
-  // Chart 1: Trend MO vs Suita
-  new Chart(document.getElementById('chart-trend'), {
-    type: 'line',
-    data: {
-      labels: months,
-      datasets: [
-        { label:'阪口商店（MO）FF販売高', data: FF_MO.sales, borderColor:'#e74c3c', backgroundColor:'rgba(231,76,60,0.1)', tension:0.3, pointRadius:5, borderWidth:2.5 },
-        { label:'吹田支店（ベンチマーク）', data: FF_SUITA.sales, borderColor:'#2ecc71', backgroundColor:'rgba(46,204,113,0.1)', tension:0.3, pointRadius:5, borderWidth:2.5, borderDash:[5,3] },
-      ]
-    },
-    options: { responsive:true, plugins:{ legend:{ position:'bottom', labels:{font:{size:11}} } }, scales:{ y:{ ticks:{ callback:v => (v/1000).toFixed(0)+'K' } } } }
+const input = document.getElementById('search');
+const cats = document.querySelectorAll('.cat');
+input.addEventListener('input', () => {
+  const q = input.value.trim().toLowerCase();
+  cats.forEach(cat => {
+    let visible = 0;
+    cat.querySelectorAll('a.app').forEach(a => {
+      const hit = !q || a.textContent.toLowerCase().includes(q);
+      a.classList.toggle('hidden', !hit);
+      if (hit) visible++;
+    });
+    cat.classList.toggle('hidden', visible === 0);
+    const det = cat.querySelector('details');
+    if (det && q && visible > 0) det.open = true;
   });
-
-  // Chart 2: Growth rates bar (all stores)
-  const storesSorted = [...ffStoreGrowths].sort((a,b) => (b.salesGrowth||0)-(a.salesGrowth||0));
-  new Chart(document.getElementById('chart-growth'), {
-    type: 'bar',
-    data: {
-      labels: storesSorted.map(s => s.name),
-      datasets: [
-        { label:'FF販売高伸長率（2月対比）', data: storesSorted.map(s => s.salesGrowth != null ? +s.salesGrowth.toFixed(2) : null),
-          backgroundColor: storesSorted.map(s => s.salesGrowth > ffSuitaGrowth ? 'rgba(46,204,113,0.75)' : 'rgba(231,76,60,0.75)'),
-          borderColor: storesSorted.map(s => s.salesGrowth > ffSuitaGrowth ? '#1a8a4a' : '#c0392b'),
-          borderWidth:1 },
-      ]
-    },
-    options: {
-      indexAxis:'y', responsive:true,
-      plugins: { legend:{ display:false }, annotation:{} },
-      scales: { x:{ ticks:{ callback:v => v.toFixed(0)+'%' }, min:90 } }
-    }
-  });
-
-  // Chart 3: Kitchen growth comparison
-  const ktSorted = [...ktStoreGrowths].filter(s => s.salesGrowth != null).sort((a,b) => (b.salesGrowth||0)-(a.salesGrowth||0));
-  new Chart(document.getElementById('chart-kitchen-growth'), {
-    type:'bar',
-    data: {
-      labels: ktSorted.map(s => s.name),
-      datasets: [
-        { label:'厨房販売高伸長率', data: ktSorted.map(s => s.salesGrowth != null ? +s.salesGrowth.toFixed(2) : null), backgroundColor:'rgba(54,162,235,0.7)', borderColor:'#1a6fc4', borderWidth:1 },
-        { label:'厨房荒利益高伸長率', data: ktSorted.map(s => s.marginGrowth != null ? +s.marginGrowth.toFixed(2) : null), backgroundColor:'rgba(75,192,100,0.7)', borderColor:'#1a8a4a', borderWidth:1 },
-      ]
-    },
-    options: { indexAxis:'y', responsive:true, plugins:{ legend:{ position:'bottom', labels:{font:{size:10}} } }, scales:{ x:{ ticks:{ callback:v=>v.toFixed(0)+'%' } } } }
-  });
-
-  // Chart 4: FF April sales ranking
-  const top10 = [...FF_STORES].sort((a,b)=>b.sales[2]-a.sales[2]).slice(0,10);
-  new Chart(document.getElementById('chart-ranking'), {
-    type:'bar',
-    data: {
-      labels: top10.map(s=>s.name),
-      datasets: [{ label:'4月FF販売高PSA/D', data: top10.map(s=>s.sales[2]), backgroundColor:'rgba(26,111,196,0.75)', borderColor:'#005bac', borderWidth:1 }]
-    },
-    options: { indexAxis:'y', responsive:true, plugins:{ legend:{display:false} }, scales:{ x:{ ticks:{ callback:v=>(v/1000).toFixed(0)+'K' } } } }
-  });
-}
-
-// ═══════════════════════════════════════════════════════════
-// ■ TABLE SORT
-// ═══════════════════════════════════════════════════════════
-
-const sortState = {};
-function sortTable(tableId, colIdx) {
-  const table = document.getElementById(tableId);
-  const tbody = table.querySelector('tbody');
-  const rows = Array.from(tbody.querySelectorAll('tr:not(.mo-row):not(.branch-row)'));
-  const key = tableId + '_' + colIdx;
-  sortState[key] = !sortState[key];
-  const asc = sortState[key];
-
-  rows.sort((a,b) => {
-    const av = a.cells[colIdx]?.textContent.replace(/[^\d.\-+%]/g,'') || '';
-    const bv = b.cells[colIdx]?.textContent.replace(/[^\d.\-+%]/g,'') || '';
-    const an = parseFloat(av), bn = parseFloat(bv);
-    if (!isNaN(an) && !isNaN(bn)) return asc ? an - bn : bn - an;
-    return asc ? av.localeCompare(bv,'ja') : bv.localeCompare(av,'ja');
-  });
-
-  // Re-insert sorted rows before special rows
-  const specialRows = tbody.querySelectorAll('.mo-row, .branch-row');
-  rows.forEach(r => tbody.insertBefore(r, specialRows[0] || null));
-}
-
-// ═══════════════════════════════════════════════════════════
-// ■ TAB SWITCH
-// ═══════════════════════════════════════════════════════════
-
-function switchTab(name) {
-  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
-  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-  document.getElementById('tab-' + name).classList.add('active');
-  event.target.classList.add('active');
-  if (name === 'charts') renderCharts();
-}
-
-// ═══════════════════════════════════════════════════════════
-// ■ INIT
-// ═══════════════════════════════════════════════════════════
-
-document.addEventListener('DOMContentLoaded', () => {
-  renderSummary();
-  renderFFTable();
-  renderKitchenTable();
 });
 </script>
+
 </body>
 </html>
