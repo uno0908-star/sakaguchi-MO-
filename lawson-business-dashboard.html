@@ -258,6 +258,8 @@ hr.sep{border:none;border-top:1px solid var(--line);margin:14px 0}
   <section class="view" id="v-dept"></section>
   <!-- ===== ⑤ 評価 ===== -->
   <section class="view" id="v-eval"></section>
+  <!-- ===== ⑤b 経費申請 ===== -->
+  <section class="view" id="v-expense"></section>
   <!-- ===== ⑥ 設定 ===== -->
   <section class="view" id="v-settings"></section>
 </main>
@@ -269,6 +271,7 @@ hr.sep{border:none;border-top:1px solid var(--line);margin:14px 0}
   <button data-v="rank"><svg viewBox="0 0 24 24"><path d="M8 21V10M16 21v-7M12 21V4M12 4l-2.5 2.5M12 4l2.5 2.5"/></svg>順位</button>
   <button data-v="dept"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="7.5" height="7.5" rx="1"/><rect x="13.5" y="3" width="7.5" height="7.5" rx="1"/><rect x="3" y="13.5" width="7.5" height="7.5" rx="1"/><rect x="13.5" y="13.5" width="7.5" height="7.5" rx="1"/></svg>DEPT</button>
   <button data-v="eval"><svg viewBox="0 0 24 24"><path d="M12 3l2.7 5.6 6.3.8-4.6 4.3 1.2 6.1L12 16.9 6.4 19.8l1.2-6.1L3 9.4l6.3-.8z"/></svg>評価</button>
+  <button data-v="expense" style="position:relative"><svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 10h18M7 15h4"/></svg>申請<span id="expBadge" style="display:none;position:absolute;top:2px;right:14%;min-width:15px;height:15px;border-radius:99px;background:var(--bad);color:#fff;font-size:.56rem;font-weight:800;line-height:15px;text-align:center;padding:0 3px"></span></button>
   <button data-v="settings"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3.2"/><path d="M19 12c0-.5 0-1-.1-1.4l2-1.6-2-3.4-2.4 1a7 7 0 0 0-2.4-1.4L13.7 2h-3.4l-.4 2.6a7 7 0 0 0-2.4 1.4l-2.4-1-2 3.4 2 1.6a7 7 0 0 0 0 2.8l-2 1.6 2 3.4 2.4-1a7 7 0 0 0 2.4 1.4l.4 2.6h3.4l.4-2.6a7 7 0 0 0 2.4-1.4l2.4 1 2-3.4-2-1.6c.1-.4.1-.9.1-1.4z"/></svg>設定</button>
 </nav>
 
@@ -335,16 +338,67 @@ const teiseiItems = (ym, role) => (ym < '2026-04' ? TEISEI_ITEMS_OLD : TEISEI_IT
 const FINAL_STORE_ITEMS = ['QSC_SC','QSC_SI','衛生','5S','クレーム件数','数字の質','残業','リスク案件'];
 const RANK_TH = [[97,1],[94,2],[90,3],[85,4],[80,5],[75,6],[70,7]];  // スコア下限→級（それ未満=8級）
 
+// ---- 経費申請（Excel「評価計算&経費申請シート」の承認内容リスト準拠） ----
+const EXPENSE_KINDS = {
+  'SC経費': {
+    label: '費用出金（SC経費）',
+    items: ['業務に携わる駐車場代','業務に携わる消耗品費','店舗装飾品費','POP作成費',
+            'クレーム対応費','両替手数料','各種申請書手数料']
+  },
+  'PT後付け予算': {
+    label: 'パートタイマ給与 後付け予算',
+    items: ['新人教育費','棚替え作業費(条件付き)','本部施策キャンペーン対応',
+            '緊急対応人件費(災害・停電など)','クローバー活動','イベント対応']
+  }
+};
+const EXP_STATUS_STYLE = {
+  '申請中': 'background:rgba(255,194,75,.12);border:1px solid rgba(255,194,75,.45);color:var(--warn)',
+  '承認':   'background:rgba(45,212,167,.12);border:1px solid rgba(45,212,167,.45);color:var(--ok)',
+  '却下':   'background:rgba(255,93,115,.12);border:1px solid rgba(255,93,115,.45);color:var(--bad)'
+};
+
 // ---------- 状態 ----------
 let DB = null;            // GASから取得した生データ
 let IDX = null;           // インデックス済みデータ
-let state = { view:'company', mi:0, sc:null, store:null, rankKey:'profitRate', evalTab:'SC', deptStore:'all' };
+let state = { view:'company', mi:0, sc:null, store:null, rankKey:'profitRate', evalTab:'SC', deptStore:'all',
+              expKind:'SC経費', expFilter:'all' };
 let charts = {};
 
 const GAS_URL_KEY = 'lbd_gas_url';
 // 標準接続先（設定画面で上書き可能）
 const DEFAULT_GAS_URL = 'https://script.google.com/macros/s/AKfycbwIhX0VhNZDLUthbkLNyTUa1ypGx7-oyPrP40a99Zf2MY4iVkJZCqYgSUwT2tX5sgz-FA/exec';
 const gasUrl = () => localStorage.getItem(GAS_URL_KEY) || DEFAULT_GAS_URL;
+
+// ---------- 管理者認証 ----------
+// PINはこのHTMLには一切含まれない（GASサーバー側で照合し、トークンを発行）
+const ADMIN_TOK_KEY = 'lbd_admin_token';
+const isAdmin = () => !!localStorage.getItem(ADMIN_TOK_KEY);
+function adminLockHtml(title){
+  return `<div class="card" style="max-width:420px;margin:40px auto;text-align:center">
+    <div style="font-size:2rem;margin-bottom:8px">🔒</div>
+    <div style="font-weight:800;margin-bottom:4px">${title}は管理者専用です</div>
+    <div class="note" style="margin-bottom:14px">マスタ設定・評価の変更は管理者のみ行えます。<br>暗証番号を入力してください。</div>
+    <div class="fld"><input type="password" id="adminPin" inputmode="numeric" autocomplete="off"
+      placeholder="暗証番号" style="text-align:center;font-size:1.2rem;letter-spacing:.3em"
+      onkeydown="if(event.key==='Enter')adminUnlock()"></div>
+    <button class="btn" style="margin-top:12px;width:100%" onclick="adminUnlock()">解除する</button>
+  </div>`;
+}
+async function adminUnlock(){
+  const pin = document.getElementById('adminPin').value.trim();
+  if(!pin){ toast('暗証番号を入力してください'); return; }
+  const d = await post({action:'adminLogin', pin}, null);
+  if(d && d.ok && d.token){
+    localStorage.setItem(ADMIN_TOK_KEY, d.token);
+    toast('管理者モードになりました（6時間有効）');
+    renderAll();
+  }
+}
+function adminLogout(){
+  localStorage.removeItem(ADMIN_TOK_KEY);
+  toast('管理者モードを終了しました');
+  go('company');
+}
 
 // ---------- 起動 ----------
 document.addEventListener('DOMContentLoaded', () => {
@@ -632,7 +686,16 @@ function renderAll(){
 }
 function renderView(v){
   ({company:renderCompany, sc:renderSc, store:renderStore,
-    rank:renderRank, dept:renderDept, eval:renderEval, settings:renderSettings})[v]();
+    rank:renderRank, dept:renderDept, eval:renderEval,
+    expense:renderExpense, settings:renderSettings})[v]();
+  updateExpBadge();
+}
+// 申請中の件数バッジ（管理者のみ表示）
+function updateExpBadge(){
+  const b = document.getElementById('expBadge');
+  const n = isAdmin() ? (DB.expenses||[]).filter(e => e[10] === '申請中').length : 0;
+  b.style.display = n > 0 ? 'block' : 'none';
+  b.textContent = n;
 }
 function destroyCharts(ids){ ids.forEach(id => { if(charts[id]){ charts[id].destroy(); delete charts[id]; } }); }
 
@@ -1213,6 +1276,7 @@ function renderDept(){
 // ---------- ⑤ 評価 ----------
 function renderEval(){
   const el = document.getElementById('v-eval');
+  if(!isAdmin()){ el.innerHTML = adminLockHtml('評価画面'); return; }
   const tab = state.evalTab;
   el.innerHTML = `
   <div class="pills">
@@ -1712,10 +1776,126 @@ function evalHankiHtml(){
 }
 
 // ---------- ⑥ 設定 ----------
+// ---------- ⑤b 経費申請 ----------
+function renderExpense(){
+  const el = document.getElementById('v-expense');
+  const kind = state.expKind;
+  const ym = ymOf(state.mi);
+  const exps = (DB.expenses || []).slice().reverse(); // 新しい順
+  const admin = isAdmin();
+  const filtered = exps.filter(e =>
+    state.expFilter === 'all' ? true :
+    state.expFilter === 'pending' ? e[10] === '申請中' : e[2] === ym);
+  const pendingN = exps.filter(e => e[10] === '申請中').length;
+
+  el.innerHTML = `
+  <h2 class="sec">経費を申請する</h2>
+  <div class="card">
+    <div class="pills" style="margin-bottom:14px">
+      ${Object.keys(EXPENSE_KINDS).map(k => `<button class="pill ${k===kind?'on':''}"
+        onclick="state.expKind='${k}';renderExpense()">${EXPENSE_KINDS[k].label}</button>`).join('')}
+    </div>
+    <div class="form-grid">
+      <div class="fld"><label>店舗</label>
+        <select id="exp-store">${DB.stores.map(s =>
+          `<option value="${s.code}">${esc(s.name)}</option>`).join('')}</select></div>
+      <div class="fld"><label>申請者（あなたの名前）</label>
+        <input type="text" id="exp-name" placeholder="例: 山田"></div>
+      <div class="fld"><label>項目（承認対象のみ）</label>
+        <select id="exp-item">${EXPENSE_KINDS[kind].items.map(it =>
+          `<option>${it}</option>`).join('')}</select></div>
+      <div class="fld"><label>${kind==='SC経費' ? '出金日付' : '期間（例: 5/12,14 合計10.5h）'}</label>
+        <input type="text" id="exp-period" placeholder="${kind==='SC経費' ? '例: 6/10' : '例: 6/1,2（合計4h）'}"></div>
+      <div class="fld"><label>内容</label>
+        <input type="text" id="exp-detail" placeholder="${kind==='SC経費' ? '例: 両替手数料' : '例: 新人研修（◯◯さん）'}"></div>
+      <div class="fld"><label>金額（円）</label>
+        <input type="number" id="exp-amount" inputmode="numeric" placeholder="例: 4400"></div>
+    </div>
+    <div class="flex mt">
+      <button class="btn" id="exp-submit" onclick="submitExpenseUi()">この内容で申請する</button>
+    </div>
+    <div class="note mt">申請すると管理者に通知が届きます。承認結果はこの画面の一覧で確認できます。対象月: <b style="color:var(--txt)">${ym.replace('-','/')}</b>（右上で変更可）</div>
+  </div>
+
+  <h2 class="sec">申請一覧 ${admin && pendingN ? `<span style="color:var(--warn);letter-spacing:0">未処理 ${pendingN}件</span>` : ''}</h2>
+  <div class="pills">
+    <button class="pill ${state.expFilter==='all'?'on':''}" onclick="state.expFilter='all';renderExpense()">すべて</button>
+    <button class="pill ${state.expFilter==='pending'?'on':''}" onclick="state.expFilter='pending';renderExpense()">申請中のみ</button>
+    <button class="pill ${state.expFilter==='month'?'on':''}" onclick="state.expFilter='month';renderExpense()">${ym.replace('-','/')}のみ</button>
+  </div>
+  ${filtered.length ? filtered.map(e => expenseRowHtml(e, admin)).join('')
+    : '<div class="empty-note">申請はまだありません</div>'}`;
+}
+
+function expenseRowHtml(e, admin){
+  const [id, ts, ym, code, kind, applicant, item, period, detail, amount, status, memo] = e;
+  const store = (DB.stores.find(s => s.code === code) || {}).name || code;
+  return `<div class="card" style="margin-bottom:9px;padding:13px 15px">
+    <div style="display:flex;align-items:center;gap:9px;flex-wrap:wrap">
+      <span style="font-weight:800;font-size:.9rem">${esc(store)}</span>
+      <span style="font-size:.78rem;color:var(--sub)">${esc(applicant)}</span>
+      <span class="chip" style="padding:3px 9px">${esc(kind)}</span>
+      <span style="margin-left:auto;font-weight:800;font-variant-numeric:tabular-nums">¥${fmt(amount)}</span>
+      <span style="font-size:.68rem;font-weight:800;padding:4px 11px;border-radius:99px;${EXP_STATUS_STYLE[status]||''}">${esc(status)}</span>
+    </div>
+    <div style="font-size:.76rem;color:var(--sub);margin-top:7px;line-height:1.6">
+      ${esc(item)}${detail ? ' ｜ ' + esc(detail) : ''}${period ? ' ｜ ' + esc(period) : ''}<br>
+      <span style="color:var(--dim)">申請: ${esc(ts)}${memo ? ' ｜ 管理者メモ: ' + esc(memo) : ''}</span>
+    </div>
+    ${admin && status === '申請中' ? `<div class="flex mt" style="gap:8px">
+      <button class="btn" style="padding:8px 18px;font-size:.76rem" onclick="approveExpenseUi('${id}','承認')">承認</button>
+      <button class="btn ghost" style="padding:8px 18px;font-size:.76rem" onclick="approveExpenseUi('${id}','却下')">却下</button>
+    </div>` : ''}
+  </div>`;
+}
+
+async function submitExpenseUi(){
+  const code = document.getElementById('exp-store').value;
+  const applicant = document.getElementById('exp-name').value.trim();
+  const item = document.getElementById('exp-item').value;
+  const period = document.getElementById('exp-period').value.trim();
+  const detail = document.getElementById('exp-detail').value.trim();
+  const amount = Number(document.getElementById('exp-amount').value);
+  if(!applicant){ toast('申請者名を入力してください'); return; }
+  if(!(amount > 0)){ toast('金額を入力してください'); return; }
+  const btn = document.getElementById('exp-submit');
+  btn.disabled = true;
+  const d = await post({action:'submitExpense', ym:ymOf(state.mi), code,
+    kind:state.expKind, applicant, item, period, detail, amount}, null);
+  btn.disabled = false;
+  if(d && d.ok){
+    const store = (DB.stores.find(s => s.code === code) || {}).name || code;
+    (DB.expenses = DB.expenses || []).push([d.id, '今', ymOf(state.mi), code,
+      state.expKind, applicant, item, period, detail, amount, '申請中', '']);
+    toast('申請しました。管理者に通知が届きます');
+    renderExpense(); updateExpBadge();
+  }
+}
+
+async function approveExpenseUi(id, status){
+  const memo = status === '却下' ? (prompt('却下の理由（任意）') || '') : '';
+  const d = await post({action:'approveExpense', id, status, memo}, status + 'しました');
+  if(d && d.ok){
+    const row = (DB.expenses || []).find(e => e[0] === id);
+    if(row){ row[10] = status; row[11] = memo; }
+    renderExpense(); updateExpBadge();
+  }
+}
+
 function renderSettings(){
   const el = document.getElementById('v-settings');
+  if(!isAdmin()){ el.innerHTML = adminLockHtml('設定画面'); return; }
   const p = DB.params || {};
   el.innerHTML = `
+  <h2 class="sec">管理者モード</h2>
+  <div class="card">
+    <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+      <span style="font-size:.84rem">🔓 管理者モード中（最終操作から6時間で自動ロック）</span>
+      <button class="btn ghost" style="margin-left:auto" onclick="adminLogout()">管理者モードを終了</button>
+    </div>
+    <div class="note mt">暗証番号の変更はスプレッドシート「設定」シートに「管理者PIN」行を追加して値を書き換えてください。経費申請の通知先を変える場合は「通知メール」行を追加します。</div>
+  </div>
+
   <h2 class="sec">接続設定</h2>
   <div class="card">
     <div class="fld"><label>GAS ウェブアプリURL</label>
@@ -1917,16 +2097,30 @@ async function post(payload, successMsg){
   if(!gasUrl()){ if(successMsg) toast(successMsg + '（デモ: ローカルのみ）'); return {ok:true}; }
   _pendingSaves++;
   try{
+    // 管理者トークンを常に同送（必要なアクションのみサーバー側で検証される）
+    const tok = localStorage.getItem(ADMIN_TOK_KEY);
+    if(tok) payload.token = tok;
     const res = await fetch(gasUrl(), {
       method:'POST', redirect:'follow', keepalive:true,
       headers:{'Content-Type':'text/plain;charset=utf-8'},
       body: JSON.stringify(payload)
     });
     const d = await res.json();
+    if(d.authRequired){
+      // トークン期限切れ等 → 管理者モードを解除してロック画面へ
+      localStorage.removeItem(ADMIN_TOK_KEY);
+      toast('管理者認証の期限が切れました。暗証番号を再入力してください');
+      renderAll();
+      return d;
+    }
     if(d.error) throw new Error(d.error);
     if(successMsg) toast(successMsg);
     return d;
-  }catch(e){ toast('保存エラー: ' + e.message + '（この入力はサーバー未保存です）'); return {error:String(e)}; }
+  }catch(e){
+    toast(payload.action === 'adminLogin' ? String(e.message).replace('Error: ','')
+      : '保存エラー: ' + e.message + '（この入力はサーバー未保存です）');
+    return {error:String(e)};
+  }
   finally{ _pendingSaves--; }
 }
 
