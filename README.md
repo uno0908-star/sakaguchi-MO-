@@ -46,12 +46,16 @@
 
 | アプリ | 内容 |
 |---|---|
-| [販売進捗ダッシュボード](https://uno0908-star.github.io/sakaguchi-MO-/FFRanking.html) | 店舗別販売進捗ランキング |
-| [感謝祭 事前共有](https://uno0908-star.github.io/sakaguchi-MO-/karaagekun-festival-pre-briefing.html) | 4/21〜4/27 事前ブリーフィング |
-| [感謝祭 進捗（4/26時点）](https://uno0908-star.github.io/sakaguchi-MO-/karaagekun-progress-dashboard-0421.html) | 進捗ダッシュボード |
-| [からあげクン×飲料 結果検証](https://uno0908-star.github.io/sakaguchi-MO-/karaagekun-campaign-analysis.html) | キャンペーン結果分析 |
-| [販売進捗ダッシュボード（旧）](https://uno0908-star.github.io/sakaguchi-MO-/からあげクン販売進捗ダッシュボード.html) | 旧バージョン |
+| [販売進捗ダッシュボード](https://uno0908-star.github.io/sakaguchi-MO-/archive/FFRanking.html) | 店舗別販売進捗ランキング |
+| [感謝祭 事前共有](https://uno0908-star.github.io/sakaguchi-MO-/archive/karaagekun-festival-pre-briefing.html) | 4/21〜4/27 事前ブリーフィング |
+| [感謝祭 進捗（4/26時点）](https://uno0908-star.github.io/sakaguchi-MO-/archive/karaagekun-progress-dashboard-0421.html) | 進捗ダッシュボード |
+| [からあげクン×飲料 結果検証](https://uno0908-star.github.io/sakaguchi-MO-/archive/karaagekun-campaign-analysis.html) | キャンペーン結果分析 |
+| [販売進捗ダッシュボード（旧）](https://uno0908-star.github.io/sakaguchi-MO-/archive/からあげクン販売進捗ダッシュボード.html) | 旧バージョン |
 
 ---
 
-※ 画像ファイル（seiso-*, service_*）は清掃・接客アプリが参照しているため移動・削除しないこと
+## 📁 フォルダ構成
+
+- ルート直下 … 現役アプリのHTML（URLを変えないためここに置く）
+- `images/` … 画像（service_*.png は接客評価システムが使用中）
+- `archive/` … 終了済みイベントのHTML
