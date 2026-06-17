@@ -324,6 +324,35 @@ select.input-field{background-image:url("data:image/svg+xml,%3Csvg xmlns='http:/
   </div>
 </div>
 
+<!-- 再提出モーダル -->
+<div id="modal-resubmit" class="modal-overlay hidden">
+  <div class="modal-box" style="max-height:90vh;overflow-y:auto">
+    <div class="modal-title" style="color:var(--blue)">📷 再提出</div>
+    <div id="resubmit-info" style="font-size:.85rem;font-weight:700;color:var(--gray-dark);margin-bottom:8px"></div>
+    <div id="resubmit-reject-reason" style="font-size:.78rem;color:#991B1B;background:var(--red-light);border-radius:var(--rs);padding:8px 10px;margin-bottom:12px"></div>
+    <label class="form-label">改善実施者名 <span class="required">*</span></label>
+    <input type="text" id="resubmit-name" class="input-field" placeholder="例: 田中花子">
+    <label class="form-label" style="margin-top:10px">役職 <span class="required">*</span></label>
+    <select id="resubmit-role" class="input-field"></select>
+    <label class="form-label" style="margin-top:10px">改善日 <span class="required">*</span></label>
+    <input type="date" id="resubmit-date" class="input-field">
+    <label class="form-label" style="margin-top:10px">改善後写真 <span class="required">*</span></label>
+    <div id="resubmit-photo-previews">
+      <div class="photo-upload-box" onclick="document.getElementById('resubmit-photo-input').click()">
+        <div class="photo-upload-icon">📷</div>
+        <div class="photo-upload-text">タップして写真を選択</div>
+      </div>
+    </div>
+    <input type="file" id="resubmit-photo-input" accept="image/*" multiple style="display:none" onchange="handleResubmitPhotoSelect(this)">
+    <label class="form-label" style="margin-top:10px">コメント（任意）</label>
+    <textarea id="resubmit-comment" class="input-field textarea-field" placeholder="改善内容の詳細など"></textarea>
+    <div class="modal-actions">
+      <button class="btn-secondary" onclick="closeResubmitModal()">キャンセル</button>
+      <button class="btn-primary" id="resubmit-btn" style="width:auto;padding:11px 20px" onclick="doResubmit()">再提出する</button>
+    </div>
+  </div>
+</div>
+
 <!-- 差し戻し -->
 <div id="modal-reject" class="modal-overlay hidden">
   <div class="modal-box">
@@ -650,7 +679,8 @@ function rejectedPending(){
       const store=S.stores.find(s=>String(s.storeId)===String(set.storeId));
       const item=S.cleaningItems.find(i=>String(i.itemId)===String(set.itemId));
       list.push({storeId:set.storeId,storeName:store?.storeName||'?',itemName:item?.itemName||'?',
-        unitLabel:set.unitLabel||'',comment:sub.rejectionComment||'',rejectedAt:sub.rejectedAt||''});
+        unitLabel:set.unitLabel||'',comment:sub.rejectionComment||'',rejectedAt:sub.rejectedAt||'',
+        settingId:set.settingId||'',itemId:set.itemId||''});
     }
   });
   return list.sort((a,b)=>new Date(b.rejectedAt||0)-new Date(a.rejectedAt||0));
@@ -861,14 +891,17 @@ function renderRejectedAlert(){
       <div style="font-weight:900;color:var(--red);font-size:.95rem">差し戻し ${rejects.length}件（再提出待ち）</div>
     </div>
     ${shown.map(r=>`
-    <div data-nav="store-detail" data-store="${r.storeId}" style="background:#fff;border:1px solid var(--red);border-radius:var(--rs);padding:10px 12px;margin-bottom:8px;cursor:pointer">
+    <div style="background:#fff;border:1px solid var(--red);border-radius:var(--rs);padding:10px 12px;margin-bottom:8px">
       <div style="display:flex;align-items:center;gap:6px">
         <div style="font-weight:700;font-size:.88rem;flex:1">${r.storeName}</div>
         <div style="font-size:.7rem;color:var(--gray-text)">${fmtD(r.rejectedAt)}</div>
       </div>
       <div style="font-size:.78rem;color:var(--gray-dark);margin-top:2px">${r.itemName}${r.unitLabel?` ／ ${r.unitLabel}`:''}</div>
       ${r.comment?`<div style="font-size:.75rem;color:var(--red);margin-top:4px">理由: ${r.comment}</div>`:''}
-      <div style="font-size:.7rem;color:var(--blue);margin-top:4px;text-align:right">店舗詳細へ →</div>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-top:8px">
+        <span data-nav="store-detail" data-store="${r.storeId}" style="font-size:.7rem;color:var(--blue);cursor:pointer">店舗詳細へ →</span>
+        <button onclick="openResubmitModal('${r.settingId}','${r.storeId}','${r.itemId}')" style="font-size:.75rem;font-weight:700;color:#fff;background:var(--blue);border:none;border-radius:var(--rs);padding:6px 12px;cursor:pointer;font-family:var(--font)">📷 再提出</button>
+      </div>
     </div>`).join('')}
     ${rejects.length>MAX?`<button class="btn-secondary btn-sm" style="width:100%" onclick="S.showAllRejects=!S.showAllRejects;renderView()">${S.showAllRejects?'閉じる':`残り${rejects.length-MAX}件を表示`}</button>`:''}
   </div>`;
@@ -1775,6 +1808,72 @@ function openRejectModal(submissionId,hasManagerConfirm){
   closeConfirmModal();
 }
 function closeRejectModal(){document.getElementById('modal-reject').classList.add('hidden');S.pendingRejectId=null;}
+// ============================================================
+// 再提出モーダル（TOPから）
+// ============================================================
+let resubmitPhotos=[];
+function openResubmitModal(settingId,storeId,itemId){
+  const setting=S.storeSettings.find(s=>String(s.settingId)===String(settingId));
+  const store=S.stores.find(s=>String(s.storeId)===String(storeId));
+  const item=S.cleaningItems.find(i=>String(i.itemId)===String(itemId));
+  const sub=latestSub(settingId);
+  S.pendingResubmit={settingId,storeId,itemId};
+  resubmitPhotos=[];
+  const info=document.getElementById('resubmit-info');
+  if(info)info.textContent=`${store?.storeName||''} ／ ${item?.itemName||''}${setting?.unitLabel?' ／ '+setting.unitLabel:''}`;
+  const reason=document.getElementById('resubmit-reject-reason');
+  if(reason){const c=sub?.rejectionComment||'';reason.style.display=c?'':'none';reason.textContent=c?'差し戻し理由: '+c:'';}
+  const roleEl=document.getElementById('resubmit-role');
+  if(roleEl)roleEl.innerHTML='<option value="">-- 役職を選択 --</option>'+ROLES.map(r=>`<option value="${r}">${r}</option>`).join('');
+  const dateEl=document.getElementById('resubmit-date');
+  if(dateEl)dateEl.value=new Date().toISOString().substring(0,10);
+  renderResubmitPhotoPreview();
+  const nameEl=document.getElementById('resubmit-name');if(nameEl)nameEl.value='';
+  const commentEl=document.getElementById('resubmit-comment');if(commentEl)commentEl.value='';
+  document.getElementById('modal-resubmit').classList.remove('hidden');
+}
+function closeResubmitModal(){
+  document.getElementById('modal-resubmit').classList.add('hidden');
+  S.pendingResubmit=null;resubmitPhotos=[];
+}
+async function handleResubmitPhotoSelect(input){
+  if(!input.files.length)return;
+  const compressed=await Promise.all(Array.from(input.files).map(f=>compressImage(f)));
+  resubmitPhotos=[...resubmitPhotos,...compressed];
+  input.value='';
+  renderResubmitPhotoPreview();
+}
+function renderResubmitPhotoPreview(){
+  const wrap=document.getElementById('resubmit-photo-previews');if(!wrap)return;
+  if(!resubmitPhotos.length){
+    wrap.innerHTML=`<div class="photo-upload-box" onclick="document.getElementById('resubmit-photo-input').click()"><div class="photo-upload-icon">📷</div><div class="photo-upload-text">タップして写真を選択</div></div>`;
+    return;
+  }
+  const addTile=`<div class="multi-photo-thumb" onclick="document.getElementById('resubmit-photo-input').click()" style="border:2px dashed var(--gray-border);border-radius:var(--rs);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;cursor:pointer;background:var(--gray-bg)"><span style="font-size:1.5rem;line-height:1">＋</span><span style="font-size:.65rem;color:var(--gray-text);font-weight:600">追加</span></div>`;
+  wrap.innerHTML=`<div class="multi-photo-preview">${resubmitPhotos.map((src,i)=>`<div class="multi-photo-thumb"><img src="${src}" onclick="openPhotoModal(JSON.stringify(resubmitPhotos),${i})"><button type="button" class="multi-photo-del" onclick="removeResubmitPhoto(${i})">✕</button></div>`).join('')}${addTile}</div><div style="font-size:.75rem;color:var(--gray-text);margin-top:4px;text-align:right">${resubmitPhotos.length}枚選択中</div>`;
+}
+function removeResubmitPhoto(i){resubmitPhotos.splice(i,1);renderResubmitPhotoPreview();}
+async function doResubmit(){
+  const p=S.pendingResubmit;if(!p)return;
+  const name=document.getElementById('resubmit-name').value.trim();
+  const role=document.getElementById('resubmit-role').value;
+  const date=document.getElementById('resubmit-date').value;
+  const comment=document.getElementById('resubmit-comment').value.trim();
+  if(!name||!role||!date){showToast('必須項目をすべて入力してください','error');return;}
+  if(!resubmitPhotos.length){showToast('写真を選択してください','error');return;}
+  const imageData=resubmitPhotos.length===1?resubmitPhotos[0]:JSON.stringify(resubmitPhotos);
+  if(imageData.length>8*1024*1024){showToast('写真の合計サイズが大きすぎます。枚数を減らして送信してください','error');return;}
+  const btn=document.getElementById('resubmit-btn');btn.disabled=true;btn.textContent='送信中...';
+  try{
+    const res=await apiPost('addSubmission',{settingId:p.settingId,storeId:p.storeId,itemId:p.itemId,improvedBy:name,role,improvedDate:date,comment,imageData});
+    if(!res||!res.submissionId)throw new Error('サーバーに登録されませんでした');
+    closeResubmitModal();clearCache();await loadData(true);
+    showToast('再提出しました');renderView();
+  }catch(err){
+    const msg=/Failed to fetch|NetworkError|load failed/i.test(err.message)?'通信エラーで送信できませんでした。電波の良い場所で再度お試しください。':'送信失敗: '+err.message;
+    showToast(msg,'error');btn.disabled=false;btn.textContent='再提出する';
+  }
+}
 // 差し戻し結果をローカルに即反映（全データ再取得を不要に）
 function _applyRejectLocal(id,comment,clearManager){
   const sub=S.submissions.find(s=>String(s.submissionId)===String(id));
