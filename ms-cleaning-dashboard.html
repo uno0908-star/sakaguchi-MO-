@@ -690,11 +690,11 @@ function advicePending(){
   const list=[];
   S.storeSettings.forEach(set=>{
     const sub=latestSub(set.settingId);
-    if(sub&&sub.adviceComment&&!isRejected(sub)&&!isExcluded(sub)&&!sub.managerConfirmedBy){
+    if(sub&&sub.adviceComment&&!isRejected(sub)&&!isExcluded(sub)&&!getDismissedAdvices().includes(sub.submissionId)){
       const store=S.stores.find(s=>String(s.storeId)===String(set.storeId));
       const item=S.cleaningItems.find(i=>String(i.itemId)===String(set.itemId));
       list.push({storeId:set.storeId,storeName:store?.storeName||'?',itemName:item?.itemName||'?',
-        unitLabel:set.unitLabel||'',comment:sub.adviceComment,adviceAt:sub.adviceAt||''});
+        unitLabel:set.unitLabel||'',comment:sub.adviceComment,adviceAt:sub.adviceAt||'',submissionId:sub.submissionId||''});
     }
   });
   return list.sort((a,b)=>new Date(b.adviceAt||0)-new Date(a.adviceAt||0));
@@ -921,14 +921,17 @@ function renderAdviceAlert(){
       <div style="font-weight:900;color:#b45309;font-size:.95rem">ワンポイントアドバイス ${advices.length}件</div>
     </div>
     ${shown.map(r=>`
-    <div data-nav="store-detail" data-store="${r.storeId}" style="background:#fff;border:1px solid #f59e0b;border-radius:var(--rs);padding:10px 12px;margin-bottom:8px;cursor:pointer">
+    <div style="background:#fff;border:1px solid #f59e0b;border-radius:var(--rs);padding:10px 12px;margin-bottom:8px">
       <div style="display:flex;align-items:center;gap:6px">
         <div style="font-weight:700;font-size:.88rem;flex:1">${r.storeName}</div>
         <div style="font-size:.7rem;color:var(--gray-text)">${fmtD(r.adviceAt)}</div>
       </div>
       <div style="font-size:.78rem;color:var(--gray-dark);margin-top:2px">${r.itemName}${r.unitLabel?` ／ ${r.unitLabel}`:''}</div>
       <div style="font-size:.75rem;color:#b45309;margin-top:4px">💡 ${r.comment}</div>
-      <div style="font-size:.7rem;color:var(--blue);margin-top:4px;text-align:right">店舗詳細へ →</div>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-top:8px">
+        <span data-nav="store-detail" data-store="${r.storeId}" style="font-size:.7rem;color:var(--blue);cursor:pointer">店舗詳細へ →</span>
+        <button onclick="dismissAdvice('${r.submissionId}')" style="font-size:.75rem;font-weight:700;color:#fff;background:#d97706;border:none;border-radius:var(--rs);padding:6px 12px;cursor:pointer;font-family:var(--font)">✓ 確認済み</button>
+      </div>
     </div>`).join('')}
     ${advices.length>MAX?`<button class="btn-secondary btn-sm" style="width:100%" onclick="S.showAllAdvices=!S.showAllAdvices;renderView()">${S.showAllAdvices?'閉じる':`残り${advices.length-MAX}件を表示`}</button>`:''}
   </div>`;
@@ -1906,6 +1909,12 @@ function openAdviceModal(id){
   document.getElementById('modal-advice').classList.remove('hidden');
 }
 function closeAdviceModal(){document.getElementById('modal-advice').classList.add('hidden');S.pendingAdviceId=null;}
+function getDismissedAdvices(){try{return JSON.parse(localStorage.getItem('dismissedAdvices')||'[]');}catch{return[];}}
+function dismissAdvice(submissionId){
+  const d=getDismissedAdvices();
+  if(!d.includes(submissionId)){d.push(submissionId);localStorage.setItem('dismissedAdvices',JSON.stringify(d));}
+  renderView();
+}
 function _applyAdviceLocal(id,comment){
   const sub=S.submissions.find(s=>String(s.submissionId)===String(id));
   if(sub){sub.adviceComment=comment;sub.adviceBy=comment?'管理者':'';sub.adviceAt=comment?new Date().toISOString().substring(0,10):'';}
