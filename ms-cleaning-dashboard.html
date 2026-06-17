@@ -690,7 +690,7 @@ function advicePending(){
   const list=[];
   S.storeSettings.forEach(set=>{
     const sub=latestSub(set.settingId);
-    if(sub&&sub.adviceComment&&!isRejected(sub)&&!isExcluded(sub)){
+    if(sub&&sub.adviceComment&&!isRejected(sub)&&!isExcluded(sub)&&!sub.managerConfirmedBy){
       const store=S.stores.find(s=>String(s.storeId)===String(set.storeId));
       const item=S.cleaningItems.find(i=>String(i.itemId)===String(set.itemId));
       list.push({storeId:set.storeId,storeName:store?.storeName||'?',itemName:item?.itemName||'?',
