@@ -1266,7 +1266,7 @@ function onItemChange(itemId) {
   const storeId=document.getElementById('f-store')?.value||S.selStoreId;
   const sel=document.getElementById('f-setting'); if(!sel||!storeId||!itemId)return;
   const sets=getSettings(storeId,itemId);
-  sel.innerHTML='<option value="">-- 箇所を選択 --</option>'+sets.map(s=>`<option value="${s.settingId}">${s.unitLabel}${latestSub(s.settingId)?' ✓済':''}</option>`).join('');
+  sel.innerHTML='<option value="">-- 箇所を選択 --</option>'+sets.map(s=>{const sub=latestSub(s.settingId);const lbl=sub?(isRejected(sub)?' ⚠差し戻しあり':' ✓済'):'';return`<option value="${s.settingId}">${s.unitLabel}${lbl}</option>`;}).join('');
   sel.disabled=false;
 }
 async function handlePhotoSelect(input) {
