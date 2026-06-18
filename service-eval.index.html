@@ -457,6 +457,8 @@ const Storage=(()=>{
           var remoteCert=remoteEntry.certifications||[];
           var mergedCrew=remoteCrew.length>0?remoteCrew:localCrew;
           var mergedCert=remoteCert.length>0?remoteCert:localCert;
+          // 認定店長を持つクルーはルーキー（新人）を自動除外（GAS同期で復活するのを防ぐ）
+          if(mergedCert.includes('認定店長')){mergedCrew=mergedCrew.filter(function(r){return r!=='ルーキー（新人）'})}
           map[key]=Object.assign({},remoteEntry,{crewRoles:mergedCrew,certifications:mergedCert});
         }
       }
@@ -585,6 +587,10 @@ const Storage=(()=>{
   function saveEmployees(arr){return _write(STORAGE_KEYS.EMPLOYEES,arr)}
   function getEmployee(id){return getEmployees().find(e=>e.id===id)||null}
   function upsertEmployee(emp){
+    // 認定店長を持つクルーはルーキー（新人）を自動除外（不正な自動付与を防ぐ）
+    if((emp.certifications||[]).includes('認定店長')){
+      emp={...emp,crewRoles:(emp.crewRoles||[]).filter(r=>r!=='ルーキー（新人）')};
+    }
     const arr=getEmployees();const idx=arr.findIndex(e=>e.id===emp.id);const now=new Date().toISOString();let entry;
     if(idx>=0){entry={...arr[idx],...emp,updatedAt:now};arr[idx]=entry}else{entry={...emp,createdAt:now,updatedAt:now};arr.push(entry)}
     _write(STORAGE_KEYS.EMPLOYEES,arr);_postGas('upsertEmployee',{employee:entry});return true;
