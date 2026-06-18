@@ -1527,10 +1527,16 @@ function calcFinalEval(mi){
 
     if(p.score !== null){
       p.rank = rankOf(p.score);                     // スコアによる自動ランク
-      // フラグ（衛生≤80/QSC<80/リスク）は表示のみ。降級は手動上書き欄に修正後ランクを入力（Excel運用準拠）
+      // フラグに基づく自動降級（複数フラグの場合は最も厳しい方を適用）
+      let flagRank = p.rank;
+      if(p.flags.qsc)   flagRank = Math.max(flagRank, 6);            // QSC<80 → 評価上限6級
+      if(p.flags.eisei)  flagRank = Math.max(flagRank, p.rank + 3);  // 衛生≤80 → 3階級ダウン
+      if(p.flags.risk)   flagRank = 8;                                // リスク案件 → 最低8級
+      flagRank = Math.min(flagRank, 8);
+      p.flagRank = flagRank;
       const ov = evGet(ym, '最終修正', p.name, '', '修正後ランク');
       p.override = ov === '' ? null : Number(ov);
-      p.final = p.override !== null ? p.override : p.rank;  // 変更後（手動上書き優先）
+      p.final = p.override !== null ? p.override : p.flagRank;  // 手動上書き優先、次にフラグ適用ランク
     }
   });
 
@@ -1644,7 +1650,7 @@ function evalFinalHtml(){
   const resultHtml = `
   <h2 class="sec">⑤ 最終評価（${ymd} 個人別）</h2>
   <div class="card">
-    <div class="note mb">総合スコア＝役職別ウェイト（店長 AR50/品質30/定性20、一般 AR30/品質50/定性20、SC AR60/品質30/定性10）。SCは担当店舗の平均。フラグ（衛生≤80 / QSC<80 / リスク）は表示のみ。降級する場合は「手動上書き」に修正後ランクを入力してください。</div>
+    <div class="note mb">総合スコア＝役職別ウェイト（店長 AR50/品質30/定性20、一般 AR30/品質50/定性20、SC AR60/品質30/定性10）。SCは担当店舗の平均。フラグは自動降級（QSC<80→上限6級 / 衛生≤80→3階級ダウン / リスク→8級）。複数フラグ時は最も厳しい方を適用。手動上書きで更に変更可。</div>
     <div class="tbl-wrap"><table id="finalResultTable">
       <tr><th>氏名</th><th>役職</th><th>店舗</th><th>ARスコア</th><th>品質</th><th>定性</th><th>総合スコア</th><th>ランク</th><th>フラグ</th><th>修正後</th><th>手動上書き</th></tr>
       ${personList.length ? personList.sort((a,b2) => (a.score===null)-(b2.score===null) || (b2.score||0)-(a.score||0)).map(p => {
