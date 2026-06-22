@@ -1002,11 +1002,12 @@ const App={
 
   renderDashboard(){
     const emps=DB.employees().filter(e=>e.status==='在籍中');
+    const evalTarget=emps.filter(e=>!e.evalExcluded);
     const evals=DB.evaluations();
     const evaledIds=new Set(evals.map(e=>e.employeeId));
-    const total=emps.length,evaled=emps.filter(e=>evaledIds.has(e.id)).length;
+    const total=evalTarget.length,evaled=evalTarget.filter(e=>evaledIds.has(e.id)).length;
     const rate=total?Math.round(evaled/total*100):0;
-    const needImprove=emps.filter(e=>SERVICE_ITEMS.some(item=>{const r=this._getFinalRank(evals,e.id,item.key);return r==='△'||r==='✕'}));
+    const needImprove=evalTarget.filter(e=>SERVICE_ITEMS.some(item=>{const r=this._getFinalRank(evals,e.id,item.key);return r==='△'||r==='✕'}));
     const fantaCount=emps.filter(e=>(e.certifications||[]).some(c=>c.includes('ファンタジスタ')&&!c.includes('グランド'))).length;
     const grandCount=emps.filter(e=>(e.certifications||[]).some(c=>c.includes('グランドファンタジスタ'))).length;
     const storeManagerCount=emps.filter(e=>(e.certifications||[]).includes('認定店長')).length;
@@ -1015,7 +1016,7 @@ const App={
     const evaledByRole={'店舗責任者':new Set(),'SC':new Set(),'SI':new Set()};
     evals.forEach(ev=>{if(evaledByRole[ev.evaluatorRole])evaledByRole[ev.evaluatorRole].add(ev.employeeId)});
     const storeStats=STORES.map(s=>{
-      const se=emps.filter(e=>e.store===s);
+      const se=evalTarget.filter(e=>e.store===s);
       const ev=se.filter(e=>evaledIds.has(e.id)).length;
       const pct=set=>se.length?Math.round(se.filter(e=>set.has(e.id)).length/se.length*100):0;
       return{store:s,total:se.length,evaled:ev,rate:se.length?Math.round(ev/se.length*100):0,smRate:pct(evaledByRole['店舗責任者']),scRate:pct(evaledByRole['SC']),siRate:pct(evaledByRole['SI'])};
@@ -1026,7 +1027,7 @@ const App={
     }).join('');
     document.getElementById('dashboard-content').innerHTML=`
       <div class="stats-grid">
-        <div class="stat-card"><div class="stat-num">${total}</div><div class="stat-label">在籍クルー数</div></div>
+        <div class="stat-card"><div class="stat-num">${emps.length}</div><div class="stat-label">在籍クルー数</div></div>
         <div class="stat-card tappable" ontouchstart="" onclick="App.showCompletionRateDetail()"><div class="stat-num" style="color:var(--green)">${rate}%</div><div class="stat-label">評価完了率 ›</div></div>
         <div class="stat-card tappable" ontouchstart="" onclick="App.showUnevaluatedDetail()"><div class="stat-num" style="color:var(--orange)">${total-evaled}</div><div class="stat-label">未評価人数 ›</div></div>
         <div class="stat-card tappable" ontouchstart="" onclick="App.showImprovementByStore()"><div class="stat-num" style="color:var(--red)">${needImprove.length}</div><div class="stat-label">改善必要人数 ›</div></div>
@@ -1070,7 +1071,7 @@ const App={
     document.getElementById('employee-list-content').innerHTML=emps.length?emps.map(e=>{
       const badges=this._roleBadges(e);
       const done=SERVICE_ITEMS.every(item=>this._getFinalRank(evals,e.id,item.key));
-      const tag=done?'<span class="badge" style="background:#D1FAE5;color:#065F46">評価済</span>':'<span class="badge badge-crew">未評価</span>';
+      const tag=e.evalExcluded?'<span class="badge" style="background:#FEF3C7;color:#92400E">対象外</span>':done?'<span class="badge" style="background:#D1FAE5;color:#065F46">評価済</span>':'<span class="badge badge-crew">未評価</span>';
       const editBtn=canEdit?`<button class="btn btn-secondary btn-sm" style="flex-shrink:0" onclick="event.stopPropagation();App.openQuickEdit('${e.id}')">✏️</button>`:'';
       return`<div class="emp-card" onclick="App.openEmployee('${e.id}')"><div class="emp-avatar">${e.name.charAt(0)}</div><div class="emp-info"><div class="emp-name">${e.name}</div><div class="emp-sub">${e.store}｜${this._typeName(e.type)}</div><div class="emp-badges">${badges}${tag}</div></div>${editBtn}<div style="color:var(--gray)">›</div></div>`;
     }).join(''):'<div class="empty-state"><p>該当するクルーが見つかりません</p></div>';
@@ -1347,6 +1348,10 @@ const App={
     const certChecks=CERTIFICATIONS.map(c=>`<label class="checkbox-item"><input type="checkbox" name="qe-cert" value="${c}" ${(e.certifications||[]).includes(c)?'checked':''}>${c}</label>`).join('');
     document.getElementById('modal-quick-edit-title').textContent=`${e.name}｜役職・資格`;
     document.getElementById('modal-quick-edit-body').innerHTML=`
+      <div style="padding:12px;background:#FEF3C7;border-radius:8px;border:1px solid #F59E0B;margin-bottom:16px">
+        <label class="checkbox-item"><input type="checkbox" id="qe-eval-excluded" ${e.evalExcluded?'checked':''}><span style="font-weight:700">接客評価 対象外</span></label>
+        <div style="font-size:11px;color:#92400E;margin-top:4px;padding-left:21px">休職中・長期不在など。評価完了率・未評価カウントから除外されます。</div>
+      </div>
       <div style="font-weight:700;margin-bottom:8px">クルー役職</div>
       <div class="checkbox-group" style="margin-bottom:16px">${roleChecks}</div>
       <div style="font-weight:700;margin-bottom:8px">資格・認定</div>
@@ -1358,7 +1363,8 @@ const App={
     const id=this._quickEditEmpId;const emp=Storage.getEmployee(id);if(!emp)return;
     const crewRoles=[...document.querySelectorAll('input[name=qe-role]:checked')].map(i=>i.value);
     const certifications=[...document.querySelectorAll('input[name=qe-cert]:checked')].map(i=>i.value);
-    Storage.upsertEmployee({...emp,crewRoles,certifications});
+    const evalExcluded=document.getElementById('qe-eval-excluded')?.checked||false;
+    Storage.upsertEmployee({...emp,crewRoles,certifications,evalExcluded});
     this.closeModal();this._quickEditEmpId=null;
     this.filterEmployees();
     this.showToast('保存しました','success');
@@ -1574,17 +1580,15 @@ const App={
 
   showUnevaluatedDetail(){
     const emps=DB.employees().filter(e=>e.status==='在籍中');
+    const evalTarget=emps.filter(e=>!e.evalExcluded);
+    const excluded=emps.filter(e=>e.evalExcluded);
     const evals=DB.evaluations();
     const evaledIds=new Set(evals.map(e=>String(e.employeeId)));
-    const unevaluated=emps.filter(e=>!evaledIds.has(String(e.id)));
+    const unevaluated=evalTarget.filter(e=>!evaledIds.has(String(e.id)));
     document.getElementById('modal-detail-title').textContent=`未評価クルー（${unevaluated.length}名）`;
-    if(!unevaluated.length){
-      document.getElementById('modal-detail-body').innerHTML='<div class="empty-state"><p>未評価のクルーはいません</p></div>';
-      this._openModal('modal-detail');return;
-    }
     const byStore={};
     unevaluated.forEach(e=>{if(!byStore[e.store])byStore[e.store]=[];byStore[e.store].push(e)});
-    document.getElementById('modal-detail-body').innerHTML=Object.entries(byStore)
+    const mainHtml=unevaluated.length?Object.entries(byStore)
       .sort((a,b)=>b[1].length-a[1].length)
       .map(([store,list])=>`
         <div style="margin-bottom:14px">
@@ -1594,18 +1598,30 @@ const App={
             <div style="flex:1"><div style="font-weight:600;font-size:14px">${e.name}</div><div class="text-sub">${this._typeName(e.type)}</div></div>
             <span style="color:var(--gray)">›</span>
           </div>`).join('')}
-        </div>`).join('');
+        </div>`).join('')
+      :'<div class="empty-state" style="padding:20px 0"><p>未評価のクルーはいません</p></div>';
+    const excludedHtml=excluded.length?`
+      <div style="margin-top:16px;padding-top:14px;border-top:2px solid var(--border)">
+        <div style="font-size:13px;font-weight:700;color:#92400E;margin-bottom:8px">対象外（評価基準外）${excluded.length}名</div>
+        ${excluded.map(e=>`<div style="display:flex;align-items:center;gap:10px;padding:6px 0;border-bottom:1px solid var(--border);opacity:0.65">
+          <div class="emp-avatar" style="width:28px;height:28px;font-size:12px;flex-shrink:0;background:#D1D5DB">${e.name.charAt(0)}</div>
+          <div style="flex:1"><div style="font-size:13px;font-weight:600">${e.name}</div><div class="text-sub">${e.store}</div></div>
+          <span style="font-size:11px;background:#FEF3C7;color:#92400E;padding:2px 6px;border-radius:8px;white-space:nowrap">対象外</span>
+        </div>`).join('')}
+      </div>`:'';
+    document.getElementById('modal-detail-body').innerHTML=mainHtml+excludedHtml;
     this._openModal('modal-detail');
   },
 
   showCompletionRateDetail(){
     const emps=DB.employees().filter(e=>e.status==='在籍中');
+    const evalTarget=emps.filter(e=>!e.evalExcluded);
     const evals=DB.evaluations();
-    const total=emps.length;
+    const total=evalTarget.length;
     const evaledByRole={'店舗責任者':new Set(),'SC':new Set(),'SI':new Set()};
     evals.forEach(ev=>{if(evaledByRole[ev.evaluatorRole])evaledByRole[ev.evaluatorRole].add(String(ev.employeeId))});
     const evaledIds=new Set(evals.map(e=>String(e.employeeId)));
-    const overallEvaled=emps.filter(e=>evaledIds.has(String(e.id))).length;
+    const overallEvaled=evalTarget.filter(e=>evaledIds.has(String(e.id))).length;
     const overallRate=total?Math.round(overallEvaled/total*100):0;
     const colors={'店舗責任者':'#00A651','SC':'#0369A1','SI':'#1E40AF'};
     document.getElementById('modal-detail-title').textContent='評価完了率 役職別';
@@ -1615,7 +1631,7 @@ const App={
         <div style="font-size:12px;color:var(--text-sub);margin-top:2px">全体完了率（${overallEvaled}名 / ${total}名）</div>
       </div>
       ${['店舗責任者','SC','SI'].map(role=>{
-        const count=emps.filter(e=>evaledByRole[role].has(String(e.id))).length;
+        const count=evalTarget.filter(e=>evaledByRole[role].has(String(e.id))).length;
         const rate=total?Math.round(count/total*100):0;
         return`<div style="background:#fff;border:1px solid var(--border);border-radius:10px;padding:14px;margin-bottom:10px">
           <div class="flex-between" style="margin-bottom:8px">
@@ -1631,8 +1647,9 @@ const App={
 
   showImprovementByStore(){
     const emps=DB.employees().filter(e=>e.status==='在籍中');
+    const evalTarget=emps.filter(e=>!e.evalExcluded);
     const evals=DB.evaluations();
-    const needImprove=emps.filter(e=>SERVICE_ITEMS.some(item=>{const r=this._getFinalRank(evals,e.id,item.key);return r==='△'||r==='✕'}));
+    const needImprove=evalTarget.filter(e=>SERVICE_ITEMS.some(item=>{const r=this._getFinalRank(evals,e.id,item.key);return r==='△'||r==='✕'}));
     const byStore={};
     needImprove.forEach(e=>{if(!byStore[e.store])byStore[e.store]=[];byStore[e.store].push(e)});
     const storeEntries=Object.entries(byStore).sort((a,b)=>b[1].length-a[1].length);
