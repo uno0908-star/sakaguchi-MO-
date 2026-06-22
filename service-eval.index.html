@@ -9,7 +9,7 @@
   <title>接客評価システム｜阪口商店</title>
 <script>
 (function(){
-  var VER = '20260622-1';
+  var VER = '20260622-2';
   var stored = localStorage.getItem('_evalAppVer');
   var param  = new URLSearchParams(location.search).get('_v');
   if (stored !== VER) {
@@ -1052,11 +1052,11 @@ const App={
       </div>
       <div class="card"><div class="section-title">育成指標</div>
         <div style="display:flex;gap:8px;flex-wrap:wrap">
-          <div class="stat-card" style="flex:1;min-width:80px"><div class="stat-num" style="font-size:20px;color:#5B21B6">${fantaCount}</div><div class="stat-label">ファンタジスタ</div></div>
-          <div class="stat-card" style="flex:1;min-width:80px"><div class="stat-num" style="font-size:20px;color:#713F12">${grandCount}</div><div class="stat-label">Gファンタジスタ</div></div>
-          <div class="stat-card" style="flex:1;min-width:80px"><div class="stat-num" style="font-size:20px;color:#991B1B">${storeManagerCount}</div><div class="stat-label">認定店長</div></div>
-          <div class="stat-card" style="flex:1;min-width:80px"><div class="stat-num" style="font-size:20px;color:#0369A1">${subLeaderCount}</div><div class="stat-label">サブリーダー</div></div>
-          <div class="stat-card" style="flex:1;min-width:80px"><div class="stat-num" style="font-size:20px;color:#065F46">${leaderCount}</div><div class="stat-label">リーダー</div></div>
+          <div class="stat-card tappable" ontouchstart="" onclick="App.showRoleDetail('fanta')" style="flex:1;min-width:80px"><div class="stat-num" style="font-size:20px;color:#5B21B6">${fantaCount}</div><div class="stat-label">ファンタジスタ ›</div></div>
+          <div class="stat-card tappable" ontouchstart="" onclick="App.showRoleDetail('grand')" style="flex:1;min-width:80px"><div class="stat-num" style="font-size:20px;color:#713F12">${grandCount}</div><div class="stat-label">Gファンタジスタ ›</div></div>
+          <div class="stat-card tappable" ontouchstart="" onclick="App.showRoleDetail('storeManager')" style="flex:1;min-width:80px"><div class="stat-num" style="font-size:20px;color:#991B1B">${storeManagerCount}</div><div class="stat-label">認定店長 ›</div></div>
+          <div class="stat-card tappable" ontouchstart="" onclick="App.showRoleDetail('subLeader')" style="flex:1;min-width:80px"><div class="stat-num" style="font-size:20px;color:#0369A1">${subLeaderCount}</div><div class="stat-label">サブリーダー ›</div></div>
+          <div class="stat-card tappable" ontouchstart="" onclick="App.showRoleDetail('leader')" style="flex:1;min-width:80px"><div class="stat-num" style="font-size:20px;color:#065F46">${leaderCount}</div><div class="stat-label">リーダー ›</div></div>
         </div>
       </div>
       ${needImprove.length?`<div class="section-title">改善必要クルー（上位5名）</div>${improveList}<button class="btn btn-secondary btn-full" onclick="App.navTo('improvement')">全員を見る</button>`:''}
@@ -1406,6 +1406,10 @@ const App={
         <div class="form-group"><label>退職日</label><input type="date" id="f-leave" value="${e?.leaveDate||''}"></div>
         <div class="form-group"><label>備考</label><textarea id="f-notes" rows="2">${e?.notes||''}</textarea></div>
       </div>
+      <div style="padding:12px;background:#FEF3C7;border-radius:8px;border:1px solid #F59E0B;margin-bottom:10px">
+        <label class="checkbox-item"><input type="checkbox" id="f-eval-excluded" ${e?.evalExcluded?'checked':''}><span style="font-weight:700">接客評価 対象外</span></label>
+        <div style="font-size:11px;color:#92400E;margin-top:4px;padding-left:21px">休職中・長期不在など。評価完了率・未評価カウントから除外されます。</div>
+      </div>
       <div class="card"><div style="font-weight:700;margin-bottom:10px">クルー役職</div><div class="checkbox-group">${roleChecks}</div></div>
       <div class="card"><div style="font-weight:700;margin-bottom:10px">資格・認定</div><div class="checkbox-group">${certChecks}</div></div>
       <div style="padding:0 0 8px">
@@ -1419,8 +1423,9 @@ const App={
     if(!name){alert('氏名を入力してください');return}
     const crewRoles=[...document.querySelectorAll('input[name=crewRole]:checked')].map(i=>i.value);
     const certifications=[...document.querySelectorAll('input[name=cert]:checked')].map(i=>i.value);
+    const evalExcluded=document.getElementById('f-eval-excluded')?.checked||false;
     const existing=id?Storage.getEmployee(id):null;
-    Storage.upsertEmployee({id:id||document.getElementById('f-id').value.trim()||Date.now().toString(36),name,store:document.getElementById('f-store').value,type:document.getElementById('f-type').value,status:document.getElementById('f-status').value,joinDate:document.getElementById('f-join').value,leaveDate:document.getElementById('f-leave').value,notes:document.getElementById('f-notes').value,crewRoles,certifications,createdAt:existing?.createdAt||new Date().toISOString()});
+    Storage.upsertEmployee({id:id||document.getElementById('f-id').value.trim()||Date.now().toString(36),name,store:document.getElementById('f-store').value,type:document.getElementById('f-type').value,status:document.getElementById('f-status').value,joinDate:document.getElementById('f-join').value,leaveDate:document.getElementById('f-leave').value,notes:document.getElementById('f-notes').value,crewRoles,certifications,evalExcluded,createdAt:existing?.createdAt||new Date().toISOString()});
     alert('保存しました');this._currentFormEmpId=null;this.goBack();
   },
 
@@ -1690,6 +1695,45 @@ const App={
             <div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:4px">${badges}</div>
           </div>`;
         }).join('')}
+      </div>`).join('');
+    this._openModal('modal-detail');
+  },
+
+  showRoleDetail(type){
+    const emps=DB.employees().filter(e=>e.status==='在籍中');
+    let matched,title;
+    if(type==='fanta'){
+      matched=emps.filter(e=>(e.certifications||[]).some(c=>c.includes('ファンタジスタ')&&!c.includes('グランド')));
+      title='ファンタジスタ';
+    }else if(type==='grand'){
+      matched=emps.filter(e=>(e.certifications||[]).some(c=>c.includes('グランドファンタジスタ')));
+      title='グランドファンタジスタ';
+    }else if(type==='storeManager'){
+      matched=emps.filter(e=>(e.certifications||[]).includes('認定店長'));
+      title='認定店長';
+    }else if(type==='subLeader'){
+      matched=emps.filter(e=>(e.crewRoles||[]).some(r=>r.includes('サブリーダー')));
+      title='サブリーダー';
+    }else{
+      matched=emps.filter(e=>(e.crewRoles||[]).some(r=>r.includes('リーダー')&&!r.includes('サブ')));
+      title='リーダー';
+    }
+    document.getElementById('modal-detail-title').textContent=`${title}（${matched.length}名）`;
+    if(!matched.length){
+      document.getElementById('modal-detail-body').innerHTML='<div class="empty-state"><p>該当するクルーはいません</p></div>';
+      this._openModal('modal-detail');return;
+    }
+    const byStore={};
+    matched.forEach(e=>{if(!byStore[e.store])byStore[e.store]=[];byStore[e.store].push(e)});
+    document.getElementById('modal-detail-body').innerHTML=Object.entries(byStore).sort((a,b)=>a[0].localeCompare(b[0],'ja')).map(([store,list])=>`
+      <div style="margin-bottom:14px">
+        <div class="flex-between" style="margin-bottom:6px;padding-bottom:4px;border-bottom:2px solid var(--primary)">
+          <span style="font-weight:700;font-size:13px">${store}</span>
+          <span style="font-size:13px;font-weight:700;color:var(--primary)">${list.length}名</span>
+        </div>
+        ${list.map(e=>`<div style="padding:8px 0;border-bottom:1px solid var(--border);cursor:pointer" onclick="App.closeModal();App.openEmployee('${e.id}')">
+          <div class="flex-between"><span style="font-weight:600">${e.name}</span><span style="color:var(--gray)">›</span></div>
+        </div>`).join('')}
       </div>`).join('');
     this._openModal('modal-detail');
   },
