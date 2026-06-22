@@ -217,6 +217,34 @@ main{padding:20px;max-width:960px;margin:0 auto;}
 .bcomplete.is-done:hover{background:var(--red-bg);color:var(--red);border-color:var(--red-bd);}
 .bcomplete.is-pending{border-color:var(--border);background:var(--bg2);color:var(--text3);cursor:not-allowed;font-weight:400;opacity:.65;}
 .bcomplete.is-pending:hover{transform:none;background:var(--bg2);}
+.bcomplete.sc-store{border-color:var(--gold);background:#FEF8E8;color:var(--gold);}
+.bcomplete.sc-store:hover{background:#FDF0C8;}
+
+/* SC STORE MODAL */
+.scm-overlay{position:fixed;inset:0;background:rgba(26,31,54,.5);z-index:400;display:none;align-items:flex-end;justify-content:center;}
+.scm-overlay.open{display:flex;}
+.scm-sheet{background:#fff;width:100%;max-width:520px;max-height:88vh;border-radius:20px 20px 0 0;overflow:hidden;display:flex;flex-direction:column;box-shadow:0 -8px 40px rgba(26,31,54,.22);}
+.scm-hdr{padding:14px 18px;border-bottom:1.5px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-shrink:0;}
+.scm-hdr-left h3{font-size:15px;font-weight:700;margin-bottom:2px;}
+.scm-hdr-left p{font-size:11px;color:var(--text3);max-width:260px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.scm-hdr-close{width:30px;height:30px;border-radius:50%;border:none;background:var(--bg2);color:var(--text2);font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.scm-progress{padding:10px 18px;background:var(--accent-bg);border-bottom:1.5px solid var(--accent-bd);font-size:13px;font-weight:700;color:var(--accent);flex-shrink:0;}
+.scm-body{flex:1;overflow-y:auto;padding:4px 18px;}
+.scm-item{display:flex;align-items:center;gap:12px;padding:11px 0;border-bottom:1px solid var(--border);}
+.scm-item:last-child{border-bottom:none;}
+.scm-chk{width:26px;height:26px;border-radius:50%;border:2px solid var(--border2);background:var(--bg);display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;font-size:14px;transition:all .18s;color:transparent;}
+.scm-chk.done{background:var(--green);border-color:var(--green);color:#fff;}
+.scm-chk:active{transform:scale(.9);}
+.scm-store-name{font-size:14px;flex:1;}
+.scm-footer{padding:14px 18px;border-top:1.5px solid var(--border);display:flex;flex-direction:column;gap:8px;flex-shrink:0;}
+.scm-btn{width:100%;padding:12px;border-radius:10px;border:none;font-family:inherit;font-size:14px;font-weight:700;cursor:pointer;transition:all .18s;}
+.scm-btn.primary{background:var(--green);color:#fff;}
+.scm-btn.primary:active{background:#12905a;}
+.scm-btn.primary.is-done{background:var(--bg2);color:var(--text2);border:1.5px solid var(--border2);font-weight:400;}
+.scm-btn.secondary{background:var(--bg2);color:var(--text2);border:1.5px solid var(--border2);}
+.scm-btn.secondary:active{background:var(--border2);}
+.scm-btn.danger{background:var(--red-bg);color:var(--red);border:1.5px solid var(--red-bd);}
+.scm-btn.danger:active{background:var(--red-bd);}
 
 /* EDIT MODAL */
 .editov{position:fixed;inset:0;background:rgba(20,28,70,.55);z-index:200;display:flex;align-items:flex-start;justify-content:center;backdrop-filter:blur(6px);overflow-y:auto;padding:24px 16px;}
@@ -746,6 +774,26 @@ main{padding:20px;max-width:960px;margin:0 auto;}
 
 </main>
 
+<!-- SC 店舗別完了モーダル -->
+<div class="scm-overlay" id="scm-overlay" onclick="closeSCModal(event)">
+  <div class="scm-sheet">
+    <div class="scm-hdr">
+      <div class="scm-hdr-left">
+        <h3>🏪 店舗別完了登録</h3>
+        <p id="scm-task-name"></p>
+      </div>
+      <button class="scm-hdr-close" onclick="closeSCModal()">✕</button>
+    </div>
+    <div class="scm-progress" id="scm-progress">0店舗 完了済み</div>
+    <div class="scm-body" id="scm-body"></div>
+    <div class="scm-footer">
+      <button class="scm-btn primary" id="scm-alldone-btn" onclick="setSCAllDone()">✅ 全体完了にする</button>
+      <button class="scm-btn danger" id="scm-reset-btn" style="display:none" onclick="clearSCStores()">↩️ 完了を全てリセット</button>
+      <button class="scm-btn secondary" onclick="closeSCModal()">閉じる</button>
+    </div>
+  </div>
+</div>
+
 <script>
 const GAS_URL    = 'https://script.google.com/macros/s/AKfycbz76sbHekFY6QzYQrNpkWGKquW2keSSboS5Zm1JB4pLmbYvEi2SMPzvR7awNT8dStXg/exec';
 const CREATOR_PW = 'Lawson3963';  // タスク作成者パスワード
@@ -786,6 +834,7 @@ let isCreator    = false; // タスク作成者フラグ
 let uName = '', curPw = '';
 let tasks = [], curF = 'open', curSearch = '', selStore = null, selSC = null;
 let calY, calM;
+let scmTaskId = null;
 
 const today  = () => new Date().toISOString().split('T')[0];
 const dateOf = d => d ? d.slice(0, 10) : '';
@@ -1308,10 +1357,16 @@ function cardH(t) {
     }
     if (isOwnSC) {
       const cs = t.completedStores || {};
-      const myStatus = cs[currentSC];
-      progHtml += `<div style="margin-top:3px"><span class="tag ${myStatus ? 't-done' : 't-uemi'}">
-        ${myStatus ? '✅ 自分：完了' : '⬜ 自分：未完了'}
-      </span></div>`;
+      const overallDone = !!cs[currentSC];
+      const doneCnt = STORES.filter(s => !!cs[`${currentSC}::${s}`]).length;
+      if (overallDone) {
+        progHtml += `<div style="margin-top:3px"><span class="tag t-done">✅ 自分：全体完了</span></div>`;
+      }
+      progHtml += `<div style="margin-top:4px">
+        <span class="tag t-sc" style="cursor:pointer" onclick="openSCModal('${t.id}')" ontouchstart="">
+          🏪 ${doneCnt > 0 ? doneCnt + '店舗完了（タップで変更）' : '店舗別完了を登録 ›'}
+        </span>
+      </div>`;
     }
     progHtml += '</div>';
   }
@@ -1332,11 +1387,14 @@ function cardH(t) {
   } else if (t.type === 'sc' && isOwnSC) {
     const cs = t.completedStores || {};
     const scIsDone = !!cs[currentSC];
+    const scStoreCnt = STORES.filter(s => !!cs[`${currentSC}::${s}`]).length;
     if (isPending) {
       completeBtn = `<button class="bcomplete is-pending" disabled title="開始日前は完了できません">📅 開始前</button>`;
+    } else if (scIsDone) {
+      completeBtn = `<button class="bcomplete is-done" onclick="openSCModal('${t.id}')">✅ 完了済み（変更）</button>`;
     } else {
-      completeBtn = `<button class="bcomplete${scIsDone ? ' is-done' : ''}" onclick="doToggle('${t.id}')">
-        ${scIsDone ? '↩️ 未完了に戻す' : '✅ 完了にする'}
+      completeBtn = `<button class="bcomplete sc-store" onclick="openSCModal('${t.id}')">
+        🏪 ${scStoreCnt > 0 ? scStoreCnt + '店舗完了（続き）' : '店舗別完了登録'}
       </button>`;
     }
   }
@@ -1351,8 +1409,11 @@ function cardH(t) {
   const gcDetails = encodeURIComponent(`担当：${who}\n優先度：${t.priority}　緊急度：${t.urgency}\nタスク種別：${t.taskKind}${t.note ? '\nメモ：' + t.note : ''}`);
   const gcUrl     = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${gcTitle}&dates=${gcStart}/${gcEnd}&details=${gcDetails}`;
 
+  const chkOnClick = chkClickable
+    ? (t.type === 'sc' && isOwnSC ? `openSCModal('${t.id}')` : `doToggle('${t.id}')`)
+    : '';
   return `<div class="tc s-${st}${isOwn ? ' own-store' : ''}">
-    <div class="chk${chkDone ? ' chk-done' : ''}${chkClickable ? ' clickable' : ''}" ${chkClickable ? `onclick="doToggle('${t.id}')"` : ''}>${chkDone ? '✓' : ''}</div>
+    <div class="chk${chkDone ? ' chk-done' : ''}${chkClickable ? ' clickable' : ''}" ${chkClickable ? `onclick="${chkOnClick}"` : ''}>${chkDone ? '✓' : ''}</div>
     <div>
       <div class="ttitle">${t.title} ${tTag} ${kTag} ${stTag} ${pTag} ${uTag} ${ownTag} ${recTag}</div>
       <div class="tmeta">
@@ -1872,6 +1933,125 @@ function doLine() {
   });
   if (ts.length > 12) txt += `\n…他 ${ts.length - 12} 件`;
   navigator.clipboard.writeText(txt).then(() => toast('✅ LINEに貼り付けできるテキストをコピーしました'));
+}
+
+// ── SC 店舗別完了モーダル ──
+function openSCModal(taskId) {
+  const t = tasks.find(x => x.id === taskId);
+  if (!t || !currentSC) { toast('⚠️ SC/ASCメンバーのログインが必要です'); return; }
+  if (!(t.assignees || []).includes(currentSC)) { toast('⚠️ このメンバーは対象外のタスクです'); return; }
+  if (tStatus(t) === 'pending') {
+    toast(`⚠️ 開始日（${t.startDate ? fmtDate(t.startDate) : ''}）以降に完了できます`);
+    return;
+  }
+  scmTaskId = taskId;
+  document.getElementById('scm-task-name').textContent = t.title;
+  renderSCModal();
+  document.getElementById('scm-overlay').classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+
+function closeSCModal(e) {
+  if (e && e.target !== document.getElementById('scm-overlay')) return;
+  document.getElementById('scm-overlay').classList.remove('open');
+  document.body.style.overflow = '';
+  scmTaskId = null;
+}
+
+function renderSCModal() {
+  const t = tasks.find(x => x.id === scmTaskId);
+  if (!t) return;
+  const cs = t.completedStores || {};
+  const doneCnt = STORES.filter(s => !!cs[`${currentSC}::${s}`]).length;
+  const overallDone = !!cs[currentSC];
+
+  document.getElementById('scm-progress').textContent = `${doneCnt} / ${STORES.length}店舗 完了済み`;
+  const allDoneBtn = document.getElementById('scm-alldone-btn');
+  if (overallDone) {
+    allDoneBtn.textContent = '✅ 全体完了済み　→　未完了に戻す';
+    allDoneBtn.classList.add('is-done');
+  } else {
+    allDoneBtn.textContent = '✅ 全体完了にする';
+    allDoneBtn.classList.remove('is-done');
+  }
+  document.getElementById('scm-reset-btn').style.display = (doneCnt > 0 || overallDone) ? 'block' : 'none';
+
+  document.getElementById('scm-body').innerHTML = STORES.map(s => {
+    const done = !!cs[`${currentSC}::${s}`];
+    return `<div class="scm-item">
+      <div class="scm-chk${done ? ' done' : ''}" onclick="toggleSCStore('${s.replace(/'/g,"\\'")}')" ontouchstart="">✓</div>
+      <div class="scm-store-name">${s}</div>
+    </div>`;
+  }).join('');
+}
+
+async function toggleSCStore(storeName) {
+  const t = tasks.find(x => x.id === scmTaskId);
+  if (!t || !currentSC) return;
+  if (!t.completedStores) t.completedStores = {};
+  const key = `${currentSC}::${storeName}`;
+  const nv = !t.completedStores[key];
+  t.completedStores[key] = nv;
+  renderSCModal();
+  render();
+  try {
+    const r = await gPost({action:'updateDone', id:scmTaskId, memberName:key, done:nv});
+    if (!r.ok) {
+      t.completedStores[key] = !nv;
+      renderSCModal();
+      render();
+      toast('⚠️ 保存失敗: ' + (r.error || '更新できませんでした'));
+    }
+  } catch(e) {
+    t.completedStores[key] = !nv;
+    renderSCModal();
+    render();
+    toast('⚠️ 通信エラー。再度お試しください');
+  }
+}
+
+async function setSCAllDone() {
+  const t = tasks.find(x => x.id === scmTaskId);
+  if (!t || !currentSC) return;
+  if (!t.completedStores) t.completedStores = {};
+  const was = !!t.completedStores[currentSC];
+  const nv = !was;
+  t.completedStores[currentSC] = nv;
+  renderSCModal();
+  render();
+  toast(nv ? '✅ 全体完了にしました' : '↩️ 未完了に戻しました');
+  try {
+    const r = await gPost({action:'updateDone', id:scmTaskId, memberName:currentSC, done:nv});
+    if (!r.ok) {
+      t.completedStores[currentSC] = was;
+      renderSCModal();
+      render();
+      toast('⚠️ 保存失敗: ' + (r.error || '更新できませんでした'));
+    }
+  } catch(e) {
+    t.completedStores[currentSC] = was;
+    renderSCModal();
+    render();
+    toast('⚠️ 通信エラー。再度お試しください');
+  }
+}
+
+async function clearSCStores() {
+  const t = tasks.find(x => x.id === scmTaskId);
+  if (!t || !currentSC) return;
+  if (!confirm('このタスクの完了情報（店舗別・全体）をリセットしますか？')) return;
+  if (!t.completedStores) t.completedStores = {};
+  const storeKeys = STORES.map(s => `${currentSC}::${s}`).filter(k => t.completedStores[k]);
+  const wasOverall = !!t.completedStores[currentSC];
+  storeKeys.forEach(k => { t.completedStores[k] = false; });
+  t.completedStores[currentSC] = false;
+  renderSCModal();
+  render();
+  toast('↩️ 完了情報をリセットしました');
+  const allKeys = [...storeKeys, ...(wasOverall ? [currentSC] : [])];
+  for (const key of allKeys) {
+    try { await gPost({action:'updateDone', id:scmTaskId, memberName:key, done:false}); } catch(_) {}
+  }
 }
 
 // ── Init ──
