@@ -87,6 +87,8 @@ input,select,textarea,button{font-family:inherit;font-size:14px}
 .eval-section:last-child{border-bottom:none;margin-bottom:0;padding-bottom:0}
 .stats-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px}
 .stat-card{background:#fff;border-radius:var(--radius);padding:14px;text-align:center;box-shadow:0 1px 3px rgba(0,0,0,0.08)}
+.stat-card.tappable{cursor:pointer}
+.stat-card.tappable:active{opacity:0.75}
 .stat-num{font-size:28px;font-weight:800;color:var(--blue)}
 .stat-label{font-size:11px;color:var(--text-sub);margin-top:2px}
 .section-title{font-size:13px;font-weight:700;color:var(--text-sub);padding:4px 0 8px}
@@ -368,6 +370,14 @@ input,select,textarea,button{font-family:inherit;font-size:14px}
     <div class="form-group"><label>写真（任意）</label><input type="file" id="coaching-photo" accept="image/*"></div>
     <button class="btn btn-primary btn-full" onclick="App.saveCoaching()">保存</button>
   </div>
+</div>
+
+<div id="modal-detail" class="modal hidden">
+  <div class="modal-header">
+    <h2 id="modal-detail-title"></h2>
+    <button onclick="App.closeModal()">✕</button>
+  </div>
+  <div class="modal-body" id="modal-detail-body"></div>
 </div>
 
 <nav id="bottom-nav" class="hidden">
@@ -1017,9 +1027,9 @@ const App={
     document.getElementById('dashboard-content').innerHTML=`
       <div class="stats-grid">
         <div class="stat-card"><div class="stat-num">${total}</div><div class="stat-label">在籍クルー数</div></div>
-        <div class="stat-card"><div class="stat-num" style="color:var(--green)">${rate}%</div><div class="stat-label">評価完了率</div></div>
-        <div class="stat-card"><div class="stat-num" style="color:var(--orange)">${total-evaled}</div><div class="stat-label">未評価人数</div></div>
-        <div class="stat-card"><div class="stat-num" style="color:var(--red)">${needImprove.length}</div><div class="stat-label">改善必要人数</div></div>
+        <div class="stat-card tappable" ontouchstart="" onclick="App.showCompletionRateDetail()"><div class="stat-num" style="color:var(--green)">${rate}%</div><div class="stat-label">評価完了率 ›</div></div>
+        <div class="stat-card tappable" ontouchstart="" onclick="App.showUnevaluatedDetail()"><div class="stat-num" style="color:var(--orange)">${total-evaled}</div><div class="stat-label">未評価人数 ›</div></div>
+        <div class="stat-card tappable" ontouchstart="" onclick="App.showImprovementByStore()"><div class="stat-num" style="color:var(--red)">${needImprove.length}</div><div class="stat-label">改善必要人数 ›</div></div>
       </div>
       <div class="card"><div class="section-title">育成指標</div>
         <div style="display:flex;gap:8px;flex-wrap:wrap">
@@ -1559,6 +1569,93 @@ const App={
     Storage.deleteUser(uid);
     this.showToast('削除しました','success');
     this._renderUserList();
+  },
+
+  showUnevaluatedDetail(){
+    const emps=DB.employees().filter(e=>e.status==='在籍中');
+    const evals=DB.evaluations();
+    const evaledIds=new Set(evals.map(e=>String(e.employeeId)));
+    const unevaluated=emps.filter(e=>!evaledIds.has(String(e.id)));
+    document.getElementById('modal-detail-title').textContent=`未評価クルー（${unevaluated.length}名）`;
+    if(!unevaluated.length){
+      document.getElementById('modal-detail-body').innerHTML='<div class="empty-state"><p>未評価のクルーはいません</p></div>';
+      this._openModal('modal-detail');return;
+    }
+    const byStore={};
+    unevaluated.forEach(e=>{if(!byStore[e.store])byStore[e.store]=[];byStore[e.store].push(e)});
+    document.getElementById('modal-detail-body').innerHTML=Object.entries(byStore)
+      .sort((a,b)=>b[1].length-a[1].length)
+      .map(([store,list])=>`
+        <div style="margin-bottom:14px">
+          <div style="font-weight:700;color:var(--blue);font-size:13px;margin-bottom:6px;padding-bottom:4px;border-bottom:2px solid var(--blue)">${store}（${list.length}名）</div>
+          ${list.map(e=>`<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border);cursor:pointer" onclick="App.closeModal();App.openEmployee('${e.id}')">
+            <div class="emp-avatar" style="width:32px;height:32px;font-size:13px;flex-shrink:0">${e.name.charAt(0)}</div>
+            <div style="flex:1"><div style="font-weight:600;font-size:14px">${e.name}</div><div class="text-sub">${this._typeName(e.type)}</div></div>
+            <span style="color:var(--gray)">›</span>
+          </div>`).join('')}
+        </div>`).join('');
+    this._openModal('modal-detail');
+  },
+
+  showCompletionRateDetail(){
+    const emps=DB.employees().filter(e=>e.status==='在籍中');
+    const evals=DB.evaluations();
+    const total=emps.length;
+    const evaledByRole={'店舗責任者':new Set(),'SC':new Set(),'SI':new Set()};
+    evals.forEach(ev=>{if(evaledByRole[ev.evaluatorRole])evaledByRole[ev.evaluatorRole].add(String(ev.employeeId))});
+    const evaledIds=new Set(evals.map(e=>String(e.employeeId)));
+    const overallEvaled=emps.filter(e=>evaledIds.has(String(e.id))).length;
+    const overallRate=total?Math.round(overallEvaled/total*100):0;
+    const colors={'店舗責任者':'#00A651','SC':'#0369A1','SI':'#1E40AF'};
+    document.getElementById('modal-detail-title').textContent='評価完了率 役職別';
+    document.getElementById('modal-detail-body').innerHTML=`
+      <div style="background:var(--gray-light);border-radius:10px;padding:14px;margin-bottom:16px;text-align:center">
+        <div style="font-size:32px;font-weight:800;color:var(--green)">${overallRate}%</div>
+        <div style="font-size:12px;color:var(--text-sub);margin-top:2px">全体完了率（${overallEvaled}名 / ${total}名）</div>
+      </div>
+      ${['店舗責任者','SC','SI'].map(role=>{
+        const count=emps.filter(e=>evaledByRole[role].has(String(e.id))).length;
+        const rate=total?Math.round(count/total*100):0;
+        return`<div style="background:#fff;border:1px solid var(--border);border-radius:10px;padding:14px;margin-bottom:10px">
+          <div class="flex-between" style="margin-bottom:8px">
+            <span style="font-weight:700;font-size:15px;color:${colors[role]}">${role}</span>
+            <span style="font-size:22px;font-weight:800;color:${colors[role]}">${rate}%</span>
+          </div>
+          <div style="font-size:12px;color:var(--text-sub);margin-bottom:6px">${count}名 / ${total}名 評価済</div>
+          <div class="store-bar-track"><div style="height:100%;border-radius:inherit;background:${colors[role]};width:${rate}%;transition:width 0.3s"></div></div>
+        </div>`;
+      }).join('')}`;
+    this._openModal('modal-detail');
+  },
+
+  showImprovementByStore(){
+    const emps=DB.employees().filter(e=>e.status==='在籍中');
+    const evals=DB.evaluations();
+    const needImprove=emps.filter(e=>SERVICE_ITEMS.some(item=>{const r=this._getFinalRank(evals,e.id,item.key);return r==='△'||r==='✕'}));
+    const byStore={};
+    needImprove.forEach(e=>{if(!byStore[e.store])byStore[e.store]=[];byStore[e.store].push(e)});
+    const storeEntries=Object.entries(byStore).sort((a,b)=>b[1].length-a[1].length);
+    document.getElementById('modal-detail-title').textContent=`改善必要クルー 店舗別（計${needImprove.length}名）`;
+    if(!storeEntries.length){
+      document.getElementById('modal-detail-body').innerHTML='<div class="empty-state"><p>改善必要なクルーはいません</p></div>';
+      this._openModal('modal-detail');return;
+    }
+    document.getElementById('modal-detail-body').innerHTML=storeEntries.map(([store,list])=>`
+      <div style="margin-bottom:14px">
+        <div class="flex-between" style="margin-bottom:6px;padding-bottom:4px;border-bottom:2px solid var(--red)">
+          <span style="font-weight:700;font-size:13px">${store}</span>
+          <span style="font-size:13px;font-weight:700;color:var(--red)">${list.length}名</span>
+        </div>
+        ${list.map(e=>{
+          const items=SERVICE_ITEMS.filter(item=>{const r=this._getFinalRank(evals,e.id,item.key);return r==='△'||r==='✕'});
+          const badges=items.map(item=>{const r=this._getFinalRank(evals,e.id,item.key);return`<span class="rank-chip ${r}" style="font-size:10px;padding:0 5px;width:auto">${item.label}:${r}</span>`}).join('');
+          return`<div style="padding:8px 0;border-bottom:1px solid var(--border);cursor:pointer" onclick="App.closeModal();App.openEmployee('${e.id}')">
+            <div class="flex-between"><span style="font-weight:600">${e.name}</span><span style="color:var(--gray)">›</span></div>
+            <div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:4px">${badges}</div>
+          </div>`;
+        }).join('')}
+      </div>`).join('');
+    this._openModal('modal-detail');
   },
 };
 
