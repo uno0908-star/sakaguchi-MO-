@@ -3,7 +3,25 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
   <title>接客評価システム｜阪口商店</title>
+<script>
+(function(){
+  var VER = '20260622-1';
+  var stored = localStorage.getItem('_evalAppVer');
+  var param  = new URLSearchParams(location.search).get('_v');
+  if (stored !== VER) {
+    localStorage.setItem('_evalAppVer', VER);
+    if (param !== VER) {
+      var u = new URL(location.href);
+      u.searchParams.set('_v', VER);
+      location.replace(u.toString());
+    }
+  }
+})();
+</script>
 <style>
 :root{--blue:#005BAC;--blue-light:#0072C6;--green:#00A651;--orange:#FF6B35;--red:#E53E3E;--gold:#D4AF37;--gray:#6B7280;--gray-light:#F3F4F6;--border:#E5E7EB;--text:#1F2937;--text-sub:#6B7280;--header-h:52px;--nav-h:60px;--radius:10px}
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
