@@ -378,6 +378,16 @@ main{padding:20px;max-width:960px;margin:0 auto;}
 .sc-badge{background:var(--purple-bg);color:var(--purple);border:1.5px solid var(--purple-bd);border-radius:20px;font-size:11px;font-weight:700;padding:5px 12px;display:none;white-space:nowrap;}
 .sc-badge.show{display:inline-flex;align-items:center;gap:5px;}
 
+/* SC 担当店選択 */
+.sc-store-grid{display:grid;grid-template-columns:1fr 1fr;gap:5px;max-height:210px;overflow-y:auto;margin-bottom:8px;border:1.5px solid var(--border2);border-radius:var(--rs);padding:7px;}
+.sc-store-cb{display:flex;align-items:center;gap:6px;padding:7px 9px;border:1.5px solid var(--border2);border-radius:7px;cursor:pointer;background:var(--bg);transition:all .15s;font-size:12px;color:var(--text2);user-select:none;}
+.sc-store-cb.sel{background:var(--accent-bg);border-color:var(--accent);color:var(--accent);font-weight:700;}
+.sc-store-cb:active{opacity:.75;}
+.sc-chk-mark{width:15px;height:15px;border-radius:3px;border:2px solid var(--border2);flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:10px;line-height:1;}
+.sc-store-cb.sel .sc-chk-mark{background:var(--accent);border-color:var(--accent);color:#fff;}
+.sc-store-helper{display:flex;gap:6px;margin-bottom:8px;}
+.sc-store-helper .pwgh{flex:1;padding:7px;font-size:11px;}
+
 @media(max-width:640px){
   .stats-row{grid-template-columns:repeat(2,1fr);}
   .fgrid{grid-template-columns:1fr;}
@@ -479,6 +489,20 @@ main{padding:20px;max-width:960px;margin:0 auto;}
       <div class="sc-grid" id="sc-grid"></div>
     </div>
 
+    <!-- SC 担当店舗選択 -->
+    <div id="section-sc-stores" style="display:none">
+      <button class="pwgh" onclick="backToSCSelect()" style="margin-bottom:12px;font-size:12px">← 名前選択に戻る</button>
+      <div class="pwsub" id="sc-store-who" style="font-weight:700;color:var(--purple);margin-bottom:4px"></div>
+      <div class="pwsub" style="margin-bottom:10px">担当している店舗を選んでください</div>
+      <div class="sc-store-helper">
+        <button class="pwgh" onclick="scStoreSelectAll(true)">☑ 全選択</button>
+        <button class="pwgh" onclick="scStoreSelectAll(false)">☐ 全解除</button>
+      </div>
+      <div class="sc-store-grid" id="sc-store-grid"></div>
+      <div id="sc-store-count" style="font-size:11px;color:var(--text3);text-align:center;margin-bottom:10px"></div>
+      <button class="pwbtn" onclick="confirmSCLogin()">✅ ログイン</button>
+    </div>
+
     <!-- 共通：閲覧のみ・スタッフ/管理者 -->
     <div class="pwbtns-row" id="common-btns">
       <button class="pwgh" onclick="doGuest()">👀 閲覧のみ</button>
@@ -578,6 +602,7 @@ main{padding:20px;max-width:960px;margin:0 auto;}
     <span class="sc-badge" id="sc-badge"></span>
     <span class="creator-badge" id="creator-badge"></span>
     <span class="mgr-badge" id="mgr-badge"></span>
+    <button class="hbtn" id="sc-store-change-btn" style="display:none;border-color:var(--purple-bd);color:var(--purple);background:var(--purple-bg)" onclick="openSCStoreSelect()">🏪 <span>担当店</span></button>
     <button class="hbtn ref" onclick="loadTasks()">🔄 <span>更新</span></button>
     <button class="hbtn line" onclick="doLine()">💬 <span>LINE共有</span></button>
     <button class="hbtn key" onclick="showPw()">🔑 <span>切替</span></button>
@@ -835,6 +860,22 @@ let uName = '', curPw = '';
 let tasks = [], curF = 'open', curSearch = '', selStore = null, selSC = null;
 let calY, calM;
 let scmTaskId = null;
+let scStoreAssignments = {};  // { 'SC名': ['店舗1', ...] }
+let pendingSCName = null;
+
+function loadSCStoreAssignments() {
+  try {
+    const raw = localStorage.getItem('scStoreAssignments');
+    if (raw) scStoreAssignments = JSON.parse(raw);
+  } catch(e) { scStoreAssignments = {}; }
+}
+function saveSCStoreAssignments() {
+  localStorage.setItem('scStoreAssignments', JSON.stringify(scStoreAssignments));
+}
+function getSCStores(scName) {
+  const stored = scStoreAssignments[scName];
+  return (stored && stored.length > 0) ? stored : STORES;
+}
 
 const today  = () => new Date().toISOString().split('T')[0];
 const dateOf = d => d ? d.slice(0, 10) : '';
@@ -1023,9 +1064,79 @@ function doStoreLogin() {
 
 function doScLogin(name) {
   if (!SCS.includes(name)) return;
+  showSCStoreSelect(name);
+}
+
+function showSCStoreSelect(name) {
+  pendingSCName = name;
+  const saved = scStoreAssignments[name] || [];
+  document.getElementById('section-store').style.display      = 'none';
+  document.getElementById('section-sc').style.display        = 'none';
+  document.getElementById('section-mgr').style.display       = 'none';
+  document.getElementById('common-btns').style.display       = 'none';
+  document.getElementById('section-quick').style.display     = 'none';
+  document.getElementById('login-tabs').style.display        = 'none';
+  document.getElementById('section-sc-stores').style.display = 'block';
+  document.getElementById('sc-store-who').textContent = `👔 ${name}`;
+  document.getElementById('sc-store-grid').innerHTML = STORES.map(s => {
+    const sel = saved.includes(s);
+    return `<div class="sc-store-cb${sel ? ' sel' : ''}" onclick="toggleSCStoreSel('${s.replace(/'/g,"\\'")}')">
+      <div class="sc-chk-mark">${sel ? '✓' : ''}</div>
+      <span>${s}</span>
+    </div>`;
+  }).join('');
+  updateSCStoreCount();
+}
+
+function toggleSCStoreSel(storeName) {
+  const all = [...document.querySelectorAll('.sc-store-cb')];
+  const el = all.find(e => e.querySelector('span').textContent === storeName);
+  if (!el) return;
+  el.classList.toggle('sel');
+  el.querySelector('.sc-chk-mark').textContent = el.classList.contains('sel') ? '✓' : '';
+  updateSCStoreCount();
+}
+
+function scStoreSelectAll(val) {
+  document.querySelectorAll('.sc-store-cb').forEach(el => {
+    el.classList[val ? 'add' : 'remove']('sel');
+    el.querySelector('.sc-chk-mark').textContent = val ? '✓' : '';
+  });
+  updateSCStoreCount();
+}
+
+function updateSCStoreCount() {
+  const cnt = document.querySelectorAll('.sc-store-cb.sel').length;
+  const el = document.getElementById('sc-store-count');
+  if (el) el.textContent = cnt > 0 ? `${cnt}店舗 選択中` : '店舗が選択されていません（全店舗対象になります）';
+}
+
+function backToSCSelect() {
+  pendingSCName = null;
+  document.getElementById('section-sc-stores').style.display = 'none';
+  document.getElementById('login-tabs').style.display        = 'flex';
+  document.getElementById('common-btns').style.display       = 'flex';
+  showScSection();
+}
+
+function confirmSCLogin() {
+  const name = pendingSCName;
+  if (!name || !SCS.includes(name)) return;
+  const selected = [...document.querySelectorAll('.sc-store-cb.sel')].map(el => el.querySelector('span').textContent);
+  scStoreAssignments[name] = selected;
+  saveSCStoreAssignments();
   currentSC = name; currentStore = null; isMgr = false; isCreator = false;
   localStorage.setItem('storeSession', JSON.stringify({type:'sc', name}));
+  pendingSCName = null;
+  document.getElementById('section-sc-stores').style.display = 'none';
+  document.getElementById('login-tabs').style.display        = 'flex';
   finLogin();
+}
+
+function openSCStoreSelect() {
+  if (!currentSC) return;
+  showPw();
+  showSCStoreSelect(currentSC);
 }
 
 // パスコードでログイン（タスク作成者 or 管理者）
@@ -1093,14 +1204,19 @@ function finLogin() {
     document.getElementById('sb-stat-lbl').textContent = '自店舗 未完了';
     banner.classList.add('show');
   } else if (currentSC) {
+    const myStores = getSCStores(currentSC);
+    const storeLabel = myStores.length === STORES.length ? '全店舗' : `${myStores.length}店舗担当`;
     document.getElementById('sb-icon').textContent     = '👔';
     document.getElementById('sb-name').textContent     = currentSC;
-    document.getElementById('sb-sub').textContent      = '自分のタスクを優先表示しています';
+    document.getElementById('sb-sub').textContent      = `担当店舗：${storeLabel}`;
     document.getElementById('sb-stat-lbl').textContent = '自分 未完了';
     banner.classList.add('show');
   } else {
     banner.classList.remove('show');
   }
+
+  const scBtn = document.getElementById('sc-store-change-btn');
+  if (scBtn) scBtn.style.display = currentSC ? 'flex' : 'none';
 
   toggleForm();
   render();
@@ -1358,13 +1474,14 @@ function cardH(t) {
     if (isOwnSC) {
       const cs = t.completedStores || {};
       const overallDone = !!cs[currentSC];
-      const doneCnt = STORES.filter(s => !!cs[`${currentSC}::${s}`]).length;
+      const myStores = getSCStores(currentSC);
+      const doneCnt = myStores.filter(s => !!cs[`${currentSC}::${s}`]).length;
       if (overallDone) {
         progHtml += `<div style="margin-top:3px"><span class="tag t-done">✅ 自分：全体完了</span></div>`;
       }
       progHtml += `<div style="margin-top:4px">
         <span class="tag t-sc" style="cursor:pointer" onclick="openSCModal('${t.id}')" ontouchstart="">
-          🏪 ${doneCnt > 0 ? doneCnt + '店舗完了（タップで変更）' : '店舗別完了を登録 ›'}
+          🏪 ${doneCnt > 0 ? doneCnt + '/' + myStores.length + '店舗完了（タップで変更）' : '店舗別完了を登録 ›'}
         </span>
       </div>`;
     }
@@ -1387,14 +1504,16 @@ function cardH(t) {
   } else if (t.type === 'sc' && isOwnSC) {
     const cs = t.completedStores || {};
     const scIsDone = !!cs[currentSC];
-    const scStoreCnt = STORES.filter(s => !!cs[`${currentSC}::${s}`]).length;
+    const myStoresList = getSCStores(currentSC);
+    const scStoreCnt = myStoresList.filter(s => !!cs[`${currentSC}::${s}`]).length;
+    const scStoreTotal = myStoresList.length;
     if (isPending) {
       completeBtn = `<button class="bcomplete is-pending" disabled title="開始日前は完了できません">📅 開始前</button>`;
     } else if (scIsDone) {
       completeBtn = `<button class="bcomplete is-done" onclick="openSCModal('${t.id}')">✅ 完了済み（変更）</button>`;
     } else {
       completeBtn = `<button class="bcomplete sc-store" onclick="openSCModal('${t.id}')">
-        🏪 ${scStoreCnt > 0 ? scStoreCnt + '店舗完了（続き）' : '店舗別完了登録'}
+        🏪 ${scStoreCnt > 0 ? scStoreCnt + '/' + scStoreTotal + '店舗完了（続き）' : '店舗別完了登録'}
       </button>`;
     }
   }
@@ -1962,10 +2081,11 @@ function renderSCModal() {
   const t = tasks.find(x => x.id === scmTaskId);
   if (!t) return;
   const cs = t.completedStores || {};
-  const doneCnt = STORES.filter(s => !!cs[`${currentSC}::${s}`]).length;
+  const myStores = getSCStores(currentSC);
+  const doneCnt = myStores.filter(s => !!cs[`${currentSC}::${s}`]).length;
   const overallDone = !!cs[currentSC];
 
-  document.getElementById('scm-progress').textContent = `${doneCnt} / ${STORES.length}店舗 完了済み`;
+  document.getElementById('scm-progress').textContent = `${doneCnt} / ${myStores.length}店舗 完了済み`;
   const allDoneBtn = document.getElementById('scm-alldone-btn');
   if (overallDone) {
     allDoneBtn.textContent = '✅ 全体完了済み　→　未完了に戻す';
@@ -1976,7 +2096,7 @@ function renderSCModal() {
   }
   document.getElementById('scm-reset-btn').style.display = (doneCnt > 0 || overallDone) ? 'block' : 'none';
 
-  document.getElementById('scm-body').innerHTML = STORES.map(s => {
+  document.getElementById('scm-body').innerHTML = myStores.map(s => {
     const done = !!cs[`${currentSC}::${s}`];
     return `<div class="scm-item">
       <div class="scm-chk${done ? ' done' : ''}" onclick="toggleSCStore('${s.replace(/'/g,"\\'")}')" ontouchstart="">✓</div>
@@ -2067,6 +2187,8 @@ document.addEventListener('keydown', e => {
 
 upChk();
 document.getElementById('f-end').value = today() + 'T23:59';
+
+loadSCStoreAssignments();
 
 // ページを開くたびに必ずログイン画面を表示する
 initQuickLogin();
