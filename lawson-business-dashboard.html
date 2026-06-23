@@ -343,7 +343,7 @@ const EXPENSE_KINDS = {
   'SC経費': {
     label: '費用出金（SC経費）',
     itemEditable: true,                       // 項目（勘定科目）を入力可
-    dateLabel: '該当日', datePh: '例: 6/10',
+    dateLabel: '出金日', datePh: '例: 6/10',
     // 内容のプルダウン候補
     details: ['業務に関わる駐車場代','店舗装飾品費','POP作成費','クレーム対応','両替手数料','各種申請手数料','その他']
   },
@@ -1857,6 +1857,13 @@ function renderExpense(){
     : '<div class="empty-note">申請はまだありません</div>'}`;
 }
 
+// スプレッドシートが日付化した "Wed Jun 17 2026 ... GMT+0900" を "6/17" に整形（テキストはそのまま）
+function fmtPeriod(v){
+  const s = String(v || '');
+  if(s.indexOf('GMT') >= 0){ const d = new Date(s); if(!isNaN(d)) return (d.getMonth()+1) + '/' + d.getDate(); }
+  return s;
+}
+
 function expenseRowHtml(e, admin){
   const [id, ts, ym, code, kind, applicant, item, period, detail, amount, status, memo] = e;
   const store = (DB.stores.find(s => s.code === code) || {}).name || code;
@@ -1869,7 +1876,7 @@ function expenseRowHtml(e, admin){
       <span style="font-size:.68rem;font-weight:800;padding:4px 11px;border-radius:99px;${EXP_STATUS_STYLE[status]||''}">${esc(status)}</span>
     </div>
     <div style="font-size:.76rem;color:var(--sub);margin-top:7px;line-height:1.6">
-      ${esc(item)}${detail ? ' ｜ ' + esc(detail) : ''}${period ? ' ｜ ' + esc(period) : ''}<br>
+      ${esc(item)}${detail ? ' ｜ ' + esc(detail) : ''}${period ? ' ｜ ' + esc(fmtPeriod(period)) : ''}<br>
       <span style="color:var(--dim)">申請: ${esc(ts)}${memo ? ' ｜ 管理者メモ: ' + esc(memo) : ''}</span>
     </div>
     ${admin && status === '申請中' ? `<div class="flex mt" style="gap:8px">
