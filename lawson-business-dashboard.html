@@ -353,6 +353,8 @@ const EXPENSE_KINDS = {
 };
 // 経費の項目（勘定科目）。種別に関わらず共通。「その他」を含む
 const EXPENSE_ITEMS = ['営業用消耗品費','電話料','清掃費','非課税経費','雑費8%','雑費10%','現金仕入','その他'];
+// 経費の内容（プルダウン候補）。選択＋自由記入を併用
+const EXPENSE_DETAILS = ['新人教育費','棚替作業費','各種研修費用','各種勉強会','本部施策対応費','緊急対応費','クローバー活動','イベント対応','その他'];
 const EXP_STATUS_STYLE = {
   '申請中': 'background:rgba(255,194,75,.12);border:1px solid rgba(255,194,75,.45);color:var(--warn)',
   '承認':   'background:rgba(45,212,167,.12);border:1px solid rgba(45,212,167,.45);color:var(--ok)',
@@ -1813,10 +1815,6 @@ function renderExpense(){
   el.innerHTML = `
   <h2 class="sec">経費を申請する</h2>
   <div class="card">
-    <div class="pills" style="margin-bottom:14px">
-      ${Object.keys(EXPENSE_KINDS).map(k => `<button class="pill ${k===kind?'on':''}"
-        onclick="state.expKind='${k}';renderExpense()">${EXPENSE_KINDS[k].label}</button>`).join('')}
-    </div>
     <div class="form-grid">
       <div class="fld"><label>店舗</label>
         <select id="exp-store">${DB.stores.map(s =>
@@ -1826,10 +1824,13 @@ function renderExpense(){
       <div class="fld"><label>項目（勘定科目）</label>
         <select id="exp-item">${EXPENSE_ITEMS.map(it =>
           `<option>${it}</option>`).join('')}</select></div>
-      <div class="fld"><label>${kind==='SC経費' ? '出金日付' : '期間（例: 5/12,14 合計10.5h）'}</label>
-        <input type="text" id="exp-period" placeholder="${kind==='SC経費' ? '例: 6/10' : '例: 6/1,2（合計4h）'}"></div>
+      <div class="fld"><label>該当日</label>
+        <input type="text" id="exp-period" placeholder="例: 6/10"></div>
       <div class="fld"><label>内容</label>
-        <input type="text" id="exp-detail" placeholder="${kind==='SC経費' ? '例: 両替手数料' : '例: 新人研修（◯◯さん）'}"></div>
+        <select id="exp-detail">${EXPENSE_DETAILS.map(it =>
+          `<option>${it}</option>`).join('')}</select></div>
+      <div class="fld"><label>内容の補足（自由記入・任意）</label>
+        <input type="text" id="exp-detail-note" placeholder="例: 新人研修（◯◯さん）"></div>
       <div class="fld"><label>金額（円）</label>
         <input type="number" id="exp-amount" inputmode="numeric" placeholder="例: 4400"></div>
     </div>
@@ -1876,19 +1877,22 @@ async function submitExpenseUi(){
   const applicant = document.getElementById('exp-name').value.trim();
   const item = document.getElementById('exp-item').value;
   const period = document.getElementById('exp-period').value.trim();
-  const detail = document.getElementById('exp-detail').value.trim();
+  const detailCat = document.getElementById('exp-detail').value;
+  const detailNote = document.getElementById('exp-detail-note').value.trim();
+  const detail = detailNote ? (detailCat + ' ｜ ' + detailNote) : detailCat; // プルダウン＋自由記入
   const amount = Number(document.getElementById('exp-amount').value);
+  const kind = 'SC経費';
   if(!applicant){ toast('申請者名を入力してください'); return; }
   if(!(amount > 0)){ toast('金額を入力してください'); return; }
   const btn = document.getElementById('exp-submit');
   btn.disabled = true;
   const d = await post({action:'submitExpense', ym:ymOf(state.mi), code,
-    kind:state.expKind, applicant, item, period, detail, amount}, null);
+    kind, applicant, item, period, detail, amount}, null);
   btn.disabled = false;
   if(d && d.ok){
     const store = (DB.stores.find(s => s.code === code) || {}).name || code;
     (DB.expenses = DB.expenses || []).push([d.id, '今', ymOf(state.mi), code,
-      state.expKind, applicant, item, period, detail, amount, '申請中', '']);
+      kind, applicant, item, period, detail, amount, '申請中', '']);
     toast('申請しました。管理者に通知が届きます');
     renderExpense(); updateExpBadge();
   }
