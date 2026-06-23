@@ -630,7 +630,7 @@ const Storage=(()=>{
       if(!user)return false;
       const r=user.role;
       if(r==='管理者')return true; // 管理者は全権限
-      const P={evalWrite:['SI','SC','店舗責任者'],empEdit:['SI','SC'],empManage:['SI'],memoWrite:['SI','SC','店舗責任者'],certEdit:['SI','SC','店舗責任者'],userManage:['SI'],sysAdmin:['SI'],backup:['SI'],allStores:['SI','SC']};
+      const P={evalWrite:['SI','SC','店舗責任者'],empEdit:['SI','SC'],empManage:['SI'],memoWrite:['SI','SC','店舗責任者'],certEdit:['SI','SC','店舗責任者'],userManage:['SI'],sysAdmin:[],backup:['SI'],allStores:['SI','SC']};
       return(P[perm]||[]).includes(r);
     }
   };
@@ -1044,9 +1044,9 @@ const App={
     document.getElementById('bottom-nav').classList.remove('hidden');
     const lbl={管理者:'管理者',SI:'SI',SC:'SC','店舗責任者':'責任者','一般クルー':'クルー'}[user.role]||user.role;
     document.getElementById('header-user').textContent=`${user.name}｜${lbl}`;
-    // 管理者・SI: 設定ナビを表示
+    // 管理者のみ: 設定ナビを表示（SIには表示しない）
     const navSettings=document.getElementById('nav-settings');
-    if(navSettings)navSettings.style.display=(user.role==='管理者'||user.role==='SI')?'flex':'none';
+    if(navSettings)navSettings.style.display=(user.role==='管理者')?'flex':'none';
     // 一般クルー: クルー追加ボタン(FAB)を隠す
     this._currentUser=user;
   },
