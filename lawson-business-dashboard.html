@@ -351,6 +351,8 @@ const EXPENSE_KINDS = {
             '緊急対応人件費(災害・停電など)','クローバー活動','イベント対応']
   }
 };
+// 経費の項目（勘定科目）。種別に関わらず共通。「その他」を含む
+const EXPENSE_ITEMS = ['営業用消耗品費','電話料','清掃費','非課税経費','雑費8%','雑費10%','現金仕入','その他'];
 const EXP_STATUS_STYLE = {
   '申請中': 'background:rgba(255,194,75,.12);border:1px solid rgba(255,194,75,.45);color:var(--warn)',
   '承認':   'background:rgba(45,212,167,.12);border:1px solid rgba(45,212,167,.45);color:var(--ok)',
@@ -1821,8 +1823,8 @@ function renderExpense(){
           `<option value="${s.code}">${esc(s.name)}</option>`).join('')}</select></div>
       <div class="fld"><label>申請者（あなたの名前）</label>
         <input type="text" id="exp-name" placeholder="例: 山田"></div>
-      <div class="fld"><label>項目（承認対象のみ）</label>
-        <select id="exp-item">${EXPENSE_KINDS[kind].items.map(it =>
+      <div class="fld"><label>項目（勘定科目）</label>
+        <select id="exp-item">${EXPENSE_ITEMS.map(it =>
           `<option>${it}</option>`).join('')}</select></div>
       <div class="fld"><label>${kind==='SC経費' ? '出金日付' : '期間（例: 5/12,14 合計10.5h）'}</label>
         <input type="text" id="exp-period" placeholder="${kind==='SC経費' ? '例: 6/10' : '例: 6/1,2（合計4h）'}"></div>
