@@ -1618,6 +1618,21 @@ const App={
     return jst.getUTCFullYear()+'-'+String(jst.getUTCMonth()+1).padStart(2,'0');
   },
 
+  /* 提出済/未提出/要確認の数字タップで氏名一覧をポップアップ表示 */
+  showCompList(cat){
+    const L=this._compLists||{};
+    const meta={sub:['提出済','#00A651'],not:['未提出','#E53E3E'],need:['要確認','#FF6B35']}[cat]||['',''];
+    const list=L[cat]||[];
+    const byStore={};list.forEach(x=>{(byStore[x.store]=byStore[x.store]||[]).push(x.name)});
+    const stores=Object.keys(byStore).sort((a,b)=>a.localeCompare(b,'ja'));
+    document.getElementById('modal-detail-title').textContent=`${meta[0]}（${list.length}名）`;
+    const body=list.length
+      ? stores.map(s=>`<div style="margin-bottom:12px"><div style="font-weight:700;color:#005BAC;font-size:13px;border-bottom:1px solid var(--border);padding-bottom:3px;margin-bottom:5px">${s}（${byStore[s].length}名）</div><div style="font-size:14px;line-height:1.9">${byStore[s].join('、')}</div></div>`).join('')
+      : '<div class="empty-state"><p>該当者なし</p></div>';
+    document.getElementById('modal-detail-body').innerHTML=`<div style="border-left:4px solid ${meta[1]};padding-left:10px;margin-bottom:12px;color:${meta[1]};font-weight:700">${L.month||''} の${meta[0]}者</div>`+body;
+    this._openModal('modal-detail');
+  },
+
   /* ===== コンプラ回答状況（管理者のみ）===== */
   async renderCompliance(){
     if(DB.user().role!=='管理者'){this.showToast('権限がありません（管理者のみ）','error');this.navTo('dashboard');return}
@@ -1641,16 +1656,18 @@ const App={
     const compMap={};comp.forEach(r=>{compMap[String(r['従業員番号'])]=r});
     const active=DB.employees().filter(e=>e.status==='在籍中');
     const stores={};
+    const gSub=[],gNot=[],gNeed=[]; // 数字タップ用の全体名簿
     active.forEach(e=>{
       const s=e.store||'(店舗未設定)';
       if(!stores[s])stores[s]={total:0,sub:0,need:0,not:[],needList:[]};
       stores[s].total++;
       const rec=compMap[String(e.id)];
       if(rec&&String(rec['提出状況'])==='Submitted'){
-        if(String(rec['要確認フラグ'])==='NeedReview'){stores[s].need++;stores[s].needList.push(e.name)}
-        else stores[s].sub++;
-      }else{stores[s].not.push(e.name)}
+        if(String(rec['要確認フラグ'])==='NeedReview'){stores[s].need++;stores[s].needList.push(e.name);gNeed.push({name:e.name,store:s})}
+        else{stores[s].sub++;gSub.push({name:e.name,store:s})}
+      }else{stores[s].not.push(e.name);gNot.push({name:e.name,store:s})}
     });
+    this._compLists={sub:gSub,not:gNot,need:gNeed,month:month};
     const totAll=active.length;
     const subAll=Object.values(stores).reduce((a,s)=>a+s.sub,0);
     const needAll=Object.values(stores).reduce((a,s)=>a+s.need,0);
@@ -1665,11 +1682,11 @@ const App={
       <div style="font-size:13px;color:var(--text-sub)">全体の提出率</div>
       <div style="font-size:40px;font-weight:800;color:${rate>=100?'#00A651':rate>=80?'#005BAC':'#E53E3E'}">${rate}%</div>
       <div style="display:flex;gap:8px;margin-top:8px">
-        <div class="stat-card" style="flex:1"><div class="stat-num" style="color:#00A651">${respAll}</div><div class="stat-label">提出済</div></div>
-        <div class="stat-card" style="flex:1"><div class="stat-num" style="color:#E53E3E">${notAll}</div><div class="stat-label">未提出</div></div>
-        <div class="stat-card" style="flex:1"><div class="stat-num" style="color:#FF6B35">${needAll}</div><div class="stat-label">要確認</div></div>
+        <div class="stat-card" style="flex:1;cursor:pointer" onclick="App.showCompList('sub')"><div class="stat-num" style="color:#00A651">${respAll}</div><div class="stat-label">提出済 ▸</div></div>
+        <div class="stat-card" style="flex:1;cursor:pointer" onclick="App.showCompList('not')"><div class="stat-num" style="color:#E53E3E">${notAll}</div><div class="stat-label">未提出 ▸</div></div>
+        <div class="stat-card" style="flex:1;cursor:pointer" onclick="App.showCompList('need')"><div class="stat-num" style="color:#FF6B35">${needAll}</div><div class="stat-label">要確認 ▸</div></div>
       </div>
-      <div style="font-size:12px;color:var(--text-sub);margin-top:6px">対象：在籍中クルー ${totAll}名（${month}）</div>
+      <div style="font-size:12px;color:var(--text-sub);margin-top:6px">数字をタップで氏名一覧 ／ 対象：在籍中クルー ${totAll}名（${month}）</div>
     </div>`;
     html+=storeNames.map(s=>{
       const o=stores[s];const r=o.total?Math.round((o.sub+o.need)/o.total*100):0;
