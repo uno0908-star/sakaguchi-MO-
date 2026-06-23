@@ -6,7 +6,7 @@
 <title>LAWSON Business Dashboard | 店利益管理</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=Noto+Sans+JP:wght@400;500;700;900&display=swap" rel="stylesheet">
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
 <style>
 :root{
   --bg:#070c18; --bg2:#0b1224; --panel:rgba(18,28,54,.72); --panel2:rgba(26,38,70,.55);
@@ -417,12 +417,26 @@ function go(v){
 // ---------- データ取得 ----------
 async function loadData(isRefresh){
   if(isRefresh) toast('更新中...');
+  // 初回表示時は前回データ(キャッシュ)を即描画して、GASのコールドスタート待ちの体感を解消
+  if(!isRefresh && !DB){
+    try{
+      const cached = localStorage.getItem('lbd_cache_v1');
+      if(cached){
+        DB = JSON.parse(cached);
+        buildIndex(); initMonthSelector(); renderAll();
+        document.getElementById('demoBanner').style.display = 'none';
+        document.getElementById('loader').classList.add('hide');
+        toast('最新データを取得中...');
+      }
+    }catch(e){}
+  }
   try{
     if(gasUrl()){
       const res = await fetch(gasUrl() + '?action=dashboard', {redirect:'follow'});
       const data = await res.json();
       if(data.error) throw new Error(data.error);
       DB = data;
+      try{ localStorage.setItem('lbd_cache_v1', JSON.stringify(data)); }catch(e){}
       document.getElementById('demoBanner').style.display = 'none';
     }else{
       DB = makeDemoData();
