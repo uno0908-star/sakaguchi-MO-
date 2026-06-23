@@ -923,6 +923,23 @@ const App={
   _view:'login',_history:[],_currentEmpId:null,_currentFormEmpId:null,
 
   async init(){
+    // ★共有されたHTMLファイルを直接開いた（file://）場合の保険。
+    //   file:// ではGASに接続できずデータ同期・保存ができないため、
+    //   正しい公開URLへ誘導してアプリの起動を止める。
+    if(location.protocol==='file:'){
+      const url='https://uno0908-star.github.io/sakaguchi-MO-/service-eval.index.html';
+      document.body.innerHTML=
+        '<div style="min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px;font-family:sans-serif;text-align:center;background:#005BAC;color:#fff">'+
+        '<div style="font-size:48px;margin-bottom:12px">⚠️</div>'+
+        '<div style="font-size:20px;font-weight:700;margin-bottom:8px">このままでは使えません</div>'+
+        '<div style="font-size:14px;line-height:1.7;margin-bottom:24px;max-width:340px">'+
+        'ファイルから開いています。<br>下のボタンから開いてください。<br>'+
+        '<span style="font-size:12px;opacity:.85">Please open from the button below</span></div>'+
+        '<a href="'+url+'" style="display:inline-block;background:#fff;color:#005BAC;font-weight:700;font-size:16px;padding:14px 28px;border-radius:10px;text-decoration:none">アプリを開く / OPEN</a>'+
+        '<div style="font-size:11px;opacity:.8;margin-top:20px;word-break:break-all;max-width:340px">'+url+'</div>'+
+        '</div>';
+      return;
+    }
     this._buildStoreSelects();
     const roleEl=document.getElementById('login-role');
     if(roleEl){roleEl.addEventListener('change',()=>this._toggleStoreWrap());this._toggleStoreWrap()}
