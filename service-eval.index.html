@@ -547,9 +547,14 @@ const Storage=(()=>{
         if(App._view==='dashboard')App.renderDashboard();
         if(App._view==='employees')App.filterEmployees();
       }
+      // 同期成功を呼び出し元に伝える（サーバーの従業員件数も返す）
+      // → 初回シード判定で「サーバーが本当に空か」を確実に判断するために使用
+      return {ok:true,serverEmpCount:gasEmps.length};
     }catch(e){
       console.error('[GAS sync]',e);
       showToast('GAS接続エラー（キャッシュで表示中）','error');
+      // 通信失敗時は ok:false を返す。呼び出し元はこの場合シードしてはいけない
+      return {ok:false,error:e.message};
     }
   }
   async function syncNow(){return _syncFromGas()}
@@ -922,12 +927,20 @@ const App={
     const roleEl=document.getElementById('login-role');
     if(roleEl){roleEl.addEventListener('change',()=>this._toggleStoreWrap());this._toggleStoreWrap()}
     // GAS同期を先に完了させてから初期シード判定する（新端末でGASの最新データを上書きしない）
-    await Storage.syncNow();
-    if(!Storage.getEmployees().length){
+    const sync=await Storage.syncNow();
+    // ★初期シードは「①同期に成功した ②サーバーの従業員が0件 ③この端末も0件」の
+    //   3条件が全て揃ったときだけ実行する。
+    //   通信失敗時（sync.ok===false）は、サーバーにデータがあるか分からないため
+    //   絶対にシード＆GAS送信しない（＝全員ルーキーで上書きする事故を防ぐ）。
+    const canSeed=sync&&sync.ok===true&&sync.serverEmpCount===0&&!Storage.getEmployees().length;
+    if(canSeed){
       const seeded=INITIAL_EMPLOYEES.map(e=>({...e,status:'在籍中',joinDate:'',leaveDate:'',notes:'',crewRoles:['ルーキー（新人）'],certifications:[],createdAt:new Date().toISOString()}));
       Storage.saveEmployees(seeded);
-      // GASも空の場合のみ初期データを一括登録
+      // GASも空であることを確認済みの場合のみ初期データを一括登録
       Storage.seedGas(seeded);
+    }else if(sync&&sync.ok===false&&!Storage.getEmployees().length){
+      // 通信失敗かつローカルも空 → シードせずに警告。電波の良い場所で再読み込みを促す
+      this.showToast('サーバーに接続できませんでした。電波の良い場所で再読み込みしてください（初期化は行いません）','error');
     }
     // 自動ログインなし: 毎回ログイン画面を表示
     Storage.clearUser();
