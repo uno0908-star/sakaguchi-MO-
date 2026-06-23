@@ -319,7 +319,12 @@ input,select,textarea,button{font-family:inherit;font-size:14px}
         <div style="font-weight:700">📝 コンプラ回答状況</div>
         <select id="comp-month" onchange="App.renderCompliance()" style="padding:6px 10px;border:1px solid var(--border);border-radius:8px;font-size:14px"></select>
       </div>
-      <div class="text-sub" style="font-size:12px">在籍中クルーを対象に、月次コンプラアンケートの提出状況を表示します（退職者は自動除外）。</div>
+      <select id="comp-asof" onchange="App.renderCompliance()" style="width:100%;padding:8px 10px;border:1px solid var(--border);border-radius:8px;font-size:14px">
+        <option value="now">現在の状況</option>
+        <option value="15">15日時点（店長評価用）</option>
+        <option value="eom">月末時点（SC評価用）</option>
+      </select>
+      <div class="text-sub" style="font-size:12px;margin-top:8px">在籍中クルーを対象に提出状況を表示（退職者は自動除外）。「時点」を切り替えると、提出日時を基にその時点の実績をさかのぼって表示します。</div>
     </div>
     <div id="comp-content"><div class="empty-state"><p>読み込み中...</p></div></div>
   </div>
@@ -1638,6 +1643,9 @@ const App={
     return jst.getUTCFullYear()+'-'+String(jst.getUTCMonth()+1).padStart(2,'0');
   },
 
+  /* ISO日時を JST の "YYYY-MM-DD" に変換（時点判定の比較用） */
+  _jstDate(v){const d=new Date(v);if(isNaN(d))return '';const j=new Date(d.getTime()+9*3600000);return j.getUTCFullYear()+'-'+String(j.getUTCMonth()+1).padStart(2,'0')+'-'+String(j.getUTCDate()).padStart(2,'0')},
+
   /* 提出済/未提出/要確認の数字タップで氏名一覧をポップアップ表示 */
   showCompList(cat){
     const L=this._compLists||{};
@@ -1663,6 +1671,11 @@ const App={
       sel.innerHTML=opts;
     }
     const month=sel.value;
+    // 時点（現在 / 15日時点 / 月末時点）。提出日時を基にカットオフ日を決める
+    const mode=document.getElementById('comp-asof')?.value||'now';
+    let cutoff=null;
+    if(mode==='15')cutoff=month+'-15';
+    else if(mode==='eom'){const p=month.split('-');const last=new Date(Number(p[0]),Number(p[1]),0).getDate();cutoff=month+'-'+String(last).padStart(2,'0')}
     const box=document.getElementById('comp-content');
     box.innerHTML='<div class="empty-state"><p>読み込み中...</p></div>';
     let comp=[];
@@ -1682,7 +1695,9 @@ const App={
       if(!stores[s])stores[s]={total:0,sub:0,need:0,not:[],needList:[]};
       stores[s].total++;
       const rec=compMap[String(e.id)];
-      if(rec&&String(rec['提出状況'])==='Submitted'){
+      // 指定時点までに提出されているか（カットオフ無し=現在）
+      const subByCut=rec&&String(rec['提出状況'])==='Submitted'&&(!cutoff||!rec['提出日時']||this._jstDate(rec['提出日時'])<=cutoff);
+      if(subByCut){
         if(String(rec['要確認フラグ'])==='NeedReview'){stores[s].need++;stores[s].needList.push(e.name);gNeed.push({name:e.name,store:s})}
         else{stores[s].sub++;gSub.push({name:e.name,store:s})}
       }else{stores[s].not.push(e.name);gNot.push({name:e.name,store:s})}
@@ -1698,8 +1713,13 @@ const App={
       const rb=stores[b].total?(stores[b].sub+stores[b].need)/stores[b].total:0;
       return ra-rb; // 実施率が低い店舗を上に
     });
-    let html=`<div class="card" style="text-align:center">
-      <div style="font-size:13px;color:var(--text-sub)">全体の提出率</div>
+    const modeBanner=mode==='15'
+      ?`<div class="card" style="background:#EFF6FF;border-color:#1E40AF"><div style="font-weight:700;color:#1E40AF">🗓 15日時点の実績（店長評価用）</div><div style="font-size:12px;color:#374151;margin-top:4px">15日時点で未提出者がいる店舗は、<b>店長の定性評価「就業規則」項目が×</b>の対象です。</div></div>`
+      :mode==='eom'
+      ?`<div class="card" style="background:#FFF7ED;border-color:#FF6B35"><div style="font-weight:700;color:#C2410C">🗓 月末時点の実績（SC評価用）</div><div style="font-size:12px;color:#374151;margin-top:4px">月末時点で未提出者が残る店舗は、<b>担当SCの定性表が×</b>の対象です。</div></div>`
+      :'';
+    let html=modeBanner+`<div class="card" style="text-align:center">
+      <div style="font-size:13px;color:var(--text-sub)">${cutoff?cutoff+' 時点の':''}全体の提出率</div>
       <div style="font-size:40px;font-weight:800;color:${rate>=100?'#00A651':rate>=80?'#005BAC':'#E53E3E'}">${rate}%</div>
       <div style="display:flex;gap:8px;margin-top:8px">
         <div class="stat-card" style="flex:1;cursor:pointer" onclick="App.showCompList('sub')"><div class="stat-num" style="color:#00A651">${respAll}</div><div class="stat-label">提出済 ▸</div></div>
@@ -1714,7 +1734,18 @@ const App={
       const notHtml=o.not.length?`<div style="margin-top:8px"><span class="badge" style="background:#FEE2E2;color:#991B1B">未提出 ${o.not.length}名</span><div style="font-size:13px;margin-top:4px">${o.not.join('、')}</div></div>`:'';
       const needHtml=o.needList.length?`<div style="margin-top:8px"><span class="badge" style="background:#FEF3C7;color:#92400E">要確認 ${o.needList.length}名</span><div style="font-size:13px;margin-top:4px">${o.needList.join('、')}</div></div>`:'';
       const done=o.not.length===0&&o.needList.length===0;
-      return `<div class="card"><div class="flex-between"><div style="font-weight:700">${s}</div><div style="font-weight:800;color:${col}">${r}%　<span style="font-size:12px;color:var(--text-sub);font-weight:400">${o.sub+o.need}/${o.total}</span></div></div>${done?'<div style="margin-top:6px;color:#00A651;font-weight:600;font-size:14px">✅ 全員提出済み</div>':''}${notHtml}${needHtml}</div>`;
+      // 時点別の評価判定
+      let judge='';
+      if(mode==='15'){
+        judge=o.not.length>0
+          ?`<div style="margin-top:8px;padding:8px;background:#FEE2E2;border-radius:8px;color:#991B1B;font-weight:700">⛔ 店長評価 就業規則：×（15日時点で未提出 ${o.not.length}名）</div>`
+          :`<div style="margin-top:8px;padding:8px;background:#DCFCE7;border-radius:8px;color:#065F46;font-weight:700">✅ 店長評価 就業規則：〇（15日時点で全員提出）</div>`;
+      }else if(mode==='eom'){
+        judge=o.not.length>0
+          ?`<div style="margin-top:8px;padding:8px;background:#FEE2E2;border-radius:8px;color:#991B1B;font-weight:700">⛔ 担当SC評価：×（月末時点で未提出 ${o.not.length}名）</div>`
+          :`<div style="margin-top:8px;padding:8px;background:#DCFCE7;border-radius:8px;color:#065F46;font-weight:700">✅ 担当SC評価：〇（月末時点で全員提出）</div>`;
+      }
+      return `<div class="card"><div class="flex-between"><div style="font-weight:700">${s}</div><div style="font-weight:800;color:${col}">${r}%　<span style="font-size:12px;color:var(--text-sub);font-weight:400">${o.sub+o.need}/${o.total}</span></div></div>${judge}${done&&mode==='now'?'<div style="margin-top:6px;color:#00A651;font-weight:600;font-size:14px">✅ 全員提出済み</div>':''}${notHtml}${needHtml}</div>`;
     }).join('');
     box.innerHTML=html;
   },
