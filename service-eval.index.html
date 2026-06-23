@@ -307,6 +307,19 @@ input,select,textarea,button{font-family:inherit;font-size:14px}
   </div>
 </div>
 
+<div id="view-compliance" class="view">
+  <div class="view-content">
+    <div class="card">
+      <div class="flex-between" style="margin-bottom:8px">
+        <div style="font-weight:700">📝 コンプラ回答状況</div>
+        <select id="comp-month" onchange="App.renderCompliance()" style="padding:6px 10px;border:1px solid var(--border);border-radius:8px;font-size:14px"></select>
+      </div>
+      <div class="text-sub" style="font-size:12px">在籍中クルーを対象に、月次コンプラアンケートの提出状況を表示します（退職者は自動除外）。</div>
+    </div>
+    <div id="comp-content"><div class="empty-state"><p>読み込み中...</p></div></div>
+  </div>
+</div>
+
 <div id="view-analysis-menu" class="view">
   <div class="view-content">
     <div class="menu-list">
@@ -1083,7 +1096,7 @@ const App={
   goBack(){const p=this._history.pop();if(p)this.showView(p,false)},
 
   _updateHeader(viewId){
-    const titles={login:'接客評価システム',dashboard:'阪口商店 接客評価',employees:'クルー一覧','employee-detail':'クルー詳細',evaluation:'評価入力',observation:'気づきメモ',improvement:'改善必要者','store-analysis':'店舗別分析','analysis-menu':'分析','employee-form':'クルー登録・編集',settings:'管理設定',discussion:'目線合わせ','item-ranking':'項目別弱点ランキング'};
+    const titles={login:'接客評価システム',dashboard:'阪口商店 接客評価',employees:'クルー一覧','employee-detail':'クルー詳細',evaluation:'評価入力',observation:'気づきメモ',improvement:'改善必要者','store-analysis':'店舗別分析','analysis-menu':'分析','employee-form':'クルー登録・編集',settings:'管理設定',discussion:'目線合わせ','item-ranking':'項目別弱点ランキング',compliance:'コンプラ回答状況'};
     document.getElementById('header-title').textContent=titles[viewId]||'';
     const back=document.getElementById('btn-back');
     back.classList.toggle('hidden',['dashboard','employees','observation','analysis-menu','settings','login'].includes(viewId));
@@ -1094,7 +1107,7 @@ const App={
   },
 
   _renderView(viewId){
-    const map={dashboard:'renderDashboard',employees:'renderEmployeeList','employee-detail':'renderEmployeeDetail',evaluation:'renderEvaluation',observation:'renderObservations',improvement:'renderImprovement','store-analysis':'renderStoreAnalysis','employee-form':'renderEmployeeForm',settings:'renderSettings',discussion:'renderDiscussion','item-ranking':'renderItemRanking'};
+    const map={dashboard:'renderDashboard',employees:'renderEmployeeList','employee-detail':'renderEmployeeDetail',evaluation:'renderEvaluation',observation:'renderObservations',improvement:'renderImprovement','store-analysis':'renderStoreAnalysis','employee-form':'renderEmployeeForm',settings:'renderSettings',discussion:'renderDiscussion','item-ranking':'renderItemRanking',compliance:'renderCompliance'};
     if(map[viewId])this[map[viewId]]();
   },
 
@@ -1144,6 +1157,7 @@ const App={
       <div style="display:flex;gap:12px;margin-bottom:8px;font-size:11px;color:var(--text-sub)"><span><span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:#00A651;margin-right:3px"></span>責任者</span><span><span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:#0369A1;margin-right:3px"></span>SC</span><span><span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:#1E40AF;margin-right:3px"></span>SI</span></div>
       ${storeStats.map(s=>`<div class="store-bar-wrap"><div class="store-bar-name"><span>${s.store}</span><span>全体 ${s.evaled}/${s.total}名 ${s.rate}%</span></div><div class="store-bar-track"><div class="store-bar-fill" style="width:${s.rate}%"></div></div>${[['責任者',s.smRate,'#00A651'],['SC',s.scRate,'#0369A1'],['SI',s.siRate,'#1E40AF']].map(([l,r,c])=>`<div style="display:flex;align-items:center;gap:6px;margin-top:3px"><span style="font-size:10px;width:36px;color:var(--text-sub)">${l}</span><div class="store-bar-track" style="flex:1;height:6px;margin:0"><div style="height:100%;border-radius:inherit;background:${c};width:${r}%"></div></div><span style="font-size:10px;width:32px;text-align:right;color:var(--text-sub)">${r}%</span></div>`).join('')}</div>`).join('')}
       <div style="height:8px"></div>
+      ${DB.user().role==='管理者'?`<button class="btn btn-secondary btn-full" onclick="App.navTo('compliance')" style="margin-top:8px">📝 コンプラ回答状況</button>`:''}
       ${Storage.AUTH.can(DB.user(),'sysAdmin')?`<button class="btn btn-secondary btn-full" onclick="App.navTo('settings')" style="margin-top:8px">⚙️ 管理設定</button>`:''}
       <button class="btn btn-secondary btn-full" onclick="App.logout()" style="margin-top:8px">ログアウト</button>`;
   },
@@ -1591,6 +1605,69 @@ const App={
     return[...roles,...certBadges].join('');
   },
   async _fileToBase64(file){return new Promise(r=>{const fr=new FileReader();fr.onload=e=>r(e.target.result);fr.readAsDataURL(file)})},
+
+  /* ===== コンプラ回答状況（管理者のみ）===== */
+  async renderCompliance(){
+    if(DB.user().role!=='管理者'){this.showToast('権限がありません（管理者のみ）','error');this.navTo('dashboard');return}
+    const sel=document.getElementById('comp-month');
+    if(!sel.options.length){
+      const now=new Date();let opts='';
+      for(let i=0;i<6;i++){const d=new Date(now.getFullYear(),now.getMonth()-i,1);const m=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0');opts+=`<option value="${m}">${d.getFullYear()}年${d.getMonth()+1}月</option>`}
+      sel.innerHTML=opts;
+    }
+    const month=sel.value;
+    const box=document.getElementById('comp-content');
+    box.innerHTML='<div class="empty-state"><p>読み込み中...</p></div>';
+    let comp=[];
+    try{
+      const res=await fetch(`${GAS_URL}?action=getCompliance&month=${month}`,{redirect:'follow'});
+      const d=await res.json();
+      if(!d.ok)throw new Error(d.error||'取得エラー');
+      comp=d.compliance||[];
+    }catch(e){box.innerHTML='<div class="empty-state"><p>取得に失敗しました（'+e.message+'）。電波の良い場所で再度お試しください。</p></div>';return}
+    const compMap={};comp.forEach(r=>{compMap[String(r['従業員番号'])]=r});
+    const active=DB.employees().filter(e=>e.status==='在籍中');
+    const stores={};
+    active.forEach(e=>{
+      const s=e.store||'(店舗未設定)';
+      if(!stores[s])stores[s]={total:0,sub:0,need:0,not:[],needList:[]};
+      stores[s].total++;
+      const rec=compMap[String(e.id)];
+      if(rec&&String(rec['提出状況'])==='Submitted'){
+        if(String(rec['要確認フラグ'])==='NeedReview'){stores[s].need++;stores[s].needList.push(e.name)}
+        else stores[s].sub++;
+      }else{stores[s].not.push(e.name)}
+    });
+    const totAll=active.length;
+    const subAll=Object.values(stores).reduce((a,s)=>a+s.sub,0);
+    const needAll=Object.values(stores).reduce((a,s)=>a+s.need,0);
+    const respAll=subAll+needAll;const notAll=totAll-respAll;
+    const rate=totAll?Math.round(respAll/totAll*100):0;
+    const storeNames=Object.keys(stores).sort((a,b)=>{
+      const ra=stores[a].total?(stores[a].sub+stores[a].need)/stores[a].total:0;
+      const rb=stores[b].total?(stores[b].sub+stores[b].need)/stores[b].total:0;
+      return ra-rb; // 実施率が低い店舗を上に
+    });
+    let html=`<div class="card" style="text-align:center">
+      <div style="font-size:13px;color:var(--text-sub)">全体の提出率</div>
+      <div style="font-size:40px;font-weight:800;color:${rate>=100?'#00A651':rate>=80?'#005BAC':'#E53E3E'}">${rate}%</div>
+      <div style="display:flex;gap:8px;margin-top:8px">
+        <div class="stat-card" style="flex:1"><div class="stat-num" style="color:#00A651">${respAll}</div><div class="stat-label">提出済</div></div>
+        <div class="stat-card" style="flex:1"><div class="stat-num" style="color:#E53E3E">${notAll}</div><div class="stat-label">未提出</div></div>
+        <div class="stat-card" style="flex:1"><div class="stat-num" style="color:#FF6B35">${needAll}</div><div class="stat-label">要確認</div></div>
+      </div>
+      <div style="font-size:12px;color:var(--text-sub);margin-top:6px">対象：在籍中クルー ${totAll}名（${month}）</div>
+    </div>`;
+    html+=storeNames.map(s=>{
+      const o=stores[s];const r=o.total?Math.round((o.sub+o.need)/o.total*100):0;
+      const col=r>=100?'#00A651':r>=80?'#005BAC':'#E53E3E';
+      const notHtml=o.not.length?`<div style="margin-top:8px"><span class="badge" style="background:#FEE2E2;color:#991B1B">未提出 ${o.not.length}名</span><div style="font-size:13px;margin-top:4px">${o.not.join('、')}</div></div>`:'';
+      const needHtml=o.needList.length?`<div style="margin-top:8px"><span class="badge" style="background:#FEF3C7;color:#92400E">要確認 ${o.needList.length}名</span><div style="font-size:13px;margin-top:4px">${o.needList.join('、')}</div></div>`:'';
+      const done=o.not.length===0&&o.needList.length===0;
+      return `<div class="card"><div class="flex-between"><div style="font-weight:700">${s}</div><div style="font-weight:800;color:${col}">${r}%　<span style="font-size:12px;color:var(--text-sub);font-weight:400">${o.sub+o.need}/${o.total}</span></div></div>${done?'<div style="margin-top:6px;color:#00A651;font-weight:600;font-size:14px">✅ 全員提出済み</div>':''}${notHtml}${needHtml}</div>`;
+    }).join('');
+    box.innerHTML=html;
+  },
 
   /* ===== 管理設定 ===== */
   renderSettings(){
