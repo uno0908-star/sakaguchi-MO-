@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>月次コンプライアンス確認 / Monthly Compliance</title>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  :root{--blue:#005BAC;--blue-d:#004080;--green:#00A651;--red:#E53E3E;--gray:#6B7280;--bg:#F3F4F6;--border:#E5E7EB}
+  body{font-family:-apple-system,"Segoe UI","Hiragino Kaku Gothic ProN","Meiryo",sans-serif;background:var(--bg);color:#1F2937;line-height:1.6;-webkit-text-size-adjust:100%}
+  .wrap{max-width:560px;margin:0 auto;min-height:100vh;background:#fff;display:flex;flex-direction:column}
+  header{background:var(--blue);color:#fff;padding:16px;text-align:center;position:sticky;top:0;z-index:10}
+  header .t1{font-size:17px;font-weight:800;letter-spacing:.5px}
+  header .t2{font-size:11px;opacity:.9;margin-top:2px}
+  .content{padding:18px;flex:1}
+  .card{background:#fff;border:1px solid var(--border);border-radius:12px;padding:16px;margin-bottom:14px;box-shadow:0 1px 3px rgba(0,0,0,.05)}
+  .label{font-weight:700;font-size:15px;margin-bottom:2px}
+  .label .en{font-weight:400;color:var(--gray);font-size:12px}
+  .hint{font-size:12px;color:var(--gray);margin:4px 0 10px}
+  input[type=text],input[type=tel]{width:100%;padding:14px;font-size:18px;border:2px solid var(--border);border-radius:10px;text-align:center;letter-spacing:2px}
+  input:focus{outline:none;border-color:var(--blue)}
+  .btn{display:block;width:100%;padding:15px;font-size:16px;font-weight:700;border:none;border-radius:10px;cursor:pointer;text-align:center}
+  .btn-primary{background:var(--blue);color:#fff}
+  .btn-primary:disabled{background:#9CA3AF;cursor:not-allowed}
+  .btn-green{background:var(--green);color:#fff}
+  .month-box{background:#EBF3FB;border:2px solid var(--blue);border-radius:12px;padding:14px;text-align:center;margin-bottom:14px}
+  .month-box .m1{font-size:22px;font-weight:800;color:var(--blue)}
+  .month-box .m2{font-size:12px;color:var(--gray)}
+  .me{background:#F0FDF4;border:1px solid var(--green);border-radius:10px;padding:12px;margin-bottom:14px}
+  .me .nm{font-size:18px;font-weight:800}
+  .me .sb{font-size:13px;color:var(--gray)}
+  .doc{margin-bottom:18px;border:1px solid var(--border);border-radius:10px;overflow:hidden}
+  .doc .dh{background:#F9FAFB;padding:10px 12px;font-weight:700;font-size:14px;border-bottom:1px solid var(--border)}
+  .doc .dh .en{font-weight:400;color:var(--gray);font-size:11px}
+  .doc img{width:100%;display:block;cursor:zoom-in}
+  .chk{display:flex;align-items:center;gap:10px;padding:12px;background:#FFFBEB;border-top:1px solid var(--border)}
+  .chk input{width:24px;height:24px;flex-shrink:0}
+  .chk label{font-size:14px;font-weight:600}
+  .agree{display:flex;align-items:center;gap:10px;padding:12px;background:#EBF3FB;border-radius:10px}
+  .agree input{width:24px;height:24px}
+  .err{color:var(--red);font-size:13px;margin-top:6px;font-weight:600;display:none}
+  /* モーダル */
+  .modal{position:fixed;inset:0;background:rgba(0,0,0,.55);display:none;align-items:center;justify-content:center;z-index:100;padding:24px}
+  .modal.show{display:flex}
+  .modal .box{background:#fff;border-radius:14px;padding:24px;max-width:380px;text-align:center}
+  .modal .ic{font-size:46px}
+  .modal .mt{font-size:18px;font-weight:800;color:var(--red);margin:8px 0}
+  .modal .mb{font-size:14px;color:#374151;margin-bottom:6px}
+  .modal .men{font-size:12px;color:var(--gray);margin-bottom:18px}
+  .toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#333;color:#fff;padding:12px 20px;border-radius:8px;font-size:14px;opacity:0;transition:.3s;z-index:200;pointer-events:none;max-width:90%}
+  .hidden{display:none!important}
+  .imgmodal{position:fixed;inset:0;background:rgba(0,0,0,.9);display:none;z-index:300;overflow:auto;padding:10px}
+  .imgmodal.show{display:block}
+  .imgmodal img{width:100%;max-width:900px;margin:0 auto;display:block}
+  .imgmodal .x{position:fixed;top:10px;right:16px;color:#fff;font-size:34px;cursor:pointer}
+  .done{text-align:center;padding:40px 20px}
+  .done .ic{font-size:60px}
+  .done .h{font-size:22px;font-weight:800;color:var(--green);margin:10px 0}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="t1">月次コンプライアンス確認フォーム</div>
+    <div class="t2">Monthly Compliance Confirmation ｜ 有限会社阪口商店</div>
+  </header>
+  <div class="content">
+
+    <!-- 画面1: 氏名コード入力 -->
+    <div id="view-login">
+      <div class="card">
+        <div class="label">従業員番号（7桁）<span class="en">／ Employee ID (7 digits)</span></div>
+        <div class="hint">ご自身の従業員番号を入力してください。分からない場合は店舗責任者に確認してください。<br>Enter your Employee ID. If you don't know it, ask your store manager.</div>
+        <input type="tel" id="emp-id" inputmode="numeric" maxlength="7" placeholder="1234567" autocomplete="off">
+        <div class="err" id="login-err"></div>
+        <button class="btn btn-primary" id="btn-verify" style="margin-top:14px" onclick="verify()">確認する ／ Confirm</button>
+      </div>
+    </div>
+
+    <!-- 画面2: アンケート -->
+    <div id="view-survey" class="hidden">
+      <div class="month-box">
+        <div class="m1" id="month-jp"></div>
+        <div class="m2" id="month-en"></div>
+        <div class="m2" style="margin-top:4px">対象月（自動設定・変更不可）／ Target month (auto, fixed)</div>
+      </div>
+      <div class="me">
+        <div class="nm" id="me-name"></div>
+        <div class="sb" id="me-sub"></div>
+      </div>
+
+      <div class="card">
+        <div class="label">以下の掲示物4点を確認しました<span class="en">／ I have reviewed the following 4 documents</span></div>
+        <div class="hint">下の資料を確認し、4点すべてにチェックしてください。<br>Review each document below and check all 4 boxes.</div>
+        <div id="docs"></div>
+      </div>
+
+      <div class="card">
+        <div class="label">内容を理解し遵守することに同意します<span class="en">／ I understand and agree to comply</span></div>
+        <label class="agree" style="margin-top:8px"><input type="checkbox" id="agree" onchange="updateBtn()"><span>はい ／ Yes</span></label>
+      </div>
+
+      <div class="card">
+        <div class="label">電子署名<span class="en">／ Electronic Signature</span></div>
+        <div class="hint">上記と同じ氏名を入力してください（電子署名として記録されます）。<br>Type your name exactly as shown above.</div>
+        <input type="text" id="sign" placeholder="氏名を入力 / Type your name" style="letter-spacing:0;font-size:16px" oninput="updateBtn()">
+        <div class="err" id="sign-err">氏名が一致しません ／ Name does not match</div>
+      </div>
+
+      <button class="btn btn-green" id="btn-submit" disabled onclick="submitSurvey()">送信する ／ Submit</button>
+      <div class="err" id="submit-err" style="text-align:center"></div>
+    </div>
+
+    <!-- 画面3: 完了 -->
+    <div id="view-done" class="hidden">
+      <div class="done">
+        <div class="ic">✅</div>
+        <div class="h">送信完了！<br>Submitted!</div>
+        <p id="done-msg" style="color:var(--gray);font-size:14px"></p>
+        <button class="btn btn-primary" style="margin-top:24px" onclick="location.reload()">閉じる ／ Close</button>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- 氏名コード不一致モーダル -->
+<div class="modal" id="modal-block">
+  <div class="box">
+    <div class="ic">⚠️</div>
+    <div class="mt">氏名コードが一致しません</div>
+    <div class="mb">入力された従業員番号は登録されていません。<br><b>店舗責任者へ氏名コードを確認してください。</b></div>
+    <div class="men">Your Employee ID was not found.<br>Please confirm your Employee ID with your store manager.</div>
+    <button class="btn btn-primary" onclick="document.getElementById('modal-block').classList.remove('show')">閉じる ／ Close</button>
+  </div>
+</div>
+
+<!-- 画像拡大 -->
+<div class="imgmodal" id="imgmodal" onclick="this.classList.remove('show')">
+  <span class="x">×</span><img id="imgmodal-img" src="" alt="">
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const GAS_URL='https://script.google.com/macros/s/AKfycbyHEBH5Q8VBcZFBzfH5tYQm46RCa_fYw3PDlKp1qA5E9EWmR44OQ8UA1JTXFa-stnbG8g/exec';
+const MONTHS_EN=['January','February','March','April','May','June','July','August','September','October','November','December'];
+const TYPE_NAME={Crew:'アルバイト（Crew）',ContractEmployee:'契約社員（Contract Employee）',FullTimeEmployee:'正社員（Full Time Employee）'};
+const DOCS=[
+  {key:'doc_compliance',jp:'コンプライアンス通信',en:'Compliance Newsletter',img:'images/compliance-policy.png'},
+  {key:'doc_age',jp:'未成年販売防止確認',en:'Underage Sales Prevention',img:'images/age-verification.png'},
+  {key:'doc_work',jp:'勤務時規約',en:'Work Rules & Attendance',img:'images/work-rules.png'},
+  {key:'doc_crew',jp:'クルー規約',en:'Crew Policy & Appearance',img:'images/crew-policy.png'}
+];
+let CURRENT_MONTH='', EMP=null;
+
+function curMonth(){const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')}
+function toast(msg){const t=document.getElementById('toast');t.textContent=msg;t.style.opacity='1';clearTimeout(t._t);t._t=setTimeout(()=>t.style.opacity='0',3000)}
+function showImg(src){document.getElementById('imgmodal-img').src=src;document.getElementById('imgmodal').classList.add('show')}
+
+async function verify(){
+  const id=(document.getElementById('emp-id').value||'').trim();
+  const err=document.getElementById('login-err');
+  err.style.display='none';
+  if(!/^\d{7}$/.test(id)){err.textContent='従業員番号は7桁の数字です ／ Must be 7 digits';err.style.display='block';return}
+  const btn=document.getElementById('btn-verify');
+  btn.disabled=true;btn.textContent='確認中... ／ Checking...';
+  CURRENT_MONTH=curMonth();
+  try{
+    const res=await fetch(`${GAS_URL}?action=verifyCrew&id=${encodeURIComponent(id)}&month=${CURRENT_MONTH}`,{redirect:'follow'});
+    const d=await res.json();
+    if(!d.ok)throw new Error(d.error||'エラー');
+    if(!d.found){
+      document.getElementById('modal-block').classList.add('show');
+      return;
+    }
+    EMP=d.employee;
+    if(d.submitted){
+      // 既に当月提出済み → 再提出可能だが通知
+      toast('今月は提出済みです（再提出も可能）');
+    }
+    startSurvey();
+  }catch(e){
+    err.textContent='接続できませんでした。電波の良い場所で再度お試しください ／ Connection error';
+    err.style.display='block';
+  }finally{
+    btn.disabled=false;btn.textContent='確認する ／ Confirm';
+  }
+}
+
+function startSurvey(){
+  const d=new Date();
+  document.getElementById('month-jp').textContent=d.getFullYear()+'年'+(d.getMonth()+1)+'月';
+  document.getElementById('month-en').textContent=MONTHS_EN[d.getMonth()]+' '+d.getFullYear();
+  document.getElementById('me-name').textContent=EMP.name;
+  document.getElementById('me-sub').textContent=(EMP.store||'')+'｜'+(TYPE_NAME[EMP.type]||EMP.type||'');
+  // 掲示物
+  document.getElementById('docs').innerHTML=DOCS.map(doc=>`
+    <div class="doc">
+      <div class="dh">${doc.jp}<span class="en">／ ${doc.en}</span></div>
+      <img src="${doc.img}" alt="${doc.jp}" loading="lazy" onclick="showImg('${doc.img}')">
+      <div class="chk"><input type="checkbox" id="${doc.key}" onchange="updateBtn()"><label for="${doc.key}">確認しました ／ Reviewed</label></div>
+    </div>`).join('');
+  document.getElementById('view-login').classList.add('hidden');
+  document.getElementById('view-survey').classList.remove('hidden');
+  window.scrollTo(0,0);
+}
+
+function allChecked(){return DOCS.every(d=>document.getElementById(d.key).checked)}
+function signOK(){return (document.getElementById('sign').value||'').trim()===String(EMP.name).trim()}
+
+function updateBtn(){
+  const ok=allChecked()&&document.getElementById('agree').checked&&signOK();
+  document.getElementById('btn-submit').disabled=!ok;
+  const se=document.getElementById('sign-err');
+  const sv=(document.getElementById('sign').value||'').trim();
+  se.style.display=(sv&&!signOK())?'block':'none';
+}
+
+async function submitSurvey(){
+  if(!(allChecked()&&document.getElementById('agree').checked&&signOK())){toast('未チェック項目があります');return}
+  const btn=document.getElementById('btn-submit');
+  btn.disabled=true;btn.textContent='送信中... ／ Sending...';
+  const rec={
+    '対象年月':CURRENT_MONTH,'従業員番号':String(EMP.id),'氏名':EMP.name,'店舗':EMP.store,'雇用区分':EMP.type,
+    doc_compliance:true,doc_age:true,doc_work:true,doc_crew:true,
+    '同意':'はい','電子署名':document.getElementById('sign').value.trim(),
+    '提出状況':'Submitted','提出日時':new Date().toISOString()
+  };
+  try{
+    const res=await fetch(GAS_URL,{method:'POST',redirect:'follow',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify({action:'recordCompliance',record:rec})});
+    const d=await res.json();
+    if(!d.ok)throw new Error(d.error||'送信エラー');
+    document.getElementById('view-survey').classList.add('hidden');
+    document.getElementById('done-msg').textContent=EMP.name+' さん（'+document.getElementById('month-jp').textContent+'分）の回答を受け付けました。';
+    document.getElementById('view-done').classList.remove('hidden');
+    window.scrollTo(0,0);
+  }catch(e){
+    document.getElementById('submit-err').textContent='送信できませんでした。再度お試しください ／ '+e.message;
+    btn.disabled=false;btn.textContent='送信する ／ Submit';
+  }
+}
+
+// Enterで確認
+document.getElementById('emp-id').addEventListener('keydown',e=>{if(e.key==='Enter')verify()});
+</script>
+</body>
+</html>
