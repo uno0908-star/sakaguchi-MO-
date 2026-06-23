@@ -1576,8 +1576,8 @@ const App={
   _canEditRole(role){const r=DB.user()?.role;return Storage.AUTH.can(DB.user(),'evalWrite')&&r===role},
   _typeName(type){return{Crew:'クルー',ContractEmployee:'契約社員',FullTimeEmployee:'正社員'}[type]||type},
   /* 在籍年数（Excelスナップショット由来・IDで照合・表示専用） */
-  /* 基準月(2026-06)から現在までの経過月数。毎月自動で+1される */
-  _tenureElapsed(){const b=(typeof TENURE_BASELINE_MONTH!=='undefined')?TENURE_BASELINE_MONTH:'2026-06';const p=b.split('-');const by=Number(p[0]),bm=Number(p[1]);const now=new Date();const e=(now.getFullYear()-by)*12+((now.getMonth()+1)-bm);return e>0?e:0},
+  /* 基準(2026-06-15)からの経過月数。元データが毎月15日時点のため、各月15日を越えた時点で+1する */
+  _tenureElapsed(){const b=(typeof TENURE_BASELINE_MONTH!=='undefined')?TENURE_BASELINE_MONTH:'2026-06';const p=b.split('-');const by=Number(p[0]),bm=Number(p[1]);const now=new Date();let e=(now.getFullYear()-by)*12+((now.getMonth()+1)-bm);if(now.getDate()<15)e--;return e>0?e:0},
   _tenureMonths(id){const m=(typeof TENURE_MAP!=='undefined')?TENURE_MAP[String(id)]:null;if(m==null||m==='')return null;return Number(m)+this._tenureElapsed()},
   _tenureText(id){const m=this._tenureMonths(id);if(m==null)return'';const y=Math.floor(m/12),mo=m%12;return(y?y+'年':'')+mo+'ヶ月'},
   _tenureFull(id){const m=this._tenureMonths(id);if(m==null)return'';return this._tenureText(id)+'（'+m+'ヶ月）'},
