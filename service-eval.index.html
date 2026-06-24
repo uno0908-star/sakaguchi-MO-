@@ -543,13 +543,24 @@ const Storage=(()=>{
     return{id:e.id,employeeId:e.employeeId?String(e.employeeId):e.employeeId,evalDate:e.evalDate,evaluatorName:e.evaluatorName,evaluatorRole:e.evaluatorRole,guidanceNotes:e.guidanceNotes,createdAt:e.createdAt,items:items};
   }
 
-  async function _syncFromGas(){
+  /* getAll を1回だけ取得（AbortControllerでタイムアウト）。コールドスタート対策で呼び出し側がリトライする */
+  async function _fetchGetAll(timeoutMs){
+    const ctrl=new AbortController();const t=setTimeout(function(){ctrl.abort()},timeoutMs||70000);
     try{
-      showToast('データを同期中...','info');
-      const res=await fetch(`${GAS_URL}?action=getAll`,{redirect:'follow'});
+      const res=await fetch(`${GAS_URL}?action=getAll`,{redirect:'follow',signal:ctrl.signal});
       if(!res.ok)throw new Error('HTTP '+res.status);
       const d=await res.json();
       if(!d.ok)throw new Error(d.error||'不明なエラー');
+      return d;
+    }finally{clearTimeout(t)}
+  }
+  async function _syncFromGas(){
+    try{
+      showToast('データを同期中...','info');
+      // getAllは全データ511KBでコールド時45秒超。タイムアウト＋自動1回リトライ（2回目はウォームで高速）
+      let d;
+      try{d=await _fetchGetAll(70000)}
+      catch(e1){console.warn('[GAS sync retry]',e1&&e1.message);d=await _fetchGetAll(70000)}
       // 従業員: updatedAtで比較マージ。ローカルが新しければ自動再送
       var localEmps=_read(STORAGE_KEYS.EMPLOYEES,[]).map(_normalizeEmp);
       var gasEmps=d.employees?.length?d.employees.map(_normalizeEmp):[];
@@ -595,7 +606,7 @@ const Storage=(()=>{
       return {ok:true,serverEmpCount:gasEmps.length};
     }catch(e){
       console.error('[GAS sync]',e);
-      showToast('GAS接続エラー（キャッシュで表示中）','error');
+      showToast('サーバー応答が遅く同期できませんでした（前回の表示を継続中・再度お試しを）','error');
       // 通信失敗時は ok:false を返す。呼び出し元はこの場合シードしてはいけない
       return {ok:false,error:e.message};
     }
