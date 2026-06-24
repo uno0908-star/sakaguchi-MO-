@@ -601,6 +601,36 @@ const Storage=(()=>{
     }
   }
   async function syncNow(){return _syncFromGas()}
+
+  /* 従業員のみ軽量同期（getAllは全データ511KBで遅くタイムアウトしやすいため、
+     クルーマスタ取込の事前照合はこの軽量版を使う）。AbortControllerでタイムアウト。 */
+  async function syncEmployeesOnly(timeoutMs){
+    timeoutMs=timeoutMs||45000;
+    const ctrl=new AbortController();const t=setTimeout(function(){ctrl.abort()},timeoutMs);
+    try{
+      const res=await fetch(`${GAS_URL}?action=getEmployees`,{redirect:'follow',signal:ctrl.signal});
+      if(!res.ok)throw new Error('HTTP '+res.status);
+      const d=await res.json();
+      if(!d.ok)throw new Error(d.error||'不明なエラー');
+      const localEmps=_read(STORAGE_KEYS.EMPLOYEES,[]).map(_normalizeEmp);
+      const gasEmps=(d.employees&&d.employees.length)?d.employees.map(_normalizeEmp):[];
+      if(typeof REMOVED_EMPLOYEE_IDS!=='undefined'){
+        REMOVED_EMPLOYEE_IDS.forEach(function(rid){
+          if(gasEmps.some(function(e){return String(e.id)===String(rid)})){
+            fetch(GAS_URL,{method:'POST',redirect:'follow',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify({action:'deleteEmployee',id:String(rid)})}).catch(function(){});
+          }
+        });
+      }
+      if(gasEmps.length){
+        const r=_mergeEmployees(localEmps,gasEmps);
+        _write(STORAGE_KEYS.EMPLOYEES,r.merged);
+        r.toResync.forEach(function(emp){_postGas('upsertEmployee',{employee:emp})});
+      }
+      return{ok:true,serverEmpCount:gasEmps.length};
+    }catch(e){
+      return{ok:false,error:e.name==='AbortError'?'タイムアウト（電波またはサーバー応答待ち）':e.message};
+    }finally{clearTimeout(t)}
+  }
   async function testConnection(){
     try{const res=await fetch(`${GAS_URL}?action=ping`,{redirect:'follow'});const d=await res.json();return d.ok?{ok:true,message:d.message}:{ok:false,error:d.error}}
     catch(e){return{ok:false,error:e.message}}
@@ -778,7 +808,7 @@ const Storage=(()=>{
     return{ok:true};
   }
 
-  return{init,syncNow,testConnection,seedGas,AUTH,showToast,addNewEmployees,normName,relinkEmployee,
+  return{init,syncNow,syncEmployeesOnly,testConnection,seedGas,AUTH,showToast,addNewEmployees,normName,relinkEmployee,
     getEmployees,saveEmployees,getEmployee,upsertEmployee,deleteEmployee,addRetirement,transferEmployee,reinstateEmployee,
     getEvaluations,addEvaluation,getEvalsByEmployee,
     getObservations,addObservation,getCoachings,addCoaching,getCoachingsByEmployee,
@@ -1831,13 +1861,18 @@ const App={
      ・アナログ追加済み（仮IDだが氏名一致）→ 評価データを保持したまま氏名コード(id)だけ付け替え（在籍年数も自動反映）
      既存クルーの評価・ステータス・資格は一切変更しない。 */
   async importRoster(){
+   const res=document.getElementById('s-import-roster-result');
+   try{
     if(typeof CREW_ROSTER==='undefined'||!CREW_ROSTER.length){this.showToast('取込データがありません','error');return}
     if(!Storage.AUTH.can(DB.user(),'empManage')){this.showToast('権限がありません（SI・管理者のみ）','error');return}
-    const res=document.getElementById('s-import-roster-result');
-    // まず最新状態を取得（既存クルーを正確に把握し、二重追加を防ぐ）
-    if(res)res.textContent='同期して照合中...';
-    const sync=await Storage.syncNow();
-    if(sync&&sync.ok===false){if(res)res.innerHTML='<span style="color:#991B1B">サーバーに接続できませんでした。電波の良い場所で再実行してください。</span>';return}
+    // まず最新のクルー一覧だけ軽量取得（getAllは重く固まるため）。タイムアウト時はローカルで続行可。
+    if(res)res.textContent='最新のクルー一覧を取得中…（初回は最大1分ほどかかる場合があります）';
+    const sync=await Storage.syncEmployeesOnly();
+    if(sync&&sync.ok===false){
+      if(!confirm('サーバーからの取得に時間がかかっています（'+(sync.error||'')+'）。\n\nこの端末の現在のデータで照合を続けますか？\n※他の端末で最近クルーを追加した場合は、後で「今すぐ同期」してから再実行してください。')){
+        if(res)res.textContent='中止しました（再実行してください）';return;
+      }
+    }
     const emps=DB.employees();
     const existIds=new Set(emps.map(e=>String(e.id)));
     const rosterIds=new Set(CREW_ROSTER.map(r=>String(r.id)));
@@ -1890,8 +1925,12 @@ const App={
     if(ambiguous.length)out+='<br><span style="color:#92400E">同名複数で未処理 '+ambiguous.length+'名は手動でご確認ください。</span>';
     if(res)res.innerHTML=out;
     this.showToast('クルーマスタを反映しました','success');
-    await Storage.syncNow();
     if(this._view==='employees')this.filterEmployees();
+   }catch(err){
+    console.error('[importRoster]',err);
+    if(res)res.innerHTML='<span style="color:#991B1B">エラーが発生しました：'+(err&&err.message||err)+'</span>';
+    this.showToast('エラー：'+(err&&err.message||err),'error');
+   }
   },
 
   importBackup(){
