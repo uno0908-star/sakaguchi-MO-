@@ -593,11 +593,11 @@ async function apiPost(action, body={}) {
 // ============================================================
 // データ管理
 // ============================================================
-async function loadData(force=false) {
+async function loadData(force=false, silent=false) {
   const now = Date.now();
   if (!force && S.lastFetch && now-S.lastFetch < CFG.CACHE_TTL_MS) return;
   if (!force) { const c=tryCache(); if(c){S.submissions=c;return;} }
-  showLoading();
+  if (!silent) showLoading(); // 既にデータ表示中はスピナーを出さず裏で更新
   try {
     const d = await apiGet('getSubmissions');
     S.submissions=d||[]; _clearSubIdx(); saveCache(S.submissions); S.lastFetch=Date.now(); S.error=null;
@@ -606,6 +606,8 @@ async function loadData(force=false) {
 }
 function applyData(d) { S.submissions=d||[]; }
 function tryCache() { try{const r=localStorage.getItem(CFG.CACHE_KEY);if(!r)return null;const{subs,ts}=JSON.parse(r);if(Date.now()-ts>CFG.CACHE_TTL_MS)return null;return subs;}catch{return null;} }
+// 起動時の即表示用：古くても残っているキャッシュを返す
+function tryCacheAny() { try{const r=localStorage.getItem(CFG.CACHE_KEY);if(!r)return null;const{subs}=JSON.parse(r);return subs;}catch{return null;} }
 function saveCache(subs) { try{localStorage.setItem(CFG.CACHE_KEY,JSON.stringify({subs,ts:Date.now()}));}catch{} }
 function clearCache() { localStorage.removeItem(CFG.CACHE_KEY); S.lastFetch=0; _clearSubIdx(); }
 
@@ -2051,8 +2053,13 @@ async function refreshData(){clearCache();await loadData(true);renderView();show
 async function init(){
   S.stores=STORES; S.cleaningItems=ITEMS; S.storeSettings=ALL_SETTINGS;
   initEvents(); // イベント登録（1回のみ）
-  renderView(); // マスターデータで即時表示（写真付きダッシュボード）
-  try { await loadData(true); } catch(e){ /* エラーはloadData内でtoast表示済み */ }
+  // 前回のキャッシュがあれば即表示（古くてもまず出す）
+  const cached = tryCacheAny();
+  const hasCache = !!(cached && cached.length);
+  if (hasCache) { S.submissions = cached; _clearSubIdx(); }
+  renderView(); // マスター＋キャッシュで即時表示（写真付きダッシュボード）
+  // 裏で最新取得。既にデータ表示中はスピナーを出さない
+  try { await loadData(true, hasCache); } catch(e){ /* エラーはloadData内でtoast表示済み */ }
   renderView(); // 報告データ反映
 }
 document.addEventListener('DOMContentLoaded',init);
