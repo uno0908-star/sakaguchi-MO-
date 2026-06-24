@@ -1701,25 +1701,23 @@ async function loadThumbnailOnly(submissionId){
   }catch(e){}
 }
 
-// ── 写真カードを順次自動ロード（モバイル対応: IntersectionObserverを使わず逐次処理）
+// ── 写真カードを自動ロード（6並列のワーカープールで高速化）
 function autoLoadThumbnails(){
   var cards=Array.prototype.slice.call(document.querySelectorAll('[id^="pgw-"]'));
   if(!cards.length)return;
   var idx=0;
-  function loadNext(){
-    if(idx>=cards.length)return;
+  var CONCURRENCY=6; // 同時取得枚数（直列→並列で体感数倍速く）
+  function worker(){
+    if(idx>=cards.length)return Promise.resolve();
     var card=cards[idx++];
     var id=card.id.replace('pgw-','');
     if(_photoCache[id]){
       _showPhotoInWrap(card,_photoCache[id]);
-      setTimeout(loadNext,0);
-    }else{
-      loadThumbnailOnly(id).then(function(){setTimeout(loadNext,50);},function(){setTimeout(loadNext,50);});
+      return worker();
     }
+    return loadThumbnailOnly(id).then(worker,worker);
   }
-  // 先頭2枚を並行ロードしてあとは逐次
-  loadNext();
-  setTimeout(loadNext,10);
+  for(var i=0;i<CONCURRENCY;i++)worker();
 }
 
 // ── 写真カードタップ（ギャラリー・管理画面など）
