@@ -1083,7 +1083,13 @@ const App={
     const roleEl=document.getElementById('login-role');
     if(roleEl){roleEl.addEventListener('change',()=>this._toggleStoreWrap());this._toggleStoreWrap()}
     // GAS同期を先に完了させてから初期シード判定する（新端末でGASの最新データを上書きしない）
-    const sync=await Storage.syncNow();
+    // ★従業員データは軽量API(getEmployees 約2-5秒)で確実に取得する。
+    //   getAll(全511KB)はモバイルのコールドスタート時に失敗しやすく、
+    //   失敗するとローカルが空のままダッシュボードが全部0表示になるため。
+    let sync=await Storage.syncEmployeesOnly(60000);
+    // 評価・指導・目線合わせ等(getAll必須)はバックグラウンドで取得し、初期表示をブロックしない。
+    //   完了後に_syncFromGas内で現在画面を自動再描画する。
+    if(sync&&sync.ok===true){Storage.syncNow().catch(function(){})}
     // ★初期シードは「①同期に成功した ②サーバーの従業員が0件 ③この端末も0件」の
     //   3条件が全て揃ったときだけ実行する。
     //   通信失敗時（sync.ok===false）は、サーバーにデータがあるか分からないため
