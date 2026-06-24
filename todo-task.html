@@ -10,7 +10,7 @@
 <!-- LINE in-app browser キャッシュ対策：バージョンが変わったら自動リロード -->
 <script>
 (function(){
-  var VER = '20260622-1'; // ★ 更新時はここを変える
+  var VER = '20260624-1'; // ★ 更新時はここを変える
   var stored = localStorage.getItem('_appVer');
   var param  = new URLSearchParams(location.search).get('_v');
   if (stored !== VER) {
@@ -997,6 +997,19 @@ function toast(msg, ms=2600) {
 async function gGet(p)  { return (await fetch(GAS_URL + '?' + new URLSearchParams(p))).json(); }
 async function gPost(b) { return (await fetch(GAS_URL, {method:'POST', body:JSON.stringify(b)})).json(); }
 
+const TASKS_CACHE_KEY = 'todoTasksCache_v1';
+
+// キャッシュからの即時描画（起動時のみ使用）
+function renderFromCache() {
+  try {
+    const raw = localStorage.getItem(TASKS_CACHE_KEY);
+    if (!raw) return false;
+    tasks = JSON.parse(raw);
+    render();
+    return true;
+  } catch(e) { return false; }
+}
+
 async function loadTasks() {
   loading(true);
   try {
@@ -1009,6 +1022,7 @@ async function loadTasks() {
           : (t.completedStores || {})
       }));
       render();
+      try { localStorage.setItem(TASKS_CACHE_KEY, JSON.stringify(tasks)); } catch(e) {} // ★キャッシュ保存
       toast('🔄 データを更新しました');
     } else toast('⚠️ 読込エラー: ' + r.error);
   } catch(e) { toast('⚠️ 通信エラー。時間をおいて再試行してください'); }
@@ -2192,7 +2206,8 @@ loadSCStoreAssignments();
 
 // ページを開くたびに必ずログイン画面を表示する
 initQuickLogin();
-loadTasks();
+renderFromCache();   // ★まずキャッシュを即表示（一瞬で出る）
+loadTasks();         // ★裏で最新を取得して上書き
 </script>
 </body>
 </html>
