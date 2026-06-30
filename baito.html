@@ -99,8 +99,8 @@ body{font-family:'Noto Sans JP',sans-serif;background:var(--gray-50);color:var(-
 .sci.active{border-color:var(--blue);background:var(--blue-light)}
 .sci input[type="checkbox"]{width:17px;height:17px;accent-color:var(--blue);flex-shrink:0;cursor:pointer}
 .sci label{flex:1;font-size:13px;font-weight:500;cursor:pointer}
-.rm-btn{background:none;border:none;color:var(--gray-300);cursor:pointer;font-size:15px;padding:0 3px;line-height:1}
-.rm-btn:hover{color:var(--accent)}
+.rm-btn{background:#fff5f5;border:1.5px solid var(--red);color:var(--red);cursor:pointer;font-size:11px;font-weight:700;padding:5px 9px;border-radius:7px;line-height:1;white-space:nowrap;flex-shrink:0}
+.rm-btn:hover{background:var(--red);color:#fff}
 .add-shift-row{display:flex;gap:7px;margin-top:9px}
 .add-shift-input{flex:1;padding:8px 11px;border:1.5px solid var(--gray-300);border-radius:8px;font-family:'Noto Sans JP',sans-serif;font-size:13px}
 .add-shift-input:focus{outline:none;border-color:var(--blue)}
@@ -783,8 +783,8 @@ function onDayChange(){
     row.className = "day-shift-row";
     row.dataset.day = day;
 
-    // シフト選択肢（settings.shiftsから生成）
-    const shiftOptions = settings.shifts.map(s=>
+    // シフト選択肢：店長がチェックした募集時間だけを表示（バッジ表示と一致させる）
+    const shiftOptions = settings.shifts.filter(s=>s.checked).map(s=>
       `<option value="${s.label}">${s.label}</option>`
     ).join("") + '<option value="相談可">時間帯は相談可</option>';
 
@@ -828,7 +828,7 @@ function buildShiftCheckList(){
       <input type="checkbox" id="sc${idx}" ${shift.checked?"checked":""}
         onchange="toggleShift(${idx},this.checked)">
       <label for="sc${idx}">${shift.label}</label>
-      ${isCustom?`<button class="rm-btn" onclick="removeCustomShift(${idx})">✕</button>`:""}
+      ${isCustom?`<button class="rm-btn" onclick="removeCustomShift(${idx})" title="この時間帯を削除">🗑 削除</button>`:""}
     `;
     list.appendChild(item);
   });
