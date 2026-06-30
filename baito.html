@@ -612,9 +612,28 @@ let settings     = loadSettings(currentKey);
 let pwTarget     = "";
 let qrUnlocked   = false;
 
+// 標準6種を必ず先頭に揃える（欠けていれば補完／チェック状態は引き継ぐ）。
+// 標準以外（店長が作った時間）は後ろに残す。→ 全店舗で標準6種が消えない。
+function ensureDefaultShifts(shifts){
+  const src = Array.isArray(shifts) ? shifts : [];
+  const merged = DEFAULT_SHIFTS.map(d=>{
+    const found = src.find(s=>s && s.label===d.label);
+    return { label:d.label, checked: found ? !!found.checked : false };
+  });
+  src.forEach(s=>{
+    if(s && s.label && !DEFAULT_SHIFTS.some(d=>d.label===s.label)){
+      merged.push({ label:String(s.label), checked:!!s.checked });
+    }
+  });
+  return merged;
+}
+
 function loadSettings(k){
-  try{ const r=localStorage.getItem("baito_"+k); if(r) return JSON.parse(r); }catch(e){}
-  return { shifts:DEFAULT_SHIFTS.map(s=>({...s})), count:"若干名", comment:"", stopped:false, managerEmail:"" };
+  let s = null;
+  try{ const r=localStorage.getItem("baito_"+k); if(r) s=JSON.parse(r); }catch(e){}
+  if(!s) s = { count:"若干名", comment:"", stopped:false, managerEmail:"" };
+  s.shifts = ensureDefaultShifts(s.shifts);   // 標準6種を必ず確保
+  return s;
 }
 function saveSettingsStore(k,s){ localStorage.setItem("baito_"+k,JSON.stringify(s)); }
 
@@ -691,8 +710,9 @@ function applyStore(key){
         if(json.config){
           try{
             const cfg = (typeof json.config==="string") ? JSON.parse(json.config) : json.config;
-            if(cfg && Array.isArray(cfg.shifts) && cfg.shifts.length){
-              settings.shifts = cfg.shifts.map(s=>({label:String(s.label), checked:!!s.checked}));
+            if(cfg && Array.isArray(cfg.shifts)){
+              // 同期データに標準6種が欠けていても必ず補完する
+              settings.shifts = ensureDefaultShifts(cfg.shifts);
             }
             if(typeof cfg.count==="string")    settings.count   = cfg.count;
             if(typeof cfg.comment==="string")  settings.comment = cfg.comment;
