@@ -821,7 +821,9 @@ function buildShiftCheckList(){
   const list=document.getElementById("shiftCheckList");
   list.innerHTML="";
   settings.shifts.forEach((shift,idx)=>{
-    const isCustom=idx>=DEFAULT_SHIFTS.length;
+    // 標準の時間帯（DEFAULT_SHIFTS）に無いラベル＝店長が作った時間＝削除可
+    // ※並び順ではなく名前で判定（同期データで順番が変わっても確実に削除ボタンを出す）
+    const isCustom=!DEFAULT_SHIFTS.some(d=>d.label===shift.label);
     const item=document.createElement("div");
     item.className="sci"+(shift.checked?" active":"");
     item.innerHTML=`
