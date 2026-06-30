@@ -670,16 +670,45 @@ function applyStore(key){
   document.getElementById("mpStoreName").textContent   = s.name;
   document.title = "アルバイト応募 | " + s.name;
 
-  // GASからこの店舗の登録済み店長メールを取得して表示
+  // GASからこの店舗の登録済み店長メール＋募集設定を取得して反映
+  // （localStorageを即表示しつつ、裏でサーバーの最新に追従＝全端末で共有）
   if(GAS_URL && !GAS_URL.includes("YOUR_GAS")){
     fetch(GAS_URL + "?storeKey=" + encodeURIComponent(key))
       .then(r=>r.json())
       .then(json=>{
-        if(json.status==="ok" && json.value){
+        if(!json || json.status!=="ok") return;
+        let changed = false;
+
+        // 通知メール
+        if(json.value){
           settings.managerEmail = json.value;
-          saveSettingsStore(key, settings);
           const el = document.getElementById("mpEmail");
           if(el) el.value = json.value;
+          changed = true;
+        }
+
+        // 募集設定（シフト・人数・コメント・停止状態）を全端末で共有
+        if(json.config){
+          try{
+            const cfg = (typeof json.config==="string") ? JSON.parse(json.config) : json.config;
+            if(cfg && Array.isArray(cfg.shifts) && cfg.shifts.length){
+              settings.shifts = cfg.shifts.map(s=>({label:String(s.label), checked:!!s.checked}));
+            }
+            if(typeof cfg.count==="string")    settings.count   = cfg.count;
+            if(typeof cfg.comment==="string")  settings.comment = cfg.comment;
+            if(typeof cfg.stopped==="boolean") settings.stopped = cfg.stopped;
+            changed = true;
+          }catch(e){}
+        }
+
+        if(changed){
+          saveSettingsStore(key, settings);
+          // 今表示中の店舗のときだけ画面を最新化
+          if(key===currentKey){
+            applyStoppedUI(settings.stopped);
+            refreshBadge();
+            buildTimebandSelect();
+          }
         }
       }).catch(()=>{});
   }
@@ -861,15 +890,34 @@ function saveManagerSettings(){
   saveSettingsStore(currentKey, settings);
 
   // GASのスプレッドシートにも保存（端末をまたいで有効・CORS回避）
-  if(email && GAS_URL && !GAS_URL.includes("YOUR_GAS")){
-    const params = new URLSearchParams({
-      action:       "saveManager",
-      storeKey:     currentKey,
-      storeName:    currentStore.name,
-      managerEmail: email
+  if(GAS_URL && !GAS_URL.includes("YOUR_GAS")){
+    // 通知メール
+    if(email){
+      const params = new URLSearchParams({
+        action:       "saveManager",
+        storeKey:     currentKey,
+        storeName:    currentStore.name,
+        managerEmail: email
+      });
+      const img = new Image();
+      img.src = GAS_URL + "?" + params.toString();
+    }
+
+    // 募集設定（シフト・人数・コメント・停止状態）を全端末で共有
+    const cfg = {
+      shifts:  settings.shifts,
+      count:   settings.count,
+      comment: settings.comment,
+      stopped: settings.stopped
+    };
+    const cfgParams = new URLSearchParams({
+      action:    "saveConfig",
+      storeKey:  currentKey,
+      storeName: currentStore.name,
+      config:    JSON.stringify(cfg)
     });
-    const img = new Image();
-    img.src = GAS_URL + "?" + params.toString();
+    const cfgImg = new Image();
+    cfgImg.src = GAS_URL + "?" + cfgParams.toString();
   }
 
   applyStoppedUI(settings.stopped);
