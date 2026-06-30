@@ -1350,6 +1350,13 @@ function renderAnalysis() {
     const done=S.stores.reduce((a,st)=>a+getSettings(st.storeId,item.itemId).filter(s=>latestSub(s.settingId)).length,0);
     return{...item,done,total,pct:total?Math.round(done/total*100):0};
   }).sort((a,b)=>a.pct-b.pct);
+  // 店舗別 クルー稼働率（誰が清掃しているか／店長抱え込みの可視化）
+  const crewRanking=S.stores.map(st=>{
+    const rs=roleStats(st.storeId);
+    const total=ROLES.reduce((a,r)=>a+(rs[r]||0),0);
+    const crew=rs['クルー']||0;
+    return{...st,rs,total,crew,crewPct:total?Math.round(crew/total*100):0};
+  }).sort((a,b)=>a.crewPct-b.crewPct);
 
   return`<div class="app-header"><div class="header-title">分析</div><button class="header-action" onclick="refreshData()">↻</button></div>
   <div class="view-content">
@@ -1361,6 +1368,18 @@ function renderAnalysis() {
     <div class="card">
       <div class="card-title">店舗別 進捗状況</div>
       ${ranking.map(st=>`<div class="role-bar" style="cursor:pointer;margin-bottom:8px" data-nav="store-detail" data-store="${st.storeId}"><div class="role-name" style="min-width:110px;max-width:110px;overflow:hidden;white-space:nowrap;font-size:.76rem">${st.storeName}</div><div class="role-bar-track"><div class="role-bar-fill" style="width:${st.prog.pct}%;background:${st.prog.pct===100?'var(--green)':st.prog.pct>=50?'var(--blue)':'var(--orange)'}"></div></div><div class="role-count">${st.prog.pct}%</div></div>`).join('')}
+    </div>
+    <div class="card">
+      <div class="card-title">店舗別 クルー稼働率（誰が清掃しているか）</div>
+      <div style="display:flex;flex-wrap:wrap;gap:8px 12px;font-size:.68rem;color:var(--gray-text);margin-bottom:10px">
+        ${ROLES.map((r,i)=>`<span style="display:inline-flex;align-items:center;gap:3px"><span style="width:10px;height:10px;border-radius:2px;display:inline-block;background:${['#3B82F6','#8B5CF6','#10B981','#F59E0B','#EF4444'][i]}"></span>${r}</span>`).join('')}
+      </div>
+      ${crewRanking.map(st=>{
+        const colors=['crew','sub','leader','contract','manager'];
+        if(!st.total)return`<div class="role-bar" style="margin-bottom:8px"><div class="role-name" style="min-width:110px;max-width:110px;overflow:hidden;white-space:nowrap;font-size:.76rem">${st.storeName}</div><div class="role-bar-track" style="display:flex;align-items:center;justify-content:center;font-size:.62rem;color:var(--gray-text)">提出なし</div><div class="role-count">–</div></div>`;
+        return`<div class="role-bar" style="cursor:pointer;margin-bottom:8px" data-nav="store-detail" data-store="${st.storeId}"><div class="role-name" style="min-width:110px;max-width:110px;overflow:hidden;white-space:nowrap;font-size:.76rem">${st.storeName}</div><div class="role-bar-track" style="display:flex">${ROLES.map((r,i)=>{const c=st.rs[r]||0;return c?`<div class="role-bar-fill ${colors[i]}" style="width:${c/st.total*100}%;border-radius:0" title="${r}: ${c}件"></div>`:'';}).join('')}</div><div class="role-count" style="color:${st.crewPct>=50?'var(--green)':st.crewPct>=30?'var(--blue)':'var(--orange)'}">${st.crewPct}%</div></div>`;
+      }).join('')}
+      <div style="font-size:.7rem;color:var(--gray-text);margin-top:6px">右の％はクルーの清掃割合。低い店舗ほど店長・社員が抱え込んでいます（クルー割合の低い順に表示）。</div>
     </div>
     <div class="card">
       <div class="card-title">清掃項目別 完了率（未改善順）</div>
