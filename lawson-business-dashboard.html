@@ -315,28 +315,35 @@ const EVAL_ITEMS = {
 };
 
 // ---- 最終評価（Excel「評価計算&経費申請シート」の計算ロジック準拠） ----
-const SHIFT_SLOTS = ['店長①','店長②','一般','SC'];          // 人員配置の枠
-const STAFF_ROLES = ['店長','一般','SC'];                     // 社員マスタの役職
+const SHIFT_SLOTS = ['店長①','店長②','一般','SC','契約社員①','契約社員②'];  // 人員配置の枠
+// 社員給与換算の対象枠。契約社員は時給制（パート給与として店利益に計上済み）のため、
+// PF/PAの社員給与控除に含めると二重控除になる → 除外する
+const SALARY_SLOTS = ['店長①','店長②','一般','SC'];
+const STAFF_ROLES = ['店長','一般','SC','契約社員'];          // 社員マスタの役職
 const ROLE_W = {                                              // 役職別ウェイト
   '店長': {ar:.5, q:.3, t:.2},
   '一般': {ar:.3, q:.5, t:.2},
-  'SC':   {ar:.6, q:.3, t:.1}
+  'SC':   {ar:.6, q:.3, t:.1},
+  '契約社員': {ar:.2, q:.6, t:.2}                             // 評価設定(26.10~03)・事業報告会準拠
 };
 const TEISEI_ITEMS = {                                        // 定性評価項目（○=20点×5項目）26.04以降
   'SC':   ['店長離職率','支店牽引','課題解決','店長育成','就業規則'],
   '店長': ['クルーアンケート','支店牽引','課題解決','クルー育成','就業規則'],
-  '一般': ['接客姿勢','支店牽引','改善提案','クルー育成','就業規則']
+  '一般': ['接客姿勢','支店牽引','改善提案','クルー育成','就業規則'],
+  '契約社員': ['クルーアンケート','支店牽引','課題解決姿勢','売場力訴求','就業規則']
 };
 const TEISEI_ITEMS_OLD = {                                    // 25.10〜26.03の旧項目
   'SC':   ['店長離職率','支店牽引','改善横展開','店長育成','就業規則'],
   '店長': ['アルバイト定着率','支店牽引','改善事例','クルー育成','就業規則'],
-  '一般': ['接客姿勢','支店牽引','改善提案','クルー育成','就業規則']
+  '一般': ['接客姿勢','支店牽引','改善提案','クルー育成','就業規則'],
+  '契約社員': ['クルーアンケート','支店牽引','課題解決姿勢','売場力訴求','就業規則']
 };
 // 年月に応じた定性項目（評価制度が26.04に改定されたため）
 const teiseiItems = (ym, role) => (ym < '2026-04' ? TEISEI_ITEMS_OLD : TEISEI_ITEMS)[role];
 // 店舗品質・補正の入力項目（評価データシートに 種別=最終店舗 で保存）
 const FINAL_STORE_ITEMS = ['QSC_SC','QSC_SI','衛生','5S','クレーム件数','数字の質','残業','リスク案件'];
 const RANK_TH = [[97,1],[94,2],[90,3],[85,4],[80,5],[75,6],[70,7]];  // スコア下限→級（それ未満=8級）
+const KEIYAKU_ALLOW = {1:10000, 2:8500, 3:7000, 4:5500, 5:4000, 6:2500, 7:1000, 8:500};  // 契約社員 等級手当（円/月）
 
 // ---- 経費申請（Excel「評価計算&経費申請シート」の承認内容リスト準拠） ----
 const EXPENSE_KINDS = {
@@ -494,7 +501,7 @@ function buildIndex(){
   });
   IDX.shift = {};
   (DB.shifts||[]).forEach(r => {
-    // [ym, code, 区分(店長①/店長②/一般/SC), 氏名, 週時間]
+    // [ym, code, 区分(店長①/店長②/一般/SC/契約社員①/契約社員②), 氏名, 週時間]
     const o = (IDX.shift[r[0]] = IDX.shift[r[0]] || {});
     (o[r[1]] = o[r[1]] || {})[r[2]] = {name:r[3], h:num(r[4],null)};
   });
@@ -1451,7 +1458,7 @@ function staffRole(name){
  *  ARスコア: <0→0 / <70%→AR×40/70 / 70~100→40+(AR-70)×39/29 / 100~120→80+(AR-100) / >120→100
  *  品質: MAX(0,MIN(100, AVG(QSC平均,衛生,5S) + クレーム補正(≥3:-5/≥1:-1) + 数字の質))
  *  定性: ○数÷記入済項目数×100（空欄項目は分母から除外）/ 総合: 役職別ウェイト / SC個人=担当店舗平均
- *  役職: その月のシフト枠から判定（SC枠→SC / 店長枠→店長 / 他→一般）
+ *  役職: その月のシフト枠から判定（SC枠→SC / 店長枠→店長 / 契約社員枠のみ→契約社員 / 他→一般）
  *  特別フラグ: 表示のみ。降級は「修正後ランク」手入力（Excel運用準拠）。評価対象外フラグで除外可
  */
 function calcFinalEval(mi){
@@ -1463,7 +1470,8 @@ function calcFinalEval(mi){
     const code = s.code;
     const sh = shifts[code] || {};
     let totalH = 0;
-    SHIFT_SLOTS.forEach(k => { if(sh[k] && sh[k].h) totalH += Number(sh[k].h); });
+    // 契約社員枠は時給制（パート給与に計上済み）のため給与換算から除外（SALARY_SLOTSのみ集計）
+    SALARY_SLOTS.forEach(k => { if(sh[k] && sh[k].h) totalH += Number(sh[k].h); });
     const salary = totalH > 0 ? 300000/(55/7*30)*(totalH/7*30)/1000 : 0;  // 千円
     const fukuri = salary * .18;
     const budP = b(code, K.PROFIT, '予算', mi);
@@ -1506,7 +1514,9 @@ function calcFinalEval(mi){
   });
   Object.values(persons).forEach(p => {
     const slots = p.stores.map(x => x.slot);
-    p.role = slots.includes('SC') ? 'SC' : slots.some(sl => sl.indexOf('店長') === 0) ? '店長' : '一般';
+    p.role = slots.includes('SC') ? 'SC'
+      : slots.some(sl => sl.indexOf('店長') === 0) ? '店長'
+      : slots.every(sl => sl.indexOf('契約社員') === 0) ? '契約社員' : '一般';
   });
 
   Object.values(persons).forEach(p => {
@@ -1570,7 +1580,7 @@ function evalFinalHtml(){
   const shifts = IDX.shift[ym] || {};
 
   if(!staff.length){
-    return `<div class="card"><div class="empty-note">社員マスタが未登録です。設定画面の「社員マスタ」で氏名と役職（店長/一般/SC）を登録してください。</div></div>`;
+    return `<div class="card"><div class="empty-note">社員マスタが未登録です。設定画面の「社員マスタ」で氏名と役職（店長/一般/SC/契約社員）を登録してください。</div></div>`;
   }
 
   const nameSel = (code, slot, cur) => `<select data-code="${code}" data-slot="${esc(slot)}"
@@ -1585,7 +1595,7 @@ function evalFinalHtml(){
   const shiftHtml = `
   <h2 class="sec">① 人員配置（${ymd}）</h2>
   <div class="card">
-    <div class="note mb">店舗ごとに配置社員と週勤務時間（休憩除く）を入力。給与は週55h=月30万円換算で自動計算します。SC枠はSC担当設定から初期表示します。</div>
+    <div class="note mb">店舗ごとに配置社員と週勤務時間（休憩除く）を入力。給与は週55h=月30万円換算で自動計算します。SC枠はSC担当設定から初期表示します。<b>契約社員枠は時給制（パート給与に計上済み）のため給与換算には含めません</b>（評価対象としてのみ使用）。</div>
     <div class="tbl-wrap"><table id="shiftTable">
       <tr><th>店舗</th>${SHIFT_SLOTS.map(sl => `<th>${sl}</th><th>週h</th>`).join('')}</tr>
       ${DB.stores.map(s => {
@@ -1669,7 +1679,7 @@ function evalFinalHtml(){
   const resultHtml = `
   <h2 class="sec">⑤ 最終評価（${ymd} 個人別）</h2>
   <div class="card">
-    <div class="note mb">総合スコア＝役職別ウェイト（店長 AR50/品質30/定性20、一般 AR30/品質50/定性20、SC AR60/品質30/定性10）。SCは担当店舗の平均。フラグは自動降級（QSC<80→上限6級 / 衛生≤80→3階級ダウン / リスク→8級）。複数フラグ時は最も厳しい方を適用。手動上書きで更に変更可。</div>
+    <div class="note mb">総合スコア＝役職別ウェイト（店長 AR50/品質30/定性20、一般 AR30/品質50/定性20、SC AR60/品質30/定性10、契約社員 AR20/品質60/定性20）。SCは担当店舗の平均。フラグは自動降級（QSC<80→上限6級 / 衛生≤80→3階級ダウン / リスク→8級）。複数フラグ時は最も厳しい方を適用。手動上書きで更に変更可。契約社員は確定ランクの下に等級手当額（1級10,000円〜8級500円）を表示します。</div>
     <div class="tbl-wrap"><table id="finalResultTable">
       <tr><th>氏名</th><th>役職</th><th>店舗</th><th>ARスコア</th><th>品質</th><th>定性</th><th>総合スコア</th><th>ランク</th><th>フラグ</th><th>修正後</th><th>手動上書き</th></tr>
       ${personList.length ? personList.sort((a,b2) => (a.score===null)-(b2.score===null) || (b2.score||0)-(a.score||0)).map(p => {
@@ -1688,7 +1698,7 @@ function evalFinalHtml(){
           <td><b>${p.score!==null?fmt(p.score,1):'-'}</b></td>
           <td><b>${rk(p.rank)}</b></td>
           <td class="t-bad" style="font-size:.68rem">${flagTxt}</td>
-          <td class="${p.final!==p.rank?'t-warn':''}"><b>${rk(p.final)}</b></td>
+          <td class="${p.final!==p.rank?'t-warn':''}"><b>${rk(p.final)}</b>${p.role==='契約社員'&&p.final?`<div style="font-size:.6rem;color:var(--sub)">${KEIYAKU_ALLOW[p.final].toLocaleString()}円</div>`:''}</td>
           <td><input type="number" min="1" max="8" data-name="${esc(p.name)}" value="${p.override!==null&&p.override!==undefined?p.override:''}"
             style="width:52px;background:var(--bg2);border:1px solid var(--line2);border-radius:7px;color:var(--txt);padding:6px;text-align:right" placeholder="${p.rank||''}"></td>
         </tr>`;
@@ -1986,7 +1996,7 @@ function renderSettings(){
       <button class="btn ghost" onclick="addStaffRow()">社員を追加</button>
       <button class="btn" onclick="saveStaffMaster()">社員マスタを保存</button>
     </div>
-    <div class="note mt">最終評価タブの人員配置・定性評価で使用します。役職（店長/一般/SC）でスコアの重みが変わります。</div>
+    <div class="note mt">最終評価タブの人員配置・定性評価で使用します。役職（店長/一般/SC/契約社員）でスコアの重みが変わります。契約社員は等級手当（1級10,000円〜8級500円）の対象です。</div>
   </div>
 
   <h2 class="sec">判定パラメータ</h2>
