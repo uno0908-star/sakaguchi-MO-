@@ -1698,7 +1698,7 @@ function evalFinalHtml(){
           <td><b>${p.score!==null?fmt(p.score,1):'-'}</b></td>
           <td><b>${rk(p.rank)}</b></td>
           <td class="t-bad" style="font-size:.68rem">${flagTxt}</td>
-          <td class="${p.final!==p.rank?'t-warn':''}"><b>${rk(p.final)}</b>${p.role==='契約社員'&&p.final?`<div style="font-size:.6rem;color:var(--sub)">${KEIYAKU_ALLOW[p.final].toLocaleString()}円</div>`:''}</td>
+          <td class="${p.final!==p.rank?'t-warn':''}"><b>${rk(p.final)}</b>${p.role==='契約社員'&&KEIYAKU_ALLOW[p.final]!==undefined?`<div style="font-size:.6rem;color:var(--sub)">${KEIYAKU_ALLOW[p.final].toLocaleString()}円</div>`:''}</td>
           <td><input type="number" min="1" max="8" data-name="${esc(p.name)}" value="${p.override!==null&&p.override!==undefined?p.override:''}"
             style="width:52px;background:var(--bg2);border:1px solid var(--line2);border-radius:7px;color:var(--txt);padding:6px;text-align:right" placeholder="${p.rank||''}"></td>
         </tr>`;
@@ -1758,7 +1758,9 @@ async function saveFinalOverride(auto){
   const ym = ymOf(state.mi);
   const rows = [];
   document.querySelectorAll('#finalResultTable input[data-name]').forEach(el => {
-    rows.push([ym, '最終修正', el.dataset.name, '', '修正後ランク', el.value === '' ? '' : Number(el.value)]);
+    // min/max属性は直接入力を防げないため、1〜8級の整数に丸めて保存する
+    const v = el.value === '' ? '' : Math.min(8, Math.max(1, Math.round(Number(el.value)) || 1));
+    rows.push([ym, '最終修正', el.dataset.name, '', '修正後ランク', v]);
   });
   evUpsert(rows);
   if(!auto) renderEval();
