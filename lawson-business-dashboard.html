@@ -403,13 +403,14 @@ async function adminUnlock(){
   if(d && d.ok && d.token){
     localStorage.setItem(ADMIN_TOK_KEY, d.token);
     toast('管理者モードになりました（6時間有効）');
-    renderAll();
+    loadData(true);  // 評価・社員・人員配置はトークン付きでのみ配信されるため再取得
   }
 }
 function adminLogout(){
   localStorage.removeItem(ADMIN_TOK_KEY);
   toast('管理者モードを終了しました');
   go('company');
+  loadData(true);  // 評価系データをメモリ・キャッシュから落とすため再取得
 }
 
 // ---------- 起動 ----------
@@ -444,11 +445,20 @@ async function loadData(isRefresh){
   }
   try{
     if(gasUrl()){
-      const res = await fetch(gasUrl() + '?action=dashboard', {redirect:'follow'});
+      // 評価・社員・人員配置は管理者トークン付きリクエストのみ配信される
+      const tok = localStorage.getItem(ADMIN_TOK_KEY);
+      const res = await fetch(gasUrl() + '?action=dashboard' + (tok ? '&token=' + encodeURIComponent(tok) : ''), {redirect:'follow'});
       const data = await res.json();
       if(data.error) throw new Error(data.error);
+      // トークンを送ったのに評価データが省略された＝サーバー側で期限切れ → ロックに戻す
+      if(data.evalLocked && tok){
+        localStorage.removeItem(ADMIN_TOK_KEY);
+        toast('管理者認証の期限が切れました。暗証番号を再入力してください');
+      }
       DB = data;
-      try{ localStorage.setItem('lbd_cache_v1', JSON.stringify(data)); }catch(e){}
+      // キャッシュには評価系の個人データを残さない（共用端末対策）
+      try{ localStorage.setItem('lbd_cache_v1', JSON.stringify(
+        Object.assign({}, data, {evals:[], staff:[], shifts:[]}))); }catch(e){}
       document.getElementById('demoBanner').style.display = 'none';
     }else{
       DB = makeDemoData();
@@ -555,6 +565,13 @@ function initMonthSelector(){
 //  未確定月（速報なし）= 予算 + 手入力補正（v2と同じ）
 // ============================================================
 
+// 達成率。予算がマイナス（赤字予算店）は 実績/予算 だと改善しても悪化して見えるため、
+// 評価ARと同じ改善率方式 (着地−予算)÷|予算|×100 で計算（2026-06統一ルール。予算通り=0%、黒字化=100%）
+function rateOf(profit, bud){
+  if(profit === null || profit === undefined || bud === null || bud === undefined || !bud) return null;
+  return bud > 0 ? profit/bud*100 : (profit-bud)/Math.abs(bud)*100;
+}
+
 // チャージ3段階スライドからFC収入を計算（gross: 荒利 千円, ct: {d,e,f} チャージ率）
 function chargeFC(gross, ct){
   if(gross <= 3000) return gross * (1 - ct.d);
@@ -630,7 +647,7 @@ function forecast(code, mi){
   if(actProfit !== null){
     const actSales = b(code, K.SALES, '実績', mi);
     return { status:'fixed', profit:actProfit, sales:actSales, bud:budProfit, budSales,
-      rate: budProfit ? actProfit/budProfit*100 : null,
+      rate: rateOf(actProfit, budProfit),
       nippan: actSales !== null ? actSales/dTotal : null, detail:null, mid, inp, v3:null };
   }
 
@@ -648,7 +665,7 @@ function forecast(code, mi){
   return {
     status:'forecast', profit:profitFC,
     sales: v3 ? v3.L : budSales, bud:budProfit, budSales,
-    rate: budProfit ? profitFC/budProfit*100 : null,
+    rate: rateOf(profitFC, budProfit),
     nippan: v3 ? v3.L/30 : (budSales !== null ? budSales/dTotal : null),
     detail:{ fLabor, fPaid, fExp, fSpec, mode: v3 ? 'v3' : 'v2',
       progress: mid ? mid.days/dTotal*100 : null,
@@ -672,7 +689,7 @@ function forecastAgg(codes, mi){
     sales += f.sales || 0; budSales += f.budSales || 0;
     if(f.status === 'fixed') fixed++; else if(hasInput(f.inp)) adjusted++; else plain++;
   });
-  return { profit, bud, sales, budSales, rate: bud ? profit/bud*100 : null, fixed, adjusted, plain };
+  return { profit, bud, sales, budSales, rate: rateOf(profit, bud), fixed, adjusted, plain };
 }
 
 // DEPT速報のデータ基準日（経過営業日数から導出。例: 6月で14日分→「6/14時点」）
@@ -773,7 +790,7 @@ function renderCompany(){
   <div class="grid g4 mt">
     ${kpiCard('売上着地', fmt(f.sales), '千円', '予算 '+fmt(f.budSales)+' / '+pct(f.budSales?f.sales/f.budSales*100:null))}
     ${kpiCard('日販着地(平均)', fmt(f.sales/daysInMonth(mi)/codes.length, 0), '千円', '全店平均')}
-    ${kpiCard('年間店利益見込', fmt(annProfit), '千円', '年間予算 '+fmt(annBud)+' / '+pct(annBud?annProfit/annBud*100:null))}
+    ${kpiCard('年間店利益見込', fmt(annProfit), '千円', '年間予算 '+fmt(annBud)+' / '+pct(rateOf(annProfit, annBud)))}
     ${kpiCard('危険店舗', dangers.length + ' <span class="unit">店</span>', '', '達成率'+num((DB.params||{}).dangerLine,95)+'%未満')}
   </div>
 
@@ -1455,7 +1472,7 @@ function staffRole(name){
  *  AR: PF=店利益予算−社員給与−法定福利18% / PA=店利益実績(なければ着地予測)−給与−福利−残業
  *      給与=300000/(55/7*30)×(合計週時間/7*30)/1000（週55h=月30万円換算・千円）
  *      PF≤0（赤字予測店）は改善率方式: AR=(PA−PF)÷|PF|×100
- *  ARスコア: <0→0 / <70%→AR×40/70 / 70~100→40+(AR-70)×39/29 / 100~120→80+(AR-100) / >120→100
+ *  ARスコア: <0→0 / <70%→AR×40/70 / 70~100→40+(AR-70)×39/29（上限80） / 100~120→80+(AR-100) / >120→100
  *  品質: MAX(0,MIN(100, AVG(QSC平均,衛生,5S) + クレーム補正(≥3:-5/≥1:-1) + 数字の質))
  *  定性: ○数÷記入済項目数×100（空欄項目は分母から除外）/ 総合: 役職別ウェイト / SC個人=担当店舗平均
  *  役職: その月のシフト枠から判定（SC枠→SC / 店長枠→店長 / 契約社員枠のみ→契約社員 / 他→一般）
@@ -1490,8 +1507,10 @@ function calcFinalEval(mi){
     // AR: PF>0は通常の達成率(PA/PF)。PF<0は改善率方式 (PA−PF)÷|PF|×100（統一ルール・2026-06決定）
     let AR = null;
     if(PF !== null && PA !== null && PF !== 0) AR = PF > 0 ? PA/PF*100 : (PA-PF)/Math.abs(PF)*100;
+    // 70〜100%区間は上限80点でクランプ（素の式だとAR99.7〜100%で80点を僅かに超え、
+    // 100%ちょうど(80点)より高くなる逆転が起きるため。99%以下はExcelと同値）
     const arScore = AR === null ? null : AR < 0 ? 0 :
-      AR < 70 ? AR*(40/70) : AR < 100 ? 40+(AR-70)*(39/29) : AR <= 120 ? 80+(AR-100) : 100;
+      AR < 70 ? AR*(40/70) : AR < 100 ? Math.min(40+(AR-70)*(39/29), 80) : AR <= 120 ? 80+(AR-100) : 100;
 
     const qBase = avgN([qscAvg, eisei, s5]);
     const qScore = qBase === null ? null :
