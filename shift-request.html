@@ -1438,17 +1438,24 @@ async function executeDelete(){
   if(btn){btn.disabled=true;btn.innerHTML='🔄 削除中...';}
 
   // GASスプレッドシート側を削除（成功した場合のみローカルも削除）
-  let res=null;
+  let res=null,timedOut=false;
   try{
-    res=await jsonpFetch(GAS_URL+'?'+query+'&pw='+encodeURIComponent(val),30000);
+    res=await jsonpFetch(GAS_URL+'?'+query+'&pw='+encodeURIComponent(val),180000);
   }catch(e){
+    timedOut=(e&&e.message==='timeout');
     console.warn('GAS delete failed:',e);
   }
 
   if(btn){btn.disabled=false;btn.innerHTML=origText;}
 
   if(!(res&&res.status==='ok')){
-    alert('⚠ 削除に失敗しました。データは削除されていません。\n'+(res&&res.error?('エラー：'+res.error):'通信環境を確認して再度お試しください。\n（GASが旧バージョンの場合は、新しいGASコードのデプロイが必要です）'));
+    if(timedOut){
+      // タイムアウト＝サーバー側では削除が完了している可能性がある → 最新データで確認
+      alert('⏳ サーバーの応答待ちがタイムアウトしました。\n削除はサーバー側で完了している可能性があります。\nこのまま最新データを再取得して確認します。');
+      renderAdmin();
+    }else{
+      alert('⚠ 削除に失敗しました。データは削除されていません。\n'+(res&&res.error?('エラー：'+res.error):'通信環境を確認して再度お試しください。\n（GASが旧バージョンの場合は、新しいGASコードのデプロイが必要です）'));
+    }
     return;
   }
 
