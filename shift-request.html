@@ -337,7 +337,7 @@
   </div>
   <div class="admin-actions">
     <button class="action-btn" onclick="exportCSV()">📥 CSVダウンロード</button>
-    <button class="action-btn danger" onclick="clearAll()">🗑 全データ削除</button>
+    <button class="action-btn danger" onclick="openDeleteModal()">🗑 データ削除</button>
   </div>
   <div class="filter-bar">
     <div class="form-select-wrap" style="flex:1;min-width:130px;">
@@ -417,6 +417,51 @@ function parseTimeStr(val){
   const m=String(val).match(/(\d{2}):(\d{2}):\d{2}/);
   if(m)return`${m[1]}:${m[2]}`;
   return null;
+}
+
+// 任意の日付表現を "YYYY-MM-DD" に正規化（"Mon May 18 2026 ..." 形式にも対応）
+function normDateStr(val){
+  if(!val)return null;
+  const s=String(val).trim();
+  if(/^\d{4}-\d{2}-\d{2}$/.test(s))return s;
+  const d=new Date(s.replace(/\s*\(.*\)\s*$/,''));
+  if(!isNaN(d.getTime()))return ds(d);
+  return null;
+}
+
+// GAS・localStorageから読んだ提出データを正規化（日付=YYYY-MM-DD、時刻=HH:MM に統一）
+function normalizeSubmissions(arr){
+  return(arr||[]).map(s=>({
+    ...s,
+    id:String(s.id),
+    dates:(s.dates||[]).map(dt=>{
+      const allday=dt.allday===true||String(dt.allday).toLowerCase()==='true';
+      return{
+        date:normDateStr(dt.date)||String(dt.date||''),
+        start:allday?null:parseTimeStr(dt.start),
+        end:allday?null:parseTimeStr(dt.end),
+        allday
+      };
+    })
+  }));
+}
+
+// 確定データのキー（id_日付）の日付部分を正規化
+function normalizeConfirmed(obj){
+  const out={};
+  Object.keys(obj||{}).forEach(k=>{
+    const i=k.indexOf('_');
+    if(i<0){out[k]=obj[k];return;}
+    const nd=normDateStr(k.slice(i+1));
+    out[nd?k.slice(0,i)+'_'+nd:k]=obj[k];
+  });
+  return out;
+}
+
+// localStorageの提出データを正規化して読み込む
+function loadLocalData(){
+  try{return normalizeSubmissions(JSON.parse(localStorage.getItem('shiftData')||'[]'));}
+  catch(e){return[];}
 }
 
 // timestamp を日本語表示に変換
@@ -843,7 +888,11 @@ async function submitShift(){
   btn.innerHTML='<svg width="18" height="18" viewBox="0 0 24 24" fill="none" style="animation:spin 1s linear infinite"><circle cx="12" cy="12" r="10" stroke="white" stroke-width="2" stroke-dasharray="31.4" stroke-dashoffset="10"/></svg>&nbsp;送信中...';
 
   try{
-    await fetch(GAS_URL,{method:'POST',mode:'no-cors',headers:{'Content-Type':'application/json'},body:JSON.stringify(sub)});
+    // text/plain送信ならプリフライトなしでレスポンスを読める → 保存成功を確認できる
+    const res=await fetch(GAS_URL,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify(sub)});
+    let result=null;
+    try{result=await res.json();}catch(e){}
+    if(!res.ok||(result&&result.status==='error'))throw new Error((result&&result.error)||('HTTP '+res.status));
     const stored=JSON.parse(localStorage.getItem('shiftData')||'[]');
     stored.push(sub);
     localStorage.setItem('shiftData',JSON.stringify(stored));
@@ -852,7 +901,7 @@ async function submitShift(){
     });
     const sc=document.getElementById('successCard');sc.classList.add('show');sc.scrollIntoView({behavior:'smooth'});
   }catch(err){
-    alert('送信に失敗しました。通信環境を確認して再度お試しください。');
+    alert('送信に失敗しました。通信環境を確認して再度お試しください。\n（エラー：'+(err&&err.message?err.message:'不明')+'）');
     btn.disabled=false;
     btn.innerHTML='シフト希望を提出する';
   }
@@ -888,35 +937,43 @@ function resetForm(){
 // ★修正2: 削除フラグを使ってGASデータ再取得後も削除状態を維持
 let _dataCleared=false;
 
+// JSONP共通ヘルパー（タイムアウト時もscriptタグとコールバックを確実に掃除）
+function jsonpFetch(url,timeoutMs=10000){
+  return new Promise((resolve,reject)=>{
+    const cb='gasCb_'+Date.now()+'_'+Math.floor(Math.random()*100000);
+    const script=document.createElement('script');
+    let done=false;
+    const cleanup=()=>{try{delete window[cb];}catch(e){}if(script.parentNode)script.parentNode.removeChild(script);};
+    window[cb]=(json)=>{if(done)return;done=true;cleanup();resolve(json);};
+    script.onerror=()=>{if(done)return;done=true;cleanup();reject(new Error('script error'));};
+    setTimeout(()=>{
+      if(done)return;done=true;
+      // 遅延応答が来てもエラーにならないよう空関数に差し替えてから掃除
+      window[cb]=()=>{try{delete window[cb];}catch(e){}};
+      if(script.parentNode)script.parentNode.removeChild(script);
+      reject(new Error('timeout'));
+    },timeoutMs);
+    script.src=url+(url.includes('?')?'&':'?')+'callback='+cb;
+    document.head.appendChild(script);
+  });
+}
+
 async function fetchSheetData(){
-  // 削除済みフラグが立っている場合はlocalStorageのみ返す（空配列）
+  // 削除済みフラグが立っている場合はlocalStorageのみ返す
   if(_dataCleared){
-    return JSON.parse(localStorage.getItem('shiftData')||'[]');
+    return loadLocalData();
   }
   try{
-    const data = await new Promise((resolve,reject)=>{
-      const cb='gasCallback_'+Date.now();
-      const script=document.createElement('script');
-      script.src=GAS_URL+'?callback='+cb;
-      script.onerror=()=>reject(new Error('script error'));
-      window[cb]=(json)=>{
-        delete window[cb];
-        document.head.removeChild(script);
-        resolve(json);
-      };
-      setTimeout(()=>{
-        if(window[cb]){delete window[cb];reject(new Error('timeout'));}
-      },10000);
-      document.head.appendChild(script);
-    });
+    const data=await jsonpFetch(GAS_URL,15000);
     if(data&&Array.isArray(data.data)){
-      localStorage.setItem('shiftData',JSON.stringify(data.data));
-      return data.data;
+      const norm=normalizeSubmissions(data.data);
+      localStorage.setItem('shiftData',JSON.stringify(norm));
+      return norm;
     }
   }catch(e){
     console.warn('GAS fetch failed, using localStorage:',e);
   }
-  return JSON.parse(localStorage.getItem('shiftData')||'[]');
+  return loadLocalData();
 }
 
 // 管理
@@ -928,17 +985,9 @@ let _confirmedCache={}; // GASから取得した確定データキャッシュ
 // GASから確定データを取得
 async function fetchConfirmed(){
   try{
-    const data=await new Promise((resolve,reject)=>{
-      const cb='gasConfirmedCb_'+Date.now();
-      const script=document.createElement('script');
-      script.src=GAS_URL+'?action=getConfirmed&callback='+cb;
-      script.onerror=()=>reject(new Error('script error'));
-      window[cb]=(json)=>{delete window[cb];document.head.removeChild(script);resolve(json);};
-      setTimeout(()=>{if(window[cb]){delete window[cb];try{document.head.removeChild(script);}catch(e){}reject(new Error('timeout'));}},8000);
-      document.head.appendChild(script);
-    });
+    const data=await jsonpFetch(GAS_URL+'?action=getConfirmed',10000);
     if(data&&data.confirmed){
-      _confirmedCache=data.confirmed;
+      _confirmedCache=normalizeConfirmed(data.confirmed);
       localStorage.setItem('shiftConfirmed',JSON.stringify(_confirmedCache));
       return _confirmedCache;
     }
@@ -946,30 +995,38 @@ async function fetchConfirmed(){
     console.warn('fetchConfirmed failed, using cache:',e);
   }
   // フォールバック：ローカルキャッシュ
-  _confirmedCache=JSON.parse(localStorage.getItem('shiftConfirmed')||'{}');
+  _confirmedCache=normalizeConfirmed(JSON.parse(localStorage.getItem('shiftConfirmed')||'{}'));
   return _confirmedCache;
 }
 
-// GASに確定データを保存
+// GASに確定データを保存（text/plain送信でレスポンスを検証できる）
 async function saveConfirmToGAS(sid,date,store){
   try{
-    await fetch(GAS_URL,{
-      method:'POST',mode:'no-cors',
-      headers:{'Content-Type':'application/json'},
+    const res=await fetch(GAS_URL,{
+      method:'POST',
+      headers:{'Content-Type':'text/plain;charset=utf-8'},
       body:JSON.stringify({action:'confirm',submissionId:sid,date,store})
     });
-  }catch(e){console.warn('saveConfirm failed:',e);}
+    if(!res.ok)throw new Error('HTTP '+res.status);
+  }catch(e){
+    console.warn('saveConfirm failed:',e);
+    alert('⚠ 確定の保存に失敗しました。通信環境の良い場所で、もう一度「確定入力」をやり直してください。');
+  }
 }
 
 // GASから確定データを削除
 async function deleteConfirmFromGAS(sid,date){
   try{
-    await fetch(GAS_URL,{
-      method:'POST',mode:'no-cors',
-      headers:{'Content-Type':'application/json'},
+    const res=await fetch(GAS_URL,{
+      method:'POST',
+      headers:{'Content-Type':'text/plain;charset=utf-8'},
       body:JSON.stringify({action:'unconfirm',submissionId:sid,date})
     });
-  }catch(e){console.warn('deleteConfirm failed:',e);}
+    if(!res.ok)throw new Error('HTTP '+res.status);
+  }catch(e){
+    console.warn('deleteConfirm failed:',e);
+    alert('⚠ 確定解除の保存に失敗しました。通信環境の良い場所で、もう一度お試しください。');
+  }
 }
 
 function confirmedKey(sid,date){return String(sid)+'_'+date;}
@@ -994,9 +1051,21 @@ async function confirmShift(sid,date,currentStore){
 }
 
 async function renderAdmin(){
-  document.getElementById('submissionList').innerHTML='<div class="empty-admin"><div class="empty-icon">🔄</div>データを読み込んでいます...</div>';
+  // ★キャッシュがあれば即表示（GASコールドスタート対策）→ 裏で最新データを取得して再描画
+  const cached=loadLocalData();
+  if(cached.length&&!_dataCleared){
+    _confirmedCache=normalizeConfirmed(JSON.parse(localStorage.getItem('shiftConfirmed')||'{}'));
+    _renderAdminNow(cached);
+  }else{
+    document.getElementById('submissionList').innerHTML='<div class="empty-admin"><div class="empty-icon">🔄</div>データを読み込んでいます...</div>';
+  }
   // シフト希望データと確定データを並行取得
   const [data]=await Promise.all([fetchSheetData(),fetchConfirmed()]);
+  _renderAdminNow(data);
+}
+
+// 現在のフィルター設定で描画（データは引数で渡す）
+function _renderAdminNow(data){
   buildWeekFilter(data);
   const fs=document.getElementById('filterStore').value;
   const fo=document.getElementById('filterOther').value;
@@ -1279,11 +1348,12 @@ function showShiftBarTooltip(el,text){
 }
 
 function exportCSV(){
-  const data=JSON.parse(localStorage.getItem('shiftData')||'[]');
+  // 名寄せ後のデータで出力（再提出は最新のみ）。日付・時刻は整形済み、確定店舗列も追加
+  const data=deduplicateSubmissions(loadLocalData());
   if(!data.length){alert('データがありません');return;}
-  const rows=[['提出日時','名前','氏名コード','所属店舗','希望日','開始時間','終了時間','終日','他店舗勤務可','交通手段','備考']];
+  const rows=[['提出日時','名前','氏名コード','所属店舗','希望日','開始時間','終了時間','終日','確定店舗','他店舗勤務可','交通手段','備考']];
   data.forEach(s=>(s.dates||[]).forEach(dt=>{
-    rows.push([s.timestamp,s.name,s.empId,s.homeStore,dt.date,dt.allday?'終日':dt.start,dt.allday?'終日':dt.end,dt.allday?'○':'',(s.otherStores||[]).join('|'),s.transport||'',s.note]);
+    rows.push([fmtTimestamp(s.timestamp),s.name,s.empId,s.homeStore,dt.date,dt.allday?'終日':(dt.start||''),dt.allday?'終日':(dt.end||''),dt.allday?'○':'',getConfirmedStoreForSub(s,dt.date)||'',(s.otherStores||[]).join('|'),s.transport||'',s.note]);
   }));
   const csv=rows.map(r=>r.map(v=>`"${String(v||'').replace(/"/g,'""')}"`).join(',')).join('\n');
   const blob=new Blob(['\uFEFF'+csv],{type:'text/csv;charset=utf-8;'});
@@ -1291,19 +1361,43 @@ function exportCSV(){
   a.download=`シフト希望_${new Date().toLocaleDateString('ja-JP').replace(/\//g,'')}.csv`;a.click();
 }
 
-// ★全データ削除 - 削除パスワードモーダルを開く
-function clearAll(){
+// ★データ削除 - 範囲選択（週選択・過去分・全削除）＋パスワードモーダル
+function openDeleteModal(){
+  buildDeleteRangeOptions();
   document.getElementById('clearPwModal').style.display='flex';
   document.getElementById('clearPwInput').value='';
   document.getElementById('clearPwError').style.display='none';
-  setTimeout(()=>document.getElementById('clearPwInput').focus(),100);
+}
+
+// 現在のデータから削除範囲の選択肢を組み立てる
+function buildDeleteRangeOptions(){
+  const sel=document.getElementById('deleteRangeSelect');
+  const data=loadLocalData();
+  const mondays=new Set();
+  data.forEach(s=>(s.dates||[]).forEach(dt=>{
+    const m=getMondayStr(dt.date);
+    if(m)mondays.add(m);
+  }));
+  const todayStr=ds(new Date());
+  let html='<option value="">-- 削除する範囲を選択 --</option>';
+  html+='<option value="past">📅 過去の希望をまとめて削除（今日より前）</option>';
+  [...mondays].sort().forEach(mon=>{
+    const md=ds2d(mon);
+    const sun=new Date(md);sun.setDate(md.getDate()+6);
+    const isPast=ds(sun)<todayStr;
+    html+=`<option value="week:${mon}">${md.getMonth()+1}/${md.getDate()}〜${sun.getMonth()+1}/${sun.getDate()}の週を削除${isPast?'（過去）':''}</option>`;
+  });
+  html+='<option value="all">⚠ 全データ削除</option>';
+  sel.innerHTML=html;
 }
 
 function closeClearPwModal(){
   document.getElementById('clearPwModal').style.display='none';
 }
 
-async function executeClearAll(){
+async function executeDelete(){
+  const range=document.getElementById('deleteRangeSelect').value;
+  if(!range){alert('削除する範囲を選択してください');return;}
   const val=document.getElementById('clearPwInput').value;
   if(val!=='3272885'){
     const box=document.getElementById('clearPwModalBox');
@@ -1318,49 +1412,78 @@ async function executeClearAll(){
     return;
   }
   closeClearPwModal();
-  if(!confirm('本当に全データを削除しますか？\nこの操作は元に戻せません。'))return;
+
+  // 確認メッセージとGASアクションを組み立て
+  let confirmMsg,query;
+  const todayStr=ds(new Date());
+  if(range==='all'){
+    confirmMsg='本当に全データを削除しますか？\nこの操作は元に戻せません。';
+    query='action=clearAll';
+  }else if(range==='past'){
+    const t=ds2d(todayStr);
+    confirmMsg=`今日（${t.getMonth()+1}/${t.getDate()}）より前の希望日をすべて削除しますか？\nこの操作は元に戻せません。`;
+    query='action=deleteBefore&date='+todayStr;
+  }else{
+    const mon=range.slice(5);
+    const md=ds2d(mon);
+    const sun=new Date(md);sun.setDate(md.getDate()+6);
+    confirmMsg=`${md.getMonth()+1}/${md.getDate()}〜${sun.getMonth()+1}/${sun.getDate()}の週のシフト希望を削除しますか？\n（この週の確定データも一緒に削除されます）\nこの操作は元に戻せません。`;
+    query='action=deleteWeek&monday='+mon;
+  }
+  if(!confirm(confirmMsg))return;
 
   // ボタンをローディング状態に
   const btn=document.querySelector('.action-btn.danger');
   const origText=btn?btn.innerHTML:'';
   if(btn){btn.disabled=true;btn.innerHTML='🔄 削除中...';}
 
-  // GASスプレッドシート側を削除
-  let gasOk=false;
+  // GASスプレッドシート側を削除（成功した場合のみローカルも削除）
+  let res=null;
   try{
-    await new Promise((resolve,reject)=>{
-      const cb='gasClearCallback_'+Date.now();
-      const script=document.createElement('script');
-      script.src=GAS_URL+'?action=clearAll&callback='+cb;
-      script.onerror=()=>reject(new Error('script error'));
-      window[cb]=(json)=>{
-        delete window[cb];
-        document.head.removeChild(script);
-        if(json&&json.status==='ok')resolve();
-        else reject(new Error('GAS returned error'));
-      };
-      setTimeout(()=>{
-        if(window[cb]){delete window[cb];try{document.head.removeChild(script);}catch(e){}reject(new Error('timeout'));}
-      },10000);
-      document.head.appendChild(script);
-    });
-    gasOk=true;
+    res=await jsonpFetch(GAS_URL+'?'+query+'&pw='+encodeURIComponent(val),30000);
   }catch(e){
-    console.warn('GAS clearAll failed:',e);
+    console.warn('GAS delete failed:',e);
   }
-
-  // ブラウザのlocalStorageも削除
-  localStorage.removeItem('shiftData');
-  _dataCleared=true;
 
   if(btn){btn.disabled=false;btn.innerHTML=origText;}
 
-  if(gasOk){
-    alert('✅ スプレッドシートとブラウザのデータを削除しました。');
-  }else{
-    alert('⚠️ ブラウザのデータは削除しましたが、スプレッドシート側の削除に失敗しました。\nGASのコードに clearAll 対応が必要です。\n\n（GASコードの追加方法はClaude に確認してください）');
+  if(!(res&&res.status==='ok')){
+    alert('⚠ 削除に失敗しました。データは削除されていません。\n'+(res&&res.error?('エラー：'+res.error):'通信環境を確認して再度お試しください。\n（GASが旧バージョンの場合は、新しいGASコードのデプロイが必要です）'));
+    return;
   }
+
+  // ローカル側も同じ範囲を削除して同期
+  applyLocalDeletion(range,todayStr);
+
+  let detail='';
+  if(typeof res.removedDates==='number'){
+    detail=`\n（希望日 ${res.removedDates}件・提出 ${res.removedSubs}件・確定 ${res.removedConfirmed}件を削除）`;
+  }
+  alert('✅ 削除しました。'+detail);
   renderAdmin();
+}
+
+// ローカルキャッシュから指定範囲の日付・確定データを削除
+function applyLocalDeletion(range,todayStr){
+  const inRange=(dstr)=>{
+    if(range==='all')return true;
+    if(range==='past')return dstr<todayStr;
+    return isInWeek(dstr,range.slice(5));
+  };
+  let data=loadLocalData();
+  data=data.map(s=>({...s,dates:(s.dates||[]).filter(dt=>!inRange(dt.date))}))
+           .filter(s=>(s.dates||[]).length>0);
+  localStorage.setItem('shiftData',JSON.stringify(data));
+  // 確定データも同期削除
+  Object.keys(_confirmedCache).forEach(k=>{
+    const i=k.indexOf('_');
+    if(i>=0&&inRange(k.slice(i+1)))delete _confirmedCache[k];
+  });
+  localStorage.setItem('shiftConfirmed',JSON.stringify(_confirmedCache));
+  // 削除した週がフィルター選択中なら解除
+  const fwSel=document.getElementById('filterWeek');
+  if(fwSel&&fwSel.value&&(range==='all'||(range.startsWith('week:')&&fwSel.value===range.slice(5))||(range==='past'&&fwSel.value<todayStr)))fwSel.value='';
+  if(range==='all')_dataCleared=true;
 }
 
 // ===== パスワード認証 =====
@@ -1486,8 +1609,14 @@ function togglePwVisibility(){
           <path d="M9 6V4h6v2" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
         </svg>
       </div>
-      <div style="font-size:16px;font-weight:800;color:#0f172a;">全データ削除</div>
-      <div style="font-size:12px;color:#64748b;margin-top:5px;line-height:1.5;">削除専用パスワードを入力してください。<br><span style="color:#e53935;font-weight:600;">この操作は元に戻せません。</span></div>
+      <div style="font-size:16px;font-weight:800;color:#0f172a;">データ削除</div>
+      <div style="font-size:12px;color:#64748b;margin-top:5px;line-height:1.5;">削除する範囲を選び、削除専用パスワードを入力してください。<br><span style="color:#e53935;font-weight:600;">この操作は元に戻せません。</span></div>
+    </div>
+    <div style="font-size:12px;font-weight:600;color:#334155;margin-bottom:6px;">削除する範囲</div>
+    <div class="form-select-wrap" style="margin-bottom:12px;">
+      <select id="deleteRangeSelect" class="form-select" style="font-size:13.5px;">
+        <option value="">-- 削除する範囲を選択 --</option>
+      </select>
     </div>
     <div style="position:relative;margin-bottom:10px;">
       <input type="password" id="clearPwInput"
@@ -1496,13 +1625,13 @@ function togglePwVisibility(){
         style="width:100%;padding:12px 44px 12px 14px;border:1.5px solid #e2e8f0;border-radius:10px;font-size:15px;font-family:'DM Mono',monospace;letter-spacing:0.15em;background:#f8fafc;outline:none;transition:border-color .2s;"
         onfocus="this.style.borderColor='#e53935';this.style.background='#fff';"
         onblur="this.style.borderColor='#e2e8f0';this.style.background='#f8fafc';"
-        onkeydown="if(event.key==='Enter')executeClearAll();if(event.key==='Escape')closeClearPwModal();">
+        onkeydown="if(event.key==='Enter')executeDelete();if(event.key==='Escape')closeClearPwModal();">
       <span onclick="toggleClearPwVisibility()" style="position:absolute;right:13px;top:50%;transform:translateY(-50%);cursor:pointer;font-size:17px;user-select:none;" id="clearPwToggle">👁</span>
     </div>
     <div id="clearPwError" style="display:none;background:#fdecea;color:#e53935;font-size:12px;font-weight:600;padding:8px 12px;border-radius:8px;margin-bottom:10px;text-align:center;">
       ❌ パスワードが違います。もう一度入力してください。
     </div>
-    <button onclick="executeClearAll()" style="width:100%;padding:13px;background:linear-gradient(135deg,#c62828,#e53935);color:#fff;border:none;border-radius:10px;font-size:15px;font-weight:700;font-family:'Noto Sans JP',sans-serif;cursor:pointer;box-shadow:0 3px 10px rgba(229,57,53,.3);margin-bottom:10px;">
+    <button onclick="executeDelete()" style="width:100%;padding:13px;background:linear-gradient(135deg,#c62828,#e53935);color:#fff;border:none;border-radius:10px;font-size:15px;font-weight:700;font-family:'Noto Sans JP',sans-serif;cursor:pointer;box-shadow:0 3px 10px rgba(229,57,53,.3);margin-bottom:10px;">
       🗑 削除を実行する
     </button>
     <button onclick="closeClearPwModal()" style="width:100%;padding:10px;background:transparent;color:#64748b;border:1.5px solid #e2e8f0;border-radius:10px;font-size:13px;font-weight:600;font-family:'Noto Sans JP',sans-serif;cursor:pointer;">
@@ -1589,15 +1718,9 @@ async function submitConfirmModal(){
 }
 
 // ★GAS通信なしでキャッシュデータだけで即描画
+// （仮シフト表は _renderAdminWithData 内で描画されるため二重描画しない）
 function renderAdminFromCache(){
-  const data=JSON.parse(localStorage.getItem('shiftData')||'[]');
-  const fs=document.getElementById('filterStore').value;
-  const fo=document.getElementById('filterOther').value;
-  const sortMode=document.getElementById('filterSort')?.value||'store';
-  const fw=document.getElementById('filterWeek')?.value||'';
-  const allData=deduplicateSubmissions(data);
-  _renderAdminWithData(data,fs,fo,sortMode,fw);
-  renderDraftShift(allData,fs,fw);
+  _renderAdminNow(loadLocalData());
 }
 </script>
 </body>
