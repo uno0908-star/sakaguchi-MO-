@@ -133,8 +133,15 @@
   .success-title{font-size:18px;font-weight:700;color:var(--green);margin-bottom:8px;}
   .success-sub{font-size:13px;color:var(--gray-700);line-height:1.6;}
 
-  .admin-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:16px;}
-  .stat-card{background:#fff;border-radius:var(--radius-sm);padding:14px 12px;text-align:center;box-shadow:var(--shadow-sm);border:1px solid var(--gray-200);}
+  .admin-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:6px;}
+  .stat-card{background:#fff;border-radius:var(--radius-sm);padding:14px 12px;text-align:center;box-shadow:var(--shadow-sm);border:1px solid var(--gray-200);cursor:pointer;transition:transform .1s,box-shadow .15s,border-color .15s;position:relative;-webkit-tap-highlight-color:transparent;}
+  .stat-card:hover{border-color:var(--lawson-blue);box-shadow:var(--shadow-md);}
+  .stat-card:active{transform:scale(.96);}
+  .stat-card::after{content:'👆';position:absolute;top:5px;right:7px;font-size:9px;opacity:.35;}
+  .stats-hint{font-size:10.5px;color:var(--gray-500);text-align:center;margin-bottom:14px;}
+  .stat-pop-row{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:9px 11px;border-radius:8px;background:var(--gray-50);margin-bottom:6px;font-size:13px;}
+  .stat-pop-name{font-weight:700;color:var(--gray-900);}
+  .stat-pop-sub{font-size:11px;color:var(--gray-500);font-family:'DM Mono',monospace;}
   .stat-num{font-size:24px;font-weight:900;color:var(--lawson-blue);line-height:1;}
   .stat-label{font-size:10px;color:var(--gray-500);margin-top:4px;font-weight:500;}
   .filter-bar{display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap;}
@@ -250,7 +257,7 @@
     <div class="form-group">
       <label class="form-label">所属店舗<span class="required-badge">必須</span></label>
       <div class="form-select-wrap">
-        <select class="form-select" id="homeStore">
+        <select class="form-select" id="homeStore" onchange="syncHomeStoreExclusion()">
           <option value="">-- 店舗を選択 --</option>
         </select>
       </div>
@@ -331,10 +338,11 @@
 <div id="admin-view" class="view">
 <div class="main">
   <div class="admin-stats">
-    <div class="stat-card"><div class="stat-num" id="statTotal">0</div><div class="stat-label">提出件数</div></div>
-    <div class="stat-card"><div class="stat-num" id="statStores">0</div><div class="stat-label">対象店舗数</div></div>
-    <div class="stat-card"><div class="stat-num" id="statOther" style="color:var(--green);">0</div><div class="stat-label">他店舗OKの人数</div></div>
+    <div class="stat-card" onclick="showStatPopup('total')"><div class="stat-num" id="statTotal">0</div><div class="stat-label">提出件数</div></div>
+    <div class="stat-card" onclick="showStatPopup('stores')"><div class="stat-num" id="statStores">0</div><div class="stat-label">対象店舗数</div></div>
+    <div class="stat-card" onclick="showStatPopup('other')"><div class="stat-num" id="statOther" style="color:var(--green);">0</div><div class="stat-label">他店舗OKの人数</div></div>
   </div>
+  <div class="stats-hint">👆 数字をタップすると、該当する人・店舗の一覧が表示されます</div>
   <div class="admin-actions">
     <button class="action-btn" onclick="exportCSV()">📥 CSVダウンロード</button>
     <button class="action-btn danger" onclick="openDeleteModal()">🗑 データ削除</button>
@@ -771,6 +779,27 @@ function onOtherChg(){
     document.getElementById('transportNoteBox').classList.remove('show');
   }
 }
+// 所属店舗として選ばれた店舗は「他店舗OK」の対象外 → チェック解除して選択不可にする
+function syncHomeStoreExclusion(){
+  const home=document.getElementById('homeStore').value;
+  document.querySelectorAll('#otherStoreGrid .store-check-item').forEach(item=>{
+    const cb=item.querySelector('input');
+    const label=item.querySelector('.store-check-label');
+    if(cb.value===home){
+      if(cb.checked)cb.checked=false;
+      cb.disabled=true;
+      item.style.opacity='.35';
+      label.style.cursor='not-allowed';
+      label.title='所属店舗のため選択できません';
+    }else{
+      cb.disabled=false;
+      item.style.opacity='';
+      label.style.cursor='';
+      label.removeAttribute('title');
+    }
+  });
+  onOtherChg();
+}
 function onTransportChange(){
   const val=document.querySelector('input[name="transport"]:checked')?.value;
   const nb=document.getElementById('transportNoteBox');
@@ -867,7 +896,8 @@ async function submitShift(){
   const empId=document.getElementById('empId').value.trim();
   const homeStore=document.getElementById('homeStore').value;
   const note=document.getElementById('crewNote').value.trim();
-  const otherStores=[...document.querySelectorAll('#otherStoreGrid input:checked')].map(x=>x.value);
+  // 所属店舗と同じ店舗は「他店舗OK」ではないので除外（間違いチェック対策）
+  const otherStores=[...document.querySelectorAll('#otherStoreGrid input:checked')].map(x=>x.value).filter(n=>n!==homeStore);
   const keys=Object.keys(selDT);
   const transportEl=document.querySelector('input[name="transport"]:checked');
   const transport=transportEl?transportEl.value:null;
@@ -978,6 +1008,7 @@ async function fetchSheetData(){
 
 // 管理
 const PAGE_SIZE=10;let adminPage=1;
+let _statCtx={list:[],fw:'',fs:''}; // 統計カードのタップ用（直近の集計対象を保持）
 
 // ===== シフト確定データ管理（GASリアルタイム共有） =====
 let _confirmedCache={}; // GASから取得した確定データキャッシュ
@@ -1074,16 +1105,22 @@ function _renderAdminNow(data){
   _renderAdminWithData(data,fs,fo,sortMode,fw);
 }
 
+// ★他店舗OKの実効値：所属店舗と同じ店舗のチェックは「他店舗OK」ではないので除外
+// （間違って自店をチェックした人が「他店舗OK」に数えられるバグを防ぐ）
+function effectiveOtherStores(s){
+  return (s.otherStores||[]).filter(n=>n&&n!==s.homeStore);
+}
+
 function _renderAdminWithData(data,fs,fo,sortMode,fw){
   // 同一人物の重複提出を名寄せ（最新日付データを優先）
   const allData=deduplicateSubmissions(data);
   let filtered=allData.filter(s=>{
     if(fs){
       const inHome=s.homeStore===fs;
-      const inOther=(s.otherStores||[]).includes(fs);
+      const inOther=effectiveOtherStores(s).includes(fs);
       if(!inHome&&!inOther)return false;
     }
-    if(fo==='yes'&&(!s.otherStores||!s.otherStores.length))return false;
+    if(fo==='yes'&&!effectiveOtherStores(s).length)return false;
     if(fw&&!(s.dates||[]).some(dt=>isInWeek(dt.date,fw)))return false;
     return true;
   });
@@ -1115,9 +1152,12 @@ function _renderAdminWithData(data,fs,fo,sortMode,fw){
     filtered.reverse();
   }
 
-  document.getElementById('statTotal').textContent=allData.length;
-  document.getElementById('statStores').textContent=new Set(allData.map(s=>s.homeStore)).size;
-  document.getElementById('statOther').textContent=allData.filter(s=>s.otherStores&&s.otherStores.length).length;
+  // ★統計は現在の絞り込み（店舗・他店舗・週）を反映したリストで集計
+  //   → 週を切り替えるとその週の件数になり、タップで内訳を表示できる
+  document.getElementById('statTotal').textContent=filtered.length;
+  document.getElementById('statStores').textContent=new Set(filtered.map(s=>s.homeStore)).size;
+  document.getElementById('statOther').textContent=filtered.filter(s=>effectiveOtherStores(s).length).length;
+  _statCtx={list:filtered,fw:fw,fs:fs};
 
   // ★仮シフト表の描画
   renderDraftShift(allData,fs,fw);
@@ -1155,10 +1195,11 @@ function _renderAdminWithData(data,fs,fo,sortMode,fw){
       return`<div class="sub-date-row"><span class="sub-date-dow ${cls}">${d.getMonth()+1}/${d.getDate()}(${days[dow]})</span><span class="sub-date-time">${tstr}</span>${confirmSection}</div>`;
     }).join('');
 
-    const otherSec=s.otherStores&&s.otherStores.length
-      ?`<div class="sub-other-stores"><div class="sub-other-label">🟢 他店舗勤務可（${s.otherStores.length}店舗）</div><div class="other-store-chips">${s.otherStores.map(n=>`<span class="other-chip" style="${fs&&n===fs?'background:#fff3cd;border-color:#f5a623;color:#7a4f00;font-weight:700;':''}">${fs&&n===fs?'★ ':''}${n}</span>`).join('')}</div>${s.transport?`<div style="margin-top:5px;font-size:11px;color:var(--gray-500);">交通手段：<b>${s.transport}</b></div>`:''}</div>`:'';
+    const effOther=effectiveOtherStores(s);
+    const otherSec=effOther.length
+      ?`<div class="sub-other-stores"><div class="sub-other-label">🟢 他店舗勤務可（${effOther.length}店舗）</div><div class="other-store-chips">${effOther.map(n=>`<span class="other-chip" style="${fs&&n===fs?'background:#fff3cd;border-color:#f5a623;color:#7a4f00;font-weight:700;':''}">${fs&&n===fs?'★ ':''}${n}</span>`).join('')}</div>${s.transport?`<div style="margin-top:5px;font-size:11px;color:var(--gray-500);">交通手段：<b>${s.transport}</b></div>`:''}</div>`:'';
     const noteSec=s.note?`<div class="sub-note">💬 ${s.note}</div>`:'';
-    const hitBadge=(fs&&s.homeStore!==fs&&(s.otherStores||[]).includes(fs))
+    const hitBadge=(fs&&s.homeStore!==fs&&effOther.includes(fs))
       ?`<div style="margin-bottom:8px;font-size:11px;background:var(--orange-light);color:#7a4f00;border:1px solid rgba(245,166,35,.4);border-radius:6px;padding:4px 9px;display:inline-block;">📌 <b>${fs}</b> に他店舗OKで対応可</div>`
       :'';
     const tsDisplay=fmtTimestamp(s.timestamp);
@@ -1728,6 +1769,61 @@ async function submitConfirmModal(){
 // （仮シフト表は _renderAdminWithData 内で描画されるため二重描画しない）
 function renderAdminFromCache(){
   _renderAdminNow(loadLocalData());
+}
+</script>
+
+<!-- 統計カードのタップ内訳ポップアップ -->
+<div id="statModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:999;align-items:center;justify-content:center;padding:20px;backdrop-filter:blur(3px);" onclick="if(event.target===this)closeStatModal()">
+  <div style="background:#fff;border-radius:18px;width:100%;max-width:420px;max-height:82vh;display:flex;flex-direction:column;box-shadow:0 16px 48px rgba(0,0,0,.22);overflow:hidden;">
+    <div style="padding:16px 18px 12px;border-bottom:1px solid #e2e8f0;display:flex;align-items:center;justify-content:space-between;gap:10px;">
+      <div id="statModalTitle" style="font-size:14.5px;font-weight:800;color:#0f172a;line-height:1.4;"></div>
+      <button onclick="closeStatModal()" style="flex-shrink:0;background:#f1f5f9;border:none;width:30px;height:30px;border-radius:8px;font-size:15px;cursor:pointer;color:#64748b;">✕</button>
+    </div>
+    <div id="statModalBody" style="padding:12px 15px 18px;overflow-y:auto;"></div>
+  </div>
+</div>
+
+<script>
+function closeStatModal(){document.getElementById('statModal').style.display='none';}
+
+function _weekLabelFor(fw){
+  if(!fw)return'全期間';
+  const md=ds2d(fw);const sun=new Date(md);sun.setDate(md.getDate()+6);
+  return`${md.getMonth()+1}/${md.getDate()}〜${sun.getMonth()+1}/${sun.getDate()}の週`;
+}
+
+function showStatPopup(type){
+  const{list,fw,fs}=_statCtx;
+  const wl=_weekLabelFor(fw);
+  const storeSuffix=fs?`／${fs}`:'';
+  let title='',body='';
+
+  if(type==='total'){
+    const sorted=list.slice().sort((a,b)=>(a.homeStore||'').localeCompare(b.homeStore||'','ja')||(a.name||'').localeCompare(b.name||'','ja'));
+    title=`提出者一覧（${wl}${storeSuffix}・${sorted.length}名）`;
+    body=sorted.map(s=>{
+      const cnt=(fw?(s.dates||[]).filter(dt=>isInWeek(dt.date,fw)):(s.dates||[])).length;
+      return`<div class="stat-pop-row"><div><div class="stat-pop-name">${s.name}</div><div class="stat-pop-sub">No.${s.empId}</div></div><div style="text-align:right;"><span class="sub-store-badge">${s.homeStore}</span><div class="stat-pop-sub" style="margin-top:3px;">${cnt}日</div></div></div>`;
+    }).join('');
+  }else if(type==='stores'){
+    const byStore={};
+    list.forEach(s=>{const k=s.homeStore||'(未設定)';(byStore[k]=byStore[k]||[]).push(s);});
+    const keys=Object.keys(byStore).sort((a,b)=>byStore[b].length-byStore[a].length||a.localeCompare(b,'ja'));
+    title=`対象店舗（${wl}${storeSuffix}・${keys.length}店舗）`;
+    body=keys.map(k=>`<div class="stat-pop-row"><span class="stat-pop-name">${k}</span><span class="sub-store-badge">${byStore[k].length}名</span></div>`).join('');
+  }else if(type==='other'){
+    const others=list.filter(s=>effectiveOtherStores(s).length)
+      .sort((a,b)=>(a.homeStore||'').localeCompare(b.homeStore||'','ja')||(a.name||'').localeCompare(b.name||'','ja'));
+    title=`他店舗OKの人（${wl}${storeSuffix}・${others.length}名）`;
+    body=others.map(s=>{
+      const chips=effectiveOtherStores(s).map(n=>`<span class="other-chip" style="${fs&&n===fs?'background:#fff3cd;border-color:#f5a623;color:#7a4f00;font-weight:700;':''}">${fs&&n===fs?'★ ':''}${n}</span>`).join('');
+      return`<div class="stat-pop-row" style="flex-direction:column;align-items:stretch;gap:6px;"><div style="display:flex;align-items:center;justify-content:space-between;gap:8px;"><span class="stat-pop-name">${s.name}</span><span class="sub-store-badge">${s.homeStore}</span></div><div class="other-store-chips">${chips}</div>${s.transport?`<div class="stat-pop-sub">🚗 ${s.transport}</div>`:''}</div>`;
+    }).join('');
+  }
+
+  document.getElementById('statModalTitle').textContent=title;
+  document.getElementById('statModalBody').innerHTML=body||'<div style="text-align:center;color:#64748b;padding:26px 0;font-size:13px;">該当する人はいません。</div>';
+  document.getElementById('statModal').style.display='flex';
 }
 </script>
 </body>
