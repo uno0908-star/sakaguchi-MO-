@@ -112,6 +112,19 @@
 </main>
 
 <script>
+// ── キャッシュ回避 ─────────────────────────────────
+// スマホのブラウザが古いアプリHTMLを使い回すのを防ぐ。
+// アプリを更新して全端末へ確実に反映したい時は、下の APP_VERSION を
+// 新しい値に書き換える（例: '2026-07-08b' → '2026-07-08c'）。
+// リンクに ?v=バージョン が付き、バージョンが変わった時だけ再取得される。
+const APP_VERSION = '2026-07-08b';
+document.querySelectorAll('a.app').forEach(a => {
+  const href = a.getAttribute('href');
+  if (href && /\.html$/i.test(href) && !href.includes('?')) {
+    a.setAttribute('href', href + '?v=' + APP_VERSION);
+  }
+});
+
 const input = document.getElementById('search');
 const cats = document.querySelectorAll('.cat');
 input.addEventListener('input', () => {
