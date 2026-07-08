@@ -1152,9 +1152,9 @@ function renderStoreDetail() {
             <button class="subitem-action" style="color:var(--gray-text);font-size:.68rem" onclick="rejectExclusion('${sub.submissionId}')">却下</button>
           </div>`:`<button class="subitem-action" style="color:var(--gray-text);font-size:.72rem" onclick="cancelExclusionRequest('${sub.submissionId}')">申請取消</button>`):
           (isDone||isRej)?`<button class="subitem-action" onclick="showSubDetail('${setting.settingId}','${store.storeId}','${item.itemId}')">詳細</button>`:
-          `<div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px">
+          `<div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px">
             <span class="subitem-action" data-nav="submit" data-store="${store.storeId}" data-setting="${setting.settingId}">報告 →</span>
-            ${S.isAdmin?`<button class="subitem-action" style="color:var(--blue);font-size:.68rem" onclick="excludeSetting('${setting.settingId}','${store.storeId}','${item.itemId}')">除外にする</button>`:`<button class="subitem-action" style="color:var(--blue);font-size:.68rem" onclick="openExclReqModal('${setting.settingId}','${store.storeId}','${item.itemId}')">除外申請</button>`}
+            ${S.isAdmin?`<button onclick="excludeSetting('${setting.settingId}','${store.storeId}','${item.itemId}')" style="font-size:.7rem;color:var(--blue);font-weight:700;background:#fff;border:1px solid var(--blue);border-radius:999px;padding:4px 11px;cursor:pointer;font-family:var(--font);white-space:nowrap">除外にする</button>`:`<button onclick="openExclReqModal('${setting.settingId}','${store.storeId}','${item.itemId}')" style="font-size:.7rem;color:var(--blue);font-weight:700;background:#fff;border:1px solid var(--blue);border-radius:999px;padding:4px 11px;cursor:pointer;font-family:var(--font);white-space:nowrap">🙋 除外申請</button>`}
           </div>`}
       </div>`;}).join('');
     return`<div class="item-section" id="is-${item.itemId}">
@@ -1185,6 +1185,7 @@ function renderStoreDetail() {
       </div>
       <div class="progress-bar-wrap"><div class="progress-bar-fill ${prog.pct===100?'green':''}" style="width:${prog.pct}%"></div></div>
     </div>
+    ${!S.isAdmin?`<div class="alert alert-info" style="font-size:.78rem;margin-bottom:10px;line-height:1.6">🙋 <strong>設備がない箇所</strong>（例: 棚が4本しかないのに「5本目」がある等）は、下の項目を開いて各箇所の <span style="display:inline-block;border:1px solid var(--blue);border-radius:999px;padding:1px 8px;color:var(--blue);font-weight:700;font-size:.72rem">🙋 除外申請</span> ボタンから申請できます。管理者が承認すると対象から外れます。</div>`:''}
     ${items}
   </div>`;
 }
