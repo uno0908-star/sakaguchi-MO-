@@ -9,7 +9,7 @@
   <title>接客評価システム｜阪口商店</title>
 <script>
 (function(){
-  var VER = '20260709-6';
+  var VER = '20260709-7';
   var stored = localStorage.getItem('_evalAppVer');
   var param  = new URLSearchParams(location.search).get('_v');
   if (stored !== VER) {
@@ -1803,19 +1803,21 @@ const App={
   // クルー別の評価履歴サマリー。評価月＋コメント（指導メモ）月を活動月として集計
   _evalHistorySummary(evals,emps,coachings){
     const cur=new Date().toISOString().slice(0,7);
-    const byEmp={};emps.forEach(e=>byEmp[String(e.id)]=[]);
+    const byEmp={},coachByEmp={};
+    emps.forEach(e=>{byEmp[String(e.id)]=[];coachByEmp[String(e.id)]=[]});
     evals.forEach(e=>{const k=String(e.employeeId);if(byEmp[k])byEmp[k].push(e)});
-    const coachByEmp={};(coachings||[]).forEach(c=>{const k=String(c.employeeId);(coachByEmp[k]=coachByEmp[k]||[]).push(c)});
+    (coachings||[]).forEach(c=>{const k=String(c.employeeId);if(coachByEmp[k])coachByEmp[k].push(c)});
     return emps.map(e=>{
       const ee=byEmp[String(e.id)]||[];
-      const evalMonths=[...new Set(ee.map(x=>(x.evalDate||x.createdAt?.slice(0,7)||'').slice(0,7)).filter(Boolean))].sort();
       const cc=coachByEmp[String(e.id)]||[];
-      // 指導メモの月：date(YYYY-MM-DD/YYYY-MM)優先、なければcreatedAt
-      const commentMonths=[...new Set(cc.map(c=>((c.date&&c.date.length>=7)?c.date.slice(0,7):(c.createdAt?.slice(0,7)||''))).filter(Boolean))].sort();
+      // 評価の対象月（◯月度＝evalDate）。ステータス/タイムライン表示用
+      const evalMonths=[...new Set(ee.map(x=>(x.evalDate||x.createdAt?.slice(0,7)||'').slice(0,7)).filter(Boolean))].sort();
+      // コメント（指導メモ）を実際に残した月。保存日時createdAtを優先（評価フォーム由来はdateが◯月度になり誤判定するため）
+      const commentMonths=[...new Set(cc.map(c=>(c.createdAt?c.createdAt.slice(0,7):((c.date&&c.date.length>=7)?c.date.slice(0,7):''))).filter(Boolean))].sort();
       const allMonths=[...new Set([...evalMonths,...commentMonths])].sort();
       let open=0,fixed=0;
       SERVICE_ITEMS.forEach(item=>{const s=this._getItemStatus(evals,e.id,item.key).status;if(s==='要改善')open++;else if(s==='改善済')fixed++});
-      // 停滞 = 活動月（評価＋コメント）が1ヶ月だけ、かつ今月より前
+      // 停滞 = 評価もコメントも実質1ヶ月だけ、かつ今月より前（初回以降フォローなし）
       const stalled=allMonths.length===1&&allMonths[0]<cur;
       return{e,months:allMonths,evalMonths,commentMonths,allMonths,open,fixed,stalled,evaluated:allMonths.length>0};
     });
