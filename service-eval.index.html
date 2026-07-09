@@ -9,7 +9,7 @@
   <title>接客評価システム｜阪口商店</title>
 <script>
 (function(){
-  var VER = '20260709-4';
+  var VER = '20260709-5';
   var stored = localStorage.getItem('_evalAppVer');
   var param  = new URLSearchParams(location.search).get('_v');
   if (stored !== VER) {
@@ -1235,9 +1235,9 @@ const App={
     const impStats=this._improvementStats(evals,evalTarget);
     const impAll=impStats.fixedItems+impStats.openItems;
     const impRate=impAll?Math.round(impStats.fixedItems/impAll*100):0;
-    const histSummary=this._evalHistorySummary(evals,evalTarget);
+    const histSummary=this._evalHistorySummary(evals,evalTarget,DB.coachings());
     const stalledCount=histSummary.filter(x=>x.stalled).length;
-    const stalledCard=stalledCount?`<div class="card" onclick="App.showTrendDetail()" style="cursor:pointer;border:1px solid #F59E0B;background:#FFFBEB"><div class="flex-between"><div><div style="font-weight:700;color:#92400E">⚠️ 評価が1ヶ月で止まっているクルー</div><div class="text-sub" style="font-size:11px;margin-top:2px">追加評価・再チェックが必要です。タップで一覧 ›</div></div><div style="font-size:26px;font-weight:800;color:#B45309">${stalledCount}<span style="font-size:13px;font-weight:600">名</span></div></div></div>`:'';
+    const stalledCard=stalledCount?`<div class="card" onclick="App.showTrendDetail()" style="cursor:pointer;border:1px solid #F59E0B;background:#FFFBEB"><div class="flex-between"><div><div style="font-weight:700;color:#92400E">⚠️ 評価・コメントが1ヶ月で止まっているクルー</div><div class="text-sub" style="font-size:11px;margin-top:2px">再チェックも指導メモも途絶えています。タップで一覧 ›</div></div><div style="font-size:26px;font-weight:800;color:#B45309">${stalledCount}<span style="font-size:13px;font-weight:600">名</span></div></div></div>`:'';
     const trend=this._improvementTrend(evals,evalTarget);
     const trendCard=trend?`<div class="card" onclick="App.showTrendDetail()" style="cursor:pointer"><div class="section-title">📈 改善の推移（月別・累積）　<span style="color:var(--blue);font-weight:700">個人別を見る ›</span></div>${trend.map(t=>{const tot=t.open+t.fixed;const fp=tot?Math.round(t.fixed/tot*100):0;return`<div style="margin-bottom:9px"><div class="flex-between" style="font-size:12px;margin-bottom:3px"><span style="font-weight:700">${t.month.slice(5)}月</span><span class="text-sub"><b style="color:var(--green)">改善${t.fixed}</b> ／ <b style="color:var(--red)">要改善${t.open}</b>（改善率${fp}%）</span></div><div class="analysis-bar-multi" style="height:12px">${tot?`<div class="bar-good" style="width:${fp}%"></div><div class="bar-bad" style="width:${100-fp}%"></div>`:'<div style="width:100%;background:var(--gray-light)"></div>'}</div></div>`}).join('')}<div class="text-sub" style="font-size:11px;margin-top:2px">※ 各月末時点の累積状態（🟢再チェックで○◎化＝改善／🔴△✕のまま＝要改善）</div></div>`:'';
     const improveList=needImprove.slice(0,5).map(e=>{
@@ -1320,7 +1320,11 @@ const App={
       const stBadge=st==='改善済'?'<span class="st-dot st-fixed">🟢改善済</span>':st==='要改善'?'<span class="st-dot st-open">🔴要改善</span>':st==='良好'?'<span class="st-dot st-good">🔵良好</span>':'<span class="st-dot st-none">⬜未</span>';
       return`<div style="display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid var(--border);flex-wrap:wrap"><span style="font-size:13px;font-weight:600;width:65px">${item.label}</span><span class="rank-chip ${fin||'未'}">${fin||'未'}</span>${stBadge}<span style="font-size:11px;color:var(--text-sub)">SI:${this._chip(si)} SC:${this._chip(sc)} 責:${this._chip(sm)}</span></div>`;
     }).join('');
-    const coachHtml=coachings.length?coachings.map(c=>`<div class="timeline-item"><div class="timeline-dot"></div><div class="timeline-body"><div class="timeline-meta"><span>${c.date||c.createdAt?.slice(0,10)||''}</span><span class="badge badge-${this._roleClass(c.authorRole)}">${c.authorRole}</span><span>${c.authorName}</span></div><div>${c.content}</div>${c.photo?`<img src="${c.photo}" class="timeline-photo">`:''}</div></div>`).join(''):'<div class="empty-state"><p>指導メモなし</p></div>';
+    const coachHtml=coachings.length?coachings.map(c=>{
+      const when=c.createdAt?this._fmtDateTime(c.createdAt):this._fmtDateTime(c.date);
+      const mtag=(c.date&&/^\d{4}-\d{2}$/.test(c.date))?`<span class="badge badge-crew" style="font-size:9px">${c.date.slice(0,4)}年${c.date.slice(5,7)}月度</span>`:'';
+      return`<div class="timeline-item"><div class="timeline-dot"></div><div class="timeline-body"><div class="timeline-meta"><span>🕒 ${when}</span>${mtag}<span class="badge badge-${this._roleClass(c.authorRole)}">${c.authorRole}</span><span>${c.authorName}</span></div><div>${c.content}</div>${c.photo?`<img src="${c.photo}" class="timeline-photo">`:''}</div></div>`;
+    }).join(''):'<div class="empty-state"><p>指導メモなし</p></div>';
     const canEdit=this._canEdit();
     const monthlyGraph=this._getMonthlyTrend(evals,id);
     document.getElementById('employee-detail-content').innerHTML=`
@@ -1403,7 +1407,7 @@ const App={
       const dot=i.authorRole==='SI'?'#1E40AF':i.authorRole==='SC'?'#0369A1':'#065F46';
       const kindBadge=`<span class="badge" style="background:${isCoach?'#DBEAFE':'#FEF3C7'};color:${isCoach?'#1E40AF':'#92400E'}">${isCoach?'📘 指導メモ':'💬 気づきメモ'}</span>`;
       const target=isCoach&&i.who?`<span style="font-weight:700;color:#111;cursor:pointer" onclick="App.openEmployee('${i.empId}')">${i.who}</span>`:'';
-      return`<div class="timeline-item"><div class="timeline-dot" style="background:${dot}"></div><div class="timeline-body"><div class="timeline-meta" style="flex-wrap:wrap;gap:6px"><span>${String(i.date).slice(0,10)}</span>${kindBadge}<span class="badge badge-${this._roleClass(i.authorRole)}">${i.authorRole}</span><span>${i.authorName}</span><span style="color:var(--blue)">${i.store}</span>${target}</div><div style="margin-top:4px">${i.content.replace(/\n/g,'<br>')}</div>${i.photo?`<img src="${i.photo}" class="timeline-photo">`:''}</div></div>`;
+      return`<div class="timeline-item"><div class="timeline-dot" style="background:${dot}"></div><div class="timeline-body"><div class="timeline-meta" style="flex-wrap:wrap;gap:6px"><span>🕒 ${this._fmtDateTime(i.date)}</span>${kindBadge}<span class="badge badge-${this._roleClass(i.authorRole)}">${i.authorRole}</span><span>${i.authorName}</span><span style="color:var(--blue)">${i.store}</span>${target}</div><div style="margin-top:4px">${i.content.replace(/\n/g,'<br>')}</div>${i.photo?`<img src="${i.photo}" class="timeline-photo">`:''}</div></div>`;
     }).join(''):'<div class="empty-state"><p>メモはまだありません</p></div>';
     document.getElementById('observation-content').innerHTML=`<div style="padding:12px">${html}</div>`;
   },
@@ -1785,28 +1789,46 @@ const App={
       return{month:m,open,fixed};
     });
   },
-  // クルー別の評価履歴サマリー（評価月一覧・現在の要改善/改善済・停滞判定）
-  _evalHistorySummary(evals,emps){
+  // 日付・時刻の整形。ISO(T付き)は時刻まで、YYYY-MMは年月のみ
+  _fmtDateTime(v){
+    if(!v)return'';
+    const s=String(v);
+    if(/^\d{4}-\d{2}$/.test(s))return s.slice(0,4)+'/'+s.slice(5,7);
+    const d=new Date(s);
+    if(isNaN(d.getTime()))return s.slice(0,10);
+    const p=n=>String(n).padStart(2,'0');
+    const ds=`${d.getFullYear()}/${p(d.getMonth()+1)}/${p(d.getDate())}`;
+    return s.indexOf('T')>=0?`${ds} ${p(d.getHours())}:${p(d.getMinutes())}`:ds;
+  },
+  // クルー別の評価履歴サマリー。評価月＋コメント（指導メモ）月を活動月として集計
+  _evalHistorySummary(evals,emps,coachings){
     const cur=new Date().toISOString().slice(0,7);
     const byEmp={};emps.forEach(e=>byEmp[String(e.id)]=[]);
     evals.forEach(e=>{const k=String(e.employeeId);if(byEmp[k])byEmp[k].push(e)});
+    const coachByEmp={};(coachings||[]).forEach(c=>{const k=String(c.employeeId);(coachByEmp[k]=coachByEmp[k]||[]).push(c)});
     return emps.map(e=>{
       const ee=byEmp[String(e.id)]||[];
-      const months=[...new Set(ee.map(x=>(x.evalDate||x.createdAt?.slice(0,7)||'').slice(0,7)).filter(Boolean))].sort();
+      const evalMonths=[...new Set(ee.map(x=>(x.evalDate||x.createdAt?.slice(0,7)||'').slice(0,7)).filter(Boolean))].sort();
+      const cc=coachByEmp[String(e.id)]||[];
+      // 指導メモの月：date(YYYY-MM-DD/YYYY-MM)優先、なければcreatedAt
+      const commentMonths=[...new Set(cc.map(c=>((c.date&&c.date.length>=7)?c.date.slice(0,7):(c.createdAt?.slice(0,7)||''))).filter(Boolean))].sort();
+      const allMonths=[...new Set([...evalMonths,...commentMonths])].sort();
       let open=0,fixed=0;
       SERVICE_ITEMS.forEach(item=>{const s=this._getItemStatus(evals,e.id,item.key).status;if(s==='要改善')open++;else if(s==='改善済')fixed++});
-      // 停滞 = 評価月が1ヶ月だけ、かつその月が今月より前（追加フォローがされていない）
-      const stalled=months.length===1&&months[0]<cur;
-      return{e,months,open,fixed,stalled,evaluated:months.length>0};
+      // 停滞 = 活動月（評価＋コメント）が1ヶ月だけ、かつ今月より前
+      const stalled=allMonths.length===1&&allMonths[0]<cur;
+      return{e,months:allMonths,evalMonths,commentMonths,allMonths,open,fixed,stalled,evaluated:allMonths.length>0};
     });
+  },
+  // 1クルーの指定月末時点の 要改善/改善済 件数
+  _statusCountsAsOf(empEvals,empId,month){
+    let open=0,fixed=0;
+    SERVICE_ITEMS.forEach(item=>{const s=this._statusAsOf(empEvals,empId,item.key,month);if(s==='要改善')open++;else if(s==='改善済')fixed++});
+    return{open,fixed};
   },
   // 1クルーの月別 要改善/改善済 スナップショット（各月末時点の累積）
   _empMonthlyImprovement(empEvals,empId,months){
-    return months.map(m=>{
-      let open=0,fixed=0;
-      SERVICE_ITEMS.forEach(item=>{const s=this._statusAsOf(empEvals,empId,item.key,m);if(s==='要改善')open++;else if(s==='改善済')fixed++});
-      return{month:m,open,fixed};
-    });
+    return months.map(m=>({month:m,...this._statusCountsAsOf(empEvals,empId,m)}));
   },
   // 1項目のBefore→After行を生成（改善済/要改善のみ。他は空文字）
   _changeRow(evals,empId,itemKey,label){
@@ -2285,13 +2307,21 @@ const App={
     const emps=DB.employees().filter(e=>e.status==='在籍中');
     const evalTarget=emps.filter(e=>!e.evalExcluded);
     const evals=DB.evaluations();
-    const summary=this._evalHistorySummary(evals,evalTarget);
+    const summary=this._evalHistorySummary(evals,evalTarget,DB.coachings());
     const byEmp={};evalTarget.forEach(e=>byEmp[String(e.id)]=[]);
     evals.forEach(e=>{const k=String(e.employeeId);if(byEmp[k])byEmp[k].push(e)});
     const totalStalled=summary.filter(x=>x.stalled).length;
     document.getElementById('modal-detail-title').textContent='改善状況 個人別（店舗別）';
-    const chip=s=>`<span style="display:inline-block;font-size:10px;padding:2px 6px;border-radius:8px;background:var(--gray-light);white-space:nowrap">${s.month.slice(5)}月 <b style="color:var(--green)">改${s.fixed}</b>/<b style="color:var(--red)">要${s.open}</b></span>`;
-    const timeline=x=>this._empMonthlyImprovement(byEmp[String(x.e.id)]||[],x.e.id,x.months).map(chip).join('<span class="chg-arrow">→</span>');
+    // 各月末の要改善/改善済を月チップで表示。💬=その月は指導メモ（コメント）のみで評価チェックなし
+    const timeline=x=>{
+      const em=new Set(x.evalMonths);
+      const ee=byEmp[String(x.e.id)]||[];
+      return x.allMonths.map(m=>{
+        const c=this._statusCountsAsOf(ee,x.e.id,m);
+        const only=!em.has(m);
+        return`<span style="display:inline-block;font-size:10px;padding:2px 6px;border-radius:8px;background:${only?'#EDE9FE':'var(--gray-light)'};white-space:nowrap">${only?'💬':''}${m.slice(5)}月 <b style="color:var(--green)">改${c.fixed}</b>/<b style="color:var(--red)">要${c.open}</b></span>`;
+      }).join('<span class="chg-arrow">→</span>');
+    };
     const cntChips=x=>`${x.open?`<span class="st-dot st-open">要改善${x.open}</span>`:''}${x.fixed?`<span class="st-dot st-fixed">改善済${x.fixed}</span>`:''}`;
     // 店舗ごとにまとめる（評価ありのみ）。停滞多い→人数多い順
     const byStore={};
@@ -2300,7 +2330,8 @@ const App={
       list.sort((a,b)=>(b.stalled-a.stalled)||(b.open-a.open)||(b.fixed-a.fixed));
       return{store,list,stalled:list.filter(x=>x.stalled).length};
     }).sort((a,b)=>b.stalled-a.stalled||b.list.length-a.list.length);
-    let html=totalStalled?`<div style="margin-bottom:10px;padding:8px 10px;background:#FFFBEB;border-radius:8px;border:1px solid #F59E0B;color:#92400E;font-size:12px">⚠️ <b>評価が1ヶ月で止まっているクルー 計${totalStalled}名</b>。店舗ごとに確認してください。</div>`:'';
+    let html=`<div class="text-sub" style="font-size:11px;margin-bottom:8px">月チップ＝各月末の改善状況。<span style="background:#EDE9FE;padding:1px 5px;border-radius:6px">💬◯月</span>＝評価チェックはせず指導メモ（コメント）のみの月</div>`;
+    html+=totalStalled?`<div style="margin-bottom:10px;padding:8px 10px;background:#FFFBEB;border-radius:8px;border:1px solid #F59E0B;color:#92400E;font-size:12px">⚠️ <b>評価もコメントも1ヶ月で止まっているクルー 計${totalStalled}名</b>。店舗ごとに確認してください。</div>`:'';
     html+=storeEntries.map(({store,list,stalled})=>`
       <div style="margin-bottom:14px">
         <div class="flex-between" style="margin-bottom:6px;padding-bottom:4px;border-bottom:2px solid ${stalled?'#F59E0B':'var(--blue)'}">
