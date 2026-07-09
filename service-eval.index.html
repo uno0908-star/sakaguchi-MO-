@@ -9,7 +9,7 @@
   <title>接客評価システム｜阪口商店</title>
 <script>
 (function(){
-  var VER = '20260622-2';
+  var VER = '20260709-1';
   var stored = localStorage.getItem('_evalAppVer');
   var param  = new URLSearchParams(location.search).get('_v');
   if (stored !== VER) {
@@ -96,6 +96,20 @@ input,select,textarea,button{font-family:inherit;font-size:14px}
 .rank-chip.△{background:#FEF3C7;color:#92400E}
 .rank-chip.✕{background:#FEE2E2;color:#991B1B}
 .rank-chip.未{background:var(--gray-light);color:var(--gray);font-size:10px}
+.chg-row{display:flex;align-items:center;gap:4px;flex-wrap:wrap;margin:4px 0;font-size:12px}
+.chg-item{font-weight:700;min-width:52px}
+.chg-role{font-size:10px;color:var(--text-sub)}
+.chg-arrow{color:var(--gray);font-weight:800}
+.chg-tag{font-size:10px;font-weight:700;padding:1px 6px;border-radius:8px;white-space:nowrap}
+.chg-fixed{background:#D1FAE5;color:#065F46}
+.chg-open{background:#FEE2E2;color:#991B1B}
+.st-dot{font-size:11px;font-weight:700;padding:2px 8px;border-radius:9px;white-space:nowrap}
+.st-fixed{background:#D1FAE5;color:#065F46}
+.st-open{background:#FEE2E2;color:#991B1B}
+.st-good{background:#DBEAFE;color:#1E40AF}
+.st-none{background:var(--gray-light);color:var(--gray)}
+.cycle-bar-track{background:var(--gray-light);border-radius:5px;height:10px;overflow:hidden;margin-top:6px}
+.cycle-bar-fill{height:100%;background:var(--green);border-radius:5px;transition:width 0.3s}
 .eval-item{background:#fff;border-radius:var(--radius);margin-bottom:10px;overflow:hidden}
 .eval-item-header{padding:12px 14px;background:var(--blue);color:#fff;display:flex;align-items:center;justify-content:space-between}
 .eval-item-header h3{font-size:14px;font-weight:700}
@@ -1214,11 +1228,16 @@ const App={
       const se=evalTarget.filter(e=>e.store===s);
       const ev=se.filter(e=>evaledIds.has(e.id)).length;
       const pct=set=>se.length?Math.round(se.filter(e=>set.has(e.id)).length/se.length*100):0;
-      return{store:s,total:se.length,evaled:ev,rate:se.length?Math.round(ev/se.length*100):0,smRate:pct(evaledByRole['店舗責任者']),scRate:pct(evaledByRole['SC']),siRate:pct(evaledByRole['SI'])};
+      const imp=this._improvementStats(evals,se);
+      const impTotal=imp.fixedItems+imp.openItems;
+      return{store:s,total:se.length,evaled:ev,rate:se.length?Math.round(ev/se.length*100):0,smRate:pct(evaledByRole['店舗責任者']),scRate:pct(evaledByRole['SC']),siRate:pct(evaledByRole['SI']),fixedItems:imp.fixedItems,impTotal,impRate:impTotal?Math.round(imp.fixedItems/impTotal*100):0};
     }).filter(s=>s.total>0).sort((a,b)=>b.rate-a.rate);
+    const impStats=this._improvementStats(evals,evalTarget);
+    const impAll=impStats.fixedItems+impStats.openItems;
+    const impRate=impAll?Math.round(impStats.fixedItems/impAll*100):0;
     const improveList=needImprove.slice(0,5).map(e=>{
-      const items=SERVICE_ITEMS.filter(item=>{const r=this._getFinalRank(evals,e.id,item.key);return r==='△'||r==='✕'});
-      return`<div class="imp-row" onclick="App.openEmployee('${e.id}')"><div class="imp-name">${e.name}</div><div class="imp-store">${e.store}</div><div class="imp-items">${items.map(i=>`<span class="badge badge-crew">${i.label}</span>`).join('')}</div></div>`;
+      const rows=SERVICE_ITEMS.map(item=>this._changeRow(evals,e.id,item.key,item.label)).join('');
+      return`<div class="imp-row" onclick="App.openEmployee('${e.id}')"><div class="flex-between"><div class="imp-name">${e.name}</div><span style="color:var(--gray)">›</span></div><div class="imp-store">${e.store}</div><div style="margin-top:4px">${rows}</div></div>`;
     }).join('');
     document.getElementById('dashboard-content').innerHTML=`
       <div class="stats-grid">
@@ -1226,6 +1245,14 @@ const App={
         <div class="stat-card tappable" ontouchstart="" onclick="App.showCompletionRateDetail()"><div class="stat-num" style="color:var(--green)">${rate}%</div><div class="stat-label">評価完了率 ›</div></div>
         <div class="stat-card tappable" ontouchstart="" onclick="App.showUnevaluatedDetail()"><div class="stat-num" style="color:var(--orange)">${total-evaled}</div><div class="stat-label">未評価人数 ›</div></div>
         <div class="stat-card tappable" ontouchstart="" onclick="App.showImprovementByStore()"><div class="stat-num" style="color:var(--red)">${needImprove.length}</div><div class="stat-label">改善必要人数 ›</div></div>
+      </div>
+      <div class="card"><div class="section-title">🔄 改善サイクル（再チェックで △✕ → ○◎）</div>
+        <div style="display:flex;gap:8px">
+          <div class="stat-card tappable" ontouchstart="" onclick="App.showImprovementByStore()" style="flex:1;min-width:0"><div class="stat-num" style="font-size:22px;color:var(--red)">${impStats.openItems}</div><div class="stat-label">要改善（項目）›</div></div>
+          <div class="stat-card tappable" ontouchstart="" onclick="App.showFixedDetail()" style="flex:1;min-width:0"><div class="stat-num" style="font-size:22px;color:var(--green)">${impStats.fixedItems}</div><div class="stat-label">改善済（項目）↑ ›</div></div>
+        </div>
+        <div class="cycle-bar-track"><div class="cycle-bar-fill" style="width:${impRate}%"></div></div>
+        <div class="text-sub" style="font-size:11px;margin-top:4px;text-align:right">改善率 <b style="color:var(--green)">${impRate}%</b>（${impStats.fixedItems}/${impAll}件が○◎化）</div>
       </div>
       <div class="card"><div class="section-title">育成指標</div>
         <div style="display:flex;gap:8px;flex-wrap:wrap">
@@ -1239,7 +1266,7 @@ const App={
       ${needImprove.length?`<div class="section-title">改善必要クルー（上位5名）</div>${improveList}<button class="btn btn-secondary btn-full" onclick="App.navTo('improvement')">全員を見る</button>`:''}
       <div class="section-title" style="margin-top:12px">店舗別評価完了率</div>
       <div style="display:flex;gap:12px;margin-bottom:8px;font-size:11px;color:var(--text-sub)"><span><span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:#00A651;margin-right:3px"></span>責任者</span><span><span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:#0369A1;margin-right:3px"></span>SC</span><span><span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:#1E40AF;margin-right:3px"></span>SI</span></div>
-      ${storeStats.map(s=>`<div class="store-bar-wrap"><div class="store-bar-name"><span>${s.store}</span><span>全体 ${s.evaled}/${s.total}名 ${s.rate}%</span></div><div class="store-bar-track"><div class="store-bar-fill" style="width:${s.rate}%"></div></div>${[['責任者',s.smRate,'#00A651'],['SC',s.scRate,'#0369A1'],['SI',s.siRate,'#1E40AF']].map(([l,r,c])=>`<div style="display:flex;align-items:center;gap:6px;margin-top:3px"><span style="font-size:10px;width:36px;color:var(--text-sub)">${l}</span><div class="store-bar-track" style="flex:1;height:6px;margin:0"><div style="height:100%;border-radius:inherit;background:${c};width:${r}%"></div></div><span style="font-size:10px;width:32px;text-align:right;color:var(--text-sub)">${r}%</span></div>`).join('')}</div>`).join('')}
+      ${storeStats.map(s=>`<div class="store-bar-wrap"><div class="store-bar-name"><span>${s.store}</span><span>全体 ${s.evaled}/${s.total}名 ${s.rate}%</span></div><div class="store-bar-track"><div class="store-bar-fill" style="width:${s.rate}%"></div></div>${[['責任者',s.smRate,'#00A651'],['SC',s.scRate,'#0369A1'],['SI',s.siRate,'#1E40AF']].map(([l,r,c])=>`<div style="display:flex;align-items:center;gap:6px;margin-top:3px"><span style="font-size:10px;width:36px;color:var(--text-sub)">${l}</span><div class="store-bar-track" style="flex:1;height:6px;margin:0"><div style="height:100%;border-radius:inherit;background:${c};width:${r}%"></div></div><span style="font-size:10px;width:32px;text-align:right;color:var(--text-sub)">${r}%</span></div>`).join('')}${s.impTotal?`<div style="display:flex;align-items:center;gap:6px;margin-top:5px;padding-top:5px;border-top:1px dashed var(--border)"><span style="font-size:10px;width:36px;color:var(--green);font-weight:700">🔄改善</span><div class="store-bar-track" style="flex:1;height:6px;margin:0"><div style="height:100%;border-radius:inherit;background:var(--green);width:${s.impRate}%"></div></div><span style="font-size:10px;width:44px;text-align:right;color:var(--text-sub)">${s.fixedItems}/${s.impTotal}件</span></div>`:''}</div>`).join('')}
       <div style="height:8px"></div>
       ${DB.user().role==='管理者'?`<button class="btn btn-secondary btn-full" onclick="App.navTo('compliance')" style="margin-top:8px">📝 コンプラ回答状況</button>`:''}
       ${Storage.AUTH.can(DB.user(),'sysAdmin')?`<button class="btn btn-secondary btn-full" onclick="App.navTo('settings')" style="margin-top:8px">⚙️ 管理設定</button>`:''}
@@ -1282,7 +1309,9 @@ const App={
     const evalSummary=SERVICE_ITEMS.map(item=>{
       const si=this._getRankByRole(evals,id,'SI',item.key),sc=this._getRankByRole(evals,id,'SC',item.key),sm=this._getRankByRole(evals,id,'店舗責任者',item.key);
       const fin=si||sc||sm||'';
-      return`<div style="display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid var(--border)"><span style="font-size:13px;font-weight:600;width:65px">${item.label}</span><span class="rank-chip ${fin||'未'}">${fin||'未'}</span><span style="font-size:11px;color:var(--text-sub)">SI:${this._chip(si)} SC:${this._chip(sc)} 責:${this._chip(sm)}</span></div>`;
+      const st=this._getItemStatus(evals,id,item.key).status;
+      const stBadge=st==='改善済'?'<span class="st-dot st-fixed">🟢改善済</span>':st==='要改善'?'<span class="st-dot st-open">🔴要改善</span>':st==='良好'?'<span class="st-dot st-good">🔵良好</span>':'<span class="st-dot st-none">⬜未</span>';
+      return`<div style="display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid var(--border);flex-wrap:wrap"><span style="font-size:13px;font-weight:600;width:65px">${item.label}</span><span class="rank-chip ${fin||'未'}">${fin||'未'}</span>${stBadge}<span style="font-size:11px;color:var(--text-sub)">SI:${this._chip(si)} SC:${this._chip(sc)} 責:${this._chip(sm)}</span></div>`;
     }).join('');
     const coachHtml=coachings.length?coachings.map(c=>`<div class="timeline-item"><div class="timeline-dot"></div><div class="timeline-body"><div class="timeline-meta"><span>${c.date||c.createdAt?.slice(0,10)||''}</span><span class="badge badge-${this._roleClass(c.authorRole)}">${c.authorRole}</span><span>${c.authorName}</span></div><div>${c.content}</div>${c.photo?`<img src="${c.photo}" class="timeline-photo">`:''}</div></div>`).join(''):'<div class="empty-state"><p>指導メモなし</p></div>';
     const canEdit=this._canEdit();
@@ -1410,10 +1439,16 @@ const App={
     if(user.role==='店舗責任者')emps=emps.filter(e=>e.store===user.store);
     else if(store)emps=emps.filter(e=>e.store===store);
     const evals=DB.evaluations();
-    const rows=emps.filter(e=>SERVICE_ITEMS.some(item=>{const r=this._getFinalRank(evals,e.id,item.key);return r==='△'||r==='✕'})).map(e=>{
-      const items=SERVICE_ITEMS.filter(item=>{const r=this._getFinalRank(evals,e.id,item.key);return r==='△'||r==='✕'});
-      const badges=items.map(item=>{const r=this._getFinalRank(evals,e.id,item.key);return`<span class="rank-chip ${r}" style="font-size:11px;padding:0 6px">${item.label}:${r}</span>`}).join('');
-      return`<div class="imp-row" onclick="App.openEmployee('${e.id}')"><div class="flex-between"><div class="imp-name">${e.name}</div><span style="color:var(--gray)">›</span></div><div class="imp-store">${e.store}</div><div class="imp-items" style="margin-top:6px">${badges}</div></div>`;
+    // 各クルーの 要改善/改善済 件数を集計し、要改善が多い順→改善済がある人の順で表示
+    const list=emps.map(e=>{
+      let open=0,fixed=0;
+      SERVICE_ITEMS.forEach(item=>{const s=this._getItemStatus(evals,e.id,item.key).status;if(s==='要改善')open++;else if(s==='改善済')fixed++});
+      return{e,open,fixed};
+    }).filter(x=>x.open>0||x.fixed>0).sort((a,b)=>b.open-a.open||b.fixed-a.fixed);
+    const rows=list.map(({e,open,fixed})=>{
+      const changeRows=SERVICE_ITEMS.map(item=>this._changeRow(evals,e.id,item.key,item.label)).join('');
+      const summary=`${open?`<span class="st-dot st-open">要改善 ${open}</span>`:''}${fixed?`<span class="st-dot st-fixed">改善済 ${fixed}</span>`:''}`;
+      return`<div class="imp-row" onclick="App.openEmployee('${e.id}')"><div class="flex-between"><div class="imp-name">${e.name}</div><span style="color:var(--gray)">›</span></div><div class="imp-store">${e.store}</div><div style="display:flex;gap:6px;margin:6px 0">${summary}</div>${changeRows}</div>`;
     }).join('');
     document.getElementById('improvement-content').innerHTML=rows||'<div class="empty-state"><p>改善必要なクルーはいません</p></div>';
   },
@@ -1685,6 +1720,47 @@ const App={
     if(latest[itemKey+'_rank']!==undefined)return{rank:latest[itemKey+'_rank']||'',comment:latest[itemKey+'_comment']||''};
     return null;
   },
+  /* ===== 再チェック（△✕→○◎）の可視化ロジック ===== */
+  // 1項目の状態を判定。status: 未 / 要改善 / 改善済 / 良好
+  //  改善済 = 元々△✕だったが、上位者の再チェックで最終ランクが○◎になったもの
+  _getItemStatus(evals,empId,itemKey){
+    const si=this._getRankByRole(evals,empId,'SI',itemKey);
+    const sc=this._getRankByRole(evals,empId,'SC',itemKey);
+    const sm=this._getRankByRole(evals,empId,'店舗責任者',itemKey);
+    const final=si||sc||sm||''; // SI優先（_getFinalRankと同じ）
+    const isBad=r=>r==='△'||r==='✕';
+    if(!final)return{status:'未',final:'',si,sc,sm};
+    if(isBad(final))return{status:'要改善',final,si,sc,sm};
+    // final良好。優先順（責任者→SC→SI）で最初の△✕を「元の指摘」とみなす
+    const chain=[['店舗責任者',sm],['SC',sc],['SI',si]].filter(x=>x[1]);
+    const badEntry=chain.find(x=>isBad(x[1]));
+    if(badEntry){
+      const afterRole=si?'SI':sc?'SC':'店舗責任者';
+      return{status:'改善済',final,before:badEntry[1],beforeRole:badEntry[0],afterRole,si,sc,sm};
+    }
+    return{status:'良好',final,si,sc,sm};
+  },
+  _roleShort(role){return role==='店舗責任者'?'責':role},
+  // クルー群の改善集計（件数・対象クルー）
+  _improvementStats(evals,emps){
+    let fixedItems=0,openItems=0;const fixedEmps=[],openEmps=[];
+    emps.forEach(e=>{
+      let ef=0,eo=0;
+      SERVICE_ITEMS.forEach(item=>{const s=this._getItemStatus(evals,e.id,item.key).status;if(s==='改善済')ef++;else if(s==='要改善')eo++});
+      fixedItems+=ef;openItems+=eo;
+      if(ef>0)fixedEmps.push(e);
+      if(eo>0)openEmps.push(e);
+    });
+    return{fixedItems,openItems,fixedEmps,openEmps};
+  },
+  // 1項目のBefore→After行を生成（改善済/要改善のみ。他は空文字）
+  _changeRow(evals,empId,itemKey,label){
+    const s=this._getItemStatus(evals,empId,itemKey);
+    if(s.status==='改善済')return`<div class="chg-row"><span class="chg-item">${label}</span><span class="chg-role">${this._roleShort(s.beforeRole)}</span><span class="rank-chip ${s.before}">${s.before}</span><span class="chg-arrow">→</span><span class="chg-role">${this._roleShort(s.afterRole)}</span><span class="rank-chip ${s.final}">${s.final}</span><span class="chg-tag chg-fixed">✅改善済</span></div>`;
+    if(s.status==='要改善')return`<div class="chg-row"><span class="chg-item">${label}</span><span class="rank-chip ${s.final}">${s.final}</span><span class="chg-tag chg-open">🔴未対応</span></div>`;
+    return'';
+  },
+
   _canEdit(){return Storage.AUTH.can(DB.user(),'evalWrite')},
   _canEditRole(role){const r=DB.user()?.role;return Storage.AUTH.can(DB.user(),'evalWrite')&&r===role},
   _typeName(type){return{Crew:'クルー',ContractEmployee:'契約社員',FullTimeEmployee:'正社員'}[type]||type},
@@ -2083,11 +2159,43 @@ const App={
           <span style="font-size:13px;font-weight:700;color:var(--red)">${list.length}名</span>
         </div>
         ${list.map(e=>{
-          const items=SERVICE_ITEMS.filter(item=>{const r=this._getFinalRank(evals,e.id,item.key);return r==='△'||r==='✕'});
-          const badges=items.map(item=>{const r=this._getFinalRank(evals,e.id,item.key);return`<span class="rank-chip ${r}" style="font-size:10px;padding:0 5px;width:auto">${item.label}:${r}</span>`}).join('');
+          const changeRows=SERVICE_ITEMS.map(item=>this._changeRow(evals,e.id,item.key,item.label)).join('');
           return`<div style="padding:8px 0;border-bottom:1px solid var(--border);cursor:pointer" onclick="App.closeModal();App.openEmployee('${e.id}')">
             <div class="flex-between"><span style="font-weight:600">${e.name}</span><span style="color:var(--gray)">›</span></div>
-            <div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:4px">${badges}</div>
+            <div style="margin-top:4px">${changeRows}</div>
+          </div>`;
+        }).join('')}
+      </div>`).join('');
+    this._openModal('modal-detail');
+  },
+
+  showFixedDetail(){
+    const emps=DB.employees().filter(e=>e.status==='在籍中');
+    const evalTarget=emps.filter(e=>!e.evalExcluded);
+    const evals=DB.evaluations();
+    // 改善済（△✕→○◎）項目を持つクルーを店舗別に
+    const list=evalTarget.map(e=>{
+      let fixed=0;SERVICE_ITEMS.forEach(item=>{if(this._getItemStatus(evals,e.id,item.key).status==='改善済')fixed++});
+      return{e,fixed};
+    }).filter(x=>x.fixed>0);
+    const totalFixed=list.reduce((n,x)=>n+x.fixed,0);
+    document.getElementById('modal-detail-title').textContent=`改善済み 再チェックで○◎化（計${totalFixed}件）`;
+    if(!list.length){
+      document.getElementById('modal-detail-body').innerHTML='<div class="empty-state"><p>まだ改善済みの項目はありません</p></div>';
+      this._openModal('modal-detail');return;
+    }
+    const byStore={};list.forEach(x=>{if(!byStore[x.e.store])byStore[x.e.store]=[];byStore[x.e.store].push(x)});
+    document.getElementById('modal-detail-body').innerHTML=Object.entries(byStore).sort((a,b)=>b[1].reduce((n,x)=>n+x.fixed,0)-a[1].reduce((n,x)=>n+x.fixed,0)).map(([store,items])=>`
+      <div style="margin-bottom:14px">
+        <div class="flex-between" style="margin-bottom:6px;padding-bottom:4px;border-bottom:2px solid var(--green)">
+          <span style="font-weight:700;font-size:13px">${store}</span>
+          <span style="font-size:13px;font-weight:700;color:var(--green)">${items.reduce((n,x)=>n+x.fixed,0)}件改善</span>
+        </div>
+        ${items.map(({e})=>{
+          const changeRows=SERVICE_ITEMS.map(item=>{const s=this._getItemStatus(evals,e.id,item.key);return s.status==='改善済'?this._changeRow(evals,e.id,item.key,item.label):''}).join('');
+          return`<div style="padding:8px 0;border-bottom:1px solid var(--border);cursor:pointer" onclick="App.closeModal();App.openEmployee('${e.id}')">
+            <div class="flex-between"><span style="font-weight:600">${e.name}</span><span style="color:var(--gray)">›</span></div>
+            <div style="margin-top:4px">${changeRows}</div>
           </div>`;
         }).join('')}
       </div>`).join('');
