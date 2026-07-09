@@ -10,7 +10,7 @@
 <!-- LINE in-app browser キャッシュ対策：バージョンが変わったら自動リロード -->
 <script>
 (function(){
-  var VER = '20260624-1'; // ★ 更新時はここを変える
+  var VER = '20260709-img'; // ★ 更新時はここを変える
   var stored = localStorage.getItem('_appVer');
   var param  = new URLSearchParams(location.search).get('_v');
   if (stored !== VER) {
@@ -450,6 +450,33 @@ main{padding:20px;max-width:960px;margin:0 auto;}
 .alert-empty{text-align:center;padding:60px 20px;color:var(--text3);}
 .alert-empty-ico{font-size:48px;margin-bottom:12px;}
 .alert-empty-msg{font-size:15px;font-weight:500;}
+
+/* ── 画像添付 ── */
+.img-uploader{background:var(--bg);border:1.5px dashed var(--border2);border-radius:var(--rs);padding:12px;}
+.img-thumbs{display:flex;flex-wrap:wrap;gap:8px;}
+.img-thumbs:empty{display:none;}
+.img-thumb{position:relative;width:78px;height:78px;border-radius:8px;overflow:hidden;border:1.5px solid var(--border);background:var(--surface2);}
+.img-thumb img{width:100%;height:100%;object-fit:cover;cursor:pointer;display:block;}
+.img-thumb-del{position:absolute;top:2px;right:2px;width:20px;height:20px;border:none;border-radius:50%;background:rgba(20,28,70,.72);color:#fff;font-size:11px;cursor:pointer;display:flex;align-items:center;justify-content:center;line-height:1;padding:0;}
+.img-thumb-del:hover{background:var(--red);}
+.img-add-btn{display:inline-flex;align-items:center;gap:6px;margin-top:10px;padding:9px 15px;border:1.5px solid var(--accent-bd);background:var(--accent-bg);color:var(--accent);border-radius:var(--rs);font-size:13px;font-weight:700;cursor:pointer;transition:all .15s;}
+.img-add-btn:hover{background:#DCE9FD;}
+.img-hint{font-size:11px;color:var(--text3);margin-top:8px;line-height:1.5;}
+/* カード内サムネ */
+.tc-imgs{display:flex;flex-wrap:wrap;gap:6px;margin-top:9px;}
+.tc-img{width:62px;height:62px;object-fit:cover;border-radius:7px;border:1.5px solid var(--border);cursor:pointer;transition:transform .15s;}
+.tc-img:hover{transform:scale(1.06);box-shadow:var(--sh1);}
+/* カレンダー詳細サムネ */
+.cal-popup-imgs{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px;}
+.cal-popup-imgs img{width:84px;height:84px;object-fit:cover;border-radius:8px;border:1.5px solid var(--border);cursor:pointer;}
+/* ライトボックス（拡大表示） */
+.lightbox{position:fixed;inset:0;background:rgba(10,14,30,.92);z-index:1000;display:none;flex-direction:column;align-items:center;justify-content:center;padding:20px;}
+.lightbox.open{display:flex;}
+.lightbox img{max-width:100%;max-height:80vh;border-radius:10px;box-shadow:0 12px 44px rgba(0,0,0,.55);}
+.lightbox-close{position:absolute;top:16px;right:18px;width:42px;height:42px;border:none;border-radius:50%;background:rgba(255,255,255,.16);color:#fff;font-size:20px;cursor:pointer;display:flex;align-items:center;justify-content:center;}
+.lightbox-close:hover{background:rgba(255,255,255,.3);}
+.lightbox-link{margin-top:16px;color:#fff;background:rgba(255,255,255,.16);padding:9px 20px;border-radius:20px;font-size:13px;font-weight:600;text-decoration:none;}
+.lightbox-link:hover{background:rgba(255,255,255,.3);}
 </style>
 </head>
 <body>
@@ -580,6 +607,17 @@ main{padding:20px;max-width:960px;margin:0 auto;}
       <div class="full">
         <div class="fl">📌 メモ（任意）</div>
         <textarea class="fta" id="e-note" placeholder="補足・詳細があれば入力"></textarea>
+      </div>
+      <div class="full">
+        <div class="fl">📷 資料・写真（任意）</div>
+        <div class="img-uploader">
+          <div class="img-thumbs" id="e-img-thumbs"></div>
+          <label class="img-add-btn">
+            📷 写真を追加
+            <input type="file" accept="image/*" multiple onchange="onImgPick(event,'e')" style="display:none">
+          </label>
+          <div class="img-hint">パワポのスクショ等を選択できます（複数可）。PCでは Ctrl+V で貼り付けも可。</div>
+        </div>
       </div>
       <div class="full">
         <button class="bsub" onclick="doEdit()">💾 変更を保存する</button>
@@ -741,6 +779,17 @@ main{padding:20px;max-width:960px;margin:0 auto;}
         <div class="fl">📌 メモ（任意）</div>
         <textarea class="fta" id="f-note" placeholder="補足・詳細があれば入力してください"></textarea>
       </div>
+      <div class="full">
+        <div class="fl">📷 資料・写真（任意）</div>
+        <div class="img-uploader">
+          <div class="img-thumbs" id="f-img-thumbs"></div>
+          <label class="img-add-btn">
+            📷 写真を追加
+            <input type="file" accept="image/*" multiple onchange="onImgPick(event,'f')" style="display:none">
+          </label>
+          <div class="img-hint">パワポのスクショ等を選択できます（複数可）。<br>PCではコピーした画像をこの画面に貼り付け（Ctrl+V）でも追加できます。</div>
+        </div>
+      </div>
       <!-- 繰り返し設定（管理者のみ表示） -->
       <div class="full" id="recurrence-section" style="display:none">
         <div class="fl" style="margin-bottom:10px">🔁 繰り返し設定（管理者のみ）</div>
@@ -789,7 +838,15 @@ main{padding:20px;max-width:960px;margin:0 auto;}
     <div class="cal-popup-row"><span class="cal-popup-lbl">⭐ 優先度</span><span id="cal-popup-priority" class="cal-popup-val"></span></div>
     <div class="cal-popup-row"><span class="cal-popup-lbl">⚡ 緊急度</span><span id="cal-popup-urgency" class="cal-popup-val"></span></div>
     <div id="cal-popup-note-wrap" style="display:none"><div class="cal-popup-note" id="cal-popup-note"></div></div>
+    <div class="cal-popup-imgs" id="cal-popup-imgs"></div>
   </div>
+</div>
+
+<!-- 画像ライトボックス（拡大表示） -->
+<div class="lightbox" id="lightbox" onclick="closeLightbox(event)">
+  <button class="lightbox-close" onclick="closeLightbox()">✕</button>
+  <img id="lightbox-img" src="" alt="">
+  <a id="lightbox-open" href="#" target="_blank" rel="noopener" class="lightbox-link">🔗 元画像をDriveで開く</a>
 </div>
 
 <!-- ALERT VIEW -->
@@ -996,6 +1053,116 @@ function toast(msg, ms=2600) {
 }
 async function gGet(p)  { return (await fetch(GAS_URL + '?' + new URLSearchParams(p))).json(); }
 async function gPost(b) { return (await fetch(GAS_URL, {method:'POST', body:JSON.stringify(b)})).json(); }
+
+// ===== 画像添付（Google Drive 連携） =====
+// 追加フォーム(f)・編集モーダル(e) それぞれの添付画像ID配列
+let fImages = [];
+let eImages = [];
+
+// DriveファイルIDからサムネイル/表示用URLを生成
+function imgThumbUrl(id, size) { return 'https://drive.google.com/thumbnail?id=' + id + '&sz=w' + (size || 400); }
+
+// 画像をキャンバスで最大1600pxに縮小し JPEG(base64) に変換
+function compressImage(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = e => {
+      const img = new Image();
+      img.onload = () => {
+        let w = img.width, h = img.height;
+        const MAX = 1600;
+        if (w > MAX || h > MAX) { const r = Math.min(MAX / w, MAX / h); w = Math.round(w * r); h = Math.round(h * r); }
+        const c = document.createElement('canvas'); c.width = w; c.height = h;
+        c.getContext('2d').drawImage(img, 0, 0, w, h);
+        const dataUrl = c.toDataURL('image/jpeg', 0.82);
+        resolve({ base64: dataUrl.split(',')[1], mimeType: 'image/jpeg', filename: (file.name || 'photo') + '.jpg' });
+      };
+      img.onerror = reject;
+      img.src = e.target.result;
+    };
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
+
+// 1枚アップロードして対象配列にIDを追加
+async function uploadOneImage(file, prefix) {
+  const { base64, mimeType, filename } = await compressImage(file);
+  const r = await gPost({ action: 'uploadImage', pw: curPw, base64, mimeType, filename });
+  if (r.ok) {
+    (prefix === 'f' ? fImages : eImages).push(r.id);
+    renderImgThumbs(prefix);
+    return true;
+  }
+  toast('⚠️ 画像アップロード失敗: ' + (r.error || ''));
+  return false;
+}
+
+// ファイル選択時
+async function onImgPick(ev, prefix) {
+  const files = [...ev.target.files]; ev.target.value = '';
+  const imgs = files.filter(f => f.type.startsWith('image/'));
+  if (!imgs.length) return;
+  if (!curPw) { toast('⚠️ 登録するにはログインが必要です'); return; }
+  loading(true);
+  let n = 0;
+  for (const f of imgs) { if (await uploadOneImage(f, prefix)) n++; }
+  loading(false);
+  if (n) toast('📷 写真を ' + n + ' 枚追加しました');
+}
+
+// サムネ描画
+function renderImgThumbs(prefix) {
+  const arr = prefix === 'f' ? fImages : eImages;
+  const el  = document.getElementById(prefix + '-img-thumbs');
+  if (!el) return;
+  el.innerHTML = arr.map(id =>
+    `<div class="img-thumb"><img src="${imgThumbUrl(id)}" onclick="openLightbox('${id}')" alt="添付画像">` +
+    `<button class="img-thumb-del" onclick="removeImg('${prefix}','${id}')" title="削除">✕</button></div>`
+  ).join('');
+}
+
+// サムネ削除（Driveからもゴミ箱へ）
+function removeImg(prefix, id) {
+  if (prefix === 'f') fImages = fImages.filter(x => x !== id);
+  else                eImages = eImages.filter(x => x !== id);
+  renderImgThumbs(prefix);
+  gPost({ action: 'deleteImage', pw: curPw, imageId: id }).catch(() => {});
+}
+
+// クリップボード貼り付け（PC）
+document.addEventListener('paste', e => {
+  const items = (e.clipboardData || {}).items;
+  if (!items) return;
+  let target = null;
+  if (document.getElementById('editov').style.display === 'flex') target = 'e';
+  else if (document.getElementById('view-add').classList.contains('active')) target = 'f';
+  if (!target) return;
+  const imgs = [...items].filter(it => it.type.startsWith('image/'));
+  if (!imgs.length) return;
+  e.preventDefault();
+  if (!curPw) { toast('⚠️ 登録するにはログインが必要です'); return; }
+  (async () => {
+    loading(true);
+    let n = 0;
+    for (const it of imgs) { const f = it.getAsFile(); if (f && await uploadOneImage(f, target)) n++; }
+    loading(false);
+    if (n) toast('📷 貼り付けました（' + n + '枚）');
+  })();
+});
+
+// ライトボックス（拡大表示）
+function openLightbox(id) {
+  document.getElementById('lightbox-img').src   = imgThumbUrl(id, 2000);
+  document.getElementById('lightbox-open').href = 'https://drive.google.com/file/d/' + id + '/view';
+  document.getElementById('lightbox').classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+function closeLightbox(e) {
+  if (e && e.target && e.target.id === 'lightbox-img') return; // 画像自体のクリックでは閉じない
+  document.getElementById('lightbox').classList.remove('open');
+  document.body.style.overflow = '';
+}
 
 const TASKS_CACHE_KEY = 'todoTasksCache_v1';
 
@@ -1556,6 +1723,7 @@ function cardH(t) {
       </div>
       ${dateBar}
       ${progHtml}
+      ${(t.images && t.images.length) ? `<div class="tc-imgs">${t.images.map(id => `<img src="${imgThumbUrl(id)}" class="tc-img" onclick="openLightbox('${id}')" alt="資料">`).join('')}</div>` : ''}
     </div>
     <div class="tr">
       <div class="dpill ${dlCls}">${dlTxt}</div>
@@ -1629,6 +1797,10 @@ function showCalPopup(id, dotClass) {
   } else {
     noteWrap.style.display = 'none';
   }
+  const imgWrap = document.getElementById('cal-popup-imgs');
+  imgWrap.innerHTML = (t.images && t.images.length)
+    ? t.images.map(id => `<img src="${imgThumbUrl(id)}" onclick="openLightbox('${id}')" alt="資料">`).join('')
+    : '';
   document.getElementById('cal-overlay').classList.add('open');
   document.body.style.overflow = 'hidden';
 }
@@ -1736,6 +1908,9 @@ function openEdit(id) {
     cb.checked = assignees.includes(cb.value);
   });
 
+  eImages = [...(t.images || [])];
+  renderImgThumbs('e');
+
   document.getElementById('e-fok').style.display = 'none';
   document.getElementById('editov').style.display = 'flex';
 }
@@ -1773,16 +1948,18 @@ async function doEdit() {
   if (!asgn.length)         { alert('割り当て先を1つ以上選んでください'); return; }
   if (start && start > end) { alert('開始日時は終了日時より前に設定してください'); return; }
 
+  const imgs = [...eImages];
   const t = tasks.find(x => x.id === id);
   const prev = t ? {...t} : null;
   if (t) Object.assign(t, {title, taskKind:kind, startDate:start, endDate:end,
-    type, priority:pri, urgency:urg, note, assignees:asgn});
+    type, priority:pri, urgency:urg, note, assignees:asgn, images:imgs});
   render();
   toast('✅ タスクを更新しました');
   closeEdit();
 
   const payload = {action:'updateTask', pw:curPw, id, title, taskKind:kind,
-    startDate:start, endDate:end, type, priority:pri, urgency:urg, note, assignees:asgn};
+    startDate:start, endDate:end, type, priority:pri, urgency:urg, note, assignees:asgn,
+    images:imgs};
   try {
     const r = await gPost(payload);
     if (!r.ok) {
@@ -1821,6 +1998,10 @@ function doCopy(id) {
   document.getElementById('f-start').value = '';  // 日付は手動入力
   document.getElementById('f-end').value   = '';
 
+  // 添付画像も引き継ぐ
+  fImages = [...(t.images || [])];
+  renderImgThumbs('f');
+
   // 割り当て先チェックボックスを更新
   upChk();
   const assignees = t.assignees || [];
@@ -1853,11 +2034,13 @@ async function doAdd() {
   if (asgn.length === 0) { alert('割り当て先を1つ以上選んでください'); return; }
   if (start && start > end) { alert('開始日は終了日より前に設定してください'); return; }
 
+  const imgs = [...fImages];
   const tmpId = 'tmp_' + Date.now();
   const newTask = {id:tmpId, title, taskKind:kind, startDate:start, endDate:end,
     type, priority:pri, urgency:urg, note, assignees:asgn,
     registeredBy:uName, done:false, doneAt:'', completedStores:{}, createdAt:today(),
-    recurrenceType:recType, recurrenceDay:recDay, recurrenceTemplate:isTmpl, lastGeneratedDate:''};
+    recurrenceType:recType, recurrenceDay:recDay, recurrenceTemplate:isTmpl, lastGeneratedDate:'',
+    images:imgs};
   tasks.push(newTask);
 
   // フォームをリセット
@@ -1865,6 +2048,7 @@ async function doAdd() {
   document.getElementById('f-start').value = '';
   document.getElementById('f-end').value   = today() + 'T23:59';
   document.getElementById('f-note').value  = '';
+  fImages = []; renderImgThumbs('f');
   const ca = document.getElementById('chkAll'); if (ca) ca.checked = false;
   document.querySelectorAll('.chk-m').forEach(c => c.checked = false);
   if (isMgr && document.getElementById('f-recurrence')) {
@@ -1879,7 +2063,8 @@ async function doAdd() {
     const r = await gPost({action:'addTask', pw:curPw, title, taskKind:kind,
       startDate:start, endDate:end, type, priority:pri, urgency:urg, note,
       assignees:asgn, registeredBy:uName,
-      recurrenceType:recType, recurrenceDay:recDay, recurrenceTemplate:isTmpl});
+      recurrenceType:recType, recurrenceDay:recDay, recurrenceTemplate:isTmpl,
+      images:imgs});
     if (r.ok) {
       newTask.id = r.id;
     } else {
