@@ -9,7 +9,7 @@
   <title>接客評価システム｜阪口商店</title>
 <script>
 (function(){
-  var VER = '20260709-1';
+  var VER = '20260709-2';
   var stored = localStorage.getItem('_evalAppVer');
   var param  = new URLSearchParams(location.search).get('_v');
   if (stored !== VER) {
@@ -1235,6 +1235,8 @@ const App={
     const impStats=this._improvementStats(evals,evalTarget);
     const impAll=impStats.fixedItems+impStats.openItems;
     const impRate=impAll?Math.round(impStats.fixedItems/impAll*100):0;
+    const trend=this._improvementTrend(evals,evalTarget);
+    const trendCard=trend?`<div class="card"><div class="section-title">📈 改善の推移（月別・累積）</div>${trend.map(t=>{const tot=t.open+t.fixed;const fp=tot?Math.round(t.fixed/tot*100):0;return`<div style="margin-bottom:9px"><div class="flex-between" style="font-size:12px;margin-bottom:3px"><span style="font-weight:700">${t.month.slice(5)}月</span><span class="text-sub"><b style="color:var(--green)">改善${t.fixed}</b> ／ <b style="color:var(--red)">要改善${t.open}</b>（改善率${fp}%）</span></div><div class="analysis-bar-multi" style="height:12px">${tot?`<div class="bar-good" style="width:${fp}%"></div><div class="bar-bad" style="width:${100-fp}%"></div>`:'<div style="width:100%;background:var(--gray-light)"></div>'}</div></div>`}).join('')}<div class="text-sub" style="font-size:11px;margin-top:2px">※ 各月末時点の累積状態（🟢再チェックで○◎化＝改善／🔴△✕のまま＝要改善）</div></div>`:'';
     const improveList=needImprove.slice(0,5).map(e=>{
       const rows=SERVICE_ITEMS.map(item=>this._changeRow(evals,e.id,item.key,item.label)).join('');
       return`<div class="imp-row" onclick="App.openEmployee('${e.id}')"><div class="flex-between"><div class="imp-name">${e.name}</div><span style="color:var(--gray)">›</span></div><div class="imp-store">${e.store}</div><div style="margin-top:4px">${rows}</div></div>`;
@@ -1254,6 +1256,7 @@ const App={
         <div class="cycle-bar-track"><div class="cycle-bar-fill" style="width:${impRate}%"></div></div>
         <div class="text-sub" style="font-size:11px;margin-top:4px;text-align:right">改善率 <b style="color:var(--green)">${impRate}%</b>（${impStats.fixedItems}/${impAll}件が○◎化）</div>
       </div>
+      ${trendCard}
       <div class="card"><div class="section-title">育成指標</div>
         <div style="display:flex;gap:8px;flex-wrap:wrap">
           <div class="stat-card tappable" ontouchstart="" onclick="App.showRoleDetail('fanta')" style="flex:1;min-width:80px"><div class="stat-num" style="font-size:20px;color:#5B21B6">${fantaCount}</div><div class="stat-label">ファンタジスタ ›</div></div>
@@ -1752,6 +1755,31 @@ const App={
       if(eo>0)openEmps.push(e);
     });
     return{fixedItems,openItems,fixedEmps,openEmps};
+  },
+  // 指定月末時点（累積）での項目状態を返す。empEvalsは当該クルーの評価配列
+  _statusAsOf(empEvals,empId,itemKey,month){
+    const upto=empEvals.filter(e=>(e.evalDate||e.createdAt?.slice(0,7)||'')<=month);
+    const si=this._getRankByRole(upto,empId,'SI',itemKey);
+    const sc=this._getRankByRole(upto,empId,'SC',itemKey);
+    const sm=this._getRankByRole(upto,empId,'店舗責任者',itemKey);
+    const final=si||sc||sm||'';
+    const isBad=r=>r==='△'||r==='✕';
+    if(!final)return'未';
+    if(isBad(final))return'要改善';
+    return[sm,sc,si].filter(Boolean).some(isBad)?'改善済':'良好';
+  },
+  // 直近6ヶ月の「要改善/改善済」件数の推移（各月末時点の累積）
+  _improvementTrend(evals,emps){
+    const months=[...new Set(evals.map(e=>(e.evalDate||e.createdAt?.slice(0,7)||'').slice(0,7)).filter(Boolean))].sort();
+    if(months.length<2)return null; // 推移が描けない
+    const recent=months.slice(-6);
+    const byEmp={};emps.forEach(e=>byEmp[String(e.id)]=[]);
+    evals.forEach(e=>{const k=String(e.employeeId);if(byEmp[k])byEmp[k].push(e)});
+    return recent.map(m=>{
+      let open=0,fixed=0;
+      emps.forEach(e=>{const ee=byEmp[String(e.id)]||[];SERVICE_ITEMS.forEach(item=>{const s=this._statusAsOf(ee,e.id,item.key,m);if(s==='要改善')open++;else if(s==='改善済')fixed++})});
+      return{month:m,open,fixed};
+    });
   },
   // 1項目のBefore→After行を生成（改善済/要改善のみ。他は空文字）
   _changeRow(evals,empId,itemKey,label){
