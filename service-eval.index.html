@@ -9,7 +9,7 @@
   <title>接客評価システム｜阪口商店</title>
 <script>
 (function(){
-  var VER = '20260709-3';
+  var VER = '20260709-4';
   var stored = localStorage.getItem('_evalAppVer');
   var param  = new URLSearchParams(location.search).get('_v');
   if (stored !== VER) {
@@ -1273,7 +1273,7 @@ const App={
       ${needImprove.length?`<div class="section-title">改善必要クルー（上位5名）</div>${improveList}<button class="btn btn-secondary btn-full" onclick="App.navTo('improvement')">全員を見る</button>`:''}
       <div class="section-title" style="margin-top:12px">店舗別評価完了率</div>
       <div style="display:flex;gap:12px;margin-bottom:8px;font-size:11px;color:var(--text-sub)"><span><span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:#00A651;margin-right:3px"></span>責任者</span><span><span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:#0369A1;margin-right:3px"></span>SC</span><span><span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:#1E40AF;margin-right:3px"></span>SI</span></div>
-      ${storeStats.map(s=>`<div class="store-bar-wrap"><div class="store-bar-name"><span>${s.store}</span><span>全体 ${s.evaled}/${s.total}名 ${s.rate}%</span></div><div class="store-bar-track"><div class="store-bar-fill" style="width:${s.rate}%"></div></div>${[['責任者',s.smRate,'#00A651'],['SC',s.scRate,'#0369A1'],['SI',s.siRate,'#1E40AF']].map(([l,r,c])=>`<div style="display:flex;align-items:center;gap:6px;margin-top:3px"><span style="font-size:10px;width:36px;color:var(--text-sub)">${l}</span><div class="store-bar-track" style="flex:1;height:6px;margin:0"><div style="height:100%;border-radius:inherit;background:${c};width:${r}%"></div></div><span style="font-size:10px;width:32px;text-align:right;color:var(--text-sub)">${r}%</span></div>`).join('')}${s.impTotal?`<div style="display:flex;align-items:center;gap:6px;margin-top:5px;padding-top:5px;border-top:1px dashed var(--border)"><span style="font-size:10px;width:36px;color:var(--green);font-weight:700">🔄改善</span><div class="store-bar-track" style="flex:1;height:6px;margin:0"><div style="height:100%;border-radius:inherit;background:var(--green);width:${s.impRate}%"></div></div><span style="font-size:10px;width:44px;text-align:right;color:var(--text-sub)">${s.fixedItems}/${s.impTotal}件</span></div>`:''}</div>`).join('')}
+      ${storeStats.map(s=>`<div class="store-bar-wrap"><div class="store-bar-name"><span>${s.store}</span><span>全体 ${s.evaled}/${s.total}名 ${s.rate}%</span></div><div class="store-bar-track"><div class="store-bar-fill" style="width:${s.rate}%"></div></div>${[['責任者',s.smRate,'#00A651'],['SC',s.scRate,'#0369A1'],['SI',s.siRate,'#1E40AF']].map(([l,r,c])=>`<div style="display:flex;align-items:center;gap:6px;margin-top:3px"><span style="font-size:10px;width:36px;color:var(--text-sub)">${l}</span><div class="store-bar-track" style="flex:1;height:6px;margin:0"><div style="height:100%;border-radius:inherit;background:${c};width:${r}%"></div></div><span style="font-size:10px;width:32px;text-align:right;color:var(--text-sub)">${r}%</span></div>`).join('')}${s.impTotal?`<div onclick="App.showStoreImprovement('${s.store.replace(/'/g,"\\'")}')" style="display:flex;align-items:center;gap:6px;margin-top:5px;padding-top:5px;border-top:1px dashed var(--border);cursor:pointer"><span style="font-size:10px;width:36px;color:var(--green);font-weight:700">🔄改善</span><div class="store-bar-track" style="flex:1;height:6px;margin:0"><div style="height:100%;border-radius:inherit;background:var(--green);width:${s.impRate}%"></div></div><span style="font-size:10px;width:52px;text-align:right;color:var(--text-sub)">${s.fixedItems}/${s.impTotal}件 ›</span></div>`:''}</div>`).join('')}
       <div style="height:8px"></div>
       ${DB.user().role==='管理者'?`<button class="btn btn-secondary btn-full" onclick="App.navTo('compliance')" style="margin-top:8px">📝 コンプラ回答状況</button>`:''}
       ${Storage.AUTH.can(DB.user(),'sysAdmin')?`<button class="btn btn-secondary btn-full" onclick="App.navTo('settings')" style="margin-top:8px">⚙️ 管理設定</button>`:''}
@@ -2257,6 +2257,30 @@ const App={
     this._openModal('modal-detail');
   },
 
+  showStoreImprovement(store){
+    const emps=DB.employees().filter(e=>e.status==='在籍中'&&!e.evalExcluded&&e.store===store);
+    const evals=DB.evaluations();
+    const list=emps.map(e=>{
+      let open=0,fixed=0;
+      SERVICE_ITEMS.forEach(item=>{const s=this._getItemStatus(evals,e.id,item.key).status;if(s==='要改善')open++;else if(s==='改善済')fixed++});
+      return{e,open,fixed};
+    }).filter(x=>x.open>0||x.fixed>0).sort((a,b)=>b.open-a.open||b.fixed-a.fixed);
+    const totFixed=list.reduce((n,x)=>n+x.fixed,0),totOpen=list.reduce((n,x)=>n+x.open,0);
+    document.getElementById('modal-detail-title').textContent=`${store}｜改善状況`;
+    if(!list.length){
+      document.getElementById('modal-detail-body').innerHTML='<div class="empty-state"><p>△✕・改善済の項目はありません</p></div>';
+      this._openModal('modal-detail');return;
+    }
+    document.getElementById('modal-detail-body').innerHTML=`<div style="display:flex;gap:8px;margin-bottom:10px"><span class="st-dot st-fixed">改善済 ${totFixed}件</span><span class="st-dot st-open">要改善 ${totOpen}件</span></div>`+list.map(({e})=>{
+      const changeRows=SERVICE_ITEMS.map(item=>this._changeRow(evals,e.id,item.key,item.label)).join('');
+      return`<div style="padding:8px 0;border-bottom:1px solid var(--border);cursor:pointer" onclick="App.closeModal();App.openEmployee('${e.id}')">
+        <div class="flex-between"><span style="font-weight:600">${e.name}</span><span style="color:var(--gray)">›</span></div>
+        <div style="margin-top:4px">${changeRows}</div>
+      </div>`;
+    }).join('');
+    this._openModal('modal-detail');
+  },
+
   showTrendDetail(){
     const emps=DB.employees().filter(e=>e.status==='在籍中');
     const evalTarget=emps.filter(e=>!e.evalExcluded);
@@ -2264,22 +2288,31 @@ const App={
     const summary=this._evalHistorySummary(evals,evalTarget);
     const byEmp={};evalTarget.forEach(e=>byEmp[String(e.id)]=[]);
     evals.forEach(e=>{const k=String(e.employeeId);if(byEmp[k])byEmp[k].push(e)});
-    const stalled=summary.filter(x=>x.stalled).sort((a,b)=>b.open-a.open);
-    const active=summary.filter(x=>x.months.length>=2).sort((a,b)=>b.open-a.open||b.fixed-a.fixed);
-    document.getElementById('modal-detail-title').textContent='改善状況 個人別';
+    const totalStalled=summary.filter(x=>x.stalled).length;
+    document.getElementById('modal-detail-title').textContent='改善状況 個人別（店舗別）';
     const chip=s=>`<span style="display:inline-block;font-size:10px;padding:2px 6px;border-radius:8px;background:var(--gray-light);white-space:nowrap">${s.month.slice(5)}月 <b style="color:var(--green)">改${s.fixed}</b>/<b style="color:var(--red)">要${s.open}</b></span>`;
     const timeline=x=>this._empMonthlyImprovement(byEmp[String(x.e.id)]||[],x.e.id,x.months).map(chip).join('<span class="chg-arrow">→</span>');
     const cntChips=x=>`${x.open?`<span class="st-dot st-open">要改善${x.open}</span>`:''}${x.fixed?`<span class="st-dot st-fixed">改善済${x.fixed}</span>`:''}`;
-    let html='';
-    if(stalled.length){
-      html+=`<div style="margin-bottom:8px;padding:8px 10px;background:#FFFBEB;border-radius:8px;border:1px solid #F59E0B;color:#92400E;font-size:12px">⚠️ <b>評価が1ヶ月で止まっている ${stalled.length}名</b>：追加評価・再チェックがされていません。</div>`;
-      html+=stalled.map(x=>`<div style="padding:8px 0;border-bottom:1px solid var(--border);cursor:pointer" onclick="App.closeModal();App.openEmployee('${x.e.id}')"><div class="flex-between"><span style="font-weight:700">${x.e.name} <span class="st-dot st-open">⚠️${x.months[0].slice(5)}月のみ</span></span><span style="color:var(--gray)">›</span></div><div class="text-sub" style="font-size:11px">${x.e.store}</div><div style="margin-top:4px;display:flex;gap:6px;flex-wrap:wrap;align-items:center">${timeline(x)}${cntChips(x)}</div></div>`).join('');
-    }
-    if(active.length){
-      html+=`<div style="font-weight:700;font-size:13px;margin:14px 0 6px;padding-bottom:4px;border-bottom:2px solid var(--green)">📈 継続評価中 ${active.length}名</div>`;
-      html+=active.map(x=>`<div style="padding:8px 0;border-bottom:1px solid var(--border);cursor:pointer" onclick="App.closeModal();App.openEmployee('${x.e.id}')"><div class="flex-between"><span style="font-weight:600">${x.e.name}</span><span style="color:var(--gray)">›</span></div><div class="text-sub" style="font-size:11px">${x.e.store}｜評価${x.months.length}ヶ月</div><div style="margin-top:4px;display:flex;gap:4px;flex-wrap:wrap;align-items:center">${timeline(x)}</div><div style="margin-top:4px;display:flex;gap:6px">${cntChips(x)||'<span class="st-dot st-good">課題なし</span>'}</div></div>`).join('');
-    }
-    if(!html)html='<div class="empty-state"><p>評価データがありません</p></div>';
+    // 店舗ごとにまとめる（評価ありのみ）。停滞多い→人数多い順
+    const byStore={};
+    summary.filter(x=>x.evaluated).forEach(x=>{(byStore[x.e.store]=byStore[x.e.store]||[]).push(x)});
+    const storeEntries=Object.entries(byStore).map(([store,list])=>{
+      list.sort((a,b)=>(b.stalled-a.stalled)||(b.open-a.open)||(b.fixed-a.fixed));
+      return{store,list,stalled:list.filter(x=>x.stalled).length};
+    }).sort((a,b)=>b.stalled-a.stalled||b.list.length-a.list.length);
+    let html=totalStalled?`<div style="margin-bottom:10px;padding:8px 10px;background:#FFFBEB;border-radius:8px;border:1px solid #F59E0B;color:#92400E;font-size:12px">⚠️ <b>評価が1ヶ月で止まっているクルー 計${totalStalled}名</b>。店舗ごとに確認してください。</div>`:'';
+    html+=storeEntries.map(({store,list,stalled})=>`
+      <div style="margin-bottom:14px">
+        <div class="flex-between" style="margin-bottom:6px;padding-bottom:4px;border-bottom:2px solid ${stalled?'#F59E0B':'var(--blue)'}">
+          <span style="font-weight:700;font-size:13px">${store}</span>
+          ${stalled?`<span class="st-dot st-open">⚠️停滞${stalled}名</span>`:`<span class="text-sub" style="font-size:11px">${list.length}名</span>`}
+        </div>
+        ${list.map(x=>{
+          const warn=x.stalled?` <span class="st-dot st-open">⚠️${x.months[0].slice(5)}月のみ</span>`:'';
+          return`<div style="padding:8px 0;border-bottom:1px solid var(--border);cursor:pointer" onclick="App.closeModal();App.openEmployee('${x.e.id}')"><div class="flex-between"><span style="font-weight:600">${x.e.name}${warn}</span><span style="color:var(--gray)">›</span></div><div style="margin-top:4px;display:flex;gap:4px;flex-wrap:wrap;align-items:center">${timeline(x)}</div><div style="margin-top:4px;display:flex;gap:6px">${cntChips(x)||'<span class="st-dot st-good">課題なし</span>'}</div></div>`;
+        }).join('')}
+      </div>`).join('');
+    if(!storeEntries.length)html='<div class="empty-state"><p>評価データがありません</p></div>';
     document.getElementById('modal-detail-body').innerHTML=html;
     this._openModal('modal-detail');
   },
