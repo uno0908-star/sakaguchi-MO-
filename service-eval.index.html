@@ -2461,15 +2461,31 @@ const App={
       return{store,list,stalled:list.filter(x=>x.stalled).length};
     }).sort((a,b)=>b.stalled-a.stalled||b.list.length-a.list.length);
     let html=`<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px"><span class="st-dot st-open">🔴放置 ${totalStalled}名</span><span class="st-dot" style="background:#FEF3C7;color:#92400E">📝評価初回のみ・指導継続 ${cntGuided}名</span><span class="st-dot st-good">📈継続評価 ${cntReeval}名</span></div>`;
+    // 店舗別の改善進捗グラフ（改善率が高い順・タップで該当店舗セクションへ）
+    const storeChart=storeEntries.map((s,idx)=>{
+      const fixed=s.list.reduce((n,x)=>n+x.fixed,0),open=s.list.reduce((n,x)=>n+x.open,0);
+      const tot=fixed+open;
+      return{store:s.store,stalled:s.stalled,idx,fixed,open,tot,rate:tot?Math.round(fixed/tot*100):0};
+    }).sort((a,b)=>b.rate-a.rate||b.tot-a.tot);
+    html+=storeChart.length?`<div style="margin-bottom:12px;padding:10px 12px;background:#FFF;border:1px solid var(--border);border-radius:10px">
+      <div style="font-weight:700;font-size:12px;margin-bottom:8px">📊 店舗別 改善進捗（改善率順・タップで該当店舗へ）</div>
+      ${storeChart.map(s=>`<div onclick="document.getElementById('imp-store-${s.idx}').scrollIntoView({behavior:'smooth',block:'start'})" style="margin-bottom:8px;cursor:pointer">
+        <div class="flex-between" style="font-size:11px;margin-bottom:2px"><span style="font-weight:600">${s.store}${s.stalled?` <span style="color:#B45309">⚠️放置${s.stalled}</span>`:''}</span><span class="text-sub"><b style="color:var(--green)">改${s.fixed}</b>／<b style="color:var(--red)">要${s.open}</b>　改善率<b style="color:${s.rate>=50?'var(--green)':'var(--red)'}">${s.rate}%</b></span></div>
+        <div class="analysis-bar-multi" style="height:10px">${s.tot?`<div class="bar-good" style="width:${s.rate}%"></div><div class="bar-bad" style="width:${100-s.rate}%"></div>`:'<div style="width:100%;background:var(--gray-light)"></div>'}</div>
+      </div>`).join('')}
+      <div class="text-sub" style="font-size:10px">🟢改善済（△✕→○◎）／🔴要改善（△✕のまま）の項目数の比率</div>
+    </div>`:'';
     html+=`<div class="text-sub" style="font-size:11px;margin-bottom:8px">月チップ＝各月末の改善状況。<span style="background:#EDE9FE;padding:1px 5px;border-radius:6px">💬◯月</span>＝評価チェックせず指導メモ（コメント）のみの月</div>`;
     html+=totalStalled?`<div style="margin-bottom:10px;padding:8px 10px;background:#FFFBEB;border-radius:8px;border:1px solid #F59E0B;color:#92400E;font-size:12px">⚠️ <b>放置 計${totalStalled}名</b>＝初回評価の月以降、再評価も指導コメントも一切ないクルー。<br>※初回評価のあと指導コメントが続いている人は「📝指導継続」として切り離しています（放置には含みません）。</div>`:'';
-    html+=storeEntries.map(({store,list,stalled})=>`
-      <div style="margin-bottom:14px">
+    // 個人の改善率ミニバー（改善済/(改善済+要改善)）
+    const miniBar=x=>{const t=x.open+x.fixed;if(!t)return'';const p=Math.round(x.fixed/t*100);return`<div class="analysis-bar-multi" style="height:6px;flex:1;min-width:50px"><div class="bar-good" style="width:${p}%"></div><div class="bar-bad" style="width:${100-p}%"></div></div><span class="text-sub" style="font-size:10px;white-space:nowrap">${p}%</span>`};
+    html+=storeEntries.map(({store,list,stalled},idx)=>`
+      <div style="margin-bottom:14px" id="imp-store-${idx}">
         <div class="flex-between" style="margin-bottom:6px;padding-bottom:4px;border-bottom:2px solid ${stalled?'#F59E0B':'var(--blue)'}">
           <span style="font-weight:700;font-size:13px">${store}</span>
           ${stalled?`<span class="st-dot st-open">⚠️停滞${stalled}名</span>`:`<span class="text-sub" style="font-size:11px">${list.length}名</span>`}
         </div>
-        ${list.map(x=>`<div style="padding:8px 0;border-bottom:1px solid var(--border);cursor:pointer" onclick="App.closeModal();App.openEmployee('${x.e.id}')"><div class="flex-between"><span style="font-weight:600">${x.e.name} ${catBadge(x)}</span><span style="color:var(--gray)">›</span></div><div style="margin-top:4px;display:flex;gap:4px;flex-wrap:wrap;align-items:center">${timeline(x)}</div><div style="margin-top:4px;display:flex;gap:6px">${cntChips(x)||'<span class="st-dot st-good">課題なし</span>'}</div></div>`).join('')}
+        ${list.map(x=>`<div style="padding:8px 0;border-bottom:1px solid var(--border);cursor:pointer" onclick="App.closeModal();App.openEmployee('${x.e.id}')"><div class="flex-between"><span style="font-weight:600">${x.e.name} ${catBadge(x)}</span><span style="color:var(--gray)">›</span></div><div style="margin-top:4px;display:flex;gap:4px;flex-wrap:wrap;align-items:center">${timeline(x)}</div><div style="margin-top:4px;display:flex;gap:6px;align-items:center">${cntChips(x)||'<span class="st-dot st-good">課題なし</span>'}${miniBar(x)}</div></div>`).join('')}
       </div>`).join('');
     if(!storeEntries.length)html='<div class="empty-state"><p>評価データがありません</p></div>';
     document.getElementById('modal-detail-body').innerHTML=html;
