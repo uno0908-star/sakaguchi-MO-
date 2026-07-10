@@ -283,6 +283,10 @@ input,select,textarea,button{font-family:inherit;font-size:14px}
   <div class="view-content" id="item-ranking-content"></div>
 </div>
 
+<div id="view-coaching-week" class="view">
+  <div class="view-content" id="coaching-week-content"></div>
+</div>
+
 <div id="view-employee-form" class="view">
   <div class="view-content" id="employee-form-content"></div>
 </div>
@@ -365,6 +369,11 @@ input,select,textarea,button{font-family:inherit;font-size:14px}
       <div class="menu-item" onclick="App.showView('item-ranking')">
         <span class="menu-icon">📊</span>
         <div><strong>項目別弱点ランキング</strong><p>△・✕が多い接客項目を確認</p></div>
+        <span>›</span>
+      </div>
+      <div class="menu-item" onclick="App.showView('coaching-week')">
+        <span class="menu-icon">🗓️</span>
+        <div><strong>週間指導レポート</strong><p>週ごとに誰が誰を指導したか（月曜起点）</p></div>
         <span>›</span>
       </div>
     </div>
@@ -1194,7 +1203,7 @@ const App={
   goBack(){const p=this._history.pop();if(p)this.showView(p,false)},
 
   _updateHeader(viewId){
-    const titles={login:'接客評価システム',dashboard:'阪口商店 接客評価',employees:'クルー一覧','employee-detail':'クルー詳細',evaluation:'評価入力',observation:'気づきメモ',improvement:'改善必要者','store-analysis':'店舗別分析','analysis-menu':'分析','employee-form':'クルー登録・編集',settings:'管理設定',discussion:'目線合わせ','item-ranking':'項目別弱点ランキング',compliance:'コンプラ回答状況'};
+    const titles={login:'接客評価システム',dashboard:'阪口商店 接客評価',employees:'クルー一覧','employee-detail':'クルー詳細',evaluation:'評価入力',observation:'気づきメモ',improvement:'改善必要者','store-analysis':'店舗別分析','analysis-menu':'分析','employee-form':'クルー登録・編集',settings:'管理設定',discussion:'目線合わせ','item-ranking':'項目別弱点ランキング',compliance:'コンプラ回答状況','coaching-week':'週間指導レポート'};
     document.getElementById('header-title').textContent=titles[viewId]||'';
     const back=document.getElementById('btn-back');
     back.classList.toggle('hidden',['dashboard','employees','observation','analysis-menu','settings','login'].includes(viewId));
@@ -1205,7 +1214,7 @@ const App={
   },
 
   _renderView(viewId){
-    const map={dashboard:'renderDashboard',employees:'renderEmployeeList','employee-detail':'renderEmployeeDetail',evaluation:'renderEvaluation',observation:'renderObservations',improvement:'renderImprovement','store-analysis':'renderStoreAnalysis','employee-form':'renderEmployeeForm',settings:'renderSettings',discussion:'renderDiscussion','item-ranking':'renderItemRanking',compliance:'renderCompliance'};
+    const map={dashboard:'renderDashboard',employees:'renderEmployeeList','employee-detail':'renderEmployeeDetail',evaluation:'renderEvaluation',observation:'renderObservations',improvement:'renderImprovement','store-analysis':'renderStoreAnalysis','employee-form':'renderEmployeeForm',settings:'renderSettings',discussion:'renderDiscussion','item-ranking':'renderItemRanking',compliance:'renderCompliance','coaching-week':'renderCoachingWeek'};
     if(map[viewId])this[map[viewId]]();
   },
 
@@ -1573,6 +1582,119 @@ const App={
       </div>`;
     }).join('');
     document.getElementById('item-ranking-content').innerHTML=html||'<div class="empty-state"><p>データがありません</p></div>';
+  },
+
+  /* ===== 週間指導レポート（月曜起点） ===== */
+  _cwOffset:0,  // 0=今週、1=先週…
+  _cwAxis:'coach',  // coach=指導者別 / crew=クルー別 / store=店舗別
+
+  // offset週前の月曜0:00（ローカル時刻）
+  _cwMonday(offset){const d=new Date();d.setHours(0,0,0,0);d.setDate(d.getDate()-((d.getDay()+6)%7)-offset*7);return d},
+  _cwFmtDay(d){const w=['日','月','火','水','木','金','土'];return`${d.getMonth()+1}/${d.getDate()}(${w[d.getDay()]})`},
+
+  // 評価＋指導メモを「指導アクティビティ」に統合。週判定は保存日時createdAt（評価のevalDateは◯月度のため不可）
+  _cwActivities(){
+    const empById={};DB.employees().forEach(e=>{empById[String(e.id)]=e});
+    const items=[];
+    DB.evaluations().forEach(ev=>{
+      if(!ev.createdAt)return;
+      const e=empById[String(ev.employeeId)];
+      items.push({kind:'評価',t:ev.createdAt,author:ev.evaluatorName||'(不明)',role:ev.evaluatorRole||'',empId:String(ev.employeeId),empName:e?e.name:'(退職/不明)',store:e?e.store:'',content:(ev.guidanceNotes||'').trim()});
+    });
+    // 評価フォームの指導コメントは指導メモにも複製保存されるため、同日・同著者・同内容の指導メモは除外（二重カウント防止）
+    const dupKeys=new Set(items.filter(i=>i.content).map(i=>i.empId+'|'+i.author+'|'+i.t.slice(0,10)+'|'+i.content));
+    DB.coachings().forEach(c=>{
+      const t=c.createdAt||((c.date&&c.date.length>=10)?c.date:'');if(!t)return;
+      const e=empById[String(c.employeeId)];
+      const content=(c.content||'').trim();
+      if(dupKeys.has(String(c.employeeId)+'|'+(c.authorName||'(不明)')+'|'+t.slice(0,10)+'|'+content))return;
+      items.push({kind:'指導メモ',t,author:c.authorName||'(不明)',role:c.authorRole||'',empId:String(c.employeeId),empName:e?e.name:'(退職/不明)',store:e?e.store:'',content});
+    });
+    return items;
+  },
+
+  cwNav(d){this._cwOffset=Math.max(0,this._cwOffset+d);this.renderCoachingWeek()},
+  cwAxis(a){this._cwAxis=a;this.renderCoachingWeek()},
+
+  _cwKindBadge(i){
+    const c=i.kind==='評価'?['#D1FAE5','#065F46']:['#DBEAFE','#1E40AF'];
+    return`<span class="badge" style="background:${c[0]};color:${c[1]}">${i.kind==='評価'?'✅ 評価':'📘 指導メモ'}</span>`;
+  },
+  _cwFmtTime(t){const d=new Date(t);if(isNaN(d.getTime()))return t.slice(0,10);return`${this._cwFmtDay(d)} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`},
+  // アクティビティ1件の明細行
+  _cwLine(i,opts){
+    const who=opts.showTarget?`<span style="font-weight:700;color:#111;cursor:pointer" onclick="App.openEmployee('${i.empId}')">${i.empName}</span><span class="text-sub" style="font-size:11px">（${i.store||'店舗不明'}）</span>`:'';
+    const author=opts.showAuthor?`<span class="badge badge-${this._roleClass(i.role)}">${i.role}</span><span style="font-weight:600">${i.author}</span>${opts.showTarget?'<span class="text-sub">→</span>':''}`:'';
+    return`<div style="padding:8px 0;border-top:1px solid var(--gray-light)">
+      <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;font-size:12px"><span class="text-sub">🕒 ${this._cwFmtTime(i.t)}</span>${this._cwKindBadge(i)}${author}${who}</div>
+      ${i.content?`<div style="margin-top:4px;font-size:13px">${i.content.replace(/\n/g,'<br>')}</div>`:`<div class="text-sub" style="margin-top:4px;font-size:12px">（評価チェックのみ・コメントなし）</div>`}
+    </div>`;
+  },
+  // グループ化して開閉カードに
+  _cwGroups(items,keyFn,headFn,lineOpts){
+    const map={};
+    items.forEach(i=>{const k=keyFn(i);(map[k]=map[k]||[]).push(i)});
+    return Object.keys(map)
+      .map(k=>({k,arr:map[k].sort((a,b)=>b.t.localeCompare(a.t))}))
+      .sort((a,b)=>b.arr.length-a.arr.length)
+      .map(g=>{
+        const targets=[...new Set(g.arr.map(i=>lineOpts.showTarget?i.empName:i.author))];
+        const sub=targets.slice(0,3).join('、')+(targets.length>3?` 他${targets.length-3}名`:'');
+        return`<details class="card" style="margin-bottom:8px;padding:0">
+          <summary style="list-style:none;cursor:pointer;padding:12px 14px;display:flex;align-items:center;gap:8px">
+            ${headFn(g.arr[0],g.k)}
+            <div style="margin-left:auto;text-align:right;flex-shrink:0"><span style="font-size:18px;font-weight:800;color:var(--blue)">${g.arr.length}</span><span style="font-size:11px;color:var(--gray)">件 ▾</span></div>
+          </summary>
+          <div style="padding:0 14px 10px"><div class="text-sub" style="font-size:11px;margin-bottom:2px">${lineOpts.showTarget?'指導先':'指導者'}: ${sub}</div>${g.arr.map(i=>this._cwLine(i,lineOpts)).join('')}</div>
+        </details>`;
+      }).join('');
+  },
+
+  renderCoachingWeek(){
+    const user=DB.user();
+    const mon=this._cwMonday(this._cwOffset);
+    const sun=new Date(mon);sun.setDate(sun.getDate()+6);
+    const end=new Date(mon);end.setDate(end.getDate()+7);
+    let items=this._cwActivities().filter(i=>{const d=new Date(i.t);return d>=mon&&d<end});
+    if(user.role==='店舗責任者')items=items.filter(i=>i.store===user.store);
+    const nEval=items.filter(i=>i.kind==='評価').length,nCoach=items.length-nEval;
+    const coaches=new Set(items.map(i=>i.author)).size,crews=new Set(items.map(i=>i.empId)).size;
+
+    // 今週指導ゼロの店舗（在籍クルーがいるのに活動なし。店舗責任者には非表示）
+    let zeroHtml='';
+    if(user.role!=='店舗責任者'){
+      const active=new Set(items.map(i=>i.store));
+      const withCrew=new Set(DB.employees().filter(e=>e.status==='在籍中').map(e=>e.store));
+      const zero=STORES.filter(s=>withCrew.has(s)&&!active.has(s));
+      if(zero.length)zeroHtml=`<div class="card" style="border:1px solid #F59E0B;background:#FFFBEB"><div style="font-weight:700;color:#92400E;font-size:13px;margin-bottom:6px">⚠️ この週 指導ゼロの店舗（${zero.length}店）</div><div style="display:flex;gap:6px;flex-wrap:wrap">${zero.map(s=>`<span class="badge" style="background:#FEF3C7;color:#92400E">${s}</span>`).join('')}</div></div>`;
+    }
+
+    let body;
+    if(!items.length)body='<div class="empty-state"><p>この週の指導記録はありません</p></div>';
+    else if(this._cwAxis==='coach')body=this._cwGroups(items,i=>i.author,(i)=>`<div><div style="font-weight:700">${i.author} <span class="badge badge-${this._roleClass(i.role)}">${i.role}</span></div></div>`,{showTarget:true,showAuthor:false});
+    else if(this._cwAxis==='crew')body=this._cwGroups(items,i=>i.empId,(i)=>`<div><div style="font-weight:700;color:var(--blue);cursor:pointer" onclick="event.preventDefault();App.openEmployee('${i.empId}')">${i.empName} ›</div><div class="text-sub" style="font-size:11px">${i.store||'店舗不明'}</div></div>`,{showTarget:false,showAuthor:true});
+    else body=this._cwGroups(items,i=>i.store||'店舗不明',(i,k)=>`<div style="font-weight:700">🏪 ${k}</div>`,{showTarget:true,showAuthor:true});
+
+    const chip=(a,label)=>`<button class="btn btn-sm ${this._cwAxis===a?'btn-primary':'btn-secondary'}" style="flex:1" onclick="App.cwAxis('${a}')">${label}</button>`;
+    document.getElementById('coaching-week-content').innerHTML=`
+      <div class="card">
+        <div style="display:flex;align-items:center;gap:8px">
+          <button class="btn btn-secondary btn-sm" onclick="App.cwNav(1)">◀ 前週</button>
+          <div style="flex:1;text-align:center;font-weight:800;font-size:15px">${this._cwFmtDay(mon)}〜${this._cwFmtDay(sun)}</div>
+          <button class="btn btn-secondary btn-sm" onclick="App.cwNav(-1)" ${this._cwOffset===0?'disabled style="opacity:.4"':''}>翌週 ▶</button>
+        </div>
+        ${this._cwOffset>0?`<button class="btn btn-secondary btn-sm btn-full" style="margin-top:8px" onclick="App._cwOffset=0;App.renderCoachingWeek()">今週に戻る</button>`:''}
+      </div>
+      <div class="stats-grid" style="margin-bottom:12px">
+        <div class="stat-card"><div class="stat-num">${items.length}</div><div class="stat-label">指導 計（件）</div></div>
+        <div class="stat-card"><div class="stat-num" style="color:var(--green)">${nEval}<span style="font-size:12px">/</span><span style="color:var(--blue)">${nCoach}</span></div><div class="stat-label">評価/指導メモ</div></div>
+        <div class="stat-card"><div class="stat-num">${coaches}</div><div class="stat-label">指導した人</div></div>
+        <div class="stat-card"><div class="stat-num">${crews}</div><div class="stat-label">指導されたクルー</div></div>
+      </div>
+      <div style="display:flex;gap:6px;margin-bottom:12px">${chip('coach','👤 指導者別')}${chip('crew','🧑 クルー別')}${chip('store','🏪 店舗別')}</div>
+      ${body}
+      ${zeroHtml}
+      <div class="text-sub" style="font-size:11px;margin-top:8px">※ 保存日時（createdAt）を基に月曜起点の週へ振り分け。評価フォームの指導コメントは「評価」側に含め二重計上しません。</div>`;
   },
 
   /* ===== 月次推移グラフ ===== */
