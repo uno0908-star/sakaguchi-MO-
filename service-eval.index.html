@@ -1468,7 +1468,7 @@ const App={
       const fin=si||sc||sm||'';
       const st=this._getItemStatus(evals,id,item.key).status;
       const stBadge=st==='改善済'?'<span class="st-dot st-fixed">🟢改善済</span>':st==='要改善'?'<span class="st-dot st-open">🔴要改善</span>':st==='良好'?'<span class="st-dot st-good">🔵良好</span>':'<span class="st-dot st-none">⬜未</span>';
-      return`<div style="display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid var(--border);flex-wrap:wrap"><span style="font-size:13px;font-weight:600;width:65px">${item.label}</span><span class="rank-chip ${fin||'未'}">${fin||'未'}</span>${stBadge}<span style="font-size:11px;color:var(--text-sub)">SI:${this._chip(si)} SC:${this._chip(sc)} 責:${this._chip(sm)}</span></div>`;
+      return`<div style="display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid var(--border);flex-wrap:wrap"><span onclick="App.showStandards('${item.key}')" style="font-size:13px;font-weight:700;color:var(--blue);cursor:pointer;text-decoration:underline;text-underline-offset:3px;padding:4px 0">📖${item.label}</span><span class="rank-chip ${fin||'未'}">${fin||'未'}</span>${stBadge}<span style="font-size:11px;color:var(--text-sub)">SI:${this._chip(si)} SC:${this._chip(sc)} 責:${this._chip(sm)}</span></div>`;
     }).join('');
     const coachHtml=coachings.length?coachings.map(c=>{
       const when=c.createdAt?this._fmtDateTime(c.createdAt):this._fmtDateTime(c.date);
@@ -1479,7 +1479,7 @@ const App={
     const monthlyGraph=this._getMonthlyTrend(evals,id);
     document.getElementById('employee-detail-content').innerHTML=`
       <div class="card"><div class="flex-between"><div><div style="font-size:20px;font-weight:800">${e.name}</div><div class="text-sub">${e.store}｜${this._typeName(e.type)}｜ID:${e.id}</div>${this._tenureFull(e.id)?`<div class="text-sub" style="margin-top:3px;color:#005BAC;font-weight:600">📅 在籍年数：${this._tenureFull(e.id)}</div>`:''}</div><div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px"><span class="badge ${e.status==='在籍中'?'badge-sub':'badge-crew'}">${e.status}</span>${canEdit?`<button class="btn btn-secondary btn-sm" onclick="App.editEmployee('${e.id}')">編集</button>`:''}</div></div><div class="emp-badges" style="margin-top:10px">${this._roleBadges(e)}</div></div>
-      <div class="card"><div class="flex-between" style="margin-bottom:8px"><div style="font-weight:700">評価サマリー</div>${canEdit?`<button class="btn btn-primary btn-sm" onclick="App.openEvaluation('${e.id}')">評価入力</button>`:''}</div>${evalSummary}</div>
+      <div class="card"><div class="flex-between"><div style="font-weight:700">評価サマリー</div>${canEdit?`<button class="btn btn-primary btn-sm" onclick="App.openEvaluation('${e.id}')">評価入力</button>`:''}</div><div style="font-size:11px;color:var(--text-sub);margin:4px 0 8px">📖項目名をタッチすると出来栄え基準（正解）が見れます</div>${evalSummary}</div>
       ${monthlyGraph}
       <div class="card"><div class="flex-between" style="margin-bottom:8px"><div style="font-weight:700">指導メモ</div>${canEdit?`<button class="btn btn-primary btn-sm" onclick="App.showAddCoaching('${e.id}')">追加</button>`:''}</div>${coachHtml}</div>`;
   },
