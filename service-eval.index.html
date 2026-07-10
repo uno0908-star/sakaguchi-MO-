@@ -188,9 +188,14 @@ input,select,textarea,button{font-family:inherit;font-size:14px}
       <p class="login-subtitle">接客評価システム</p>
     </div>
     <div class="card">
-      <div class="form-group">
+      <div class="form-group" id="login-name-wrap">
         <label>お名前</label>
         <input type="text" id="login-name" placeholder="例：田中 太郎">
+      </div>
+      <div class="form-group" id="login-code-wrap" style="display:none">
+        <label>氏名コード / Staff ID</label>
+        <input type="text" id="login-code" inputmode="numeric" placeholder="例：5123059">
+        <div style="font-size:11px;color:#6B7280;margin-top:4px">自分の氏名コード（数字）を入力してください / Enter your staff ID number</div>
       </div>
       <div class="form-group">
         <label>役職</label>
@@ -1155,8 +1160,11 @@ const App={
 
   _toggleStoreWrap(){
     const role=document.getElementById('login-role')?.value;
-    document.getElementById('login-store-wrap').style.display=(role==='管理者'||role==='SI'||role==='SC')?'none':'';
-    document.getElementById('login-pass-wrap').style.display=role==='一般クルー'?'none':'';
+    const isCrew=role==='一般クルー';
+    document.getElementById('login-store-wrap').style.display=(role==='管理者'||role==='SI'||role==='SC'||isCrew)?'none':'';
+    document.getElementById('login-pass-wrap').style.display=isCrew?'none':'';
+    document.getElementById('login-name-wrap').style.display=isCrew?'none':'';
+    document.getElementById('login-code-wrap').style.display=isCrew?'':'none';
   },
 
   _applyUser(user){
@@ -1167,13 +1175,30 @@ const App={
     // 管理者のみ: 設定ナビを表示（SIには表示しない）
     const navSettings=document.getElementById('nav-settings');
     if(navSettings)navSettings.style.display=(user.role==='管理者')?'flex':'none';
-    // 一般クルー: クルー追加ボタン(FAB)を隠す
+    // 一般クルー: 他クルーの情報は見せない（ホーム＝マイカルテのみ）
+    const isCrew=user.role==='一般クルー';
+    document.querySelectorAll('#bottom-nav .nav-item').forEach(b=>{
+      if(b.id==='nav-settings')return;
+      b.style.display=(isCrew&&b.dataset.view!=='dashboard')?'none':'flex';
+    });
     this._currentUser=user;
   },
 
   login(){
-    const name=document.getElementById('login-name').value.trim();
     const role=document.getElementById('login-role').value;
+    if(role==='一般クルー'){
+      const code=(document.getElementById('login-code')?.value||'').trim();
+      if(!code){this.showToast('氏名コードを入力してください','error');return}
+      const emps=DB.employees();
+      if(!emps.length){this.showToast('データを取得できていません。電波の良い場所で再読み込みしてください','error');return}
+      const emp=emps.find(e=>String(e.id)===code&&e.status!=='退職');
+      if(!emp){this.showToast('この氏名コードは見つかりません。番号を確認してください','error');return}
+      const user={userId:'crew-'+emp.id,name:emp.name,role,store:emp.store||'',password:'',employeeId:String(emp.id)};
+      Storage.saveUser(user);this._applyUser(user);this.showView('dashboard');
+      this.showToast(`ようこそ ${emp.name} さん`,'success');
+      return;
+    }
+    const name=document.getElementById('login-name').value.trim();
     const pass=document.getElementById('login-pass')?.value||'';
     const store=document.getElementById('login-store').value;
     if(!name){this.showToast('お名前を入力してください','error');return}
@@ -1204,7 +1229,9 @@ const App={
 
   _updateHeader(viewId){
     const titles={login:'接客評価システム',dashboard:'阪口商店 接客評価',employees:'クルー一覧','employee-detail':'クルー詳細',evaluation:'評価入力',observation:'気づきメモ',improvement:'改善必要者','store-analysis':'店舗別分析','analysis-menu':'分析','employee-form':'クルー登録・編集',settings:'管理設定',discussion:'目線合わせ','item-ranking':'項目別弱点ランキング',compliance:'コンプラ回答状況','coaching-week':'週間指導レポート'};
-    document.getElementById('header-title').textContent=titles[viewId]||'';
+    let title=titles[viewId]||'';
+    if(viewId==='dashboard'){const u=DB.user();if(u&&u.role==='一般クルー'&&u.employeeId)title='マイカルテ'}
+    document.getElementById('header-title').textContent=title;
     const back=document.getElementById('btn-back');
     back.classList.toggle('hidden',['dashboard','employees','observation','analysis-menu','settings','login'].includes(viewId));
   },
@@ -1219,6 +1246,8 @@ const App={
   },
 
   renderDashboard(){
+    const me=DB.user();
+    if(me&&me.role==='一般クルー'&&me.employeeId){this.renderMyKarte(me.employeeId);return}
     const emps=DB.employees().filter(e=>e.status==='在籍中');
     const evalTarget=emps.filter(e=>!e.evalExcluded);
     const evals=DB.evaluations();
@@ -1286,6 +1315,49 @@ const App={
       <div style="height:8px"></div>
       ${DB.user().role==='管理者'?`<button class="btn btn-secondary btn-full" onclick="App.navTo('compliance')" style="margin-top:8px">📝 コンプラ回答状況</button>`:''}
       ${Storage.AUTH.can(DB.user(),'sysAdmin')?`<button class="btn btn-secondary btn-full" onclick="App.navTo('settings')" style="margin-top:8px">⚙️ 管理設定</button>`:''}
+      <button class="btn btn-secondary btn-full" onclick="App.logout()" style="margin-top:8px">ログアウト</button>`;
+  },
+
+  /* 一般クルー向けトップ: 自分の接客チェック個人カルテ（閲覧専用・他クルー情報なし） */
+  renderMyKarte(id){
+    const box=document.getElementById('dashboard-content');
+    const e=DB.employees().find(x=>String(x.id)===String(id));
+    if(!e){box.innerHTML='<div class="empty-state"><p>データを取得できませんでした。<br>電波の良い場所で再読み込みしてください。</p></div><button class="btn btn-secondary btn-full" onclick="App.logout()">ログアウト</button>';return}
+    const evals=DB.evaluations();
+    const myEvals=evals.filter(v=>String(v.employeeId)===String(id));
+    const coachings=DB.coachings().filter(c=>String(c.employeeId)===String(id)).sort((a,b)=>String(b.createdAt||b.date||'').localeCompare(String(a.createdAt||a.date||'')));
+    let good=0,fixed=0,open=0,none=0;
+    SERVICE_ITEMS.forEach(item=>{const s=this._getItemStatus(evals,e.id,item.key).status;if(s==='良好')good++;else if(s==='改善済')fixed++;else if(s==='要改善')open++;else none++});
+    const evalSummary=SERVICE_ITEMS.map(item=>{
+      const si=this._getRankByRole(evals,e.id,'SI',item.key),sc=this._getRankByRole(evals,e.id,'SC',item.key),sm=this._getRankByRole(evals,e.id,'店舗責任者',item.key);
+      const fin=si||sc||sm||'';
+      const st=this._getItemStatus(evals,e.id,item.key).status;
+      const stBadge=st==='改善済'?'<span class="st-dot st-fixed">🟢改善済</span>':st==='要改善'?'<span class="st-dot st-open">🔴要改善</span>':st==='良好'?'<span class="st-dot st-good">🔵良好</span>':'<span class="st-dot st-none">⬜未</span>';
+      return`<div style="display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid var(--border);flex-wrap:wrap"><span style="font-size:13px;font-weight:600;width:65px">${item.label}</span><span class="rank-chip ${fin||'未'}">${fin||'未'}</span>${stBadge}<span style="font-size:11px;color:var(--text-sub)">SI:${this._chip(si)} SC:${this._chip(sc)} 責:${this._chip(sm)}</span></div>`;
+    }).join('');
+    const coachHtml=coachings.length?coachings.map(c=>{
+      const when=c.createdAt?this._fmtDateTime(c.createdAt):this._fmtDateTime(c.date);
+      return`<div class="timeline-item"><div class="timeline-dot"></div><div class="timeline-body"><div class="timeline-meta"><span>🕒 ${when}</span><span class="badge badge-${this._roleClass(c.authorRole)}">${c.authorRole}</span><span>${c.authorName}</span></div><div>${c.content}</div>${c.photo?`<img src="${c.photo}" class="timeline-photo">`:''}</div></div>`;
+    }).join(''):'<div class="empty-state"><p>指導メモはまだありません</p></div>';
+    const monthlyGraph=this._getMonthlyTrend(evals,e.id);
+    const badges=this._roleBadges(e);
+    box.innerHTML=`
+      <div class="card" style="background:linear-gradient(135deg,#005BAC,#0074D9);color:#fff">
+        <div style="font-size:12px;opacity:.85">マイカルテ / My Report</div>
+        <div style="font-size:22px;font-weight:800;margin-top:2px">${e.name} さん</div>
+        <div style="font-size:12px;opacity:.9;margin-top:4px">${e.store}｜${this._typeName(e.type)}${this._tenureFull(e.id)?'｜在籍 '+this._tenureFull(e.id):''}</div>
+        ${badges?`<div class="emp-badges" style="margin-top:10px">${badges}</div>`:''}
+      </div>
+      <div class="stats-grid">
+        <div class="stat-card"><div class="stat-num" style="color:var(--blue)">${good}</div><div class="stat-label">🔵 良好</div></div>
+        <div class="stat-card"><div class="stat-num" style="color:var(--green)">${fixed}</div><div class="stat-label">🟢 改善済</div></div>
+        <div class="stat-card"><div class="stat-num" style="color:var(--red)">${open}</div><div class="stat-label">🔴 要改善</div></div>
+        <div class="stat-card"><div class="stat-num" style="color:var(--gray)">${none}</div><div class="stat-label">⬜ 未チェック</div></div>
+      </div>
+      ${myEvals.length?'':'<div class="card"><div class="empty-state"><p>接客チェックはまだありません。<br>チェックを受けるとここに結果が表示されます。</p></div></div>'}
+      <div class="card"><div style="font-weight:700;margin-bottom:8px">📋 接客チェック結果</div>${evalSummary}</div>
+      ${monthlyGraph}
+      <div class="card"><div style="font-weight:700;margin-bottom:8px">📘 自分あての指導メモ</div>${coachHtml}</div>
       <button class="btn btn-secondary btn-full" onclick="App.logout()" style="margin-top:8px">ログアウト</button>`;
   },
 
