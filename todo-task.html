@@ -317,6 +317,9 @@ main{padding:20px;max-width:960px;margin:0 auto;}
 .fi,.fs,.fta{width:100%;padding:9px 13px;background:var(--bg);border:1.5px solid var(--border2);border-radius:var(--rs);font-family:inherit;font-size:13px;color:var(--text);outline:none;transition:border-color .18s,background .18s;}
 .fi:focus,.fs:focus,.fta:focus{border-color:var(--accent);background:#fff;box-shadow:0 0 0 3px rgba(43,107,224,.1);}
 .fi::placeholder,.fta::placeholder{color:var(--text3);}
+.tq{display:flex;gap:6px;margin-top:5px;}
+.tqb{flex:1;padding:6px 0;border:1.5px solid var(--border2);border-radius:20px;background:var(--surface);font-family:inherit;font-size:12px;font-weight:700;cursor:pointer;color:var(--text2);transition:all .18s;}
+.tqb:active{background:var(--accent);border-color:var(--accent);color:#fff;}
 .fta{resize:vertical;min-height:68px;}
 .chkgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(152px,1fr));gap:6px;padding:11px;background:var(--bg);border:1.5px solid var(--border2);border-radius:var(--rs);max-height:196px;overflow-y:auto;}
 .ci{display:flex;align-items:center;gap:6px;font-size:12px;cursor:pointer;padding:5px 9px;border-radius:7px;border:1px solid transparent;transition:all .15s;color:var(--text2);}
@@ -565,10 +568,18 @@ main{padding:20px;max-width:960px;margin:0 auto;}
       <div>
         <div class="fl">📅 開始日時（任意）</div>
         <input class="fi" type="datetime-local" id="e-start">
+        <div class="tq">
+          <button type="button" class="tqb" onclick="setQuickTime('e-start','00:00')">🕛 0:00</button>
+          <button type="button" class="tqb" onclick="setQuickTime('e-start','23:59')">🌙 23:59</button>
+        </div>
       </div>
       <div>
         <div class="fl">📅 終了日時（必須）</div>
         <input class="fi" type="datetime-local" id="e-end">
+        <div class="tq">
+          <button type="button" class="tqb" onclick="setQuickTime('e-end','00:00')">🕛 0:00</button>
+          <button type="button" class="tqb" onclick="setQuickTime('e-end','23:59')">🌙 23:59</button>
+        </div>
       </div>
       <div>
         <div class="fl">📂 タスク種別</div>
@@ -736,10 +747,18 @@ main{padding:20px;max-width:960px;margin:0 auto;}
       <div>
         <div class="fl">📅 開始日時（任意）</div>
         <input class="fi" type="datetime-local" id="f-start">
+        <div class="tq">
+          <button type="button" class="tqb" onclick="setQuickTime('f-start','00:00')">🕛 0:00</button>
+          <button type="button" class="tqb" onclick="setQuickTime('f-start','23:59')">🌙 23:59</button>
+        </div>
       </div>
       <div>
         <div class="fl">📅 終了日時（必須）</div>
         <input class="fi" type="datetime-local" id="f-end">
+        <div class="tq">
+          <button type="button" class="tqb" onclick="setQuickTime('f-end','00:00')">🕛 0:00</button>
+          <button type="button" class="tqb" onclick="setQuickTime('f-end','23:59')">🌙 23:59</button>
+        </div>
       </div>
       <div>
         <div class="fl">📂 タスク種別</div>
@@ -965,6 +984,17 @@ function toDatetimeLocal(d) {
   // 日付のみ（YYYY-MM-DD） → 時刻を00:00で補完
   if (/^\d{4}-\d{2}-\d{2}$/.test(d)) return d + 'T00:00';
   return d.slice(0, 16);
+}
+
+// 時刻クイック設定（0:00 / 23:59 ボタン）。日付未入力なら今日の日付（日本時間）を補完
+function setQuickTime(id, hm) {
+  const el = document.getElementById(id);
+  let date = (el.value || '').split('T')[0];
+  if (!date) {
+    const n = new Date();
+    date = `${n.getFullYear()}-${String(n.getMonth()+1).padStart(2,'0')}-${String(n.getDate()).padStart(2,'0')}`;
+  }
+  el.value = date + 'T' + hm;
 }
 
 // 期限までの日数
