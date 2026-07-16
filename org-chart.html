@@ -112,6 +112,33 @@
   footer{
     text-align:center; color:var(--muted); font-size:11px; padding:0 20px 30px;
   }
+
+  .modal-overlay{
+    display:none;
+    position:fixed; inset:0; z-index:100;
+    background:rgba(20,25,35,0.85);
+    padding:20px;
+    overflow-y:auto;
+  }
+  .modal-overlay.show{ display:block; }
+  .modal-inner{
+    max-width:520px; margin:10px auto 40px;
+    background:#fff; border-radius:12px; padding:14px;
+  }
+  .modal-hint{
+    color:#fff; text-align:center; font-size:13.5px; padding:0 10px 12px;
+    line-height:1.6;
+  }
+  .modal-hint b{ color:var(--accent); }
+  .modal-img{ width:100%; border-radius:6px; display:block; }
+  .modal-close{
+    display:block; margin:16px auto 0;
+    background:rgba(255,255,255,0.15); color:#fff;
+    padding:10px 22px; border-radius:20px;
+  }
+  .modal-loading{
+    color:#fff; text-align:center; padding:60px 20px; font-size:14px;
+  }
 </style>
 </head>
 <body>
@@ -128,6 +155,15 @@
   <div id="chart"></div>
 </div>
 <footer>ノードをタップして名前を編集 ・「＋」で部下/店舗を追加 ・「×」で削除</footer>
+
+<div class="modal-overlay" id="modalOverlay">
+  <div class="modal-loading" id="modalLoading">画像を作成しています…</div>
+  <div class="modal-inner" id="modalInner" style="display:none;">
+    <img id="modalImg" class="modal-img">
+  </div>
+  <div class="modal-hint" id="modalHint" style="display:none;">画像を<b>長押し</b>して「写真に追加」を選ぶと保存できます</div>
+  <button class="modal-close" onclick="closeModal()">閉じる</button>
+</div>
 
 <script>
 let idSeq = 0;
@@ -227,12 +263,29 @@ function render(){
 
 function exportPng(){
   const chart = document.getElementById('chart');
+  const overlay = document.getElementById('modalOverlay');
+  const loading = document.getElementById('modalLoading');
+  const inner = document.getElementById('modalInner');
+  const hint = document.getElementById('modalHint');
+  const img = document.getElementById('modalImg');
+
+  loading.style.display = 'block';
+  inner.style.display = 'none';
+  hint.style.display = 'none';
+  overlay.classList.add('show');
+
   html2canvas(chart, {backgroundColor:'#F5F6F8', scale:2}).then(canvas=>{
-    const link = document.createElement('a');
-    link.download = '組織図.png';
-    link.href = canvas.toDataURL('image/png');
-    link.click();
+    img.src = canvas.toDataURL('image/png');
+    loading.style.display = 'none';
+    inner.style.display = 'block';
+    hint.style.display = 'block';
+  }).catch(err=>{
+    loading.textContent = '画像の作成に失敗しました。もう一度お試しください。';
   });
+}
+
+function closeModal(){
+  document.getElementById('modalOverlay').classList.remove('show');
 }
 
 render();
