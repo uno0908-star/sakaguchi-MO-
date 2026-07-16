@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>組織図ビルダー</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<style>
+  :root{
+    --navy:#1B3350;
+    --navy-light:#2C4A6E;
+    --paper:#F5F6F8;
+    --card:#FFFFFF;
+    --line:#C7CEDA;
+    --accent:#E8A33D;
+    --sc:#2E6E8E;
+    --asc:#4B8B72;
+    --store:#8A6BAE;
+    --text:#1E2430;
+    --muted:#6B7686;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    font-family:"Hiragino Sans","Yu Gothic",-apple-system,BlinkMacSystemFont,sans-serif;
+    background:var(--paper);
+    color:var(--text);
+  }
+  header{
+    position:sticky; top:0; z-index:10;
+    background:var(--navy);
+    color:#fff;
+    padding:14px 16px;
+    display:flex; align-items:center; justify-content:space-between;
+    box-shadow:0 2px 8px rgba(0,0,0,0.15);
+  }
+  header h1{
+    font-size:16px; margin:0; font-weight:600; letter-spacing:0.02em;
+  }
+  .btns{display:flex; gap:8px; flex-wrap:wrap;}
+  button{
+    font-family:inherit;
+    border:none;
+    border-radius:8px;
+    padding:8px 12px;
+    font-size:12.5px;
+    cursor:pointer;
+    font-weight:600;
+    transition:transform .08s ease, opacity .15s ease;
+  }
+  button:active{transform:scale(0.96);}
+  .btn-primary{background:var(--accent); color:#3A2600;}
+  .btn-ghost{background:rgba(255,255,255,0.12); color:#fff;}
+  .btn-ghost:hover{background:rgba(255,255,255,0.2);}
+  .btn-add{background:var(--navy-light); color:#fff; font-size:11px; padding:3px 9px; border-radius:6px;}
+  .btn-del{background:#fff; color:#B3413E; font-size:11px; padding:3px 8px; border-radius:6px; border:1px solid #E4B6B4;}
+  .canvas-wrap{
+    padding:20px 16px 60px;
+    max-width:720px;
+    margin:0 auto;
+  }
+  #chart{ width:100%; }
+
+  .node-block{ margin-bottom:10px; }
+  .node-row{ display:flex; align-items:center; gap:10px; }
+  .node-card{
+    display:flex; align-items:center; gap:10px;
+    background:var(--card);
+    border:1px solid var(--line);
+    border-left:5px solid var(--navy);
+    border-radius:9px;
+    padding:8px 12px;
+    box-shadow:0 1px 3px rgba(20,30,50,0.06);
+    flex:1;
+    min-width:0;
+  }
+  .node-card.role-sc{ border-left-color:var(--sc); }
+  .node-card.role-asc{ border-left-color:var(--asc); }
+  .node-card.role-store{ border-left-color:var(--store); }
+  .node-text{ display:flex; flex-direction:column; gap:1px; min-width:0; flex:1; }
+  .node-title{
+    font-size:10.5px; color:var(--muted); font-weight:600; letter-spacing:.03em;
+    outline:none;
+  }
+  .node-name{
+    font-size:14px; font-weight:700; color:var(--text);
+    outline:none; word-break:break-word;
+  }
+  .node-title:focus, .node-name:focus{ background:#FFF7E8; border-radius:4px; }
+  .node-actions{ display:flex; gap:5px; flex-shrink:0; }
+
+  .children{
+    margin-left:14px;
+    padding-left:20px;
+    border-left:2px solid var(--line);
+    margin-top:10px;
+  }
+  .child-item{ position:relative; }
+  .child-item::before{
+    content:'';
+    position:absolute;
+    left:-20px;
+    top:19px;
+    width:18px;
+    height:2px;
+    background:var(--line);
+  }
+
+  .empty-hint{
+    text-align:center; color:var(--muted); font-size:13px; padding:60px 20px;
+  }
+  footer{
+    text-align:center; color:var(--muted); font-size:11px; padding:0 20px 30px;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>組織図ビルダー</h1>
+  <div class="btns">
+    <button class="btn-ghost" onclick="addRoot()">＋ 新しいルート</button>
+    <button class="btn-primary" onclick="exportPng()">画像で保存</button>
+  </div>
+</header>
+
+<div class="canvas-wrap">
+  <div id="chart"></div>
+</div>
+<footer>ノードをタップして名前を編集 ・「＋」で部下/店舗を追加 ・「×」で削除</footer>
+
+<script>
+let idSeq = 0;
+function node(title, name, role){ idSeq++; return {id:'n'+idSeq, title, name, role: role||'', children:[]}; }
+
+// 初期データ（神田様の組織構成をベースに作成。自由に編集・追加できます）
+let roots = [
+  (function(){
+    const gm = node('統括マネージャー','神田 渉','gm');
+    const scNames = ['髙橋','五島','プラカス','ダハル','ビスワス','フィ'];
+    scNames.forEach(n => gm.children.push(node('SC', n, 'sc')));
+    ['サントス','スラズ'].forEach(n => gm.children.push(node('ASC', n, 'asc')));
+    return gm;
+  })()
+];
+
+function findNode(list, id){
+  for(const n of list){
+    if(n.id===id) return n;
+    const f = findNode(n.children, id);
+    if(f) return f;
+  }
+  return null;
+}
+function findParentList(list, id, parentList){
+  for(const n of list){
+    if(n.id===id) return parentList;
+    const f = findParentList(n.children, id, n.children);
+    if(f) return f;
+  }
+  return null;
+}
+
+function addChild(id){
+  const n = findNode(roots, id);
+  if(!n) return;
+  n.children.push(node('役職','新規メンバー',''));
+  render();
+}
+function addRoot(){
+  roots.push(node('役職','新規ノード',''));
+  render();
+}
+function deleteNode(id){
+  if(roots.length===1 && roots[0].id===id){
+    if(!confirm('最後のルートノードを削除しますか？')) return;
+    roots = [];
+    render();
+    return;
+  }
+  const list = findParentList(roots, id, roots);
+  if(list){
+    const idx = list.findIndex(n=>n.id===id);
+    if(idx>-1) list.splice(idx,1);
+    render();
+  }
+}
+function updateField(id, field, value){
+  const n = findNode(roots, id);
+  if(n) n[field] = value;
+}
+
+function renderNode(n){
+  const roleClass = n.role ? 'role-'+n.role : '';
+  const childrenHtml = n.children.length
+    ? `<div class="children">${n.children.map(c=>`<div class="child-item">${renderNode(c)}</div>`).join('')}</div>`
+    : '';
+  return `
+    <div class="node-block">
+      <div class="node-row">
+        <div class="node-card ${roleClass}">
+          <div class="node-text">
+            <div class="node-title" contenteditable="true" data-id="${n.id}" data-field="title"
+              oninput="updateField('${n.id}','title',this.innerText)">${n.title}</div>
+            <div class="node-name" contenteditable="true" data-id="${n.id}" data-field="name"
+              oninput="updateField('${n.id}','name',this.innerText)">${n.name}</div>
+          </div>
+          <div class="node-actions">
+            <button class="btn-add" onclick="addChild('${n.id}')">＋</button>
+            <button class="btn-del" onclick="deleteNode('${n.id}')">×</button>
+          </div>
+        </div>
+      </div>
+      ${childrenHtml}
+    </div>
+  `;
+}
+
+function render(){
+  const chart = document.getElementById('chart');
+  if(roots.length===0){
+    chart.innerHTML = `<div class="empty-hint">ノードがありません。「＋ 新しいルート」から始めましょう。</div>`;
+    return;
+  }
+  chart.innerHTML = roots.map(r=>renderNode(r)).join('');
+}
+
+function exportPng(){
+  const chart = document.getElementById('chart');
+  html2canvas(chart, {backgroundColor:'#F5F6F8', scale:2}).then(canvas=>{
+    const link = document.createElement('a');
+    link.download = '組織図.png';
+    link.href = canvas.toDataURL('image/png');
+    link.click();
+  });
+}
+
+render();
+</script>
+</body>
+</html>
