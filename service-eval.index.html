@@ -1276,7 +1276,7 @@ const App={
     const impRate=impAll?Math.round(impStats.fixedItems/impAll*100):0;
     const histSummary=this._evalHistorySummary(evals,evalTarget,DB.coachings());
     const stalledCount=histSummary.filter(x=>x.stalled).length;
-    const stalledCard=stalledCount?`<div class="card" onclick="App.showTrendDetail()" style="cursor:pointer;border:1px solid #F59E0B;background:#FFFBEB"><div class="flex-between"><div><div style="font-weight:700;color:#92400E">⚠️ 初回評価から放置のクルー</div><div class="text-sub" style="font-size:11px;margin-top:2px">再評価も指導コメントも途絶えた人だけ（指導継続中は除外）。タップで一覧 ›</div></div><div style="font-size:26px;font-weight:800;color:#B45309">${stalledCount}<span style="font-size:13px;font-weight:600">名</span></div></div></div>`:'';
+    const stalledCard=stalledCount?`<div class="card" onclick="App.showStalledByStore()" style="cursor:pointer;border:1px solid #F59E0B;background:#FFFBEB"><div class="flex-between"><div><div style="font-weight:700;color:#92400E">⚠️ 初回評価から放置のクルー</div><div class="text-sub" style="font-size:11px;margin-top:2px">再評価も指導コメントも途絶えた人だけ（指導継続中は除外）。タップで店舗別一覧 ›</div></div><div style="font-size:26px;font-weight:800;color:#B45309">${stalledCount}<span style="font-size:13px;font-weight:600">名</span></div></div></div>`:'';
     const trend=this._improvementTrend(evals,evalTarget);
     const trendCard=trend?`<div class="card" onclick="App.showTrendDetail()" style="cursor:pointer"><div class="section-title">📈 改善の推移（月別・累積）　<span style="color:var(--blue);font-weight:700">個人別を見る ›</span></div>${trend.map(t=>{const tot=t.open+t.fixed;const fp=tot?Math.round(t.fixed/tot*100):0;return`<div style="margin-bottom:9px"><div class="flex-between" style="font-size:12px;margin-bottom:3px"><span style="font-weight:700">${t.month.slice(5)}月</span><span class="text-sub"><b style="color:var(--green)">改善${t.fixed}</b> ／ <b style="color:var(--red)">要改善${t.open}</b>（改善率${fp}%）</span></div><div class="analysis-bar-multi" style="height:12px">${tot?`<div class="bar-good" style="width:${fp}%"></div><div class="bar-bad" style="width:${100-fp}%"></div>`:'<div style="width:100%;background:var(--gray-light)"></div>'}</div></div>`}).join('')}<div class="text-sub" style="font-size:11px;margin-top:2px">※ 各月末時点の累積状態（🟢再チェックで○◎化＝改善／🔴△✕のまま＝要改善）</div></div>`:'';
     const improveList=needImprove.slice(0,5).map(e=>{
@@ -2629,6 +2629,47 @@ const App={
         ${list.map(x=>`<div style="padding:8px 0;border-bottom:1px solid var(--border);cursor:pointer" onclick="App.closeModal();App.openEmployee('${x.e.id}')"><div class="flex-between"><span style="font-weight:600">${x.e.name} ${catBadge(x)}</span><span style="color:var(--gray)">›</span></div><div style="margin-top:4px;display:flex;gap:4px;flex-wrap:wrap;align-items:center">${timeline(x)}</div><div style="margin-top:4px;display:flex;gap:6px;align-items:center">${cntChips(x)||'<span class="st-dot st-good">課題なし</span>'}${miniBar(x)}</div></div>`).join('')}
       </div>`).join('');
     if(!storeEntries.length)html='<div class="empty-state"><p>評価データがありません</p></div>';
+    document.getElementById('modal-detail-body').innerHTML=html;
+    this._openModal('modal-detail');
+  },
+
+  /* 初回評価から放置のクルーだけを店舗別にピックアップ */
+  showStalledByStore(){
+    const emps=DB.employees().filter(e=>e.status==='在籍中');
+    const evalTarget=emps.filter(e=>!e.evalExcluded);
+    const evals=DB.evaluations();
+    const summary=this._evalHistorySummary(evals,evalTarget,DB.coachings());
+    const stalled=summary.filter(x=>x.stalled);
+    document.getElementById('modal-detail-title').textContent=`初回評価から放置（計${stalled.length}名）`;
+    if(!stalled.length){
+      document.getElementById('modal-detail-body').innerHTML='<div class="empty-state"><p>放置クルーはいません 🎉<br>全員フォローできています</p></div>';
+      this._openModal('modal-detail');return;
+    }
+    const cur=new Date().toISOString().slice(0,7);
+    const gap=m=>{if(!m)return 0;const y1=Number(m.slice(0,4)),m1=Number(m.slice(5,7)),y2=Number(cur.slice(0,4)),m2=Number(cur.slice(5,7));return(y2-y1)*12+(m2-m1)};
+    const byStore={};
+    stalled.forEach(x=>{(byStore[x.e.store]=byStore[x.e.store]||[]).push(x)});
+    const entries=Object.entries(byStore).map(([store,list])=>{
+      list.sort((a,b)=>gap(b.allMonths[0])-gap(a.allMonths[0])||b.open-a.open);
+      return{store,list,maxGap:Math.max(...list.map(x=>gap(x.allMonths[0])))};
+    }).sort((a,b)=>b.list.length-a.list.length||b.maxGap-a.maxGap);
+    let html=`<div style="margin-bottom:10px;padding:8px 10px;background:#FFFBEB;border-radius:8px;border:1px solid #F59E0B;color:#92400E;font-size:12px">⚠️ 初回評価の月以降、<b>再評価も指導コメントも一切ないクルー</b>だけを表示しています。<br>※初回評価のあと指導コメントが続いている人（📝指導継続）は含みません。</div>`;
+    html+=entries.map(({store,list})=>`
+      <div style="margin-bottom:14px">
+        <div class="flex-between" style="margin-bottom:6px;padding-bottom:4px;border-bottom:2px solid #F59E0B">
+          <span style="font-weight:700;font-size:13px">${store}</span>
+          <span class="st-dot st-open">⚠️放置${list.length}名</span>
+        </div>
+        ${list.map(x=>{const first=x.allMonths[0]||'';const g=gap(first);return`<div style="padding:8px 0;border-bottom:1px solid var(--border);cursor:pointer" onclick="App.closeModal();App.openEmployee('${x.e.id}')">
+          <div class="flex-between"><span style="font-weight:600">${x.e.name}</span><span style="color:var(--gray)">›</span></div>
+          <div style="margin-top:4px;display:flex;gap:6px;flex-wrap:wrap;align-items:center">
+            <span class="st-dot" style="background:var(--gray-light)">初回評価 ${first.replace('-','/')}</span>
+            <span class="st-dot st-open">放置${g}ヶ月</span>
+            ${x.open?`<span class="st-dot st-open">要改善${x.open}</span>`:''}${x.fixed?`<span class="st-dot st-fixed">改善済${x.fixed}</span>`:''}
+          </div>
+        </div>`}).join('')}
+      </div>`).join('');
+    html+=`<div class="text-sub" style="font-size:11px">タップでクルー詳細へ。放置が長い順に表示しています。</div>`;
     document.getElementById('modal-detail-body').innerHTML=html;
     this._openModal('modal-detail');
   },
