@@ -9,7 +9,7 @@
   <title>接客評価システム｜阪口商店</title>
 <script>
 (function(){
-  var VER = '20260720-1';
+  var VER = '20260720-2';
   var stored = localStorage.getItem('_evalAppVer');
   var param  = new URLSearchParams(location.search).get('_v');
   if (stored !== VER) {
@@ -1347,7 +1347,7 @@ const App={
     }).join('');
     const coachHtml=coachings.length?coachings.map(c=>{
       const when=c.createdAt?this._fmtDateTime(c.createdAt):this._fmtDateTime(c.date);
-      return`<div class="timeline-item"><div class="timeline-dot"></div><div class="timeline-body"><div class="timeline-meta"><span>🕒 ${when}</span><span class="badge badge-${this._roleClass(c.authorRole)}">${c.authorRole}</span><span>${c.authorName}</span></div><div>${c.content}</div>${c.photo?`<img src="${c.photo}" class="timeline-photo">`:''}</div></div>`;
+      return`<div class="timeline-item"><div class="timeline-dot"></div><div class="timeline-body"><div class="timeline-meta"><span>🕒 ${when}</span><span class="badge badge-${this._roleClass(c.authorRole)}">${c.authorRole}</span><span>${c.authorName}</span></div><div>${(c.content||'').replace(/\n/g,'<br>')}</div>${c.photo?`<img src="${c.photo}" class="timeline-photo">`:''}</div></div>`;
     }).join(''):'<div class="empty-state"><p>指導メモはまだありません</p></div>';
     const monthlyGraph=this._getMonthlyTrend(evals,e.id);
     const badges=this._roleBadges(e);
@@ -1473,7 +1473,7 @@ const App={
     const coachHtml=coachings.length?coachings.map(c=>{
       const when=c.createdAt?this._fmtDateTime(c.createdAt):this._fmtDateTime(c.date);
       const mtag=(c.date&&/^\d{4}-\d{2}$/.test(c.date))?`<span class="badge badge-crew" style="font-size:9px">${c.date.slice(0,4)}年${c.date.slice(5,7)}月度</span>`:'';
-      return`<div class="timeline-item"><div class="timeline-dot"></div><div class="timeline-body"><div class="timeline-meta"><span>🕒 ${when}</span>${mtag}<span class="badge badge-${this._roleClass(c.authorRole)}">${c.authorRole}</span><span>${c.authorName}</span></div><div>${c.content}</div>${c.photo?`<img src="${c.photo}" class="timeline-photo">`:''}</div></div>`;
+      return`<div class="timeline-item"><div class="timeline-dot"></div><div class="timeline-body"><div class="timeline-meta"><span>🕒 ${when}</span>${mtag}<span class="badge badge-${this._roleClass(c.authorRole)}">${c.authorRole}</span><span>${c.authorName}</span></div><div>${(c.content||'').replace(/\n/g,'<br>')}</div>${c.photo?`<img src="${c.photo}" class="timeline-photo">`:''}</div></div>`;
     }).join(''):'<div class="empty-state"><p>指導メモなし</p></div>';
     const canEdit=this._canEdit();
     const monthlyGraph=this._getMonthlyTrend(evals,id);
