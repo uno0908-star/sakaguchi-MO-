@@ -47,6 +47,24 @@
   .tabs button.on{background:var(--blue);color:#fff;border-color:var(--blue)}
   .hidden{display:none!important}
   h3{font-size:15px;margin:4px 0 8px}
+  /* 店舗別カード（スマホ最適化） */
+  .storecards{display:grid;grid-template-columns:1fr;gap:10px}
+  @media(min-width:640px){.storecards{grid-template-columns:1fr 1fr}}
+  .scard{border:1px solid var(--border);border-left:5px solid var(--green);border-radius:12px;padding:12px 14px;background:#fff}
+  .scard.pending{border-left-color:var(--orange)}
+  .scard.done{border-left-color:var(--green);background:#F0FDF4}
+  .scard .sh{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:8px}
+  .scard .sname{font-size:16px;font-weight:800}
+  .scard .sbadge{font-size:12px;font-weight:800;padding:4px 10px;border-radius:20px;white-space:nowrap}
+  .scard .sbadge.b-ok{background:#DCFCE7;color:#166534}
+  .scard .sbadge.b-warn{background:#FFEDD5;color:#9A3412}
+  .scard .bar{height:12px;margin:6px 0}
+  .scard .snum{font-size:13px;color:var(--gray);margin-bottom:6px}
+  .scard .snum b{color:var(--text);font-size:15px}
+  .scard .sun-label{font-size:12px;font-weight:700;color:var(--orange);margin-bottom:4px}
+  .chips{display:flex;flex-wrap:wrap;gap:6px}
+  .chip{background:#FEF2F2;border:1px solid #FCA5A5;color:#B91C1C;border-radius:16px;padding:3px 10px;font-size:13px;font-weight:600}
+  .scard .alldone{font-size:13px;font-weight:700;color:var(--green)}
 </style>
 </head>
 <body>
@@ -99,10 +117,7 @@
       </div>
 
       <div id="tab-store">
-        <div class="tablewrap">
-          <table><thead><tr><th>店舗</th><th>対象</th><th>提出</th><th>未提出</th><th>提出率</th><th>未提出者</th></tr></thead>
-          <tbody id="store-body"></tbody></table>
-        </div>
+        <div id="store-cards" class="storecards"></div>
       </div>
 
       <div id="tab-unsigned" class="hidden">
@@ -214,14 +229,28 @@ function render(){
   document.getElementById('bar').style.width=rate+'%';
   document.getElementById('rate-txt').textContent=`${signed} / ${total} 名が提出済み（未提出 ${unsigned} 名）`;
 
-  // 店舗別
+  // 店舗別（カード型・未提出が多い順で上に）
   const byStore={};
   emps.forEach(e=>{(byStore[e.store]=byStore[e.store]||[]).push(e)});
-  document.getElementById('store-body').innerHTML=Object.keys(byStore).sort((a,b)=>String(a).localeCompare(String(b),'ja')).map(st=>{
-    const list=byStore[st], sg=list.filter(isSigned).length, un=list.length-sg;
-    const names=list.filter(e=>!isSigned(e)).map(e=>e.name).join('、');
+  const stKeys=Object.keys(byStore).map(st=>{
+    const list=byStore[st], sg=list.filter(isSigned).length;
+    return {st,list,sg,un:list.length-sg};
+  }).sort((a,b)=>b.un-a.un||String(a.st).localeCompare(String(b.st),'ja'));
+  document.getElementById('store-cards').innerHTML=stKeys.map(o=>{
+    const {st,list,sg,un}=o;
     const r=list.length?Math.round(sg/list.length*100):0;
-    return `<tr><td>${st}</td><td>${list.length}</td><td class="yes">${sg}</td><td class="${un?'no':''}">${un}</td><td>${r}%</td><td class="unsigned">${names||'—'}</td></tr>`;
+    const done=un===0;
+    const chips=list.filter(e=>!isSigned(e)).map(e=>`<span class="chip">${e.name}</span>`).join('');
+    return `<div class="scard ${done?'done':'pending'}">
+      <div class="sh">
+        <span class="sname">${st}</span>
+        <span class="sbadge ${done?'b-ok':'b-warn'}">${done?'✅ 完了':'未提出 '+un}</span>
+      </div>
+      <div class="bar"><i style="width:${r}%"></i></div>
+      <div class="snum">提出 <b>${sg}</b> / ${list.length}名（${r}%）</div>
+      ${done?'<div class="alldone">全員提出済み 🎉</div>'
+             :'<div class="sun-label">未提出者</div><div class="chips">'+chips+'</div>'}
+    </div>`;
   }).join('');
 
   // 未提出者
