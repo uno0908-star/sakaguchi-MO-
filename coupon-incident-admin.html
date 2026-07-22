@@ -189,9 +189,14 @@ async function load(){
     if(!er.ok)throw new Error(er.error||'名簿取得エラー');
     if(!ar.ok)throw new Error(ar.error||'署名取得エラー');
     // 在籍者のみ（退職を除外）＝レジを触る全従業員の母数
+    // ※Employeesマスタに同一IDの重複行があっても1人として数える（ID単位で重複排除）
+    const seen={};
     EMPS=(er.employees||[]).filter(e=>String(e.status||'')!=='退職').map(e=>({
       id:String(e.id),name:e.name,store:e.store||'（店舗未設定）',type:e.type
-    })).sort((a,b)=>String(a.store).localeCompare(String(b.store),'ja')||String(a.name).localeCompare(String(b.name),'ja'));
+    })).filter(e=>{
+      if(!e.id||seen[e.id])return false;
+      seen[e.id]=true;return true;
+    }).sort((a,b)=>String(a.store).localeCompare(String(b.store),'ja')||String(a.name).localeCompare(String(b.name),'ja'));
     SIGNED_MAP={};
     (ar.acks||[]).forEach(r=>{SIGNED_MAP[String(r['従業員番号'])]=r});
     fillStoreFilter();
