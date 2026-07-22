@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>クーポン不正 誓約書 署名一覧（管理／本部提出用）</title>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  :root{--blue:#005BAC;--green:#00A651;--red:#E53E3E;--gray:#6B7280;--bg:#F3F4F6;--border:#E5E7EB}
+  body{font-family:-apple-system,"Segoe UI","Hiragino Kaku Gothic ProN","Meiryo",sans-serif;background:var(--bg);color:#1F2937;line-height:1.5;-webkit-text-size-adjust:100%}
+  .wrap{max-width:1000px;margin:0 auto;padding:16px}
+  header{background:var(--blue);color:#fff;padding:16px;border-radius:12px;margin-bottom:16px}
+  header .t1{font-size:18px;font-weight:800}
+  header .t2{font-size:12px;opacity:.9;margin-top:2px}
+  .card{background:#fff;border:1px solid var(--border);border-radius:12px;padding:16px;margin-bottom:16px}
+  .btn{display:inline-block;padding:12px 18px;font-size:15px;font-weight:700;border:none;border-radius:10px;cursor:pointer}
+  .btn-green{background:var(--green);color:#fff}
+  .btn-blue{background:var(--blue);color:#fff}
+  .btn-gray{background:#6B7280;color:#fff}
+  .btn:disabled{background:#9CA3AF;cursor:not-allowed}
+  input[type=password],input[type=text]{width:100%;padding:12px;font-size:16px;border:2px solid var(--border);border-radius:10px}
+  input:focus{outline:none;border-color:var(--blue)}
+  .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+  .stat{display:flex;gap:16px;flex-wrap:wrap;margin-bottom:12px}
+  .stat .b{background:#EBF3FB;border:1px solid #BFDBFE;border-radius:10px;padding:10px 14px;text-align:center;min-width:110px}
+  .stat .b .n{font-size:24px;font-weight:800;color:var(--blue)}
+  .stat .b .l{font-size:11px;color:var(--gray)}
+  .tablewrap{overflow-x:auto;border:1px solid var(--border);border-radius:10px}
+  table{border-collapse:collapse;width:100%;font-size:13px;white-space:nowrap}
+  th,td{border:1px solid var(--border);padding:8px 10px;text-align:left}
+  th{background:#F9FAFB;font-weight:700;position:sticky;top:0}
+  tr:nth-child(even) td{background:#FAFAFA}
+  .yes{color:var(--green);font-weight:700}
+  .err{color:var(--red);font-weight:600;margin-top:8px}
+  .muted{color:var(--gray);font-size:13px}
+  .hidden{display:none!important}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="t1">クーポン不正 誓約書 署名一覧</div>
+    <div class="t2">管理者用（本部提出用Excel出力）｜ 有限会社阪口商店</div>
+  </header>
+
+  <!-- パスコード -->
+  <div class="card" id="gate">
+    <div style="font-weight:700;margin-bottom:8px">管理パスコード</div>
+    <input type="password" id="pass" placeholder="パスコードを入力" autocomplete="off">
+    <div class="err hidden" id="gate-err">パスコードが違います</div>
+    <button class="btn btn-blue" style="margin-top:12px" onclick="unlock()">開く</button>
+  </div>
+
+  <!-- 本体 -->
+  <div id="main" class="hidden">
+    <div class="card">
+      <div class="row" style="justify-content:space-between">
+        <div class="muted" id="updated">読み込み中...</div>
+        <div class="row">
+          <button class="btn btn-gray" onclick="load()">🔄 更新</button>
+          <button class="btn btn-green" id="btn-xlsx" onclick="downloadXlsx()">⬇ Excel(.xlsx)</button>
+          <button class="btn btn-blue" id="btn-csv" onclick="downloadCsv()">⬇ CSV</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="stat" id="stat"></div>
+      <div class="tablewrap">
+        <table id="tbl">
+          <thead><tr id="thead"></tr></thead>
+          <tbody id="tbody"></tbody>
+        </table>
+      </div>
+      <div class="err hidden" id="load-err"></div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<script>
+const GAS_URL='https://script.google.com/macros/s/AKfycbyHEBH5Q8VBcZFBzfH5tYQm46RCa_fYw3PDlKp1qA5E9EWmR44OQ8UA1JTXFa-stnbG8g/exec';
+const INCIDENT_ID='COUPON2026-07';
+const PASS='Lawson3963';
+const LANG_NAME={ja:'日本語',en:'英語',ne:'ネパール語',vi:'ベトナム語'};
+const COLS=['従業員番号','氏名','店舗','雇用区分','同意_懲戒解雇','同意_損害賠償','電子署名','言語','同意日時'];
+let ROWS=[];
+
+function unlock(){
+  const v=document.getElementById('pass').value;
+  if(v!==PASS){document.getElementById('gate-err').classList.remove('hidden');return}
+  document.getElementById('gate').classList.add('hidden');
+  document.getElementById('main').classList.remove('hidden');
+  load();
+}
+
+function fmtDate(iso){
+  if(!iso)return '';
+  const d=new Date(iso);
+  if(isNaN(d))return iso;
+  const p=n=>String(n).padStart(2,'0');
+  return d.getFullYear()+'/'+p(d.getMonth()+1)+'/'+p(d.getDate())+' '+p(d.getHours())+':'+p(d.getMinutes());
+}
+
+async function load(){
+  const err=document.getElementById('load-err');err.classList.add('hidden');
+  document.getElementById('updated').textContent='読み込み中...';
+  try{
+    const res=await fetch(`${GAS_URL}?action=getIncidentAck&incident=${encodeURIComponent(INCIDENT_ID)}`,{redirect:'follow'});
+    const d=await res.json();
+    if(!d.ok)throw new Error(d.error||'取得エラー');
+    ROWS=(d.acks||[]).slice().sort((a,b)=>String(a['同意日時']).localeCompare(String(b['同意日時'])));
+    render();
+    document.getElementById('updated').textContent='最終更新: '+fmtDate(new Date().toISOString())+'（'+ROWS.length+'件）';
+  }catch(e){
+    err.textContent='読み込みに失敗しました: '+e.message;err.classList.remove('hidden');
+    document.getElementById('updated').textContent='';
+  }
+}
+
+function render(){
+  // 統計
+  const total=ROWS.length;
+  const stores={};
+  ROWS.forEach(r=>{stores[r['店舗']||'不明']=true});
+  document.getElementById('stat').innerHTML=
+    `<div class="b"><div class="n">${total}</div><div class="l">署名済み人数</div></div>`+
+    `<div class="b"><div class="n">${Object.keys(stores).length}</div><div class="l">対象店舗数</div></div>`;
+  // ヘッダ
+  document.getElementById('thead').innerHTML='<th>#</th>'+COLS.map(c=>`<th>${c}</th>`).join('');
+  // 行
+  document.getElementById('tbody').innerHTML=ROWS.map((r,i)=>{
+    const tds=COLS.map(c=>{
+      let v=r[c]==null?'':String(r[c]);
+      if(c==='同意日時')v=fmtDate(v);
+      if(c==='言語')v=LANG_NAME[v]||v;
+      if(c.indexOf('同意_')===0)return `<td class="yes">${v}</td>`;
+      return `<td>${v}</td>`;
+    }).join('');
+    return `<tr><td>${i+1}</td>${tds}</tr>`;
+  }).join('');
+}
+
+function tableData(){
+  const header=['No.'].concat(COLS);
+  const rows=ROWS.map((r,i)=>[i+1].concat(COLS.map(c=>{
+    let v=r[c]==null?'':String(r[c]);
+    if(c==='同意日時')v=fmtDate(v);
+    if(c==='言語')v=LANG_NAME[v]||v;
+    return v;
+  })));
+  return [header].concat(rows);
+}
+
+function stamp(){const d=new Date();const p=n=>String(n).padStart(2,'0');return d.getFullYear()+p(d.getMonth()+1)+p(d.getDate())}
+
+function downloadXlsx(){
+  if(!ROWS.length){alert('データがありません');return}
+  if(typeof XLSX==='undefined'){alert('Excelライブラリを読み込めませんでした。CSVをご利用ください。');return}
+  const ws=XLSX.utils.aoa_to_sheet(tableData());
+  ws['!cols']=[{wch:5},{wch:11},{wch:14},{wch:16},{wch:12},{wch:14},{wch:14},{wch:16},{wch:10},{wch:18}];
+  const wb=XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb,ws,'クーポン不正誓約書');
+  XLSX.writeFile(wb,`クーポン不正誓約書_署名一覧_${stamp()}.xlsx`);
+}
+
+function downloadCsv(){
+  if(!ROWS.length){alert('データがありません');return}
+  const esc=v=>{v=String(v);return /[",\n]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v};
+  const csv=tableData().map(row=>row.map(esc).join(',')).join('\r\n');
+  const blob=new Blob(['﻿'+csv],{type:'text/csv;charset=utf-8'});
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);
+  a.download=`クーポン不正誓約書_署名一覧_${stamp()}.csv`;
+  a.click();
+  URL.revokeObjectURL(a.href);
+}
+
+document.getElementById('pass').addEventListener('keydown',e=>{if(e.key==='Enter')unlock()});
+</script>
+</body>
+</html>
