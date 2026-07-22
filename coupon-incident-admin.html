@@ -3,44 +3,57 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>クーポン不正 誓約書 署名一覧（管理／本部提出用）</title>
+<title>クーポン不正 誓約書 回収状況（管理／本部提出用）</title>
 <style>
   *{box-sizing:border-box;margin:0;padding:0}
-  :root{--blue:#005BAC;--green:#00A651;--red:#E53E3E;--gray:#6B7280;--bg:#F3F4F6;--border:#E5E7EB}
+  :root{--blue:#005BAC;--green:#00A651;--red:#E53E3E;--orange:#EA580C;--gray:#6B7280;--bg:#F3F4F6;--border:#E5E7EB}
   body{font-family:-apple-system,"Segoe UI","Hiragino Kaku Gothic ProN","Meiryo",sans-serif;background:var(--bg);color:#1F2937;line-height:1.5;-webkit-text-size-adjust:100%}
-  .wrap{max-width:1000px;margin:0 auto;padding:16px}
-  header{background:var(--blue);color:#fff;padding:16px;border-radius:12px;margin-bottom:16px}
+  .wrap{max-width:1000px;margin:0 auto;padding:14px}
+  header{background:var(--blue);color:#fff;padding:16px;border-radius:12px;margin-bottom:14px}
   header .t1{font-size:18px;font-weight:800}
   header .t2{font-size:12px;opacity:.9;margin-top:2px}
-  .card{background:#fff;border:1px solid var(--border);border-radius:12px;padding:16px;margin-bottom:16px}
-  .btn{display:inline-block;padding:12px 18px;font-size:15px;font-weight:700;border:none;border-radius:10px;cursor:pointer}
+  .card{background:#fff;border:1px solid var(--border);border-radius:12px;padding:14px;margin-bottom:14px}
+  .btn{display:inline-block;padding:11px 16px;font-size:14px;font-weight:700;border:none;border-radius:10px;cursor:pointer}
   .btn-green{background:var(--green);color:#fff}
   .btn-blue{background:var(--blue);color:#fff}
   .btn-gray{background:#6B7280;color:#fff}
   .btn:disabled{background:#9CA3AF;cursor:not-allowed}
-  input[type=password],input[type=text]{width:100%;padding:12px;font-size:16px;border:2px solid var(--border);border-radius:10px}
-  input:focus{outline:none;border-color:var(--blue)}
+  input[type=password],input[type=text],select{width:100%;padding:12px;font-size:16px;border:2px solid var(--border);border-radius:10px}
+  input:focus,select:focus{outline:none;border-color:var(--blue)}
   .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
-  .stat{display:flex;gap:16px;flex-wrap:wrap;margin-bottom:12px}
-  .stat .b{background:#EBF3FB;border:1px solid #BFDBFE;border-radius:10px;padding:10px 14px;text-align:center;min-width:110px}
+  .between{justify-content:space-between}
+  .stat{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:8px}
+  .stat .b{background:#EBF3FB;border:1px solid #BFDBFE;border-radius:10px;padding:10px 14px;text-align:center;min-width:100px;flex:1}
+  .stat .b.warn{background:#FFF7ED;border-color:#FED7AA}
+  .stat .b.ok{background:#F0FDF4;border-color:#BBF7D0}
   .stat .b .n{font-size:24px;font-weight:800;color:var(--blue)}
+  .stat .b.warn .n{color:var(--orange)}
+  .stat .b.ok .n{color:var(--green)}
   .stat .b .l{font-size:11px;color:var(--gray)}
+  .bar{height:14px;background:#E5E7EB;border-radius:8px;overflow:hidden;margin:8px 0}
+  .bar > i{display:block;height:100%;background:var(--green)}
   .tablewrap{overflow-x:auto;border:1px solid var(--border);border-radius:10px}
-  table{border-collapse:collapse;width:100%;font-size:13px;white-space:nowrap}
-  th,td{border:1px solid var(--border);padding:8px 10px;text-align:left}
-  th{background:#F9FAFB;font-weight:700;position:sticky;top:0}
+  table{border-collapse:collapse;width:100%;font-size:13px}
+  th,td{border:1px solid var(--border);padding:7px 9px;text-align:left;white-space:nowrap}
+  th{background:#F9FAFB;font-weight:700}
   tr:nth-child(even) td{background:#FAFAFA}
   .yes{color:var(--green);font-weight:700}
+  .no{color:var(--red);font-weight:700}
+  .unsigned{color:var(--red);font-weight:600;white-space:normal}
   .err{color:var(--red);font-weight:600;margin-top:8px}
-  .muted{color:var(--gray);font-size:13px}
+  .muted{color:var(--gray);font-size:12px}
+  .tabs{display:flex;gap:6px;margin-bottom:10px;flex-wrap:wrap}
+  .tabs button{padding:9px 14px;font-size:14px;font-weight:700;border:2px solid var(--border);background:#fff;border-radius:9px;cursor:pointer}
+  .tabs button.on{background:var(--blue);color:#fff;border-color:var(--blue)}
   .hidden{display:none!important}
+  h3{font-size:15px;margin:4px 0 8px}
 </style>
 </head>
 <body>
 <div class="wrap">
   <header>
-    <div class="t1">クーポン不正 誓約書 署名一覧</div>
-    <div class="t2">管理者用（本部提出用Excel出力）｜ 有限会社阪口商店</div>
+    <div class="t1">クーポン不正 誓約書 回収状況</div>
+    <div class="t2">管理者用（未提出者の把握・本部提出用Excel出力）｜ 有限会社阪口商店</div>
   </header>
 
   <!-- パスコード -->
@@ -54,24 +67,57 @@
   <!-- 本体 -->
   <div id="main" class="hidden">
     <div class="card">
-      <div class="row" style="justify-content:space-between">
+      <div class="row between">
         <div class="muted" id="updated">読み込み中...</div>
         <div class="row">
-          <button class="btn btn-gray" onclick="load()">🔄 更新</button>
+          <label class="muted" style="display:flex;align-items:center;gap:6px"><input type="checkbox" id="auto" checked style="width:18px;height:18px"> 10分ごと自動更新</label>
+          <button class="btn btn-gray" onclick="load()">🔄 今すぐ更新</button>
           <button class="btn btn-green" id="btn-xlsx" onclick="downloadXlsx()">⬇ Excel(.xlsx)</button>
           <button class="btn btn-blue" id="btn-csv" onclick="downloadCsv()">⬇ CSV</button>
         </div>
       </div>
     </div>
 
+    <!-- 全体サマリ -->
     <div class="card">
       <div class="stat" id="stat"></div>
-      <div class="tablewrap">
-        <table id="tbl">
-          <thead><tr id="thead"></tr></thead>
-          <tbody id="tbody"></tbody>
-        </table>
+      <div class="bar"><i id="bar" style="width:0%"></i></div>
+      <div class="muted" id="rate-txt"></div>
+    </div>
+
+    <!-- 店舗フィルタ＋タブ -->
+    <div class="card">
+      <div class="row" style="margin-bottom:10px">
+        <div style="flex:1;min-width:180px">
+          <select id="store-filter" onchange="render()"><option value="">すべての店舗</option></select>
+        </div>
       </div>
+      <div class="tabs">
+        <button class="on" data-tab="store" onclick="setTab('store')">店舗別 提出状況</button>
+        <button data-tab="unsigned" onclick="setTab('unsigned')">未提出者一覧</button>
+        <button data-tab="signed" onclick="setTab('signed')">署名済み一覧</button>
+      </div>
+
+      <div id="tab-store">
+        <div class="tablewrap">
+          <table><thead><tr><th>店舗</th><th>対象</th><th>提出</th><th>未提出</th><th>提出率</th><th>未提出者</th></tr></thead>
+          <tbody id="store-body"></tbody></table>
+        </div>
+      </div>
+
+      <div id="tab-unsigned" class="hidden">
+        <div class="tablewrap">
+          <table><thead><tr><th>#</th><th>店舗</th><th>従業員番号</th><th>氏名</th><th>雇用区分</th></tr></thead>
+          <tbody id="unsigned-body"></tbody></table>
+        </div>
+      </div>
+
+      <div id="tab-signed" class="hidden">
+        <div class="tablewrap">
+          <table><thead><tr id="signed-head"></tr></thead><tbody id="signed-body"></tbody></table>
+        </div>
+      </div>
+
       <div class="err hidden" id="load-err"></div>
     </div>
   </div>
@@ -83,54 +129,112 @@ const GAS_URL='https://script.google.com/macros/s/AKfycbyHEBH5Q8VBcZFBzfH5tYQm46
 const INCIDENT_ID='COUPON2026-07';
 const PASS='Lawson3963';
 const LANG_NAME={ja:'日本語',en:'英語',ne:'ネパール語',vi:'ベトナム語'};
-const COLS=['従業員番号','氏名','店舗','雇用区分','同意_懲戒解雇','同意_損害賠償','電子署名','言語','同意日時'];
-let ROWS=[];
+const TYPE_NAME={Crew:'アルバイト',ContractEmployee:'契約社員',FullTimeEmployee:'正社員'};
+const SIGNED_COLS=['従業員番号','氏名','店舗','雇用区分','同意_懲戒解雇','同意_損害賠償','電子署名','言語','同意日時'];
+
+let EMPS=[];         // 在籍者（レジ対象）
+let SIGNED_MAP={};   // 従業員番号 -> 署名レコード
+let TAB='store';
+let timer=null;
 
 function unlock(){
-  const v=document.getElementById('pass').value;
-  if(v!==PASS){document.getElementById('gate-err').classList.remove('hidden');return}
+  if(document.getElementById('pass').value!==PASS){document.getElementById('gate-err').classList.remove('hidden');return}
   document.getElementById('gate').classList.add('hidden');
   document.getElementById('main').classList.remove('hidden');
   load();
+  document.getElementById('auto').addEventListener('change',setupAuto);
+  setupAuto();
+}
+function setupAuto(){
+  if(timer){clearInterval(timer);timer=null}
+  if(document.getElementById('auto').checked){timer=setInterval(load,10*60*1000)}
+}
+function setTab(t){
+  TAB=t;
+  document.querySelectorAll('.tabs button').forEach(b=>b.classList.toggle('on',b.getAttribute('data-tab')===t));
+  ['store','unsigned','signed'].forEach(x=>document.getElementById('tab-'+x).classList.toggle('hidden',x!==t));
 }
 
 function fmtDate(iso){
   if(!iso)return '';
-  const d=new Date(iso);
-  if(isNaN(d))return iso;
+  const d=new Date(iso);if(isNaN(d))return iso;
   const p=n=>String(n).padStart(2,'0');
   return d.getFullYear()+'/'+p(d.getMonth()+1)+'/'+p(d.getDate())+' '+p(d.getHours())+':'+p(d.getMinutes());
 }
+function typeName(t){return TYPE_NAME[t]||t||''}
 
 async function load(){
   const err=document.getElementById('load-err');err.classList.add('hidden');
   document.getElementById('updated').textContent='読み込み中...';
   try{
-    const res=await fetch(`${GAS_URL}?action=getIncidentAck&incident=${encodeURIComponent(INCIDENT_ID)}`,{redirect:'follow'});
-    const d=await res.json();
-    if(!d.ok)throw new Error(d.error||'取得エラー');
-    ROWS=(d.acks||[]).slice().sort((a,b)=>String(a['同意日時']).localeCompare(String(b['同意日時'])));
+    const [er,ar]=await Promise.all([
+      fetch(`${GAS_URL}?action=getEmployees`,{redirect:'follow'}).then(r=>r.json()),
+      fetch(`${GAS_URL}?action=getIncidentAck&incident=${encodeURIComponent(INCIDENT_ID)}`,{redirect:'follow'}).then(r=>r.json())
+    ]);
+    if(!er.ok)throw new Error(er.error||'名簿取得エラー');
+    if(!ar.ok)throw new Error(ar.error||'署名取得エラー');
+    // 在籍者のみ（退職を除外）＝レジを触る全従業員の母数
+    EMPS=(er.employees||[]).filter(e=>String(e.status||'')!=='退職').map(e=>({
+      id:String(e.id),name:e.name,store:e.store||'（店舗未設定）',type:e.type
+    })).sort((a,b)=>String(a.store).localeCompare(String(b.store),'ja')||String(a.name).localeCompare(String(b.name),'ja'));
+    SIGNED_MAP={};
+    (ar.acks||[]).forEach(r=>{SIGNED_MAP[String(r['従業員番号'])]=r});
+    fillStoreFilter();
     render();
-    document.getElementById('updated').textContent='最終更新: '+fmtDate(new Date().toISOString())+'（'+ROWS.length+'件）';
+    document.getElementById('updated').textContent='最終更新: '+fmtDate(new Date().toISOString());
   }catch(e){
     err.textContent='読み込みに失敗しました: '+e.message;err.classList.remove('hidden');
     document.getElementById('updated').textContent='';
   }
 }
 
+function fillStoreFilter(){
+  const sel=document.getElementById('store-filter');
+  const cur=sel.value;
+  const stores=Array.from(new Set(EMPS.map(e=>e.store))).sort((a,b)=>String(a).localeCompare(String(b),'ja'));
+  sel.innerHTML='<option value="">すべての店舗</option>'+stores.map(s=>`<option value="${s}">${s}</option>`).join('');
+  sel.value=cur;
+}
+
+function filtered(){
+  const f=document.getElementById('store-filter').value;
+  return f?EMPS.filter(e=>e.store===f):EMPS;
+}
+function isSigned(e){return !!SIGNED_MAP[e.id]}
+
 function render(){
-  // 統計
-  const total=ROWS.length;
-  const stores={};
-  ROWS.forEach(r=>{stores[r['店舗']||'不明']=true});
+  const emps=filtered();
+  const total=emps.length, signed=emps.filter(isSigned).length, unsigned=total-signed;
+  const rate=total?Math.round(signed/total*100):0;
   document.getElementById('stat').innerHTML=
-    `<div class="b"><div class="n">${total}</div><div class="l">署名済み人数</div></div>`+
-    `<div class="b"><div class="n">${Object.keys(stores).length}</div><div class="l">対象店舗数</div></div>`;
-  // ヘッダ
-  document.getElementById('thead').innerHTML='<th>#</th>'+COLS.map(c=>`<th>${c}</th>`).join('');
-  // 行
-  document.getElementById('tbody').innerHTML=ROWS.map((r,i)=>{
-    const tds=COLS.map(c=>{
+    `<div class="b"><div class="n">${total}</div><div class="l">対象人数</div></div>`+
+    `<div class="b ok"><div class="n">${signed}</div><div class="l">提出済み</div></div>`+
+    `<div class="b warn"><div class="n">${unsigned}</div><div class="l">未提出</div></div>`+
+    `<div class="b"><div class="n">${rate}%</div><div class="l">提出率</div></div>`;
+  document.getElementById('bar').style.width=rate+'%';
+  document.getElementById('rate-txt').textContent=`${signed} / ${total} 名が提出済み（未提出 ${unsigned} 名）`;
+
+  // 店舗別
+  const byStore={};
+  emps.forEach(e=>{(byStore[e.store]=byStore[e.store]||[]).push(e)});
+  document.getElementById('store-body').innerHTML=Object.keys(byStore).sort((a,b)=>String(a).localeCompare(String(b),'ja')).map(st=>{
+    const list=byStore[st], sg=list.filter(isSigned).length, un=list.length-sg;
+    const names=list.filter(e=>!isSigned(e)).map(e=>e.name).join('、');
+    const r=list.length?Math.round(sg/list.length*100):0;
+    return `<tr><td>${st}</td><td>${list.length}</td><td class="yes">${sg}</td><td class="${un?'no':''}">${un}</td><td>${r}%</td><td class="unsigned">${names||'—'}</td></tr>`;
+  }).join('');
+
+  // 未提出者
+  const un=emps.filter(e=>!isSigned(e));
+  document.getElementById('unsigned-body').innerHTML=un.length
+    ?un.map((e,i)=>`<tr><td>${i+1}</td><td>${e.store}</td><td>${e.id}</td><td>${e.name}</td><td>${typeName(e.type)}</td></tr>`).join('')
+    :`<tr><td colspan="5" style="text-align:center;color:var(--green);font-weight:700">全員提出済みです 🎉</td></tr>`;
+
+  // 署名済み
+  document.getElementById('signed-head').innerHTML='<th>#</th>'+SIGNED_COLS.map(c=>`<th>${c}</th>`).join('');
+  const sgList=emps.filter(isSigned).map(e=>SIGNED_MAP[e.id]).sort((a,b)=>String(a['同意日時']).localeCompare(String(b['同意日時'])));
+  document.getElementById('signed-body').innerHTML=sgList.map((r,i)=>{
+    const tds=SIGNED_COLS.map(c=>{
       let v=r[c]==null?'':String(r[c]);
       if(c==='同意日時')v=fmtDate(v);
       if(c==='言語')v=LANG_NAME[v]||v;
@@ -141,39 +245,36 @@ function render(){
   }).join('');
 }
 
-function tableData(){
-  const header=['No.'].concat(COLS);
-  const rows=ROWS.map((r,i)=>[i+1].concat(COLS.map(c=>{
-    let v=r[c]==null?'':String(r[c]);
-    if(c==='同意日時')v=fmtDate(v);
-    if(c==='言語')v=LANG_NAME[v]||v;
-    return v;
-  })));
+// 名簿ベースの提出状況（本部提出・未提出者も含めて全員分）
+function rosterData(){
+  const header=['No.','店舗','従業員番号','氏名','雇用区分','署名状況','同意_懲戒解雇','同意_損害賠償','電子署名','言語','同意日時'];
+  const rows=filtered().map((e,i)=>{
+    const s=SIGNED_MAP[e.id];
+    return [i+1,e.store,e.id,e.name,typeName(e.type),
+      s?'提出済み':'未提出',
+      s?s['同意_懲戒解雇']:'', s?s['同意_損害賠償']:'', s?s['電子署名']:'',
+      s?(LANG_NAME[s['言語']]||s['言語']):'', s?fmtDate(s['同意日時']):''];
+  });
   return [header].concat(rows);
 }
-
-function stamp(){const d=new Date();const p=n=>String(n).padStart(2,'0');return d.getFullYear()+p(d.getMonth()+1)+p(d.getDate())}
+function stamp(){const d=new Date();const p=n=>String(n).padStart(2,'0');return d.getFullYear()+p(d.getMonth()+1)+p(d.getDate())+'_'+p(d.getHours())+p(d.getMinutes())}
 
 function downloadXlsx(){
-  if(!ROWS.length){alert('データがありません');return}
+  if(!EMPS.length){alert('データがありません');return}
   if(typeof XLSX==='undefined'){alert('Excelライブラリを読み込めませんでした。CSVをご利用ください。');return}
-  const ws=XLSX.utils.aoa_to_sheet(tableData());
-  ws['!cols']=[{wch:5},{wch:11},{wch:14},{wch:16},{wch:12},{wch:14},{wch:14},{wch:16},{wch:10},{wch:18}];
+  const ws=XLSX.utils.aoa_to_sheet(rosterData());
+  ws['!cols']=[{wch:5},{wch:14},{wch:11},{wch:14},{wch:10},{wch:10},{wch:12},{wch:12},{wch:14},{wch:10},{wch:17}];
   const wb=XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb,ws,'クーポン不正誓約書');
-  XLSX.writeFile(wb,`クーポン不正誓約書_署名一覧_${stamp()}.xlsx`);
+  XLSX.writeFile(wb,`クーポン不正誓約書_回収状況_${stamp()}.xlsx`);
 }
-
 function downloadCsv(){
-  if(!ROWS.length){alert('データがありません');return}
+  if(!EMPS.length){alert('データがありません');return}
   const esc=v=>{v=String(v);return /[",\n]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v};
-  const csv=tableData().map(row=>row.map(esc).join(',')).join('\r\n');
+  const csv=rosterData().map(r=>r.map(esc).join(',')).join('\r\n');
   const blob=new Blob(['﻿'+csv],{type:'text/csv;charset=utf-8'});
-  const a=document.createElement('a');
-  a.href=URL.createObjectURL(blob);
-  a.download=`クーポン不正誓約書_署名一覧_${stamp()}.csv`;
-  a.click();
-  URL.revokeObjectURL(a.href);
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);
+  a.download=`クーポン不正誓約書_回収状況_${stamp()}.csv`;a.click();URL.revokeObjectURL(a.href);
 }
 
 document.getElementById('pass').addEventListener('keydown',e=>{if(e.key==='Enter')unlock()});
