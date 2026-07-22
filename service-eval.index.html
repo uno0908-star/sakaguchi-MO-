@@ -481,8 +481,9 @@ input,select,textarea,button{font-family:inherit;font-size:14px}
 /* GAS WebアプリURL（固定） */
 const GAS_URL='https://script.google.com/macros/s/AKfycbyHEBH5Q8VBcZFBzfH5tYQm46RCa_fYw3PDlKp1qA5E9EWmR44OQ8UA1JTXFa-stnbG8g/exec';
 /* 完全削除する従業員ID（全端末で常に一覧・同期から除外し、GASにも残らないよう自動削除）
-   4189928=ブイ ティ トゥ チャン(吹田垂水三丁目) / 7192986=ビスタ ラチミ(豊中服部元町一丁目) … 二重登録の解消 */
-const REMOVED_EMPLOYEE_IDS=['4189928','7192986'];
+   7192986=ビスタ ラチミ(改番ミスで生成された架空ID・本物は7192985) … 二重登録の解消
+   ※旧: 4189928 を誤って削除対象にしていた（本物のID）。掛け持ち2店舗を別人と誤認した改番ミス。2026-07-22に除去・本物IDへ復旧 */
+const REMOVED_EMPLOYEE_IDS=['7192986'];
 
 const STORAGE_KEYS={EMPLOYEES:'se_employees',EVALUATIONS:'se_evaluations',COACHINGS:'se_coachings',OBSERVATIONS:'se_observations',USERS:'se_users',USER:'se_user',DISCUSSIONS:'se_discussions'};
 const Storage=(()=>{
@@ -978,7 +979,7 @@ const INITIAL_EMPLOYEES=[
   {id:'9160803',name:'アシス ポウデル',store:'江坂東',type:'Crew'},
   {id:'9968652',name:'中村 俊哉',store:'江坂東',type:'ContractEmployee'},
   {id:'7050784',name:'ダハル ガネス',store:'江坂東',type:'FullTimeEmployee'},
-  {id:'4189929',name:'ブイ ティ トゥ チャン',store:'吹田豊津中学校前',type:'Crew'},
+  {id:'4189928',name:'ブイ ティ トゥ チャン',store:'吹田豊津中学校前',type:'Crew'},
   {id:'5370647',name:'堀江 和恵',store:'吹田豊津中学校前',type:'Crew'},
   {id:'6109145',name:'北野 美香',store:'吹田豊津中学校前',type:'Crew'},
   {id:'6174674',name:'バニヤ カリナ',store:'吹田豊津中学校前',type:'Crew'},
@@ -1081,9 +1082,9 @@ const CREW_ROSTER=[{id:"5123059",name:"堀 智晶",store:"五月ケ丘東",type:
 /* 在籍年数の基準月。TENURE_MAPの各値はこの月時点の在籍月数。表示時はこの月からの経過月数を自動加算（全員毎月+1） */
 const TENURE_BASELINE_MONTH='2026-06';
 /* CREW_ROSTERに無いが在籍年数を補完するID（給与情報タブ「在籍年数（ヶ月）」2026-06時点 由来）。
-   4189929=ブイ ティ トゥ チャン（双子ID4189928と同一人物・基準3ヶ月）／
+   4189928=ブイ ティ トゥ チャン（本物のID・基準3ヶ月。掛け持ち2店舗を別人と誤認した改番ミスを2026-07-22に修正）／
    以下5名はCrewRoster未掲載だが給与情報に在籍あり（パラズリ/ゴレ/シャンタン/ブジェル/ラナ） */
-const TENURE_EXTRA={'4189929':3,'4185656':6,'8175006':13,'8175009':13,'5125663':40,'8171186':14};
+const TENURE_EXTRA={'4189928':3,'4185656':6,'8175006':13,'8175009':13,'5125663':40,'8171186':14};
 const TENURE_MAP=(()=>{const m={};CREW_ROSTER.forEach(r=>{m[String(r.id)]=r.m});Object.keys(TENURE_EXTRA).forEach(k=>{m[k]=TENURE_EXTRA[k]});return m})();
 
 const DB={employees(){return Storage.getEmployees()},evaluations(){return Storage.getEvaluations()},coachings(){return Storage.getCoachings()},observations(){return Storage.getObservations()},user(){return Storage.getUser()},discussions(){return Storage.getDiscussions()}};
