@@ -46,6 +46,7 @@
   .agree input{width:24px;height:24px;flex-shrink:0;margin-top:2px}
   .agree label{font-size:14px;font-weight:700}
   .err{color:var(--red);font-size:13px;margin-top:6px;font-weight:600;display:none}
+  .signnote{background:#FFFBEB;border:1px solid #FDE68A;border-radius:8px;padding:8px 10px;font-size:12px;color:#92400E;font-weight:600;margin-bottom:10px}
   .modal{position:fixed;inset:0;background:rgba(0,0,0,.55);display:none;align-items:center;justify-content:center;z-index:100;padding:24px}
   .modal.show{display:flex}
   .modal .box{background:#fff;border-radius:14px;padding:24px;max-width:380px;text-align:center}
@@ -138,6 +139,7 @@
       <div class="card">
         <div class="label" data-i="sign_label"></div>
         <div class="hint" data-i="sign_hint"></div>
+        <div class="signnote" data-i="sign_note"></div>
         <input type="text" id="sign" style="letter-spacing:0;font-size:16px" oninput="updateBtn()">
         <div class="err" id="sign-err" data-i="sign_err"></div>
       </div>
@@ -204,6 +206,7 @@ const T={
     agree_all:'上記すべての内容を理解し、同意します。',
     sign_label:'電子署名',
     sign_hint:'上に表示された氏名と同じ氏名を入力してください（電子署名として記録されます）。',
+    sign_note:'⚠ 姓・名・ミドルネームの間には半角スペースを入力してください。登録された氏名と完全に一致させる必要があります。',
     sign_err:'氏名が一致しません',
     sign_ph:'氏名を入力',
     btn_submit:'同意して署名を送信',
@@ -239,6 +242,7 @@ const T={
     agree_all:'I have read, understood, and agree to all of the above.',
     sign_label:'Electronic Signature',
     sign_hint:'Type the same name as shown above (recorded as your electronic signature).',
+    sign_note:'⚠ Put a half-width (single-byte) space between your family name, given name, and middle name. It must exactly match your registered name.',
     sign_err:'Name does not match',
     sign_ph:'Type your name',
     btn_submit:'Agree & Submit Signature',
@@ -274,6 +278,7 @@ const T={
     agree_all:'माथिका सबै कुरा बुझेर म सहमत छु।',
     sign_label:'विद्युतीय हस्ताक्षर',
     sign_hint:'माथि देखाइएको नाम जस्तै नाम टाइप गर्नुहोस् (विद्युतीय हस्ताक्षरको रूपमा रेकर्ड हुन्छ)।',
+    sign_note:'⚠ थर, नाम र बीचको नाम (middle name) बीचमा आधा-चौडाइको स्पेस (half-width space) राख्नुहोस्। दर्ता भएको नामसँग पूर्ण रूपमा मिल्नुपर्छ।',
     sign_err:'नाम मिलेन',
     sign_ph:'नाम लेख्नुहोस्',
     btn_submit:'सहमत भई हस्ताक्षर पठाउनुहोस्',
@@ -309,6 +314,7 @@ const T={
     agree_all:'Tôi đã đọc, hiểu và đồng ý với tất cả nội dung trên.',
     sign_label:'Chữ ký điện tử',
     sign_hint:'Nhập đúng họ tên như hiển thị ở trên (được ghi lại làm chữ ký điện tử).',
+    sign_note:'⚠ Hãy chèn một dấu cách nửa (half-width space) giữa họ, tên và tên đệm. Phải khớp chính xác với tên đã đăng ký.',
     sign_err:'Họ tên không khớp',
     sign_ph:'Nhập họ tên',
     btn_submit:'Đồng ý & Gửi chữ ký',
