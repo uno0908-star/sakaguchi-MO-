@@ -190,8 +190,23 @@ async function load(){
     if(!ar.ok)throw new Error(ar.error||'署名取得エラー');
     // 在籍者のみ（退職を除外）＝レジを触る全従業員の母数
     // ※Employeesマスタに同一IDの重複行があっても1人として数える（ID単位で重複排除）
+    // ※退職判定は「ID単位」で行う。掛け持ち等で同一IDの行が複数あり、退職処理が
+    //   片方の行にしか反映されない（GAS upsertが最初の1行だけ更新）ケースがあるため、
+    //   いずれか1行でも退職なら、そのIDは在籍対象から除外する（復職済みは除外しない）。
+    const isRetired=st=>st==='退職'||st==='退職済'||st==='退職済み';
+    const retired={},reinstated={};
+    (er.employees||[]).forEach(e=>{
+      const id=String(e.id),st=String(e.status||'').trim();
+      if(isRetired(st))retired[id]=true;
+      if(st==='在籍中'&&String(e.reinstatedAt||'').trim())reinstated[id]=true;
+    });
     const seen={};
-    EMPS=(er.employees||[]).filter(e=>String(e.status||'')!=='退職').map(e=>({
+    EMPS=(er.employees||[]).filter(e=>{
+      const id=String(e.id),st=String(e.status||'').trim();
+      if(isRetired(st))return false;               // この行自体が退職
+      if(retired[id]&&!reinstated[id])return false; // 別店舗の行が退職＝退職済みとみなす
+      return true;
+    }).map(e=>({
       id:String(e.id),name:e.name,store:e.store||'（店舗未設定）',type:e.type
     })).filter(e=>{
       if(!e.id||seen[e.id])return false;
