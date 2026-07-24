@@ -103,6 +103,7 @@
     .mtbl tr:nth-child(even) td{background:#FAFBFC}
     .mtbl tr:nth-child(even) td:first-child{background:#FAFBFC}
     .c-ok{color:var(--green);font-size:1rem;font-weight:700;cursor:pointer}
+    .c-fail{color:var(--red);font-size:1rem;font-weight:700;cursor:pointer;background:var(--red-light)!important}
     .c-miss{color:var(--red);font-size:1rem;font-weight:700}
     .c-open{color:var(--orange);font-size:.95rem}
     .c-wait{color:#D1D5DB;font-size:.95rem}
@@ -137,7 +138,7 @@
     .modal-nav{display:flex;align-items:center;gap:14px;margin-top:14px}
     .modal-nav button{background:rgba(255,255,255,.9);border:none;border-radius:var(--rs);padding:9px 20px;font-size:.9rem;font-weight:700;cursor:pointer;font-family:var(--font)}
     #modal-cnt{color:#fff;font-size:.85rem;min-width:48px;text-align:center}
-    #modal-cap{color:#aaa;font-size:.75rem;margin-top:8px;text-align:center;max-width:90vw}
+    #modal-cap{color:#ddd;font-size:.78rem;margin-top:8px;text-align:center;max-width:90vw;white-space:pre-line;line-height:1.5}
     #modal-close{position:absolute;top:16px;right:16px;background:none;border:none;color:#fff;font-size:1.6rem;cursor:pointer;padding:6px;line-height:1}
 
     /* Toast */
@@ -149,6 +150,43 @@
     .loading{text-align:center;padding:40px;color:var(--gray-text)}
     .spin{display:inline-block;width:28px;height:28px;border:3px solid var(--gray-border);border-top-color:var(--blue);border-radius:50%;animation:sp .8s linear infinite}
     @keyframes sp{to{transform:rotate(360deg)}}
+
+    /* AI判定 */
+    .ai-item{display:flex;gap:10px;padding:10px;border-radius:var(--rs);margin-bottom:8px;align-items:flex-start}
+    .ai-item.pass{background:var(--green-light)}
+    .ai-item.fail{background:var(--red-light)}
+    .ai-item.unknown{background:var(--gray-bg)}
+    .ai-thumb{width:52px;height:52px;border-radius:var(--rs);object-fit:cover;flex-shrink:0;background:#eee}
+    .ai-info{flex:1;min-width:0}
+    .ai-cat{font-size:.86rem;font-weight:700;display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+    .ai-tag{font-size:.66rem;font-weight:700;padding:2px 8px;border-radius:99px;color:#fff}
+    .ai-tag.pass{background:var(--green)}
+    .ai-tag.fail{background:var(--red)}
+    .ai-tag.unknown{background:var(--gray-text)}
+    .ai-issues{font-size:.75rem;color:var(--red);margin-top:3px}
+    .ai-comment{font-size:.78rem;color:var(--gray-dark);margin-top:3px;line-height:1.45}
+    .ai-summary{text-align:center;padding:12px;border-radius:var(--rs);font-weight:700;font-size:.95rem;margin-bottom:12px}
+    .ai-summary.pass{background:var(--green-light);color:var(--green)}
+    .ai-summary.fail{background:var(--red-light);color:var(--red)}
+    .ai-progress{text-align:center;padding:20px;color:var(--blue);font-size:.9rem;font-weight:600}
+
+    /* 本日の自分の投稿 */
+    .mr-item{display:flex;gap:8px;align-items:center;padding:8px 0;border-bottom:1px solid var(--gray-border)}
+    .mr-item:last-child{border-bottom:none}
+    .mr-thumb{width:40px;height:40px;border-radius:var(--rs);object-fit:cover;background:#eee;flex-shrink:0}
+    .mr-info{flex:1;min-width:0;font-size:.78rem}
+    .mr-badge{font-size:.66rem;font-weight:700;padding:2px 8px;border-radius:99px;color:#fff;white-space:nowrap}
+
+    /* 判定バッジ（写真タブ・ダッシュ共通） */
+    .jbadge{display:inline-block;font-size:.64rem;font-weight:700;padding:1px 7px;border-radius:99px;color:#fff}
+    .jbadge.pass{background:var(--green)}
+    .jbadge.fail{background:var(--red)}
+    .jbadge.unknown{background:var(--gray-text)}
+
+    /* ダッシュ 要改善リスト */
+    .improve-item{display:flex;gap:8px;align-items:center;padding:8px;border-radius:var(--rs);background:var(--red-light);margin-bottom:6px;cursor:pointer}
+    .improve-item .ii-store{font-size:.8rem;font-weight:700;color:var(--red)}
+    .improve-item .ii-detail{font-size:.72rem;color:var(--gray-dark)}
   </style>
 </head>
 <body>
@@ -171,17 +209,23 @@
     <div class="card">
       <div class="fgroup">
         <label class="flabel">店舗</label>
-        <select id="sel-store" class="finput" onchange="saveLocal()">
+        <select id="sel-store" class="finput" onchange="saveLocal();loadMyRecent()">
           <option value="">店舗を選択してください</option>
         </select>
       </div>
       <div class="fgroup">
         <label class="flabel">お名前</label>
-        <input type="text" id="inp-name" class="finput" placeholder="例：田中" oninput="saveLocal()">
+        <input type="text" id="inp-name" class="finput" placeholder="例：田中" oninput="saveLocal()" onblur="loadMyRecent()">
       </div>
       <div class="fgroup">
         <label class="flabel">時間帯</label>
         <div class="slot-row" id="slot-chips"></div>
+      </div>
+      <div class="fgroup">
+        <label class="flabel">撮影箇所 <span style="font-weight:400;color:var(--gray-text)">（任意・選ぶとAI判定が正確に）</span></label>
+        <select id="sel-category" class="finput">
+          <option value="">選ばない（AIが自動で判別）</option>
+        </select>
       </div>
       <div class="fgroup">
         <label class="flabel">売場写真（複数枚可）</label>
@@ -196,7 +240,19 @@
         <label class="flabel">コメント（任意）</label>
         <textarea id="inp-comment" class="finput" placeholder="気になる点・欠品など"></textarea>
       </div>
-      <button class="btn-primary" id="submit-btn" onclick="submitForm()">送信する</button>
+      <button class="btn-primary" id="submit-btn" onclick="submitForm()">送信してAIチェック</button>
+    </div>
+
+    <!-- 送信直後のAI判定結果 -->
+    <div class="card" id="ai-result-card" style="display:none">
+      <p class="card-ttl">🤖 AI判定結果</p>
+      <div id="ai-result-body"></div>
+    </div>
+
+    <!-- 自分の本日の投稿 -->
+    <div class="card" id="my-recent-card" style="display:none">
+      <p class="card-ttl">📍 本日のあなたの投稿</p>
+      <div id="my-recent-body"></div>
     </div>
   </section>
 
@@ -281,6 +337,11 @@
 const GAS_URL    = 'https://script.google.com/macros/s/AKfycbyrnPSumoTQx7ubPNDpXMToDlDXWfZuCZFnfJ6euSrHloWJL-D3jvxWurGlPU2RC3NeMA/exec';
 const ADMIN_PASS = 'Lawson3963';
 const SLOTS      = [6, 9, 12, 15, 18, 21];
+const CATEGORIES = [
+  {id:1,name:'米飯ケース'},{id:2,name:'オープンケース'},{id:3,name:'デザート'},
+  {id:4,name:'ベーカリー'},{id:5,name:'冷蔵リーチインケース'},{id:6,name:'冷凍ケース'},
+  {id:7,name:'菓子'},{id:8,name:'即席麺'},{id:9,name:'無印良品・日用品'},{id:10,name:'売場全体'}
+];
 const STORES     = [
   {storeId:1, storeName:'吹田垂水三丁目'}, {storeId:2, storeName:'江坂東'},
   {storeId:3, storeName:'江坂駅南口'},     {storeId:4, storeName:'吹田警察署前'},
@@ -324,6 +385,10 @@ function init() {
     fSel.appendChild(o2);
   });
 
+  // 撮影箇所セレクト構築
+  const cSel = document.getElementById('sel-category');
+  CATEGORIES.forEach(c => cSel.appendChild(new Option(c.name, c.name)));
+
   // localStorage 復元
   const savedStore = localStorage.getItem('sc_store');
   const savedName  = localStorage.getItem('sc_name');
@@ -333,6 +398,9 @@ function init() {
 
   // 管理者復元
   if (S.isAdmin) unlockAdmin();
+
+  // 自分の本日の投稿を表示
+  loadMyRecent();
 
   // スロット構築 + 1分ごと更新
   buildSlotChips();
@@ -521,32 +589,86 @@ async function submitForm() {
   }
 
   const storeName = STORES.find(s => s.storeId === storeId)?.storeName || '';
+  const category  = document.getElementById('sel-category').value;
   const btn       = document.getElementById('submit-btn');
+  const photos    = S.pendingPhotos.slice();
   btn.disabled    = true;
-  btn.textContent = '送信中...';
+  btn.textContent = '送信中…AIチェック中';
   saveLocal();
+
+  // AI判定結果カードを「判定中」表示
+  const resCard = document.getElementById('ai-result-card');
+  const resBody = document.getElementById('ai-result-body');
+  resCard.style.display = 'block';
+  resBody.innerHTML = '<div class="ai-progress"><div class="spin"></div><br>AIが売場をチェックしています…（約10秒）</div>';
+  resCard.scrollIntoView({ behavior:'smooth', block:'nearest' });
 
   try {
     const res = await gasPost({
       action: 'submitShelfCheck',
       storeId, storeName, slot,
-      submittedBy: name,
-      notes:       comment,
-      images:      S.pendingPhotos
+      submittedBy:  name,
+      notes:        comment,
+      hintCategory: category,
+      images:       photos
     });
     if (!res.success) throw new Error(res.error || '送信失敗');
+
     toast('送信しました！', 'ok');
     S.pendingPhotos = [];
     renderPreviews();
     document.getElementById('inp-comment').value = '';
-    // キャッシュを無効化して次回ダッシュボードで最新取得
-    S.dataFetched = false;
+    S.dataFetched = false; // ダッシュボード再取得用
+
+    renderAiResult(res, photos);
+    loadMyRecent();
   } catch(e) {
+    resBody.innerHTML = `<div style="color:var(--red);text-align:center;padding:12px">送信に失敗しました<br><span style="font-size:.78rem">${e.message}</span></div>`;
     toast('送信に失敗しました: ' + e.message, 'err');
   } finally {
     btn.disabled    = false;
-    btn.textContent = '送信する';
+    btn.textContent = '送信してAIチェック';
   }
+}
+
+// 送信直後のAI判定結果を描画
+function renderAiResult(res, photos) {
+  const body = document.getElementById('ai-result-body');
+  const js   = res.judgments || [];
+
+  if (res.aiStatus === 'skipped') {
+    body.innerHTML = '<div style="text-align:center;padding:12px;color:var(--gray-text);font-size:.84rem">✅ 写真を送信しました。<br>（AI判定は未設定のためスキップされました）</div>';
+    return;
+  }
+  if (res.aiStatus === 'error' || !js.length) {
+    body.innerHTML = '<div style="text-align:center;padding:12px;color:var(--orange);font-size:.84rem">✅ 写真は送信されました。<br>AI判定は今回スキップされました（時間をおいて再試行）。</div>';
+    return;
+  }
+
+  const passCount = js.filter(j => j.pass).length;
+  const allPass   = passCount === js.length;
+  const summary = allPass
+    ? `<div class="ai-summary pass">✅ すべて合格（${passCount}/${js.length}枚）</div>`
+    : `<div class="ai-summary fail">⚠️ 要改善 ${js.length - passCount}件（合格 ${passCount}/${js.length}枚）</div>`;
+
+  const items = js.map((j, i) => {
+    const st  = j.categoryId === 0 ? 'unknown' : (j.pass ? 'pass' : 'fail');
+    const tag = j.categoryId === 0 ? '判別不可' : (j.pass ? '合格' : '要改善');
+    const thumb = photos[j.idx] || photos[i] || '';
+    const issues = (j.issues && j.issues.length)
+      ? `<div class="ai-issues">⚠ ${j.issues.join(' / ')}</div>` : '';
+    const comment = j.comment ? `<div class="ai-comment">${j.comment}</div>` : '';
+    return `
+      <div class="ai-item ${st}">
+        ${thumb ? `<img class="ai-thumb" src="${thumb}">` : ''}
+        <div class="ai-info">
+          <div class="ai-cat">${j.category || '不明'}<span class="ai-tag ${st}">${tag}</span></div>
+          ${issues}${comment}
+        </div>
+      </div>`;
+  }).join('');
+
+  body.innerHTML = summary + items;
 }
 
 // ================================================================
@@ -566,6 +688,34 @@ async function gasGet(params) {
   Object.entries(params).forEach(([k, v]) => url.searchParams.set(k, v));
   const r = await fetch(url.toString());
   return r.json();
+}
+
+// ================================================================
+// 自分の本日の投稿
+// ================================================================
+async function loadMyRecent() {
+  const storeId = document.getElementById('sel-store').value;
+  const name    = document.getElementById('inp-name').value.trim();
+  if (!GAS_URL || !storeId || !name) return;
+  try {
+    const res = await gasGet({ action: 'getMyRecent', storeId, name });
+    if (!res.success || !res.data.length) return;
+    const card = document.getElementById('my-recent-card');
+    const body = document.getElementById('my-recent-body');
+    body.innerHTML = res.data.map(s => {
+      const t = s.submittedAt ? new Date(s.submittedAt).toLocaleTimeString('ja-JP',{hour:'2-digit',minute:'2-digit'}) : '';
+      const st = s.aiStatus !== 'judged' ? 'unknown' : (s.aiPass ? 'pass' : 'fail');
+      const lbl = s.aiStatus !== 'judged' ? '—' : (s.aiPass ? '合格' : '要改善');
+      const bg = st === 'pass' ? 'var(--green)' : st === 'fail' ? 'var(--red)' : 'var(--gray-text)';
+      const thumb = (s.imageUrls && s.imageUrls[0]) || '';
+      return `<div class="mr-item">
+        ${thumb ? `<img class="mr-thumb" src="${thumb}" onerror="this.style.visibility='hidden'">` : ''}
+        <div class="mr-info">${s.slot}時スロット ${t}<br><span style="color:var(--gray-text)">写真${s.imageUrls.length}枚</span></div>
+        <span class="mr-badge" style="background:${bg}">${lbl}</span>
+      </div>`;
+    }).join('');
+    card.style.display = 'block';
+  } catch(e) { /* 静かに失敗 */ }
 }
 
 // ================================================================
@@ -630,11 +780,27 @@ async function renderDashboard() {
       ${missed.map(m => `<div class="alert-item">・${m.storeName}（${m.slot}時スロット）</div>`).join('')}
     </div>` : '';
 
+  // AI要改善リスト（本日・要改善判定のみ）
+  const improveList = getImproveList();
+  const improveHtml = improveList.length ? `
+    <div class="card" style="margin-bottom:12px">
+      <p class="card-ttl">🤖 AI要改善（管理職LINEへ転送用） ${improveList.length}件</p>
+      ${improveList.map((m, i) => `
+        <div class="improve-item" onclick="openStorePhotos(${m.storeId},${m.slot})">
+          <div style="flex:1;min-width:0">
+            <div class="ii-store">${m.storeName}（${m.slot}時）</div>
+            <div class="ii-detail">${m.category}：${m.issues || m.comment || '要改善'}</div>
+          </div>
+          <span class="jbadge fail">要改善</span>
+        </div>`).join('')}
+      <button class="btn-sec" style="width:100%;margin-top:6px;font-size:.8rem" onclick="copyImproveList()">📋 一覧をコピー</button>
+    </div>` : '';
+
   // マトリックス
   const rows = STORES.map(store => {
     const cells = SLOTS.map(slot => {
       const { cls, icon } = cellStatus(store.storeId, slot, subs, h);
-      const click = cls === 'c-ok' ? `onclick="openStorePhotos(${store.storeId},${slot})"` : '';
+      const click = (cls === 'c-ok' || cls === 'c-fail') ? `onclick="openStorePhotos(${store.storeId},${slot})"` : '';
       return `<td class="${cls}" ${click}>${icon}</td>`;
     }).join('');
     return `<tr><td title="${store.storeName}">${store.storeName}</td>${cells}</tr>`;
@@ -652,13 +818,15 @@ async function renderDashboard() {
       <div class="sumcard"><div class="sumval vblue">${total}</div><div class="sumlbl">提出予定</div></div>
       <div class="sumcard"><div class="sumval vgreen">${done}</div><div class="sumlbl">提出済み</div></div>
       <div class="sumcard"><div class="sumval vred">${total - done}</div><div class="sumlbl">未提出</div></div>
-      ${openTotal ? `<div class="sumcard"><div class="sumval vorange">${openDone}/${openTotal}</div><div class="sumlbl">受付中</div></div>` : ''}
+      <div class="sumcard"><div class="sumval vorange">${improveList.length}</div><div class="sumlbl">AI要改善</div></div>
     </div>
 
     ${alertHtml}
+    ${improveHtml}
 
     <div class="legend">
-      <span><span class="c-ok">✓</span> 提出済（タップで写真）</span>
+      <span><span class="c-ok">✓</span> 合格</span>
+      <span><span class="c-fail">△</span> 要改善（タップ）</span>
       <span><span class="c-open">○</span> 受付中</span>
       <span><span class="c-miss">✕</span> 未提出</span>
       <span><span class="c-wait">−</span> 受付前</span>
@@ -686,11 +854,58 @@ async function renderDashboard() {
 }
 
 function cellStatus(storeId, slot, subs, h) {
-  const submitted = subs.some(s => s.storeId === storeId && s.slot === slot);
-  if (submitted)         return { cls:'c-ok',   icon:'✓' };
+  const cellSubs = subs.filter(s => s.storeId === storeId && s.slot === slot);
+  if (cellSubs.length) {
+    // AI判定済みで1件でも要改善があれば △
+    const hasFail = cellSubs.some(s => s.aiStatus === 'judged' && s.aiPass === false);
+    return hasFail ? { cls:'c-fail', icon:'△' } : { cls:'c-ok', icon:'✓' };
+  }
   if (h < slot - 1)     return { cls:'c-wait',  icon:'−' };
   if (h <= slot + 1)    return { cls:'c-open',  icon:'○' };
   return                        { cls:'c-miss',  icon:'✕' };
+}
+
+// AI要改善リスト（本日・判定済みで要改善のものを写真ごとに）
+function getImproveList() {
+  const result = [];
+  S.submissions.forEach(s => {
+    if (s.aiStatus !== 'judged' || !Array.isArray(s.judgments)) return;
+    s.judgments.forEach(j => {
+      if (j && j.pass === false) {
+        result.push({
+          storeId:   s.storeId,
+          storeName: s.storeName,
+          slot:      s.slot,
+          category:  j.category || '不明',
+          issues:    (j.issues && j.issues.length) ? j.issues.join('・') : '',
+          comment:   j.comment || ''
+        });
+      }
+    });
+  });
+  return result.sort((a, b) => a.storeId - b.storeId || a.slot - b.slot);
+}
+
+function copyImproveList() {
+  const list = getImproveList();
+  if (!list.length) { toast('要改善はありません', 'ok'); return; }
+  const today = new Date().toLocaleDateString('ja-JP', {month:'numeric',day:'numeric'});
+  const text = `【売場チェック AI要改善】${today}\n` +
+    list.map(m => `・${m.storeName}（${m.slot}時）${m.category}：${m.issues || m.comment || '要改善'}`).join('\n');
+  if (navigator.clipboard) {
+    navigator.clipboard.writeText(text).then(
+      () => toast('コピーしました。LINEに貼り付けできます', 'ok'),
+      () => fallbackCopy(text)
+    );
+  } else fallbackCopy(text);
+}
+
+function fallbackCopy(text) {
+  const ta = document.createElement('textarea');
+  ta.value = text; document.body.appendChild(ta); ta.select();
+  try { document.execCommand('copy'); toast('コピーしました', 'ok'); }
+  catch(e) { toast('コピーに失敗しました', 'err'); }
+  ta.remove();
 }
 
 function getMissedList() {
@@ -755,13 +970,28 @@ function renderPhotos() {
 
   grid.innerHTML = subs.map((s, i) => {
     const t = s.submittedAt ? new Date(s.submittedAt).toLocaleTimeString('ja-JP', {hour:'2-digit',minute:'2-digit'}) : '';
+    let badge = '';
+    if (s.aiStatus === 'judged') {
+      const st = s.aiPass ? 'pass' : 'fail';
+      badge = `<span class="jbadge ${st}">${s.aiPass ? 'AI合格' : 'AI要改善'}</span>`;
+    }
+    // 判定コメント（要改善のみ簡易表示）
+    let aiLine = '';
+    if (s.aiStatus === 'judged' && Array.isArray(s.judgments)) {
+      const fails = s.judgments.filter(j => j && j.pass === false);
+      if (fails.length) {
+        const f = fails[0];
+        aiLine = `<div class="pcard-sub" style="color:var(--red)">🤖 ${f.category}：${(f.issues&&f.issues.length)?f.issues.join('・'):(f.comment||'要改善')}</div>`;
+      }
+    }
     return `
       <div class="pcard" onclick="openModal(${i})">
         <img src="${s.imageUrls[0]}" alt="売場写真" loading="lazy"
           onerror="this.style.display='none'">
         <div class="pcard-body">
-          <div class="pcard-store">${s.storeName}<span class="pcnt">${s.imageUrls.length}</span></div>
+          <div class="pcard-store">${s.storeName}<span class="pcnt">${s.imageUrls.length}</span> ${badge}</div>
           <div class="pcard-sub">${s.slot}時スロット ${t}<br>${s.submittedBy}${s.notes ? ' / '+s.notes : ''}</div>
+          ${aiLine}
         </div>
       </div>`;
   }).join('');
@@ -783,6 +1013,7 @@ function openModal(cardIdx) {
   S.modal.images = card.imageUrls;
   S.modal.idx    = 0;
   S.modal.cap    = `${card.storeName} / ${card.slot}時スロット / ${card.submittedBy}`;
+  S.modal.judgments = Array.isArray(card.judgments) ? card.judgments : [];
   refreshModal();
 }
 
@@ -791,7 +1022,15 @@ function refreshModal() {
   if (!imgs.length) return;
   document.getElementById('modal-img').src = imgs[S.modal.idx];
   document.getElementById('modal-cnt').textContent = (S.modal.idx + 1) + ' / ' + imgs.length;
-  document.getElementById('modal-cap').textContent = S.modal.cap;
+  // 現在の写真に対応するAI判定を探す
+  let cap = S.modal.cap;
+  const j = (S.modal.judgments || []).find(x => x && x.idx === S.modal.idx);
+  if (j) {
+    const mark = j.categoryId === 0 ? '❓' : (j.pass ? '✅' : '⚠️');
+    const detail = j.pass ? '' : ((j.issues && j.issues.length ? '：' + j.issues.join('・') : '') + (j.comment ? '（' + j.comment + '）' : ''));
+    cap += `\n${mark} ${j.category || '不明'}${detail}`;
+  }
+  document.getElementById('modal-cap').textContent = cap;
   document.getElementById('modal').classList.add('open');
 }
 
