@@ -641,7 +641,9 @@ function renderAiResult(res, photos) {
     return;
   }
   if (res.aiStatus === 'error' || !js.length) {
-    body.innerHTML = '<div style="text-align:center;padding:12px;color:var(--orange);font-size:.84rem">✅ 写真は送信されました。<br>AI判定は今回スキップされました（時間をおいて再試行）。</div>';
+    const errText = (js[0] && js[0].error) ? js[0].error : '';
+    const detail = errText ? `<div style="font-size:.7rem;color:var(--gray-text);margin-top:6px;word-break:break-all">${errText}</div>` : '';
+    body.innerHTML = `<div style="text-align:center;padding:12px;color:var(--orange);font-size:.84rem">✅ 写真は送信されました。<br>AI判定は今回できませんでした。${detail}</div>`;
     return;
   }
 
