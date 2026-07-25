@@ -140,6 +140,8 @@
     #modal-cnt{color:#fff;font-size:.85rem;min-width:48px;text-align:center}
     #modal-cap{color:#ddd;font-size:.78rem;margin-top:8px;text-align:center;max-width:90vw;white-space:pre-line;line-height:1.5}
     #modal-close{position:absolute;top:16px;right:16px;background:none;border:none;color:#fff;font-size:1.6rem;cursor:pointer;padding:6px;line-height:1}
+    #modal-del{margin-top:14px;padding:9px 20px;background:var(--red);border:none;border-radius:var(--rs);color:#fff;font-size:.85rem;font-weight:700;font-family:var(--font);cursor:pointer}
+    #modal-del:active{background:#b91c1c}
 
     /* Toast */
     #toast-c{position:fixed;top:calc(var(--hdr-h) + 10px);left:50%;transform:translateX(-50%);z-index:500;display:flex;flex-direction:column;gap:8px;align-items:center;pointer-events:none}
@@ -176,6 +178,8 @@
     .mr-thumb{width:40px;height:40px;border-radius:var(--rs);object-fit:cover;background:#eee;flex-shrink:0}
     .mr-info{flex:1;min-width:0;font-size:.78rem}
     .mr-badge{font-size:.66rem;font-weight:700;padding:2px 8px;border-radius:99px;color:#fff;white-space:nowrap}
+    .mr-del{margin-left:6px;font-size:.7rem;font-weight:700;padding:5px 9px;border-radius:var(--rs);border:1.5px solid var(--red);background:#fff;color:var(--red);font-family:var(--font);cursor:pointer;white-space:nowrap;flex-shrink:0}
+    .mr-del:active{background:var(--red-light)}
 
     /* 判定バッジ（写真タブ・ダッシュ共通） */
     .jbadge{display:inline-block;font-size:.64rem;font-weight:700;padding:1px 7px;border-radius:99px;color:#fff}
@@ -326,6 +330,7 @@
     <button onclick="modalStep(1)">次 ›</button>
   </div>
   <div id="modal-cap"></div>
+  <button id="modal-del" onclick="deleteFromModal()">🗑 この投稿を削除</button>
 </div>
 
 <div id="toast-c"></div>
@@ -699,11 +704,11 @@ async function loadMyRecent() {
   const storeId = document.getElementById('sel-store').value;
   const name    = document.getElementById('inp-name').value.trim();
   if (!GAS_URL || !storeId || !name) return;
+  const card = document.getElementById('my-recent-card');
+  const body = document.getElementById('my-recent-body');
   try {
     const res = await gasGet({ action: 'getMyRecent', storeId, name });
-    if (!res.success || !res.data.length) return;
-    const card = document.getElementById('my-recent-card');
-    const body = document.getElementById('my-recent-body');
+    if (!res.success || !res.data.length) { card.style.display = 'none'; body.innerHTML = ''; return; }
     body.innerHTML = res.data.map(s => {
       const t = s.submittedAt ? new Date(s.submittedAt).toLocaleTimeString('ja-JP',{hour:'2-digit',minute:'2-digit'}) : '';
       const st = s.aiStatus !== 'judged' ? 'unknown' : (s.aiPass ? 'pass' : 'fail');
@@ -714,10 +719,32 @@ async function loadMyRecent() {
         ${thumb ? `<img class="mr-thumb" src="${driveImg(thumb,200)}" referrerpolicy="no-referrer" onerror="this.onerror=null;this.src='${thumb}'">` : ''}
         <div class="mr-info">${s.slot}時スロット ${t}<br><span style="color:var(--gray-text)">写真${s.imageUrls.length}枚</span></div>
         <span class="mr-badge" style="background:${bg}">${lbl}</span>
+        <button class="mr-del" onclick="deleteSubmission('${s.submissionId}','mine')">🗑 削除</button>
       </div>`;
     }).join('');
     card.style.display = 'block';
   } catch(e) { /* 静かに失敗 */ }
+}
+
+// 投稿を削除（source: 'mine'=投稿画面 / 'photos'=写真タブ）
+async function deleteSubmission(id, source) {
+  if (!id) return;
+  if (!confirm('この投稿を削除しますか？\n※写真も一緒に削除され、元に戻せません。')) return;
+  try {
+    const res = await gasPost({ action: 'deleteSubmission', submissionId: id });
+    if (!res.success) throw new Error(res.error || '削除失敗');
+    toast('削除しました', 'ok');
+    S.dataFetched = false;
+    if (source === 'photos') {
+      closeModal();
+      await fetchData(true);
+      renderPhotos();
+    } else {
+      loadMyRecent();
+    }
+  } catch(e) {
+    toast('削除に失敗しました: ' + e.message, 'err');
+  }
 }
 
 // ================================================================
@@ -1029,7 +1056,12 @@ function openModal(cardIdx) {
   S.modal.idx    = 0;
   S.modal.cap    = `${card.storeName} / ${card.slot}時スロット / ${card.submittedBy}`;
   S.modal.judgments = Array.isArray(card.judgments) ? card.judgments : [];
+  S.modal.submissionId = card.submissionId;
   refreshModal();
+}
+
+function deleteFromModal() {
+  if (S.modal.submissionId) deleteSubmission(S.modal.submissionId, 'photos');
 }
 
 function refreshModal() {
