@@ -132,7 +132,8 @@
     .admin-gate .btn-primary{max-width:260px;margin:0 auto;display:block}
 
     /* ============ 画像ビューア（ピンチイン・アウト対応） ============ */
-    #viewer{display:none;position:fixed;inset:0;z-index:300;background:#0b0b0d;flex-direction:column}
+    /* 指摘画面(320)からも開くので、それより前面に出す */
+    #viewer{display:none;position:fixed;inset:0;z-index:340;background:#0b0b0d;flex-direction:column}
     #viewer.open{display:flex}
     #v-top{display:flex;align-items:center;gap:8px;padding:10px 12px;color:#fff;flex-shrink:0}
     #v-title{flex:1;min-width:0;font-size:.82rem;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
@@ -210,7 +211,10 @@
     #ins-head b{flex:1;font-size:.95rem}
     #ins-head button{background:none;border:none;font-size:1.4rem;line-height:1;padding:0 4px;cursor:pointer;color:var(--gray-text);font-family:var(--font)}
     #ins-body{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:12px 16px}
-    #ins-photo{width:100%;max-height:180px;object-fit:contain;border-radius:var(--rs);background:var(--gray-bg)}
+    #ins-photo-wrap{position:relative;cursor:pointer;display:block}
+    #ins-photo-wrap:active{opacity:.85}
+    #ins-photo{width:100%;max-height:210px;object-fit:contain;border-radius:var(--rs);background:var(--gray-bg);display:block}
+    #ins-zoom-hint{position:absolute;right:8px;bottom:8px;background:rgba(0,0,0,.6);color:#fff;font-size:.68rem;font-weight:700;padding:4px 10px;border-radius:99px;pointer-events:none}
     #ins-sub{font-size:.78rem;color:var(--gray-text);margin:6px 0 2px;line-height:1.5}
     .ins-lbl{font-size:.78rem;font-weight:700;margin:12px 0 6px}
     .ins-type{display:flex;align-items:center;gap:9px;padding:11px 12px;border:1.5px solid var(--gray-border);border-radius:var(--rs);margin-bottom:6px;cursor:pointer;font-size:.86rem}
@@ -483,7 +487,10 @@
       <button onclick="closeInstruct()" aria-label="閉じる">✕</button>
     </div>
     <div id="ins-body">
-      <img id="ins-photo" src="" alt="対象の写真">
+      <div id="ins-photo-wrap" onclick="zoomInstructPhoto()">
+        <img id="ins-photo" src="" alt="対象の写真">
+        <span id="ins-zoom-hint">🔍 タップで拡大</span>
+      </div>
       <div id="ins-sub"></div>
       <p class="ins-lbl">直してほしいこと（複数選べます）</p>
       <div id="ins-types"></div>
@@ -1818,10 +1825,10 @@ function viewerStep(d) {
 
 function closeViewer() {
   document.getElementById('viewer').classList.remove('open');
-  // 一覧ビューから開いた場合は、閉じても一覧が残るのでスクロールは止めたまま
-  if (!document.getElementById('listview').classList.contains('open')) {
-    document.body.style.overflow = '';
-  }
+  // 一覧ビューや指摘画面から開いた場合は、閉じてもそれらが残るのでスクロールは止めたまま
+  const stillOpen = ['listview', 'instruct']
+    .some(id => document.getElementById(id).classList.contains('open'));
+  if (!stillOpen) document.body.style.overflow = '';
 }
 
 // ---------------- AI判定の詳細HTML ----------------
@@ -2020,6 +2027,24 @@ function openInstruct(i) {
 
 function closeInstruct() {
   document.getElementById('instruct').classList.remove('open');
+}
+
+// 指摘画面の写真を拡大（プライスカードは目視で確認するため、ここで拡大できることが重要）
+function zoomInstructPhoto() {
+  const sub = S.listSub, i = S.instructIdx;
+  if (!sub || i == null || !sub.imageUrls[i]) return;
+  const j = (Array.isArray(sub.judgments) ? sub.judgments : []).find(x => x && x.idx === i);
+  openViewer({
+    images: [sub.imageUrls[i]],
+    idx: 0,
+    title: `${sub.storeName} ${sub.slot}時（${i + 1}枚目）`,
+    details: [`
+      <div class="vd-box"><h4>🏷 ここを確認してください</h4>
+        <p>プライスカードが商品の左端に合っているか、抜けや傾きがないか。<br>
+        商品が手前に揃っているか、棚に空きがないか。</p></div>
+      <div class="vd-note">指2本でピンチ拡大できます。<br>
+        ✕ で閉じると、指摘の入力に戻ります。</div>`]
+  });
 }
 
 function buildInstructMessage(sub, i, picked, note) {
