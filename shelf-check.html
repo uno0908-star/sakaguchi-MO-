@@ -949,33 +949,54 @@ async function submitForm() {
   let dateStr      = S.resumeDate || null;
   let allJudgments = [];
   let ci = 0;
+  // GASがまだ appendShelfCheck に対応していない場合の保険。
+  // 追記できないと分かったら、残りは別の投稿として送って写真を失わないようにする
+  let useAppend = true;
+
+  const newSubmission = (imgs) => gasPost({
+    action: 'submitShelfCheck',
+    storeId, storeName, slot,
+    submittedBy:  name,
+    notes:        comment,
+    hintCategory: category,
+    images:       imgs
+  });
 
   try {
     for (; ci < chunks.length; ci++) {
       btn.textContent = `送信中… ${ci + 1}/${chunks.length}`;
-      let res;
-      if (!submissionId) {
-        res = await gasPost({
-          action: 'submitShelfCheck',
-          storeId, storeName, slot,
-          submittedBy:  name,
-          notes:        comment,
-          hintCategory: category,
-          images:       chunks[ci]
-        });
-        if (!res.success) throw new Error(res.error || '送信失敗');
-        submissionId = res.submissionId;
-        dateStr      = res.date;
-      } else {
+      const localOffset = S._sentCount;
+      let res, appended = false;
+
+      if (submissionId && useAppend) {
         res = await gasPost({
           action: 'appendShelfCheck',
           submissionId, date: dateStr,
           hintCategory: category,
           images:       chunks[ci]
         });
-        if (!res.success) throw new Error(res.error || '追加送信失敗');
+        if (res.success) {
+          appended = true;                       // GASが通し番号を振ってくれている
+        } else if (/unknown action/i.test(res.error || '')) {
+          useAppend = false;                     // 古いGAS → 以降は別投稿として送る
+          res = null;
+        } else {
+          throw new Error(res.error || '追加送信失敗');
+        }
       }
-      allJudgments = allJudgments.concat(res.judgments || []);
+
+      if (!appended) {
+        res = await newSubmission(chunks[ci]);
+        if (!res.success) throw new Error(res.error || '送信失敗');
+        if (!submissionId) { submissionId = res.submissionId; dateStr = res.date; }
+      }
+
+      // 追記なら通し番号済み。別投稿ならこの塊の中の番号なので手前でずらす
+      allJudgments = allJudgments.concat((res.judgments || []).map(j => {
+        if (!j || typeof j !== 'object' || j.error) return j;
+        return appended ? j
+          : Object.assign({}, j, { idx: (typeof j.idx === 'number' ? j.idx : 0) + localOffset });
+      }));
       S._sentCount += chunks[ci].length;
       showProgress(S._sentCount);
     }
