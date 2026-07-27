@@ -158,6 +158,7 @@
     .vd-box{background:var(--gray-bg);border-radius:var(--rs);padding:10px 12px;margin-bottom:8px}
     .vd-box.warn{background:var(--orange-light)}
     .vd-box.good{background:var(--green-light)}
+    .vd-box.review{background:var(--blue-light)}
     .vd-box h4{font-size:.72rem;font-weight:700;color:var(--gray-text);margin-bottom:4px}
     .vd-box p{font-size:.82rem;line-height:1.55}
     .vd-kpis{display:flex;gap:8px;margin-bottom:8px}
@@ -261,6 +262,7 @@
     .jbadge.pass{background:var(--green)}
     .jbadge.fail{background:var(--orange)}
     .jbadge.unknown{background:var(--gray-text)}
+    .jbadge.review{background:var(--blue)}
 
     /* ダッシュ 要改善リスト */
     .improve-item{display:flex;gap:8px;align-items:center;padding:8px;border-radius:var(--rs);background:var(--orange-light);margin-bottom:6px;cursor:pointer}
@@ -841,9 +843,10 @@ async function handlePhotos(input) {
   renderPreviews();
 }
 
-// プライスカードのような細かい部分をAIが読めるよう、1280px→1600pxに引き上げ
-// （1枚あたり ≒250KB→≒380KB。Drive使用量は31日で約4GB／無料枠15GBの範囲内）
-function compressImage(file, maxPx = 1600, quality = 0.74) {
+// 解像度は容量と送信速度に直結するので上げすぎない。
+// 20店舗×6スロット×10枚まで出ても31日で約9GB（無料枠15GB）に収まる設定。
+// プライスカードの細部は、撮影箇所「11. プライスカード」の近接撮影で担保する。
+function compressImage(file, maxPx = 1280, quality = 0.72) {
   return new Promise((ok, ng) => {
     const r = new FileReader();
     r.onerror = ng;
@@ -912,8 +915,19 @@ async function submitForm() {
   const resCard = document.getElementById('ai-result-card');
   const resBody = document.getElementById('ai-result-body');
   resCard.style.display = 'block';
-  resBody.innerHTML = '<div class="ai-progress"><div class="spin"></div><br>AIが売場をチェックしています…（約10秒）</div>';
+  const kb = Math.round(photos.reduce((a, p) => a + p.length, 0) * 0.75 / 1024);
+  resBody.innerHTML = `<div class="ai-progress"><div class="spin"></div><br>
+    送信中…AIが売場をチェックしています<br>
+    <span id="submit-elapsed" style="font-size:.8rem;color:var(--gray-text)">写真${photos.length}枚 / 約${kb}KB</span></div>`;
   resCard.scrollIntoView({ behavior:'smooth', block:'nearest' });
+
+  // 実際にどれくらい掛かっているかを毎回表示する。
+  // 現場が遅いと感じた時に、体感ではなく数字で判断できるようにするため
+  const t0 = Date.now();
+  const elapsedTimer = setInterval(() => {
+    const el = document.getElementById('submit-elapsed');
+    if (el) el.textContent = `写真${photos.length}枚 / 約${kb}KB … ${Math.round((Date.now() - t0) / 1000)}秒`;
+  }, 500);
 
   try {
     const res = await gasPost({
@@ -932,22 +946,34 @@ async function submitForm() {
     document.getElementById('inp-comment').value = '';
     S.dataFetched = false; // ダッシュボード再取得用
 
-    renderAiResult(res, photos, { storeName, slot, submittedBy: name, notes: comment });
+    renderAiResult(res, photos, { storeName, slot, submittedBy: name, notes: comment },
+                   Math.round((Date.now() - t0) / 1000));
     loadMyRecent();
   } catch(e) {
     resBody.innerHTML = `<div style="color:var(--red);text-align:center;padding:12px">送信に失敗しました<br><span style="font-size:.78rem">${e.message}</span></div>`;
     toast('送信に失敗しました: ' + e.message, 'err');
   } finally {
+    clearInterval(elapsedTimer);
     btn.disabled    = false;
     btn.textContent = '送信してAIチェック';
   }
 }
 
 // 送信直後のAI判定結果を描画
-function renderAiResult(res, photos, meta) {
+function renderAiResult(res, photos, meta, seconds) {
   const body = document.getElementById('ai-result-body');
   const js   = res.judgments || [];
   S.lastResult = { photos, judgments: js, meta: meta || null };
+  // 直近5回の所要時間を端末に残す。遅くなってきた時に気づけるようにする
+  const timing = seconds ? `<div style="text-align:center;font-size:.7rem;color:var(--gray-text);margin-top:8px">
+      送信からAI判定まで ${seconds}秒（写真${photos.length}枚）</div>` : '';
+  if (seconds) {
+    try {
+      const log = JSON.parse(localStorage.getItem('sc_timing') || '[]');
+      log.push({ t: Date.now(), sec: seconds, n: photos.length });
+      localStorage.setItem('sc_timing', JSON.stringify(log.slice(-5)));
+    } catch (e) {}
+  }
 
   if (res.aiStatus === 'skipped') {
     body.innerHTML = '<div style="text-align:center;padding:12px;color:var(--gray-text);font-size:.84rem">✅ 写真を送信しました。<br>（AI判定は未設定のためスキップされました）</div>';
@@ -985,7 +1011,7 @@ function renderAiResult(res, photos, meta) {
       </div>`;
   }).join('');
 
-  body.innerHTML = summary + items;
+  body.innerHTML = summary + items + timing;
 }
 
 // ================================================================
@@ -1135,9 +1161,9 @@ async function renderDashboard() {
         <div class="improve-item" onclick="openStorePhotos(${m.storeId},${m.slot})">
           <div style="flex:1;min-width:0">
             <div class="ii-store">${m.storeName}（${m.slot}時）</div>
-            <div class="ii-detail">${m.kind === 'PC' ? '🏷 ' : ''}${m.category}：${m.issues || m.comment || '要確認'}</div>
+            <div class="ii-detail">${m.kind.indexOf('PC') === 0 ? '🏷 ' : ''}${m.category}：${m.issues || m.comment || '要確認'}</div>
           </div>
-          <span class="jbadge fail">${m.kind === 'PC' ? 'PC' : '目視確認'}</span>
+          <span class="jbadge ${m.kind === 'PC目視' ? 'review' : 'fail'}">${m.kind === 'PC目視' ? '👀PC' : (m.kind === 'PC' ? 'PC' : '目視確認')}</span>
         </div>`).join('')}
       <button class="btn-sec" style="width:100%;margin-top:6px;font-size:.8rem" onclick="copyImproveList()">📋 一覧をコピー</button>
     </div>` : '';
@@ -1190,13 +1216,48 @@ async function renderDashboard() {
       </table>
     </div>
     <p style="font-size:.7rem;color:var(--gray-text);text-align:center;margin-top:4px">横にスクロールできます</p>
+
+    <div class="card" id="storage-card" style="margin-top:12px">
+      <p class="card-ttl">💾 写真保存容量</p>
+      <div id="storage-body" style="font-size:.8rem;color:var(--gray-text)">確認中…</div>
+    </div>
   `;
+
+  loadStorageStatus();
 
   // 5分後に自動更新
   clearTimeout(S.refreshTimer);
   S.refreshTimer = setTimeout(() => {
     if (S.currentTab === 'dashboard') fetchData(true).then(renderDashboard);
   }, 5 * 60 * 1000);
+}
+
+// 写真保存容量の見張り。運用が始まってから静かに溢れるのを防ぐ
+async function loadStorageStatus() {
+  const body = document.getElementById('storage-body');
+  if (!body) return;
+  try {
+    const r = await gasGet({ action: 'getStorageStatus' });
+    if (!r.success || r.usedGb === null) throw new Error('取得できませんでした');
+    const color = r.level === 'danger' ? 'var(--red)' : r.level === 'warn' ? 'var(--orange)' : 'var(--green)';
+    const label = r.level === 'danger' ? '⚠️ 容量が逼迫しています' : r.level === 'warn' ? '⚠️ そろそろ注意' : '✅ 余裕あり';
+    body.innerHTML = `
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px">
+        <div style="flex:1;height:10px;background:var(--gray-bg);border-radius:99px;overflow:hidden">
+          <div style="width:${Math.min(100, r.pct)}%;height:100%;background:${color}"></div>
+        </div>
+        <b style="color:${color};font-size:.9rem;white-space:nowrap">${r.usedGb} / ${r.limitGb} GB</b>
+      </div>
+      <div style="color:${color};font-weight:700;font-size:.8rem">${label}（${r.pct}%）</div>
+      <div style="margin-top:6px;line-height:1.6">
+        保管期間 ${r.retentionDays}日／保存済み ${r.dayFolders}日分${r.oldest ? '（最古 ' + r.oldest + '）' : ''}<br>
+        古い写真は毎日03:00に自動削除されます。
+      </div>
+      ${r.level !== 'ok' ? `<div style="margin-top:8px;padding:9px 11px;background:var(--orange-light);border-radius:var(--rs);font-size:.76rem;color:var(--gray-dark);line-height:1.6">
+        ${esc(r.hint)}<br>※ ゴミ箱の中身は30日間 容量を占有し続けます。空にすると一番効きます。</div>` : ''}`;
+  } catch (e) {
+    body.innerHTML = `<span style="color:var(--gray-text)">容量を取得できませんでした（GASを最新版に更新すると表示されます）</span>`;
+  }
 }
 
 function cellStatus(storeId, slot, subs, h) {
@@ -1230,12 +1291,12 @@ function getImproveList() {
         });
       }
       // プライスカードは前陳とは別採点なので、別の行として出す
-      if (j.pcStatus === 'check' && j.pcIssues && j.pcIssues.length) {
+      if ((j.pcStatus === 'check' || j.pcStatus === 'review') && j.pcIssues && j.pcIssues.length) {
         result.push({
           storeId:   s.storeId,
           storeName: s.storeName,
           slot:      s.slot,
-          kind:      'PC',
+          kind:      j.pcStatus === 'review' ? 'PC目視' : 'PC',
           category:  j.category || '不明',
           issues:    j.pcIssues.join('・'),
           comment:   j.pcComment || ''
@@ -1251,7 +1312,7 @@ function copyImproveList() {
   if (!list.length) { toast('AI参考の要確認はありません', 'ok'); return; }
   const today = new Date().toLocaleDateString('ja-JP', {month:'numeric',day:'numeric'});
   const text = `【売場チェック AI参考・要目視確認】${today}\n※AIの参考判定です。写真で最終確認してください\n` +
-    list.map(m => `・${m.storeName}（${m.slot}時）${m.kind === 'PC' ? '[PC]' : ''}${m.category}：${m.issues || m.comment || '要確認'}`).join('\n');
+    list.map(m => `・${m.storeName}（${m.slot}時）${m.kind.indexOf('PC') === 0 ? '[' + m.kind + ']' : ''}${m.category}：${m.issues || m.comment || '要確認'}`).join('\n');
   if (navigator.clipboard) {
     navigator.clipboard.writeText(text).then(
       () => toast('コピーしました。LINEに貼り付けできます', 'ok'),
@@ -1629,7 +1690,16 @@ function aiDetailHtml(sub, j, photoIdx) {
   // プライスカード（前陳の合否とは別枠。基準書でもコンプライアンス②の別採点）
   let pcBlock = '', pcBadge = '';
   if (j.pcStatus) {
-    if (j.pcStatus === 'check') {
+    if (j.pcStatus === 'review') {
+      // NB（メーカー品）はPCが必要だがPBは不要。写真では見分けられないので人に委ねる
+      pcBadge = `<span class="jbadge review">👀 目視確認</span>`;
+      pcBlock = `<div class="vd-box review"><h4>👀 プライスカード：人の目で確認してください</h4>
+        <p>${(j.pcIssues || []).map(x => '・' + esc(x)).join('<br>')}
+        ${j.pcComment ? '<br>' + esc(j.pcComment) : ''}</p>
+        <p style="font-size:.72rem;color:var(--gray-dark);margin-top:6px">
+        この売場は <b>NB（メーカー品）はPC必要 / オリジナル商品はPC不要</b> が混在します。
+        写真からNBかどうかは判別できないため、現物で確認してください。</p></div>`;
+    } else if (j.pcStatus === 'check') {
       pcBadge = `<span class="jbadge fail">PC要確認</span>`;
       pcBlock = `<div class="vd-box warn"><h4>🏷 プライスカード：要確認</h4>
         <p>${(j.pcIssues || []).map(x => '⚠ ' + esc(x)).join('<br>')}
