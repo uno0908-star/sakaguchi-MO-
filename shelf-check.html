@@ -549,7 +549,20 @@ const STANDARDS = [
            '<b style="color:var(--red)">フック陳列商品は、フックストッパーを活用して空き・凹みが無い（商品間の隙間を空けない）売場を保ちます</b>',
            '<b style="color:var(--red)">サイドネット売場は、穴空きがないよう定期的に前陳・補充し、見やすく選びやすい売場を保ちます</b>',
            '<b style="color:var(--red)">新商品の棚空けは、可能な限り直前のタイミングで実施します</b>'],
-    photos:['10_1.jpg','10_2.jpg'] }
+    photos:['10_1.jpg','10_2.jpg'] },
+  // コンプライアンス② P2。近接撮影でプライスカードだけを重点チェックする項目
+  { id:11, name:'プライスカード', sub:'FF・厨房・日配食品・ソフトドリンク・菓子・日用品は確認必須',
+    center:false, freq:'—', score:'3点',
+    point:'プライスカードは正しいものが取り付けられている',
+    rules:['各売場1棚ずつを無作為に確認し、正しく取り付けられている',
+           '対象：FF／厨房／日配食品（スタンドパック）／ソフトドリンク／菓子（袋スナック・LWオリジナル菓子）／日用品（無印良品・男性化粧品）',
+           'プライスカードレールには<b>商品の左端に合うように</b>取り付ける'],
+    notes:['<b>プライスカードが不要な商品</b>：弁当・おにぎり・寿司・調理パン・ベーカリー・調理麺・デリカ惣菜・サラダ（パッケージやサーマルに値札が印字されているため）',
+           '<b>それ以外の商品は原則プライスカードが必要</b>です',
+           '新商品・推奨売価変更商品のプライスカード取付・交換は忘れずに実施します',
+           '酒類販売のゴンドラには、酒類表示資材をもれなく取り付けます',
+           '<b style="color:var(--red)">品名POPのないFF商品は陳列しません（アレルゲン表示のため、品名POPが必要・手書きNG）</b>'],
+    photos:['11_1.jpg','11_2.jpg'] }
 ];
 
 const STORES     = [
@@ -828,7 +841,9 @@ async function handlePhotos(input) {
   renderPreviews();
 }
 
-function compressImage(file, maxPx = 1280, quality = 0.72) {
+// プライスカードのような細かい部分をAIが読めるよう、1280px→1600pxに引き上げ
+// （1枚あたり ≒250KB→≒380KB。Drive使用量は31日で約4GB／無料枠15GBの範囲内）
+function compressImage(file, maxPx = 1600, quality = 0.74) {
   return new Promise((ok, ng) => {
     const r = new FileReader();
     r.onerror = ng;
@@ -1120,9 +1135,9 @@ async function renderDashboard() {
         <div class="improve-item" onclick="openStorePhotos(${m.storeId},${m.slot})">
           <div style="flex:1;min-width:0">
             <div class="ii-store">${m.storeName}（${m.slot}時）</div>
-            <div class="ii-detail">${m.category}：${m.issues || m.comment || '要確認'}</div>
+            <div class="ii-detail">${m.kind === 'PC' ? '🏷 ' : ''}${m.category}：${m.issues || m.comment || '要確認'}</div>
           </div>
-          <span class="jbadge fail">目視確認</span>
+          <span class="jbadge fail">${m.kind === 'PC' ? 'PC' : '目視確認'}</span>
         </div>`).join('')}
       <button class="btn-sec" style="width:100%;margin-top:6px;font-size:.8rem" onclick="copyImproveList()">📋 一覧をコピー</button>
     </div>` : '';
@@ -1202,14 +1217,28 @@ function getImproveList() {
   S.submissions.forEach(s => {
     if (s.aiStatus !== 'judged' || !Array.isArray(s.judgments)) return;
     s.judgments.forEach(j => {
-      if (j && j.pass === false) {
+      if (!j) return;
+      if (j.pass === false) {
         result.push({
           storeId:   s.storeId,
           storeName: s.storeName,
           slot:      s.slot,
+          kind:      '前陳',
           category:  j.category || '不明',
           issues:    (j.issues && j.issues.length) ? j.issues.join('・') : '',
           comment:   j.comment || ''
+        });
+      }
+      // プライスカードは前陳とは別採点なので、別の行として出す
+      if (j.pcStatus === 'check' && j.pcIssues && j.pcIssues.length) {
+        result.push({
+          storeId:   s.storeId,
+          storeName: s.storeName,
+          slot:      s.slot,
+          kind:      'PC',
+          category:  j.category || '不明',
+          issues:    j.pcIssues.join('・'),
+          comment:   j.pcComment || ''
         });
       }
     });
@@ -1222,7 +1251,7 @@ function copyImproveList() {
   if (!list.length) { toast('AI参考の要確認はありません', 'ok'); return; }
   const today = new Date().toLocaleDateString('ja-JP', {month:'numeric',day:'numeric'});
   const text = `【売場チェック AI参考・要目視確認】${today}\n※AIの参考判定です。写真で最終確認してください\n` +
-    list.map(m => `・${m.storeName}（${m.slot}時）${m.category}：${m.issues || m.comment || '要確認'}`).join('\n');
+    list.map(m => `・${m.storeName}（${m.slot}時）${m.kind === 'PC' ? '[PC]' : ''}${m.category}：${m.issues || m.comment || '要確認'}`).join('\n');
   if (navigator.clipboard) {
     navigator.clipboard.writeText(text).then(
       () => toast('コピーしました。LINEに貼り付けできます', 'ok'),
@@ -1325,6 +1354,10 @@ function renderPhotos() {
       if (fails.length) {
         const f = fails[0];
         aiLine = `<div class="pcard-sub" style="color:var(--orange)">🤖参考 ${f.category}：${(f.issues&&f.issues.length)?f.issues.join('・'):(f.comment||'要確認')}</div>`;
+      }
+      const pcNg = s.judgments.filter(j => j && j.pcStatus === 'check' && j.pcIssues && j.pcIssues.length);
+      if (pcNg.length) {
+        aiLine += `<div class="pcard-sub" style="color:var(--orange)">🏷PC ${pcNg[0].pcIssues.join('・')}</div>`;
       }
     }
     return `
@@ -1593,13 +1626,34 @@ function aiDetailHtml(sub, j, photoIdx) {
   const rules = std
     ? `<div class="vd-box"><h4>この売場の評価基準</h4>${std.rules.map(r => `<p>☑ ${r}</p>`).join('')}</div>` : '';
 
+  // プライスカード（前陳の合否とは別枠。基準書でもコンプライアンス②の別採点）
+  let pcBlock = '', pcBadge = '';
+  if (j.pcStatus) {
+    if (j.pcStatus === 'check') {
+      pcBadge = `<span class="jbadge fail">PC要確認</span>`;
+      pcBlock = `<div class="vd-box warn"><h4>🏷 プライスカード：要確認</h4>
+        <p>${(j.pcIssues || []).map(x => '⚠ ' + esc(x)).join('<br>')}
+        ${j.pcComment ? '<br>' + esc(j.pcComment) : ''}</p>
+        <p style="font-size:.72rem;color:var(--gray-text);margin-top:5px">
+        基準：プライスカードレールには商品の左端に合うように取り付けます</p></div>`;
+    } else if (j.pcStatus === 'ok') {
+      pcBlock = `<div class="vd-box good"><h4>🏷 プライスカード</h4>
+        <p>✅ 商品の左端にそろって取り付けられています${j.pcComment ? '<br>' + esc(j.pcComment) : ''}</p></div>`;
+    } else {
+      pcBlock = `<div class="vd-box"><h4>🏷 プライスカード</h4>
+        <p style="color:var(--gray-text)">${esc(j.pcComment || '写真では確認できませんでした。')}</p>
+        <p style="font-size:.72rem;color:var(--gray-text);margin-top:5px">
+        カードを確実に見るには、撮影箇所で「11. プライスカード」を選び、レールに近づいて撮ってください。</p></div>`;
+    }
+  }
+
   return head + `
     <div class="vd-head">
       <span class="vd-cat">🤖 ${esc(j.category || '不明')}</span>
-      <span class="jbadge ${st}">${tag}</span>
+      <span class="jbadge ${st}">${tag}</span>${pcBadge}
       <span style="font-size:.68rem;color:var(--gray-text)">写真${photoIdx + 1}枚目</span>
     </div>
-    ${centerNote}${kpis}${observed}${issues}${comment}${rules}
+    ${centerNote}${kpis}${observed}${issues}${comment}${pcBlock}${rules}
     <div class="vd-note">※ AIの参考判定です。最終的な合否は人の目で確認してください。</div>`;
 }
 
