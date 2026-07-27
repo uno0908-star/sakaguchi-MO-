@@ -1251,10 +1251,14 @@ async function loadStorageStatus() {
       <div style="color:${color};font-weight:700;font-size:.8rem">${label}（${r.pct}%）</div>
       <div style="margin-top:6px;line-height:1.6">
         保管期間 ${r.retentionDays}日／保存済み ${r.dayFolders}日分${r.oldest ? '（最古 ' + r.oldest + '）' : ''}<br>
-        古い写真は毎日03:00に自動削除されます。
+        削除方式：<b style="color:${r.purgeMode === 'permanent' ? 'var(--green)' : 'var(--orange)'}">
+        ${r.purgeMode === 'permanent' ? '完全削除（容量がすぐ空きます）' : 'ゴミ箱へ移動のみ'}</b>
+        ${r.autoCapEnabled ? '<br>容量が増えると古い日から自動で追加削除します' : ''}
       </div>
-      ${r.level !== 'ok' ? `<div style="margin-top:8px;padding:9px 11px;background:var(--orange-light);border-radius:var(--rs);font-size:.76rem;color:var(--gray-dark);line-height:1.6">
-        ${esc(r.hint)}<br>※ ゴミ箱の中身は30日間 容量を占有し続けます。空にすると一番効きます。</div>` : ''}`;
+      ${(r.level !== 'ok' || r.purgeMode !== 'permanent') ? `<div style="margin-top:8px;padding:9px 11px;
+        background:${r.purgeMode !== 'permanent' ? 'var(--red-light)' : 'var(--orange-light)'};
+        border-radius:var(--rs);font-size:.76rem;color:var(--gray-dark);line-height:1.6">
+        ${esc(r.hint)}</div>` : ''}`;
   } catch (e) {
     body.innerHTML = `<span style="color:var(--gray-text)">容量を取得できませんでした（GASを最新版に更新すると表示されます）</span>`;
   }
