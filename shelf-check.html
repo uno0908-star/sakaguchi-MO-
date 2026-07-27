@@ -539,6 +539,9 @@
 const GAS_URL    = 'https://script.google.com/macros/s/AKfycbyrnPSumoTQx7ubPNDpXMToDlDXWfZuCZFnfJ6euSrHloWJL-D3jvxWurGlPU2RC3NeMA/exec';
 const ADMIN_PASS = 'Lawson3963';
 const SLOTS      = [6, 9, 12, 15, 18, 21];
+// このHTMLが前提としているGASのバージョン。gas-shelf-check.gs の CODE_VERSION と揃える。
+// 「コードは貼ったがデプロイで新しいバージョンを作成し忘れ」を自動で検知するため
+const EXPECTED_GAS_VERSION = '2026-07-27k';
 const MAX_PHOTOS = 20;   // 1投稿の上限（写真が多い店舗で17枚程度あるため）
 // 送信は数枚ずつに分ける。1回にまとめると通信・Drive保存・AI判定が集中して
 // 失敗時に全部やり直しになり、AIも1回の枚数が多いほど1枚あたりの分析が浅くなる
@@ -1388,6 +1391,8 @@ async function renderDashboard() {
     </div>
     <p style="font-size:.7rem;color:var(--gray-text);text-align:center;margin-top:4px">横にスクロールできます</p>
 
+    <div id="gas-version-card"></div>
+
     <div class="card" id="storage-card" style="margin-top:12px">
       <p class="card-ttl">💾 写真保存容量</p>
       <div id="storage-body" style="font-size:.8rem;color:var(--gray-text)">確認中…</div>
@@ -1395,6 +1400,7 @@ async function renderDashboard() {
   `;
 
   loadStorageStatus();
+  checkGasVersion();
 
   // 5分後に自動更新
   clearTimeout(S.refreshTimer);
@@ -1428,6 +1434,36 @@ function projectionHtml(r) {
       : `<div style="font-size:.72rem;color:var(--gray-text);margin-top:4px">
         この枚数なら最大 ${r.safeDays}日分まで保管できます</div>`}
     </div>`;
+}
+
+// GASが古いままかを自動で検知する。
+// コードを貼っても「デプロイ→新しいバージョン」を作らないと反映されず、
+// 直したはずの不具合が直っていない状態に気づけないため
+async function checkGasVersion() {
+  const box = document.getElementById('gas-version-card');
+  if (!box) return;
+  try {
+    const r = await gasGet({ action: 'ping' });
+    const v = r.version || null;
+    if (v === EXPECTED_GAS_VERSION) {
+      box.innerHTML = `<div style="font-size:.72rem;color:var(--gray-text);text-align:right;margin-bottom:6px">
+        GAS ${esc(v)} ✅ 最新</div>`;
+      return;
+    }
+    box.innerHTML = `
+      <div class="alert-banner" style="margin-bottom:12px">
+        <h3>⚠️ GASが古いままです</h3>
+        <div class="alert-item">アプリが必要とするバージョン：<b>${EXPECTED_GAS_VERSION}</b></div>
+        <div class="alert-item">今動いているGAS：<b>${v ? esc(v) : '不明（バージョン表示より前のコード）'}</b></div>
+        <div class="alert-item" style="margin-top:6px;line-height:1.6">
+          コードを貼り付けただけでは反映されません。<br>
+          Apps Scriptで「デプロイを管理」→ 鉛筆マーク →<br>
+          バージョンを<b>「新しいバージョン」</b>にして「デプロイ」してください。
+        </div>
+      </div>`;
+  } catch (e) {
+    box.innerHTML = '';
+  }
 }
 
 // 写真保存容量の見張り。運用が始まってから静かに溢れるのを防ぐ
