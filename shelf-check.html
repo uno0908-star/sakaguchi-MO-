@@ -541,7 +541,7 @@ const ADMIN_PASS = 'Lawson3963';
 const SLOTS      = [6, 9, 12, 15, 18, 21];
 // このHTMLが前提としているGASのバージョン。gas-shelf-check.gs の CODE_VERSION と揃える。
 // 「コードは貼ったがデプロイで新しいバージョンを作成し忘れ」を自動で検知するため
-const EXPECTED_GAS_VERSION = '2026-07-27k';
+const EXPECTED_GAS_VERSION = '2026-07-27m';
 const MAX_PHOTOS = 20;   // 1投稿の上限（写真が多い店舗で17枚程度あるため）
 // 送信は数枚ずつに分ける。1回にまとめると通信・Drive保存・AI判定が集中して
 // 失敗時に全部やり直しになり、AIも1回の枚数が多いほど1枚あたりの分析が浅くなる
@@ -1166,12 +1166,13 @@ function renderAiResult(res, photos, meta, seconds) {
     : `<div class="ai-summary fail">📷 送信完了（AI参考：${js.length - passCount}件は要確認かも）</div>`);
 
   const items = js.map((j, i) => {
-    const st  = j.categoryId === 0 ? 'unknown' : (j.pass ? 'pass' : 'fail');
-    const tag = j.categoryId === 0 ? '判別不可' : (j.pass ? '参考OK' : '要確認?');
+    const st  = j.unclear ? 'review' : (j.categoryId === 0 ? 'unknown' : (j.pass ? 'pass' : 'fail'));
+    const tag = j.unclear ? '📷判定できず' : (j.categoryId === 0 ? '判定対象外' : (j.pass ? '参考OK' : '要確認?'));
     const pi  = (typeof j.idx === 'number' && photos[j.idx]) ? j.idx : i;
     const thumb = photos[pi] || '';
-    const issues = (j.issues && j.issues.length)
-      ? `<div class="ai-issues">⚠ ${j.issues.join(' / ')}</div>` : '';
+    const issues = j.unclear
+      ? `<div class="ai-issues" style="color:var(--blue-dark)">📷 ${esc(j.photoIssue || '写真では判定できません')}／正面から撮り直してください</div>`
+      : ((j.issues && j.issues.length) ? `<div class="ai-issues">⚠ ${j.issues.join(' / ')}</div>` : '');
     const comment = j.comment ? `<div class="ai-comment">${j.comment}</div>` : '';
     return `
       <div class="ai-item ${st}" onclick="openJustSent(${pi})" style="cursor:pointer">
@@ -1335,9 +1336,9 @@ async function renderDashboard() {
         <div class="improve-item" onclick="openStorePhotos(${m.storeId},${m.slot})">
           <div style="flex:1;min-width:0">
             <div class="ii-store">${m.storeName}（${m.slot}時）</div>
-            <div class="ii-detail">${m.category}：${m.issues || m.comment || '要確認'}</div>
+            <div class="ii-detail">${m.kind === '撮り直し' ? '📷 ' : ''}${m.category}：${m.issues || m.comment || '要確認'}</div>
           </div>
-          <span class="jbadge fail">目視確認</span>
+          <span class="jbadge ${m.kind === '撮り直し' ? 'review' : 'fail'}">${m.kind === '撮り直し' ? '撮り直し' : '目視確認'}</span>
         </div>`).join('')}
       <button class="btn-sec" style="width:100%;margin-top:6px;font-size:.8rem" onclick="copyImproveList()">📋 一覧をコピー</button>
     </div>` : '';
@@ -1518,7 +1519,18 @@ function getImproveList() {
     if (s.aiStatus !== 'judged' || !Array.isArray(s.judgments)) return;
     s.judgments.forEach(j => {
       if (!j) return;
-      if (j.pass === false) {
+      if (j.unclear) {
+        // AIが判定できなかった写真。OKと見なさず、人が必ず見るリストに載せる
+        result.push({
+          storeId:   s.storeId,
+          storeName: s.storeName,
+          slot:      s.slot,
+          kind:      '撮り直し',
+          category:  j.category || '不明',
+          issues:    j.photoIssue || '写真では判定できません',
+          comment:   '正面から撮り直すか、人の目で確認してください'
+        });
+      } else if (j.pass === false) {
         result.push({
           storeId:   s.storeId,
           storeName: s.storeName,
@@ -1882,9 +1894,19 @@ function aiDetailHtml(sub, j, photoIdx) {
   }
 
   const unknown = j.categoryId === 0;
-  const st  = unknown ? 'unknown' : (j.pass ? 'pass' : 'fail');
-  const tag = unknown ? '判別できず' : (j.pass ? '参考OK' : '要確認かも');
+  const st  = j.unclear ? 'review' : (unknown ? 'unknown' : (j.pass ? 'pass' : 'fail'));
+  const tag = j.unclear ? '📷 判定できません' : (unknown ? '判定対象外' : (j.pass ? '参考OK' : '要確認かも'));
   const std = STANDARDS.find(x => x.id === j.categoryId);
+
+  // 斜め撮り・暗い等で判定できない写真。OKと誤解させないよう理由と撮り直し方を出す
+  const retake = j.unclear ? `<div class="vd-box review">
+      <h4>📷 この写真では判定できません</h4>
+      <p>${esc(j.photoIssue || '写真の状態が判定に適していません')}</p>
+      ${j.comment ? `<p style="margin-top:5px">${esc(j.comment)}</p>` : ''}
+      <p style="font-size:.73rem;color:var(--gray-dark);margin-top:6px">
+      売場の<b>正面から</b>、棚全体が入るように撮り直してください。<br>
+      通路が狭くて正面から撮れない場合は、この写真で人が目視確認してください。</p>
+    </div>` : '';
 
   // 穴空き数・正面率（新しい判定にだけ入る）
   let kpis = '';
@@ -1928,7 +1950,7 @@ function aiDetailHtml(sub, j, photoIdx) {
       <span class="jbadge ${st}">${tag}</span>
       <span style="font-size:.68rem;color:var(--gray-text)">写真${photoIdx + 1}枚目</span>
     </div>
-    ${centerNote}${kpis}${observed}${issues}${comment}${pcBlock}${rules}
+    ${retake}${centerNote}${j.unclear ? '' : kpis}${observed}${issues}${j.unclear ? '' : comment}${pcBlock}${rules}
     <div class="vd-note">※ AIの参考判定です。最終的な合否は人の目で確認してください。</div>`;
 }
 
@@ -1953,23 +1975,26 @@ function openSubmissionList(sub) {
 
   const jOf = i => js.find(x => x && x.idx === i) || js[i];
   const isUnknown = j => j && j.categoryId === 0;
-  const okN = sub.imageUrls.filter((_, i) => { const j = jOf(i); return j && !isUnknown(j) && j.pass === true; }).length;
-  const ngN = sub.imageUrls.filter((_, i) => { const j = jOf(i); return j && j.pass === false; }).length;
-  const unN = sub.imageUrls.filter((_, i) => isUnknown(jOf(i))).length;
+  const okN = sub.imageUrls.filter((_, i) => { const j = jOf(i); return j && !j.unclear && !isUnknown(j) && j.pass === true; }).length;
+  const ngN = sub.imageUrls.filter((_, i) => { const j = jOf(i); return j && !j.unclear && j.pass === false; }).length;
+  const reN = sub.imageUrls.filter((_, i) => { const j = jOf(i); return j && j.unclear; }).length;
 
   const rows = sub.imageUrls.map((url, i) => {
     const j = jOf(i);
-    const cls = !j ? '' : (j.pass === false ? 'fail' : (isUnknown(j) ? '' : 'pass'));
+    const cls = !j ? '' : (j.unclear ? 'pcng' : (j.pass === false ? 'fail' : (isUnknown(j) ? '' : 'pass')));
     let badges = '', lines = '';
     if (j && !j.error) {
-      const st  = isUnknown(j) ? 'unknown' : (j.pass ? 'pass' : 'fail');
-      const tag = isUnknown(j) ? '判定対象外' : (j.pass ? '参考OK' : '要確認かも');
+      const st  = j.unclear ? 'review' : (isUnknown(j) ? 'unknown' : (j.pass ? 'pass' : 'fail'));
+      const tag = j.unclear ? '📷 判定できません' : (isUnknown(j) ? '判定対象外' : (j.pass ? '参考OK' : '要確認かも'));
       badges = `<span class="jbadge ${st}">${tag}</span>`;
-      if (!isUnknown(j) && typeof j.holes === 'number' && typeof j.limit === 'number') {
+      if (j.unclear) {
+        lines += `<div class="lv-line pc">📷 ${esc(j.photoIssue || '写真の状態が判定に適していません')}
+          ／ 正面から撮り直すか、人の目で確認してください</div>`;
+      } else if (!isUnknown(j) && typeof j.holes === 'number' && typeof j.limit === 'number') {
         lines += `<div class="lv-line" style="color:var(--gray-text)">穴空き・凹み ${j.holes} / ${j.limit}</div>`;
       }
       if (j.issues && j.issues.length) lines += `<div class="lv-line warn">⚠ ${j.issues.map(esc).join('・')}</div>`;
-      if (j.comment) lines += `<div class="lv-line">${esc(j.comment)}</div>`;
+      if (j.comment && !j.unclear) lines += `<div class="lv-line">${esc(j.comment)}</div>`;
     } else {
       lines = `<div class="lv-line" style="color:var(--gray-text)">AI判定はありません</div>`;
     }
@@ -1996,7 +2021,7 @@ function openSubmissionList(sub) {
     <div class="lv-sum">
       <div><b class="vgreen">${okN}</b><span>参考OK</span></div>
       <div><b class="vorange">${ngN}</b><span>要確認</span></div>
-      <div><b style="color:var(--gray-text)">${unN}</b><span>判定対象外</span></div>
+      <div><b class="vblue">${reN}</b><span>📷 判定できず</span></div>
     </div>
     <div class="card" style="padding:11px 13px;margin-bottom:10px">
       <div style="font-size:.78rem;line-height:1.65">
