@@ -171,6 +171,37 @@
     .vd-note{font-size:.73rem;color:var(--gray-text);line-height:1.55;margin-top:6px}
     .vd-center{background:var(--blue-light);border-radius:var(--rs);padding:8px 11px;font-size:.75rem;color:var(--blue-dark);line-height:1.5;margin-bottom:8px}
 
+    /* ============ 投稿の一覧ビュー（送信直後と同じ見え方で後から確認） ============ */
+    #listview{display:none;position:fixed;inset:0;z-index:280;background:var(--gray-bg);flex-direction:column}
+    #listview.open{display:flex}
+    #lv-top{display:flex;align-items:center;gap:8px;padding:11px 12px;background:var(--blue);color:#fff;flex-shrink:0}
+    #lv-title{flex:1;min-width:0;font-size:.88rem;font-weight:700;line-height:1.35}
+    #lv-title span{display:block;font-size:.7rem;opacity:.85;font-weight:400;margin-top:2px}
+    #lv-close{background:none;border:none;color:#fff;font-size:1.5rem;line-height:1;padding:2px 8px;cursor:pointer;font-family:var(--font)}
+    #lv-body{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:12px}
+    #lv-body > .card:last-child{margin-bottom:24px}
+
+    .lv-row{background:#fff;border-radius:var(--r);box-shadow:var(--sh);margin-bottom:10px;overflow:hidden}
+    .lv-row.fail{border-left:4px solid var(--orange)}
+    .lv-row.pass{border-left:4px solid var(--green)}
+    .lv-row.pcng{border-left:4px solid var(--blue)}
+    .lv-main{display:flex;gap:10px;padding:10px}
+    .lv-thumb{width:88px;height:88px;border-radius:var(--rs);object-fit:cover;flex-shrink:0;background:var(--gray-bg);cursor:pointer}
+    .lv-info{flex:1;min-width:0}
+    .lv-cat{font-size:.88rem;font-weight:700;display:flex;align-items:center;gap:5px;flex-wrap:wrap;margin-bottom:4px}
+    .lv-no{font-size:.66rem;color:var(--gray-text);font-weight:400}
+    .lv-line{font-size:.76rem;line-height:1.5;margin-top:2px}
+    .lv-line.warn{color:var(--orange)}
+    .lv-line.pc{color:var(--blue-dark)}
+    .lv-acts{display:flex;gap:6px;padding:0 10px 10px}
+    .lv-acts button{flex:1;padding:9px 6px;border-radius:var(--rs);font-size:.76rem;font-weight:700;font-family:var(--font);cursor:pointer;border:1.5px solid var(--gray-border);background:#fff;color:var(--gray-dark)}
+    .lv-acts button.line{border-color:#06C755;color:#06C755}
+    .lv-acts button.line:active{background:#E8F8EE}
+    .lv-sum{display:flex;gap:8px;margin-bottom:12px}
+    .lv-sum div{flex:1;background:#fff;border-radius:var(--r);padding:11px 6px;text-align:center;box-shadow:var(--sh)}
+    .lv-sum b{display:block;font-size:1.4rem;line-height:1.1}
+    .lv-sum span{font-size:.66rem;color:var(--gray-text)}
+
     /* ============ 出来栄え基準タブ ============ */
     .std-item{background:#fff;border-radius:var(--r);box-shadow:var(--sh);margin-bottom:10px;overflow:hidden}
     .std-head{display:flex;align-items:center;gap:10px;padding:13px 14px;cursor:pointer}
@@ -417,6 +448,15 @@
   </button>
 </nav>
 
+<!-- ========== 投稿の一覧ビュー（送信直後と同じ並びで後から確認） ========== -->
+<div id="listview">
+  <div id="lv-top">
+    <span id="lv-title"></span>
+    <button id="lv-close" onclick="closeListView()" aria-label="閉じる">✕</button>
+  </div>
+  <div id="lv-body"></div>
+</div>
+
 <!-- ========== 画像ビューア（ピンチイン・アウト対応） ========== -->
 <div id="viewer">
   <div id="v-top">
@@ -599,6 +639,8 @@ const S = {
   _photoCards:  [],
   myRecent:     [],
   lastResult:   null,   // 送信直後のAI判定（写真はdataURLのまま保持）
+  listSub:      null,   // 一覧ビューで開いている投稿
+  listSource:   'photos',
   resumeId:     null,   // 途中で失敗した投稿のID（再送で同じ投稿に追記する）
   resumeDate:   null,
   _sentCount:   0,
@@ -1160,6 +1202,7 @@ async function deleteSubmission(id, source) {
     toast('削除しました', 'ok');
     S.dataFetched = false;
     closeViewer();
+    closeListView();
     if (source === 'photos') {
       await fetchData(true);
       renderPhotos();
@@ -1751,7 +1794,10 @@ function viewerStep(d) {
 
 function closeViewer() {
   document.getElementById('viewer').classList.remove('open');
-  document.body.style.overflow = '';
+  // 一覧ビューから開いた場合は、閉じても一覧が残るのでスクロールは止めたまま
+  if (!document.getElementById('listview').classList.contains('open')) {
+    document.body.style.overflow = '';
+  }
 }
 
 // ---------------- AI判定の詳細HTML ----------------
@@ -1844,6 +1890,219 @@ function esc(s) {
   return String(s == null ? '' : s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 }
 
+// ================================================================
+// 投稿の一覧ビュー
+//   送信直後に出るAI判定リストと同じ並びを、あとから何度でも見られるようにする
+// ================================================================
+function openSubmissionList(sub) {
+  if (!sub || !sub.imageUrls || !sub.imageUrls.length) return;
+  S.listSub = sub;
+  const js = Array.isArray(sub.judgments) ? sub.judgments : [];
+  const t  = sub.submittedAt
+    ? new Date(sub.submittedAt).toLocaleTimeString('ja-JP', {hour:'2-digit',minute:'2-digit'}) : '';
+
+  document.getElementById('lv-title').innerHTML =
+    `${esc(sub.storeName)} ${sub.slot}時スロット
+     <span>${esc(sub.submittedBy || '')} ${t} ／ 写真${sub.imageUrls.length}枚${sub.notes ? ' ／ 📝' + esc(sub.notes) : ''}</span>`;
+
+  const jOf = i => js.find(x => x && x.idx === i) || js[i];
+  const okN = sub.imageUrls.filter((_, i) => { const j = jOf(i); return j && j.pass === true; }).length;
+  const ngN = sub.imageUrls.filter((_, i) => { const j = jOf(i); return j && j.pass === false; }).length;
+  const pcN = sub.imageUrls.filter((_, i) => {
+    const j = jOf(i); return j && (j.pcStatus === 'check' || j.pcStatus === 'review'); }).length;
+
+  const rows = sub.imageUrls.map((url, i) => {
+    const j = jOf(i);
+    const cls = !j ? '' : (j.pcStatus === 'check' || j.pcStatus === 'review') ? 'pcng'
+              : (j.pass === false ? 'fail' : 'pass');
+    let badges = '', lines = '';
+    if (j && !j.error) {
+      const unknown = j.categoryId === 0;
+      const st  = unknown ? 'unknown' : (j.pass ? 'pass' : 'fail');
+      const tag = unknown ? '判別できず' : (j.pass ? '参考OK' : '要確認かも');
+      badges = `<span class="jbadge ${st}">${tag}</span>`;
+      if (j.pcStatus === 'check') badges += `<span class="jbadge fail">🏷PC要確認</span>`;
+      if (j.pcStatus === 'review') badges += `<span class="jbadge review">👀PC目視</span>`;
+      if (typeof j.holes === 'number' && typeof j.limit === 'number') {
+        lines += `<div class="lv-line" style="color:var(--gray-text)">穴空き・凹み ${j.holes} / ${j.limit}</div>`;
+      }
+      if (j.issues && j.issues.length) lines += `<div class="lv-line warn">⚠ ${j.issues.map(esc).join('・')}</div>`;
+      if (j.comment) lines += `<div class="lv-line">${esc(j.comment)}</div>`;
+      if (j.pcIssues && j.pcIssues.length) {
+        lines += `<div class="lv-line pc">🏷 ${j.pcIssues.map(esc).join('・')}</div>`;
+      }
+    } else {
+      lines = `<div class="lv-line" style="color:var(--gray-text)">AI判定はありません</div>`;
+    }
+    const needShare = j && (j.pcStatus === 'check' || j.pcStatus === 'review');
+    return `
+      <div class="lv-row ${cls}">
+        <div class="lv-main">
+          <img class="lv-thumb" src="${driveImg(url, 400)}" loading="lazy" referrerpolicy="no-referrer"
+               onclick="openSubmission(S.listSub, ${i}, null)"
+               onerror="this.onerror=null;this.src='${url}'">
+          <div class="lv-info">
+            <div class="lv-cat">${esc((j && j.category) || '写真')}${badges}
+              <span class="lv-no">${i + 1}枚目</span></div>
+            ${lines}
+          </div>
+        </div>
+        <div class="lv-acts">
+          <button onclick="openSubmission(S.listSub, ${i}, null)">🔍 拡大して見る</button>
+          ${needShare ? `<button class="line" onclick="shareToLine(${i})">📤 LINEで指示</button>` : ''}
+        </div>
+      </div>`;
+  }).join('');
+
+  document.getElementById('lv-body').innerHTML = `
+    <div class="lv-sum">
+      <div><b class="vgreen">${okN}</b><span>参考OK</span></div>
+      <div><b class="vorange">${ngN}</b><span>要確認</span></div>
+      <div><b class="vblue">${pcN}</b><span>PC要確認</span></div>
+    </div>
+    ${pcN ? `<div class="card" style="padding:11px 13px;margin-bottom:10px">
+      <div style="font-size:.78rem;line-height:1.6">🏷 プライスカードの指摘が <b>${pcN}件</b> あります。<br>
+      各写真の「📤 LINEで指示」から、写真つきで改善指示を送れます。</div>
+      <button class="btn-sec" style="width:100%;margin-top:8px;font-size:.8rem;border-color:#06C755;color:#06C755"
+        onclick="shareAllPcToLine()">📤 PC指摘まとめてLINEで送る（文章のみ）</button>
+    </div>` : ''}
+    ${rows}
+    ${sub.submissionId ? `<div style="padding:4px 0 8px">
+      <button class="btn-sec" style="width:100%;border-color:var(--red);color:var(--red)"
+        onclick="deleteSubmission('${sub.submissionId}','${S.listSource || 'photos'}')">🗑 この投稿を削除</button>
+    </div>` : ''}`;
+
+  document.getElementById('listview').classList.add('open');
+  document.body.style.overflow = 'hidden';
+  document.getElementById('lv-body').scrollTop = 0;
+}
+
+function closeListView() {
+  document.getElementById('listview').classList.remove('open');
+  document.body.style.overflow = '';
+}
+
+// ================================================================
+// LINEへ改善指示を転送
+//   写真つきで送るには端末の共有機能（Web Share）を使う。
+//   LINE Notifyは2025年3月で終了しており、Botは別途契約が必要なため、
+//   追加費用なしで写真を送れるこの方法にしている
+// ================================================================
+function buildPcMessage(sub, i, j) {
+  const t = sub.submittedAt
+    ? new Date(sub.submittedAt).toLocaleString('ja-JP', {month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit'}) : '';
+  const std = STANDARDS.find(x => x.id === j.categoryId);
+  const L = [];
+  L.push('【売場チェック】プライスカードの改善をお願いします');
+  L.push('');
+  L.push(`店舗：${sub.storeName}`);
+  L.push(`時間：${sub.slot}時スロット${t ? '（' + t + '）' : ''}`);
+  L.push(`売場：${(j.category || '不明')}（写真${i + 1}枚目）`);
+  L.push('');
+  if (j.pcIssues && j.pcIssues.length) {
+    L.push('■ 気になった点');
+    j.pcIssues.forEach(x => L.push('・' + x));
+    L.push('');
+  }
+  if (j.pcComment) { L.push('■ お願いしたいこと'); L.push(j.pcComment); L.push(''); }
+  L.push('■ 基準（出来栄え基準書 コンプライアンス②）');
+  L.push('プライスカードレールには、商品の左端に合うように取り付けます');
+  if (j.pcStatus === 'review') {
+    L.push('');
+    L.push('※NB（メーカー品）はプライスカードが必要です。');
+    L.push('　オリジナル商品はパッケージに値札があるため不要です。');
+    L.push('　写真では見分けられないので、現物で確認してください。');
+  }
+  if (std && std.center) {
+    L.push('');
+    L.push('※この売場は中央寄せです。棚の左右端があくのは正常です。');
+  }
+  return L.join('\n');
+}
+
+async function shareToLine(i) {
+  const sub = S.listSub;
+  if (!sub) return;
+  const js = Array.isArray(sub.judgments) ? sub.judgments : [];
+  const j  = js.find(x => x && x.idx === i) || js[i];
+  if (!j) return;
+
+  const text = buildPcMessage(sub, i, j);
+  const btnLabel = '写真を準備しています…';
+  toast(btnLabel);
+
+  let file = null;
+  try {
+    // Driveの画像はブラウザから直接読めない（CORS）ためGAS経由で取り出す
+    const r = await gasGet({ action: 'getPhotoData', id: sub.imageUrls[i] });
+    if (r.success && r.dataUrl) {
+      const blob = await (await fetch(r.dataUrl)).blob();
+      file = new File([blob], `売場チェック_${sub.storeName}_${sub.slot}時_${i + 1}.jpg`, { type: blob.type || 'image/jpeg' });
+    }
+  } catch (e) { /* 写真なしで文章だけ送る */ }
+
+  // 端末の共有メニューから LINE を選ぶ（写真つきで送れる）
+  if (navigator.share) {
+    try {
+      if (file && navigator.canShare && navigator.canShare({ files: [file] })) {
+        await navigator.share({ files: [file], text });
+      } else {
+        await navigator.share({ text });
+      }
+      return;
+    } catch (e) {
+      if (e && e.name === 'AbortError') return;   // ユーザーが共有をやめた
+    }
+  }
+  // 共有機能が使えない端末（PCなど）は文章をLINEへ、写真は別途保存
+  fallbackLineShare(text, file);
+}
+
+function fallbackLineShare(text, file) {
+  const url = 'https://line.me/R/msg/text/?' + encodeURIComponent(text);
+  if (navigator.clipboard) navigator.clipboard.writeText(text).catch(() => {});
+  if (file) {
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(file);
+    a.download = file.name;
+    a.click();
+    setTimeout(() => URL.revokeObjectURL(a.href), 5000);
+    toast('文章をコピーし、写真を保存しました。LINEに貼り付けてください', 'ok');
+  } else {
+    toast('文章をコピーしました。LINEに貼り付けてください', 'ok');
+  }
+  window.open(url, '_blank');
+}
+
+// PC指摘をまとめて1通に（写真は付かない）
+function shareAllPcToLine() {
+  const sub = S.listSub;
+  if (!sub) return;
+  const js = Array.isArray(sub.judgments) ? sub.judgments : [];
+  const targets = sub.imageUrls.map((_, i) => js.find(x => x && x.idx === i) || js[i])
+    .map((j, i) => ({ j, i }))
+    .filter(o => o.j && (o.j.pcStatus === 'check' || o.j.pcStatus === 'review'));
+  if (!targets.length) { toast('PCの指摘はありません', 'ok'); return; }
+
+  const t = sub.submittedAt
+    ? new Date(sub.submittedAt).toLocaleString('ja-JP', {month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit'}) : '';
+  const L = ['【売場チェック】プライスカードの改善をお願いします', '',
+             `店舗：${sub.storeName}`, `時間：${sub.slot}時スロット${t ? '（' + t + '）' : ''}`, ''];
+  targets.forEach(o => {
+    L.push(`■ ${o.j.category || '売場'}（写真${o.i + 1}枚目）`);
+    (o.j.pcIssues || []).forEach(x => L.push('・' + x));
+    if (o.j.pcComment) L.push('→ ' + o.j.pcComment);
+    L.push('');
+  });
+  L.push('■ 基準（出来栄え基準書 コンプライアンス②）');
+  L.push('プライスカードレールには、商品の左端に合うように取り付けます');
+  const text = L.join('\n');
+
+  if (navigator.share) {
+    navigator.share({ text }).catch(e => { if (!e || e.name !== 'AbortError') fallbackLineShare(text, null); });
+  } else fallbackLineShare(text, null);
+}
+
 // 投稿1件をビューアで開く（写真タブ／本日のあなたの投稿 共通）
 function openSubmission(sub, startIdx, canDelete) {
   if (!sub || !sub.imageUrls || !sub.imageUrls.length) return;
@@ -1860,14 +2119,16 @@ function openSubmission(sub, startIdx, canDelete) {
   });
 }
 
-// 写真タブのカードから
+// 写真タブのカードから → まず一覧で全体を確認できるようにする
 function openModal(cardIdx) {
-  openSubmission(S._photoCards[cardIdx], 0, 'photos');
+  S.listSource = 'photos';
+  openSubmissionList(S._photoCards[cardIdx]);
 }
 
 // 本日のあなたの投稿から
 function openMyRecent(i) {
-  openSubmission(S.myRecent[i], 0, 'mine');
+  S.listSource = 'mine';
+  openSubmissionList(S.myRecent[i]);
 }
 
 // 送信直後のAI判定結果から（写真はローカルのdataURL）
