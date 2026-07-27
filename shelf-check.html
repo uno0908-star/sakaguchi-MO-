@@ -131,17 +131,67 @@
     .admin-gate .finput{max-width:260px;margin:0 auto 12px;display:block}
     .admin-gate .btn-primary{max-width:260px;margin:0 auto;display:block}
 
-    /* Modal */
-    #modal{display:none;position:fixed;inset:0;z-index:200;background:rgba(0,0,0,.9);align-items:center;justify-content:center;flex-direction:column}
-    #modal.open{display:flex}
-    #modal-img{max-width:96vw;max-height:75vh;object-fit:contain;border-radius:var(--rs)}
-    .modal-nav{display:flex;align-items:center;gap:14px;margin-top:14px}
-    .modal-nav button{background:rgba(255,255,255,.9);border:none;border-radius:var(--rs);padding:9px 20px;font-size:.9rem;font-weight:700;cursor:pointer;font-family:var(--font)}
-    #modal-cnt{color:#fff;font-size:.85rem;min-width:48px;text-align:center}
-    #modal-cap{color:#ddd;font-size:.78rem;margin-top:8px;text-align:center;max-width:90vw;white-space:pre-line;line-height:1.5}
-    #modal-close{position:absolute;top:16px;right:16px;background:none;border:none;color:#fff;font-size:1.6rem;cursor:pointer;padding:6px;line-height:1}
-    #modal-del{margin-top:14px;padding:9px 20px;background:var(--red);border:none;border-radius:var(--rs);color:#fff;font-size:.85rem;font-weight:700;font-family:var(--font);cursor:pointer}
-    #modal-del:active{background:#b91c1c}
+    /* ============ 画像ビューア（ピンチイン・アウト対応） ============ */
+    #viewer{display:none;position:fixed;inset:0;z-index:300;background:#0b0b0d;flex-direction:column}
+    #viewer.open{display:flex}
+    #v-top{display:flex;align-items:center;gap:8px;padding:10px 12px;color:#fff;flex-shrink:0}
+    #v-title{flex:1;min-width:0;font-size:.82rem;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+    #v-cnt{font-size:.76rem;opacity:.8;white-space:nowrap}
+    #v-close{background:none;border:none;color:#fff;font-size:1.5rem;line-height:1;padding:2px 8px;cursor:pointer;font-family:var(--font)}
+    #v-stage{flex:1;min-height:0;overflow:hidden;position:relative;touch-action:none;display:flex;align-items:center;justify-content:center}
+    #v-img{max-width:100%;max-height:100%;object-fit:contain;transform-origin:center center;will-change:transform;user-select:none;-webkit-user-select:none;-webkit-user-drag:none;pointer-events:none}
+    #v-hint{position:absolute;bottom:10px;left:50%;transform:translateX(-50%);color:#fff;background:rgba(0,0,0,.5);border-radius:99px;font-size:.68rem;padding:5px 14px;pointer-events:none;transition:opacity .5s;white-space:nowrap}
+    #v-zoombar{position:absolute;top:8px;right:8px;display:flex;flex-direction:column;gap:6px}
+    #v-zoombar button{width:38px;height:34px;border-radius:var(--rs);border:none;background:rgba(255,255,255,.18);color:#fff;font-size:1rem;font-weight:700;cursor:pointer;font-family:var(--font);backdrop-filter:blur(4px)}
+    #v-bottom{flex-shrink:0;background:#fff;max-height:48vh;overflow-y:auto;-webkit-overflow-scrolling:touch;border-radius:14px 14px 0 0}
+    #v-nav{display:flex;align-items:center;justify-content:center;gap:10px;padding:9px 10px 4px}
+    #v-nav button{background:var(--gray-bg);border:none;border-radius:var(--rs);padding:8px 20px;font-size:.85rem;font-weight:700;font-family:var(--font);color:var(--gray-dark);cursor:pointer}
+    #v-nav button:disabled{opacity:.3}
+    #v-detail{padding:2px 14px 14px}
+    #v-actions{padding:0 14px 16px}
+    #v-actions button{width:100%;padding:11px;background:#fff;border:1.5px solid var(--red);border-radius:var(--rs);color:var(--red);font-size:.85rem;font-weight:700;font-family:var(--font);cursor:pointer}
+
+    /* ビューア内 AI判定詳細 */
+    .vd-head{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:8px 0 6px}
+    .vd-cat{font-size:.98rem;font-weight:800}
+    .vd-meta{font-size:.74rem;color:var(--gray-text);margin-bottom:8px;line-height:1.6}
+    .vd-box{background:var(--gray-bg);border-radius:var(--rs);padding:10px 12px;margin-bottom:8px}
+    .vd-box.warn{background:var(--orange-light)}
+    .vd-box.good{background:var(--green-light)}
+    .vd-box h4{font-size:.72rem;font-weight:700;color:var(--gray-text);margin-bottom:4px}
+    .vd-box p{font-size:.82rem;line-height:1.55}
+    .vd-kpis{display:flex;gap:8px;margin-bottom:8px}
+    .vd-kpi{flex:1;background:var(--gray-bg);border-radius:var(--rs);padding:8px 4px;text-align:center}
+    .vd-kpi b{display:block;font-size:1.15rem;line-height:1.2}
+    .vd-kpi span{font-size:.64rem;color:var(--gray-text)}
+    .vd-kpi.over b{color:var(--orange)}
+    .vd-kpi.ok b{color:var(--green)}
+    .vd-none{font-size:.82rem;color:var(--gray-text);padding:12px 0;text-align:center}
+    .vd-note{font-size:.73rem;color:var(--gray-text);line-height:1.55;margin-top:6px}
+    .vd-center{background:var(--blue-light);border-radius:var(--rs);padding:8px 11px;font-size:.75rem;color:var(--blue-dark);line-height:1.5;margin-bottom:8px}
+
+    /* ============ 出来栄え基準タブ ============ */
+    .std-item{background:#fff;border-radius:var(--r);box-shadow:var(--sh);margin-bottom:10px;overflow:hidden}
+    .std-head{display:flex;align-items:center;gap:10px;padding:13px 14px;cursor:pointer}
+    .std-no{width:28px;height:28px;border-radius:50%;background:var(--blue);color:#fff;font-size:.8rem;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+    .std-nm{flex:1;min-width:0}
+    .std-nm b{font-size:.93rem;display:block}
+    .std-nm span{font-size:.7rem;color:var(--gray-text);display:block;margin-top:1px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+    .std-arw{color:var(--gray-text);font-size:.9rem;transition:transform .2s;flex-shrink:0}
+    .std-item.open .std-arw{transform:rotate(90deg)}
+    .std-body{display:none;padding:0 14px 14px;border-top:1px solid var(--gray-border)}
+    .std-item.open .std-body{display:block}
+    .std-sec{font-size:.72rem;font-weight:700;color:var(--gray-text);margin:12px 0 5px;letter-spacing:.03em}
+    .std-rule{display:flex;gap:7px;font-size:.84rem;line-height:1.55;margin-bottom:5px}
+    .std-rule::before{content:'☑';color:var(--blue);font-weight:700;flex-shrink:0}
+    .std-note{font-size:.76rem;color:var(--gray-dark);line-height:1.55;margin-bottom:4px;padding-left:12px;position:relative}
+    .std-note::before{content:'●';position:absolute;left:0;color:var(--gray-border);font-size:.6rem;top:.42em}
+    .std-photos{display:grid;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:8px;margin-top:6px}
+    .std-photos img{width:100%;aspect-ratio:3/4;object-fit:cover;border-radius:var(--rs);cursor:pointer;background:var(--gray-bg)}
+    .std-tag{display:inline-block;font-size:.65rem;font-weight:700;padding:2px 8px;border-radius:99px;background:var(--blue-light);color:var(--blue-dark)}
+    .std-center-box{background:var(--blue-light);border-left:3px solid var(--blue);border-radius:var(--rs);padding:9px 11px;margin:10px 0;font-size:.78rem;line-height:1.6;color:var(--blue-dark)}
+    .std-foot{display:flex;gap:8px;margin-top:12px;font-size:.72rem;color:var(--gray-text);flex-wrap:wrap}
+    .std-foot span{background:var(--gray-bg);border-radius:99px;padding:3px 10px}
 
     /* Toast */
     #toast-c{position:fixed;top:calc(var(--hdr-h) + 10px);left:50%;transform:translateX(-50%);z-index:500;display:flex;flex-direction:column;gap:8px;align-items:center;pointer-events:none}
@@ -227,9 +277,14 @@
       </div>
       <div class="fgroup">
         <label class="flabel">撮影箇所 <span style="font-weight:400;color:var(--gray-text)">（任意・選ぶとAI判定が正確に）</span></label>
-        <select id="sel-category" class="finput">
+        <select id="sel-category" class="finput" onchange="onPickCategory()">
           <option value="">選ばない（AIが自動で判別）</option>
         </select>
+        <div id="cat-std-link" style="margin-top:6px;display:none">
+          <button class="btn-sec" style="font-size:.78rem;padding:7px 12px" onclick="openCategoryStandard()">
+            📖 この売場の出来栄え基準を見る
+          </button>
+        </div>
       </div>
       <div class="fgroup">
         <label class="flabel">売場写真（複数枚可）</label>
@@ -305,12 +360,27 @@
     </div>
   </section>
 
+  <!-- ========== 出来栄え基準タブ ========== -->
+  <section id="tab-standard" class="tab-pane">
+    <div class="card" style="padding:13px 14px">
+      <p style="font-size:.86rem;font-weight:700;margin-bottom:5px">📖 売場づくり 出来栄え基準（26年度）</p>
+      <p style="font-size:.76rem;color:var(--gray-text);line-height:1.6">
+        項目をタップすると基準が開きます。スライド画像をタップすると全画面になり、
+        <b>指2本でピンチイン・アウト</b>して拡大できます。
+      </p>
+    </div>
+    <div id="std-list"></div>
+  </section>
+
 </div>
 
 <!-- Bottom Nav -->
 <nav id="nav">
   <button class="nav-btn active" id="nav-submit" onclick="showTab('submit')">
     <span class="ni">📤</span>投稿
+  </button>
+  <button class="nav-btn" id="nav-standard" onclick="showTab('standard')">
+    <span class="ni">📖</span>基準
   </button>
   <button class="nav-btn" id="nav-dashboard" onclick="showTab('dashboard')">
     <span class="ni">📊</span><span id="nav-dash-txt">ダッシュ</span>
@@ -320,17 +390,30 @@
   </button>
 </nav>
 
-<!-- Photo Modal -->
-<div id="modal">
-  <button id="modal-close" onclick="closeModal()">✕</button>
-  <img id="modal-img" src="" alt="">
-  <div class="modal-nav">
-    <button onclick="modalStep(-1)">‹ 前</button>
-    <span id="modal-cnt"></span>
-    <button onclick="modalStep(1)">次 ›</button>
+<!-- ========== 画像ビューア（ピンチイン・アウト対応） ========== -->
+<div id="viewer">
+  <div id="v-top">
+    <span id="v-title"></span>
+    <span id="v-cnt"></span>
+    <button id="v-close" onclick="closeViewer()" aria-label="閉じる">✕</button>
   </div>
-  <div id="modal-cap"></div>
-  <button id="modal-del" onclick="deleteFromModal()">🗑 この投稿を削除</button>
+  <div id="v-stage">
+    <img id="v-img" src="" alt="" draggable="false">
+    <div id="v-zoombar">
+      <button onclick="zoomBy(1.6)" aria-label="拡大">＋</button>
+      <button onclick="zoomBy(1/1.6)" aria-label="縮小">－</button>
+      <button onclick="zoomReset()" aria-label="等倍に戻す">⤢</button>
+    </div>
+    <div id="v-hint">指2本でピンチ拡大／ダブルタップでも拡大</div>
+  </div>
+  <div id="v-bottom">
+    <div id="v-nav">
+      <button id="v-prev" onclick="viewerStep(-1)">‹ 前</button>
+      <button id="v-next" onclick="viewerStep(1)">次 ›</button>
+    </div>
+    <div id="v-detail"></div>
+    <div id="v-actions"></div>
+  </div>
 </div>
 
 <div id="toast-c"></div>
@@ -342,11 +425,108 @@
 const GAS_URL    = 'https://script.google.com/macros/s/AKfycbyrnPSumoTQx7ubPNDpXMToDlDXWfZuCZFnfJ6euSrHloWJL-D3jvxWurGlPU2RC3NeMA/exec';
 const ADMIN_PASS = 'Lawson3963';
 const SLOTS      = [6, 9, 12, 15, 18, 21];
-const CATEGORIES = [
-  {id:1,name:'米飯ケース'},{id:2,name:'オープンケース'},{id:3,name:'デザート'},
-  {id:4,name:'ベーカリー'},{id:5,name:'冷蔵リーチインケース'},{id:6,name:'冷凍ケース'},
-  {id:7,name:'菓子'},{id:8,name:'即席麺'},{id:9,name:'無印良品・日用品'},{id:10,name:'売場全体'}
+// 撮影箇所の選択肢は STANDARDS（出来栄え基準）から生成し、名称のズレを防ぐ
+// 出来栄え基準書（26年度）売場づくり①〜⑩
+//   slide  … 基準書スライド1枚まるごと（ピンチで拡大して読む）
+//   center … 「中央からフェイスアップ」運用の売場。在庫が少ない時の
+//            棚段の左右の空きは"穴空き"に数えない（AI判定でも同じ扱い）
+const STD_DIR = 'images/standard/';
+const STANDARDS = [
+  { id:1, name:'米飯ケース', sub:'おにぎり・寿司（チルド含む）・弁当（チルド含む）',
+    center:true, freq:'隙あらば前陳（1時間ごと）', score:'4点',
+    point:'おにぎり・寿司・弁当が見やすく選びやすく陳列されている',
+    rules:['商品が<b>中央からフェイスアップ</b>されており、見やすく選びやすい売場になっている',
+           'おにぎりは、穴空きや凹みが<b>全体で5箇所以下</b>である',
+           '寿司は、穴空きや凹みが<b>全体で3箇所以下</b>である',
+           '弁当は、穴空きや凹みが<b>全体で3箇所以下</b>である'],
+    notes:['米飯ケース内の商品は、中央からフェイスアップし、常に見やすく手に取りやすい売場にします',
+           'プライスカード管理の商品（ゆで卵・味噌汁等）も、見やすく手に取りやすく陳列します'],
+    photos:['01_1.jpg'] },
+  { id:2, name:'オープンケース', sub:'調理パン・調理麺・サラダ・日配食品・カット野菜',
+    center:false, freq:'隙あらば前陳（1時間ごと）', score:'4点',
+    point:'調理パン・調理麺・サラダ／日配食品・カット野菜が見やすく選びやすく陳列されている',
+    rules:['商品が正面を向き、見やすく選びやすい売場になっている（<b>売場全体で7割以上</b>が正面）',
+           '調理パン（ワンハンド除く）・調理麺・サラダは、売場全体で穴空きや凹みが<b>7箇所以下</b>である',
+           '日配食品（サラダチキン、日配惣菜・おかず、水物）、カット野菜（カット野菜以外の生鮮は除く）は、売場全体で穴空きや凹みが<b>7箇所以下</b>である'],
+    notes:['日配食品などプライスカード管理の商品は、価格が分かるよう必ずプライスカードを取り付け、前陳機能付きボリューム陳列器具を活用し陳列面をそろえます',
+           '単品POPを取り付ける場合は商品と合致させます'],
+    photos:['02_1.jpg','02_2.jpg'] },
+  { id:3, name:'デザート', sub:'チルド和洋菓子・ヨーグルト・プリン等',
+    center:true, freq:'隙あらば前陳（1時間ごと）', score:'4点',
+    point:'チルド和洋菓子・ヨーグルト・プリン等が見やすく選びやすく陳列されている',
+    rules:['チルド和洋菓子は、<b>中央からフェイスアップ</b>されており、見やすく選びやすい売場になっている',
+           'チルド和洋菓子は、穴空きや凹みが1面あたり（1ゴンドラあたり）<b>5箇所以下</b>である',
+           'ヨーグルト・プリン・ゼリー売場全体で、穴空きや凹みが<b>5箇所以下</b>である'],
+    notes:['チルド和洋菓子の新商品はラウンドケースのエンドで展開します（ラウンドケース以外の店舗はゴールデンゾーンで展開）',
+           'プライスカード管理の商品は価格が分かるように必ずプライスカードを取り付けます',
+           '単品POPを取り付ける場合は商品と合致させます'],
+    photos:['03_1.jpg'] },
+  { id:4, name:'ベーカリー', sub:'菓子パン・食パン・調理パン',
+    center:true, freq:'隙あらば前陳（1時間ごと）', score:'4点',
+    point:'ベーカリーが見やすく選びやすく陳列されている',
+    rules:['商品が<b>中央からフェイスアップ</b>されており、見やすく選びやすい売場になっている',
+           '穴空きや凹みが、<b>1ゴンドラあたり5箇所以下</b>である'],
+    notes:['ベーカリーはグルーピングを整えて陳列します',
+           'プライスカード管理の商品は価格が分かるように必ずプライスカードを取り付けます',
+           '単品POPを取り付ける場合は商品と合致させます',
+           '<b style="color:var(--red)">食パンは重ねて陳列しません</b>'],
+    photos:['04_1.jpg'] },
+  { id:5, name:'冷蔵リーチインケース', sub:'ソフトドリンク・酒類',
+    center:false, freq:'1日5回（6時・11時・13時・18時・22時）', score:'4点',
+    point:'ソフトドリンク・酒類が正面を向いており、見やすく選びやすく陳列されている',
+    rules:['商品が正面を向いており、見やすく選びやすい売場になっている（<b>売場全体で7割以上</b>が正面）',
+           '穴空きや凹みが、<b>1ゴンドラあたり5箇所以下</b>である'],
+    notes:['プライスカードを適切に取り付け、売場に穴空きや凹みがないよう定期的に前陳・補充します',
+           '酒類売場には酒類表示資材をもれなく取り付けます',
+           'スライダーパーテーションが機能するように、適正な傾斜を付け、余裕を持ったフェイス数で陳列します',
+           '商品の顔を正面に向けて補充します（2Fごとに仕切板を設置／2列目以降の商品の顔も正面を向ける）'],
+    photos:['05_1.jpg','05_2.jpg','05_3.jpg'] },
+  { id:6, name:'冷凍ケース', sub:'冷凍リーチインケース・冷凍平台・ノベルティケース',
+    center:false, freq:'1日2回（6時・18時）', score:'3点',
+    point:'冷凍食品は袋のシワがなく、商品名が分かり、見やすく選びやすく陳列されている',
+    rules:['冷凍リーチインケースは、穴空きや、倒れ、凹みが<b>1ゴンドラあたり5箇所以下</b>である',
+           '冷凍平台・ノベルティケースは、<b>在庫量8割以下のカゴが3カゴ以下</b>である'],
+    notes:['プライスカードを適切に取り付け、売場に穴空きや、倒れ、凹みがないよう定期的に前陳・補充します',
+           'リーチインケースの商品は、前陳機能付きボリューム陳列器具を活用し、袋のシワをのばして立たせます',
+           '冷凍平台・ノベルティケースの商品は、ロードラインを越えないように陳列します'],
+    photos:['06_1.jpg','06_2.jpg'] },
+  { id:7, name:'菓子', sub:'袋飴・グミ・袋スナック・箱スナック',
+    center:false, freq:'1日5回（6時・11時・13時・18時・22時）', score:'3点',
+    point:'袋飴・グミ・袋・箱スナック等が正面を向いており、見やすく選びやすく陳列されている',
+    rules:['商品が正面を向いており、見やすく選びやすい売場になっている（<b>売場全体で7割以上</b>が正面）',
+           'フック陳列されている袋飴・グミは、穴空きや凹みが<b>1ゴンドラあたり5箇所以下</b>である',
+           '袋・箱スナック、LWオリジナル菓子は、穴空きや、倒れ、凹みが<b>1ゴンドラあたり5箇所以下</b>である'],
+    notes:['プライスカードを適切に取り付け、商品のフェイスが重なったり凸凹になったりしないように陳列します',
+           '売場に穴空きや、倒れ、凹みがないよう定期的に前陳・補充し、見やすく選びやすい売場を保ちます'],
+    photos:['07_1.jpg','07_2.jpg'] },
+  { id:8, name:'即席麺', sub:'カップ麺・カップ即席麺',
+    center:false, freq:'1日5回（6時・11時・13時・18時・22時）', score:'3点',
+    point:'即席麺の商品の顔がお客様の方向を向いており、見やすく選びやすく陳列されている',
+    rules:['商品の顔がお客様の方向を向いており、見やすく選びやすい売場になっている（<b>売場全体で7割以上</b>が正面）',
+           '穴空きや凹みが、<b>1ゴンドラあたり5箇所以下</b>である'],
+    notes:['プライスカードを適切に取り付け、商品のフェイスが重なったり凸凹になったりしないように陳列します',
+           '売場に穴空きや凹みがないよう定期的に前陳・補充し、見やすく選びやすい売場を保ちます'],
+    photos:['08_1.jpg'] },
+  { id:9, name:'無印良品・日用品', sub:'無印良品・日用品（男性化粧品）',
+    center:false, freq:'1日5回（6時・11時・13時・18時・22時）', score:'3点',
+    point:'無印良品・日用品（男性化粧品）が見やすく選びやすく陳列されている',
+    rules:['商品が正面を向いており、見やすく選びやすい売場になっている（<b>売場全体で7割以上</b>が正面）',
+           '穴空きや、倒れ、凹みが<b>1ゴンドラあたり5箇所以下</b>である'],
+    notes:['プライスカードを適切に取り付け、商品のフェイスが重なったり凸凹になったりしないように陳列します',
+           '売場に穴空きや、倒れ、凹みがないよう定期的に前陳・補充し、見やすく選びやすい売場を保ちます'],
+    photos:['09_1.jpg'] },
+  { id:10, name:'売場全体', sub:'棚全体・平場ゴンドラの引き画像',
+    center:false, freq:'—', score:'5点',
+    point:'売場全体の棚に大きな穴がなく、お客様に品薄感を感じさせない売場になっている',
+    rules:['シーズンエンドを含む平場ゴンドラ（ベーカリー、雑誌売場除く）の各棚段（フック含む）で、<b>3割以上空いている箇所が5箇所以下</b>である'],
+    notes:['プライスカードを適切に取り付け、商品のフェイスが重なったり凸凹になったりしないように陳列します',
+           '売場に穴空きや、倒れ、凹みがないよう定期的に前陳・補充し、見やすく選びやすい売場を保ちます',
+           '<b style="color:var(--red)">フック陳列商品は、フックストッパーを活用して空き・凹みが無い（商品間の隙間を空けない）売場を保ちます</b>',
+           '<b style="color:var(--red)">サイドネット売場は、穴空きがないよう定期的に前陳・補充し、見やすく選びやすい売場を保ちます</b>',
+           '<b style="color:var(--red)">新商品の棚空けは、可能な限り直前のタイミングで実施します</b>'],
+    photos:['10_1.jpg','10_2.jpg'] }
 ];
+
 const STORES     = [
   {storeId:1, storeName:'吹田垂水三丁目'}, {storeId:2, storeName:'江坂東'},
   {storeId:3, storeName:'江坂駅南口'},     {storeId:4, storeName:'吹田警察署前'},
@@ -372,8 +552,11 @@ const S = {
   currentTab:   'submit',
   refreshTimer: null,
   prevMissed:   new Set(),
-  modal:        { images:[], idx:0, cap:'' },
   _photoCards:  [],
+  myRecent:     [],
+  lastResult:   null,   // 送信直後のAI判定（写真はdataURLのまま保持）
+  // 画像ビューア（ピンチ拡大対応）
+  viewer:       { images:[], idx:0, title:'', details:[], actions:'' },
 };
 
 // ================================================================
@@ -392,7 +575,7 @@ function init() {
 
   // 撮影箇所セレクト構築
   const cSel = document.getElementById('sel-category');
-  CATEGORIES.forEach(c => cSel.appendChild(new Option(c.name, c.name)));
+  STANDARDS.forEach(c => cSel.appendChild(new Option(`${c.id}. ${c.name}`, c.name)));
 
   // localStorage 復元
   const savedStore = localStorage.getItem('sc_store');
@@ -493,6 +676,90 @@ function showTab(name) {
   if (name === 'photos' && S.isAdmin) {
     fetchData().then(renderPhotos);
   }
+  if (name === 'standard') renderStandards();
+}
+
+// ================================================================
+// 出来栄え基準タブ
+// ================================================================
+function renderStandards() {
+  const box = document.getElementById('std-list');
+  if (box.dataset.built === '1') return;   // 一度だけ構築（画像は遅延読込）
+  box.dataset.built = '1';
+
+  box.innerHTML = STANDARDS.map(st => {
+    const centerBox = st.center ? `
+      <div class="std-center-box">
+        💡 <b>中央寄せの売場です。</b>在庫が少ないときは商品を棚段の<b>中央に寄せて</b>フェイスアップします。
+        このとき棚段の左右の端があくのは<b>正しい状態</b>で、穴空き（欠品）ではありません。
+      </div>` : '';
+    const photos = [`slide${String(st.id).padStart(2,'0')}.jpg`].concat(st.photos);
+    const thumbs = photos.map((f, i) => {
+      const src = STD_DIR + (i === 0 ? `thumb${String(st.id).padStart(2,'0')}.jpg` : f);
+      const style = i === 0 ? ' style="aspect-ratio:1.41/1;grid-column:1/-1"' : '';
+      return `<img src="${src}" loading="lazy" alt="${st.name} 基準${i===0?'（基準書スライド）':'見本'}"
+                onclick="openStandardPhoto(${st.id},${i})"${style}>`;
+    }).join('');
+
+    return `
+      <div class="std-item" id="std-${st.id}">
+        <div class="std-head" onclick="toggleStandard(${st.id})">
+          <div class="std-no">${st.id}</div>
+          <div class="std-nm">
+            <b>前陳：${st.name}${st.center ? ' <span class="std-tag">中央寄せ</span>' : ''}</b>
+            <span>${st.sub}</span>
+          </div>
+          <div class="std-arw">›</div>
+        </div>
+        <div class="std-body">
+          <div class="std-sec">確認ポイント</div>
+          <div style="font-size:.85rem;line-height:1.6">${st.point}</div>
+          ${centerBox}
+          <div class="std-sec">評価基準</div>
+          ${st.rules.map(r => `<div class="std-rule"><span>${r}</span></div>`).join('')}
+          <div class="std-sec">基準書スライド・見本写真（タップで拡大）</div>
+          <div class="std-photos">${thumbs}</div>
+          <div class="std-sec">補足</div>
+          ${st.notes.map(n => `<div class="std-note">${n}</div>`).join('')}
+          <div class="std-foot"><span>頻度：${st.freq}</span><span>店舗採点：${st.score}</span></div>
+        </div>
+      </div>`;
+  }).join('');
+}
+
+function toggleStandard(id) {
+  document.getElementById('std-' + id).classList.toggle('open');
+}
+
+// 投稿フォームで撮影箇所を選んだら「基準を見る」ボタンを出す
+function onPickCategory() {
+  const v = document.getElementById('sel-category').value;
+  document.getElementById('cat-std-link').style.display =
+    STANDARDS.some(s => s.name === v) ? 'block' : 'none';
+}
+
+function openCategoryStandard() {
+  const v  = document.getElementById('sel-category').value;
+  const st = STANDARDS.find(s => s.name === v);
+  if (st) openStandardPhoto(st.id, 0);
+}
+
+// 基準タブの画像をビューアで開く（0枚目=基準書スライド、以降=見本写真）
+function openStandardPhoto(stdId, idx) {
+  const st = STANDARDS.find(x => x.id === stdId);
+  if (!st) return;
+  const no     = String(st.id).padStart(2, '0');
+  const images = [STD_DIR + `slide${no}.jpg`].concat(st.photos.map(f => STD_DIR + f));
+  const centerNote = st.center
+    ? `<div class="vd-center">💡 <b>中央寄せの売場</b>：在庫が少ないときは中央に寄せてフェイスアップします。棚段の左右端の空きは穴空きではありません。</div>`
+    : '';
+  const details = images.map((_, i) => `
+    ${centerNote}
+    <div class="vd-head"><span class="vd-cat">${i === 0 ? '基準書スライド' : '見本写真'}：${st.name}</span></div>
+    <div class="vd-box"><h4>評価基準</h4>${st.rules.map(r => `<p>☑ ${r}</p>`).join('')}</div>
+    <div class="vd-note">頻度：${st.freq} ／ 店舗採点：${st.score}</div>`);
+
+  openViewer({ images, idx, title: `売場づくり${stdId}：${st.name}`, details });
 }
 
 // ================================================================
@@ -564,7 +831,7 @@ function renderPreviews() {
   document.getElementById('photo-previews').innerHTML =
     S.pendingPhotos.map((src, i) => `
       <div class="pthumb">
-        <img src="${src}" alt="写真${i+1}">
+        <img src="${src}" alt="写真${i+1}" onclick="openPreview(${i})">
         <button class="pdel" onclick="removePhoto(${i})">✕</button>
       </div>`).join('');
 }
@@ -625,7 +892,7 @@ async function submitForm() {
     document.getElementById('inp-comment').value = '';
     S.dataFetched = false; // ダッシュボード再取得用
 
-    renderAiResult(res, photos);
+    renderAiResult(res, photos, { storeName, slot, submittedBy: name, notes: comment });
     loadMyRecent();
   } catch(e) {
     resBody.innerHTML = `<div style="color:var(--red);text-align:center;padding:12px">送信に失敗しました<br><span style="font-size:.78rem">${e.message}</span></div>`;
@@ -637,9 +904,10 @@ async function submitForm() {
 }
 
 // 送信直後のAI判定結果を描画
-function renderAiResult(res, photos) {
+function renderAiResult(res, photos, meta) {
   const body = document.getElementById('ai-result-body');
   const js   = res.judgments || [];
+  S.lastResult = { photos, judgments: js, meta: meta || null };
 
   if (res.aiStatus === 'skipped') {
     body.innerHTML = '<div style="text-align:center;padding:12px;color:var(--gray-text);font-size:.84rem">✅ 写真を送信しました。<br>（AI判定は未設定のためスキップされました）</div>';
@@ -661,16 +929,18 @@ function renderAiResult(res, photos) {
   const items = js.map((j, i) => {
     const st  = j.categoryId === 0 ? 'unknown' : (j.pass ? 'pass' : 'fail');
     const tag = j.categoryId === 0 ? '判別不可' : (j.pass ? '参考OK' : '要確認?');
-    const thumb = photos[j.idx] || photos[i] || '';
+    const pi  = (typeof j.idx === 'number' && photos[j.idx]) ? j.idx : i;
+    const thumb = photos[pi] || '';
     const issues = (j.issues && j.issues.length)
       ? `<div class="ai-issues">⚠ ${j.issues.join(' / ')}</div>` : '';
     const comment = j.comment ? `<div class="ai-comment">${j.comment}</div>` : '';
     return `
-      <div class="ai-item ${st}">
+      <div class="ai-item ${st}" onclick="openJustSent(${pi})" style="cursor:pointer">
         ${thumb ? `<img class="ai-thumb" src="${thumb}">` : ''}
         <div class="ai-info">
           <div class="ai-cat">${j.category || '不明'}<span class="ai-tag ${st}">${tag}</span></div>
           ${issues}${comment}
+          <div style="font-size:.68rem;color:var(--gray-text);margin-top:3px">タップで詳細・写真を拡大 ▸</div>
         </div>
       </div>`;
   }).join('');
@@ -708,16 +978,23 @@ async function loadMyRecent() {
   const body = document.getElementById('my-recent-body');
   try {
     const res = await gasGet({ action: 'getMyRecent', storeId, name });
-    if (!res.success || !res.data.length) { card.style.display = 'none'; body.innerHTML = ''; return; }
-    body.innerHTML = res.data.map(s => {
+    if (!res.success || !res.data.length) { card.style.display = 'none'; body.innerHTML = ''; S.myRecent = []; return; }
+    S.myRecent = res.data;
+    body.innerHTML = res.data.map((s, i) => {
       const t = s.submittedAt ? new Date(s.submittedAt).toLocaleTimeString('ja-JP',{hour:'2-digit',minute:'2-digit'}) : '';
       const st = s.aiStatus !== 'judged' ? 'unknown' : (s.aiPass ? 'pass' : 'fail');
       const lbl = s.aiStatus !== 'judged' ? '送信済' : (s.aiPass ? 'AI参考:OK' : 'AI参考:要確認');
       const bg = st === 'pass' ? 'var(--green)' : st === 'fail' ? 'var(--orange)' : 'var(--gray-text)';
       const thumb = (s.imageUrls && s.imageUrls[0]) || '';
       return `<div class="mr-item">
-        ${thumb ? `<img class="mr-thumb" src="${driveImg(thumb,200)}" referrerpolicy="no-referrer" onerror="this.onerror=null;this.src='${thumb}'">` : ''}
-        <div class="mr-info">${s.slot}時スロット ${t}<br><span style="color:var(--gray-text)">写真${s.imageUrls.length}枚</span></div>
+        ${thumb ? `<img class="mr-thumb" src="${driveImg(thumb,200)}" referrerpolicy="no-referrer"
+            onclick="openMyRecent(${i})" style="cursor:pointer"
+            onerror="this.onerror=null;this.src='${thumb}'">` : ''}
+        <div class="mr-info" onclick="openMyRecent(${i})" style="cursor:pointer">
+          ${s.slot}時スロット ${t}<br>
+          <span style="color:var(--gray-text)">写真${s.imageUrls.length}枚</span>
+          <span style="color:var(--blue);font-weight:700"> ・タップでAI判定詳細 ▸</span>
+        </div>
         <span class="mr-badge" style="background:${bg}">${lbl}</span>
         <button class="mr-del" onclick="deleteSubmission('${s.submissionId}','mine')">🗑 削除</button>
       </div>`;
@@ -735,8 +1012,8 @@ async function deleteSubmission(id, source) {
     if (!res.success) throw new Error(res.error || '削除失敗');
     toast('削除しました', 'ok');
     S.dataFetched = false;
+    closeViewer();
     if (source === 'photos') {
-      closeModal();
       await fetchData(true);
       renderPhotos();
     } else {
@@ -1047,51 +1324,307 @@ function openStorePhotos(storeId, slot) {
 }
 
 // ================================================================
-// モーダル
+// 画像ビューア（ピンチイン・アウト / ダブルタップ / ドラッグ移動）
 // ================================================================
-function openModal(cardIdx) {
-  const card = S._photoCards[cardIdx];
-  if (!card) return;
-  S.modal.images = card.imageUrls;
-  S.modal.idx    = 0;
-  S.modal.cap    = `${card.storeName} / ${card.slot}時スロット / ${card.submittedBy}`;
-  S.modal.judgments = Array.isArray(card.judgments) ? card.judgments : [];
-  S.modal.submissionId = card.submissionId;
-  refreshModal();
+const Z = { s:1, tx:0, ty:0, min:1, max:6 };
+
+function zApply() {
+  document.getElementById('v-img').style.transform =
+    `translate(${Z.tx}px, ${Z.ty}px) scale(${Z.s})`;
 }
 
-function deleteFromModal() {
-  if (S.modal.submissionId) deleteSubmission(S.modal.submissionId, 'photos');
+// 画像が枠から離れすぎないように移動量を制限
+function zClamp() {
+  const img = document.getElementById('v-img');
+  const st  = document.getElementById('v-stage');
+  const mx = Math.max(0, (img.offsetWidth  * Z.s - st.clientWidth)  / 2);
+  const my = Math.max(0, (img.offsetHeight * Z.s - st.clientHeight) / 2);
+  Z.tx = Math.min(mx, Math.max(-mx, Z.tx));
+  Z.ty = Math.min(my, Math.max(-my, Z.ty));
 }
 
-function refreshModal() {
-  const imgs = S.modal.images;
-  if (!imgs.length) return;
-  const mimg = document.getElementById('modal-img');
-  mimg.referrerPolicy = 'no-referrer';
-  mimg.onerror = function(){ mimg.onerror = null; mimg.src = imgs[S.modal.idx]; };
-  mimg.src = driveImg(imgs[S.modal.idx], 1600);
-  document.getElementById('modal-cnt').textContent = (S.modal.idx + 1) + ' / ' + imgs.length;
-  // 現在の写真に対応するAI判定（参考）を探す
-  let cap = S.modal.cap;
-  const j = (S.modal.judgments || []).find(x => x && x.idx === S.modal.idx);
-  if (j) {
-    const mark = j.categoryId === 0 ? '❓' : (j.pass ? '✅' : '⚠️');
-    const detail = j.pass ? '' : ((j.issues && j.issues.length ? '：' + j.issues.join('・') : '') + (j.comment ? '（' + j.comment + '）' : ''));
-    cap += `\n🤖AI参考 ${mark} ${j.category || '不明'}${detail}`;
+function zoomReset() { Z.s = 1; Z.tx = 0; Z.ty = 0; zApply(); }
+
+// 中心を基準に拡大縮小（＋／−ボタン用）
+function zoomBy(f) {
+  const s1 = Math.min(Z.max, Math.max(Z.min, Z.s * f));
+  Z.tx *= s1 / Z.s; Z.ty *= s1 / Z.s; Z.s = s1;
+  zClamp(); zApply();
+}
+
+// 画面上の点 m を固定したまま倍率を s1 にする
+function zoomAt(m, s1) {
+  s1 = Math.min(Z.max, Math.max(Z.min, s1));
+  Z.tx = m.x - s1 * (m.x - Z.tx) / Z.s;
+  Z.ty = m.y - s1 * (m.y - Z.ty) / Z.s;
+  Z.s  = s1;
+  zClamp(); zApply();
+}
+
+(function initZoomGestures() {
+  const st   = document.getElementById('v-stage');
+  const pts  = new Map();
+  let pinch  = null;   // { dist, mid, s, tx, ty }
+  let drag   = null;   // { x, y, tx, ty, moved }
+  let lastTap = 0;
+  let lastEvt = 0;     // 直近のポインタイベント時刻（指の取りこぼし検知用）
+
+  // ステージ中心を原点とした座標に変換
+  const rel = (x, y) => {
+    const r = st.getBoundingClientRect();
+    return { x: x - r.left - r.width / 2, y: y - r.top - r.height / 2 };
+  };
+  const two = () => {
+    const [a, b] = [...pts.values()];
+    return {
+      dist: Math.hypot(a.x - b.x, a.y - b.y),
+      mid:  rel((a.x + b.x) / 2, (a.y + b.y) / 2)
+    };
+  };
+
+  st.addEventListener('pointerdown', e => {
+    // 前のジェスチャの指が残っていたら掃除する。
+    // ブラウザにスクロール等でジェスチャを奪われると pointerup が来ず、
+    // 指が残ったままになってピンチもダブルタップも効かなくなるため。
+    const now = Date.now();
+    if (pts.size && now - lastEvt > 1200) { pts.clear(); pinch = null; drag = null; }
+    lastEvt = now;
+
+    st.setPointerCapture(e.pointerId);
+    pts.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    if (pts.size === 2) {
+      const t = two();
+      pinch = { dist: t.dist, mid: t.mid, s: Z.s, tx: Z.tx, ty: Z.ty };
+      drag  = null;
+    } else if (pts.size === 1) {
+      drag = { x: e.clientX, y: e.clientY, tx: Z.tx, ty: Z.ty, moved: false };
+    }
+  });
+
+  st.addEventListener('pointermove', e => {
+    if (!pts.has(e.pointerId)) return;
+    lastEvt = Date.now();
+    pts.set(e.pointerId, { x: e.clientX, y: e.clientY });
+
+    if (pinch && pts.size === 2) {
+      const t  = two();
+      const s1 = Math.min(Z.max, Math.max(Z.min, pinch.s * (t.dist / pinch.dist)));
+      // ピンチ開始時の指の中点を固定したまま拡大縮小
+      Z.tx = pinch.mid.x - s1 * (pinch.mid.x - pinch.tx) / pinch.s;
+      Z.ty = pinch.mid.y - s1 * (pinch.mid.y - pinch.ty) / pinch.s;
+      Z.s  = s1;
+      zClamp(); zApply();
+      return;
+    }
+
+    if (drag && pts.size === 1) {
+      const dx = e.clientX - drag.x, dy = e.clientY - drag.y;
+      if (Math.abs(dx) > 6 || Math.abs(dy) > 6) drag.moved = true;
+      if (Z.s > 1.01) {            // 拡大中はドラッグで画像を移動
+        Z.tx = drag.tx + dx; Z.ty = drag.ty + dy;
+        zClamp(); zApply();
+      }
+    }
+  });
+
+  function endPointer(e) {
+    lastEvt = Date.now();
+    const d = drag;
+    pts.delete(e.pointerId);
+    if (pts.size < 2) pinch = null;
+
+    if (pts.size === 0) {
+      // 等倍のときだけ横スワイプで前後の写真へ
+      if (d && Z.s <= 1.01) {
+        const dx = e.clientX - d.x, dy = e.clientY - d.y;
+        if (Math.abs(dx) > 55 && Math.abs(dx) > Math.abs(dy)) {
+          viewerStep(dx < 0 ? 1 : -1);
+          drag = null; return;
+        }
+      }
+      // ダブルタップで拡大/等倍をトグル
+      if (d && !d.moved) {
+        const now = Date.now();
+        if (now - lastTap < 320) {
+          Z.s > 1.01 ? zoomReset() : zoomAt(rel(e.clientX, e.clientY), 2.6);
+          lastTap = 0;
+        } else lastTap = now;
+      }
+      drag = null;
+    }
   }
-  document.getElementById('modal-cap').textContent = cap;
-  document.getElementById('modal').classList.add('open');
+  st.addEventListener('pointerup', endPointer);
+  st.addEventListener('pointercancel',      e => { pts.delete(e.pointerId); pinch = null; drag = null; });
+  st.addEventListener('lostpointercapture', e => { pts.delete(e.pointerId); pinch = null; drag = null; });
+
+  // ビューアを開き直した時に指の状態を初期化する
+  st._resetGesture = function () { pts.clear(); pinch = null; drag = null; lastTap = 0; };
+
+  // PC：ホイールで拡大縮小
+  st.addEventListener('wheel', e => {
+    e.preventDefault();
+    zoomAt(rel(e.clientX, e.clientY), Z.s * (e.deltaY < 0 ? 1.15 : 1 / 1.15));
+  }, { passive: false });
+})();
+
+// ---------------- ビューア本体 ----------------
+// opts: { images:[url], idx, title, details:[html], actions:html, drive:bool }
+function openViewer(opts) {
+  S.viewer = {
+    images:  opts.images || [],
+    idx:     opts.idx || 0,
+    title:   opts.title || '',
+    details: opts.details || [],
+    actions: opts.actions || '',
+    drive:   opts.drive !== false
+  };
+  if (!S.viewer.images.length) return;
+  const stage = document.getElementById('v-stage');
+  if (stage._resetGesture) stage._resetGesture();
+  document.getElementById('viewer').classList.add('open');
+  document.body.style.overflow = 'hidden';
+  const hint = document.getElementById('v-hint');
+  hint.style.opacity = '1';
+  clearTimeout(S._hintTimer);
+  S._hintTimer = setTimeout(() => { hint.style.opacity = '0'; }, 2600);
+  refreshViewer();
 }
 
-function modalStep(d) {
-  const len = S.modal.images.length;
-  S.modal.idx = (S.modal.idx + d + len) % len;
-  refreshModal();
+function refreshViewer() {
+  const V = S.viewer;
+  const src = V.images[V.idx];
+  if (!src) return;
+
+  const img = document.getElementById('v-img');
+  zoomReset();
+  img.referrerPolicy = 'no-referrer';
+  // Driveサムネイルが失敗したら元URLへフォールバック
+  img.onerror = function () { img.onerror = null; img.src = src; };
+  img.src = V.drive ? driveImg(src, 1600) : src;
+
+  document.getElementById('v-title').textContent = V.title;
+  document.getElementById('v-cnt').textContent   = V.images.length > 1 ? `${V.idx + 1} / ${V.images.length}` : '';
+  document.getElementById('v-nav').style.display = V.images.length > 1 ? 'flex' : 'none';
+  document.getElementById('v-detail').innerHTML  = V.details[V.idx] || '';
+  document.getElementById('v-actions').innerHTML = V.actions || '';
+  document.getElementById('v-bottom').scrollTop  = 0;
 }
 
-function closeModal() {
-  document.getElementById('modal').classList.remove('open');
+function viewerStep(d) {
+  const len = S.viewer.images.length;
+  if (len < 2) return;
+  S.viewer.idx = (S.viewer.idx + d + len) % len;
+  refreshViewer();
+}
+
+function closeViewer() {
+  document.getElementById('viewer').classList.remove('open');
+  document.body.style.overflow = '';
+}
+
+// ---------------- AI判定の詳細HTML ----------------
+function aiDetailHtml(sub, j, photoIdx) {
+  const head = sub ? `<div class="vd-meta">${sub.storeName} ／ ${sub.slot}時スロット ／ ${sub.submittedBy || ''}
+      ${sub.submittedAt ? '／ ' + new Date(sub.submittedAt).toLocaleTimeString('ja-JP',{hour:'2-digit',minute:'2-digit'}) : ''}
+      ${sub.notes ? '<br>📝 ' + esc(sub.notes) : ''}</div>` : '';
+
+  if (!j) {
+    return head + `<div class="vd-none">この写真のAI判定はありません<br>
+      <span style="font-size:.72rem">（AI未設定、または判定前に送信された写真です）</span></div>`;
+  }
+  if (j.error) {
+    return head + `<div class="vd-none">AI判定に失敗しました<br><span style="font-size:.7rem">${esc(String(j.error))}</span></div>`;
+  }
+
+  const unknown = j.categoryId === 0;
+  const st  = unknown ? 'unknown' : (j.pass ? 'pass' : 'fail');
+  const tag = unknown ? '判別できず' : (j.pass ? '参考OK' : '要確認かも');
+  const std = STANDARDS.find(x => x.id === j.categoryId);
+
+  // 穴空き数・正面率（新しい判定にだけ入る）
+  let kpis = '';
+  const hasHoles = typeof j.holes === 'number';
+  const hasFace  = typeof j.faceRatio === 'number' && j.faceRatio > 0;
+  if (hasHoles || hasFace) {
+    kpis = '<div class="vd-kpis">' +
+      (hasHoles ? `<div class="vd-kpi ${(typeof j.limit==='number' && j.holes > j.limit) ? 'over' : 'ok'}">
+          <b>${j.holes}${typeof j.limit === 'number' ? `<span style="font-size:.7rem;color:var(--gray-text)"> / ${j.limit}</span>` : ''}</b>
+          <span>穴空き・凹み（上限）</span></div>` : '') +
+      (hasFace ? `<div class="vd-kpi ${j.faceRatio >= 70 ? 'ok' : 'over'}"><b>${j.faceRatio}%</b><span>正面向き（70%以上）</span></div>` : '') +
+      (typeof j.confidence === 'number' && j.confidence > 0
+        ? `<div class="vd-kpi"><b>${j.confidence}%</b><span>AIの自信度</span></div>` : '') +
+      '</div>';
+  }
+
+  const centerNote = (std && std.center)
+    ? `<div class="vd-center">💡 <b>中央寄せの売場</b>：在庫が少ないときに商品を中央へ寄せ、棚段の左右端があくのは正しい状態です。AIもこれは穴空きに数えません。</div>` : '';
+
+  const observed = j.observed
+    ? `<div class="vd-box"><h4>AIが見た売場の様子</h4><p>${esc(j.observed)}</p></div>` : '';
+  const issues = (j.issues && j.issues.length)
+    ? `<div class="vd-box warn"><h4>気になった点</h4><p>⚠ ${j.issues.map(esc).join('<br>⚠ ')}</p></div>` : '';
+  const comment = j.comment
+    ? `<div class="vd-box ${j.pass ? 'good' : ''}"><h4>アドバイス</h4><p>${esc(j.comment)}</p></div>` : '';
+  const rules = std
+    ? `<div class="vd-box"><h4>この売場の評価基準</h4>${std.rules.map(r => `<p>☑ ${r}</p>`).join('')}</div>` : '';
+
+  return head + `
+    <div class="vd-head">
+      <span class="vd-cat">🤖 ${esc(j.category || '不明')}</span>
+      <span class="jbadge ${st}">${tag}</span>
+      <span style="font-size:.68rem;color:var(--gray-text)">写真${photoIdx + 1}枚目</span>
+    </div>
+    ${centerNote}${kpis}${observed}${issues}${comment}${rules}
+    <div class="vd-note">※ AIの参考判定です。最終的な合否は人の目で確認してください。</div>`;
+}
+
+function esc(s) {
+  return String(s == null ? '' : s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+}
+
+// 投稿1件をビューアで開く（写真タブ／本日のあなたの投稿 共通）
+function openSubmission(sub, startIdx, canDelete) {
+  if (!sub || !sub.imageUrls || !sub.imageUrls.length) return;
+  const js = Array.isArray(sub.judgments) ? sub.judgments : [];
+  const details = sub.imageUrls.map((_, i) =>
+    aiDetailHtml(sub, js.find(x => x && x.idx === i) || js[i], i));
+  openViewer({
+    images:  sub.imageUrls,
+    idx:     startIdx || 0,
+    title:   `${sub.storeName} ${sub.slot}時`,
+    details,
+    actions: canDelete
+      ? `<button onclick="deleteSubmission('${sub.submissionId}','${canDelete}')">🗑 この投稿を削除</button>` : ''
+  });
+}
+
+// 写真タブのカードから
+function openModal(cardIdx) {
+  openSubmission(S._photoCards[cardIdx], 0, 'photos');
+}
+
+// 本日のあなたの投稿から
+function openMyRecent(i) {
+  openSubmission(S.myRecent[i], 0, 'mine');
+}
+
+// 送信直後のAI判定結果から（写真はローカルのdataURL）
+function openJustSent(i) {
+  const r = S.lastResult;
+  if (!r) return;
+  const details = r.photos.map((_, k) =>
+    aiDetailHtml(r.meta, r.judgments.find(x => x && x.idx === k) || r.judgments[k], k));
+  openViewer({ images: r.photos, idx: i, title: '送信した写真', details, drive: false });
+}
+
+// 送信前プレビューの拡大
+function openPreview(i) {
+  openViewer({
+    images: S.pendingPhotos, idx: i, title: '送信前の写真',
+    details: S.pendingPhotos.map(() =>
+      `<div class="vd-note">ピンチイン・アウトで拡大できます。売場の状態が写っているか確認してから送信してください。</div>`),
+    drive: false
+  });
 }
 
 // ================================================================
@@ -1116,15 +1649,14 @@ function toast(msg, type = '') {
 }
 
 // ================================================================
-// タッチスワイプ（モーダル）
+// ビューアのキーボード操作（PC）
 // ================================================================
-let _tx = 0;
-document.getElementById('modal').addEventListener('touchstart', e => { _tx = e.touches[0].clientX; });
-document.getElementById('modal').addEventListener('touchend',   e => {
-  const dx = e.changedTouches[0].clientX - _tx;
-  if (Math.abs(dx) > 50) { if (dx < 0) modalStep(1); else modalStep(-1); }
+document.addEventListener('keydown', e => {
+  if (!document.getElementById('viewer').classList.contains('open')) return;
+  if (e.key === 'Escape')     closeViewer();
+  if (e.key === 'ArrowRight') viewerStep(1);
+  if (e.key === 'ArrowLeft')  viewerStep(-1);
 });
-document.getElementById('modal').addEventListener('click', e => { if (e.target.id === 'modal') closeModal(); });
 
 // ================================================================
 // 起動
