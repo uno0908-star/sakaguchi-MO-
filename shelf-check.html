@@ -202,6 +202,24 @@
     .lv-sum b{display:block;font-size:1.4rem;line-height:1.1}
     .lv-sum span{font-size:.66rem;color:var(--gray-text)}
 
+    /* ============ 指摘してLINEで送る ============ */
+    #instruct{display:none;position:fixed;inset:0;z-index:320;background:rgba(0,0,0,.5);align-items:flex-end;justify-content:center}
+    #instruct.open{display:flex}
+    #ins-box{background:#fff;width:100%;max-width:520px;max-height:92vh;border-radius:16px 16px 0 0;display:flex;flex-direction:column}
+    #ins-head{display:flex;align-items:center;padding:14px 16px 10px;border-bottom:1px solid var(--gray-border)}
+    #ins-head b{flex:1;font-size:.95rem}
+    #ins-head button{background:none;border:none;font-size:1.4rem;line-height:1;padding:0 4px;cursor:pointer;color:var(--gray-text);font-family:var(--font)}
+    #ins-body{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:12px 16px}
+    #ins-photo{width:100%;max-height:180px;object-fit:contain;border-radius:var(--rs);background:var(--gray-bg)}
+    #ins-sub{font-size:.78rem;color:var(--gray-text);margin:6px 0 2px;line-height:1.5}
+    .ins-lbl{font-size:.78rem;font-weight:700;margin:12px 0 6px}
+    .ins-type{display:flex;align-items:center;gap:9px;padding:11px 12px;border:1.5px solid var(--gray-border);border-radius:var(--rs);margin-bottom:6px;cursor:pointer;font-size:.86rem}
+    .ins-type input{width:19px;height:19px;accent-color:var(--blue);flex-shrink:0}
+    .ins-type:has(input:checked){border-color:var(--blue);background:var(--blue-light)}
+    #ins-foot{display:flex;gap:8px;padding:12px 16px;border-top:1px solid var(--gray-border);flex-shrink:0}
+    #ins-foot .btn-sec{flex:0 0 auto}
+    #ins-foot .btn-primary{flex:1;padding:12px}
+
     /* ============ 出来栄え基準タブ ============ */
     .std-item{background:#fff;border-radius:var(--r);box-shadow:var(--sh);margin-bottom:10px;overflow:hidden}
     .std-head{display:flex;align-items:center;gap:10px;padding:13px 14px;cursor:pointer}
@@ -455,6 +473,28 @@
     <button id="lv-close" onclick="closeListView()" aria-label="閉じる">✕</button>
   </div>
   <div id="lv-body"></div>
+</div>
+
+<!-- ========== 指摘してLINEで送る ========== -->
+<div id="instruct">
+  <div id="ins-box">
+    <div id="ins-head">
+      <b>📤 指摘してLINEで送る</b>
+      <button onclick="closeInstruct()" aria-label="閉じる">✕</button>
+    </div>
+    <div id="ins-body">
+      <img id="ins-photo" src="" alt="対象の写真">
+      <div id="ins-sub"></div>
+      <p class="ins-lbl">直してほしいこと（複数選べます）</p>
+      <div id="ins-types"></div>
+      <p class="ins-lbl">補足（任意）</p>
+      <textarea id="ins-note" class="finput" rows="2" placeholder="例：3段目の右側、カードが2枚ずれています"></textarea>
+    </div>
+    <div id="ins-foot">
+      <button class="btn-sec" onclick="closeInstruct()">やめる</button>
+      <button class="btn-primary" style="background:#06C755" onclick="sendInstruct()">📤 LINEで送る</button>
+    </div>
+  </div>
 </div>
 
 <!-- ========== 画像ビューア（ピンチイン・アウト対応） ========== -->
@@ -1285,9 +1325,9 @@ async function renderDashboard() {
         <div class="improve-item" onclick="openStorePhotos(${m.storeId},${m.slot})">
           <div style="flex:1;min-width:0">
             <div class="ii-store">${m.storeName}（${m.slot}時）</div>
-            <div class="ii-detail">${m.kind.indexOf('PC') === 0 ? '🏷 ' : ''}${m.category}：${m.issues || m.comment || '要確認'}</div>
+            <div class="ii-detail">${m.category}：${m.issues || m.comment || '要確認'}</div>
           </div>
-          <span class="jbadge ${m.kind === 'PC目視' ? 'review' : 'fail'}">${m.kind === 'PC目視' ? '👀PC' : (m.kind === 'PC' ? 'PC' : '目視確認')}</span>
+          <span class="jbadge fail">目視確認</span>
         </div>`).join('')}
       <button class="btn-sec" style="width:100%;margin-top:6px;font-size:.8rem" onclick="copyImproveList()">📋 一覧をコピー</button>
     </div>` : '';
@@ -1446,18 +1486,6 @@ function getImproveList() {
           comment:   j.comment || ''
         });
       }
-      // プライスカードは前陳とは別採点なので、別の行として出す
-      if ((j.pcStatus === 'check' || j.pcStatus === 'review') && j.pcIssues && j.pcIssues.length) {
-        result.push({
-          storeId:   s.storeId,
-          storeName: s.storeName,
-          slot:      s.slot,
-          kind:      j.pcStatus === 'review' ? 'PC目視' : 'PC',
-          category:  j.category || '不明',
-          issues:    j.pcIssues.join('・'),
-          comment:   j.pcComment || ''
-        });
-      }
     });
   });
   return result.sort((a, b) => a.storeId - b.storeId || a.slot - b.slot);
@@ -1571,10 +1599,6 @@ function renderPhotos() {
       if (fails.length) {
         const f = fails[0];
         aiLine = `<div class="pcard-sub" style="color:var(--orange)">🤖参考 ${f.category}：${(f.issues&&f.issues.length)?f.issues.join('・'):(f.comment||'要確認')}</div>`;
-      }
-      const pcNg = s.judgments.filter(j => j && j.pcStatus === 'check' && j.pcIssues && j.pcIssues.length);
-      if (pcNg.length) {
-        aiLine += `<div class="pcard-sub" style="color:var(--orange)">🏷PC ${pcNg[0].pcIssues.join('・')}</div>`;
       }
     }
     return `
@@ -1846,40 +1870,19 @@ function aiDetailHtml(sub, j, photoIdx) {
   const rules = std
     ? `<div class="vd-box"><h4>この売場の評価基準</h4>${std.rules.map(r => `<p>☑ ${r}</p>`).join('')}</div>` : '';
 
-  // プライスカード（前陳の合否とは別枠。基準書でもコンプライアンス②の別採点）
-  let pcBlock = '', pcBadge = '';
-  if (j.pcStatus) {
-    if (j.pcStatus === 'review') {
-      // NB（メーカー品）はPCが必要だがPBは不要。写真では見分けられないので人に委ねる
-      pcBadge = `<span class="jbadge review">👀 目視確認</span>`;
-      pcBlock = `<div class="vd-box review"><h4>👀 プライスカード：人の目で確認してください</h4>
-        <p>${(j.pcIssues || []).map(x => '・' + esc(x)).join('<br>')}
-        ${j.pcComment ? '<br>' + esc(j.pcComment) : ''}</p>
-        <p style="font-size:.72rem;color:var(--gray-dark);margin-top:6px">
-        この売場は <b>NB（メーカー品）はPC必要 / オリジナル商品はPC不要</b> が混在します。
-        写真からNBかどうかは判別できないため、現物で確認してください。</p></div>`;
-    } else if (j.pcStatus === 'check') {
-      pcBadge = `<span class="jbadge fail">PC要確認</span>`;
-      pcBlock = `<div class="vd-box warn"><h4>🏷 プライスカード：要確認</h4>
-        <p>${(j.pcIssues || []).map(x => '⚠ ' + esc(x)).join('<br>')}
-        ${j.pcComment ? '<br>' + esc(j.pcComment) : ''}</p>
-        <p style="font-size:.72rem;color:var(--gray-text);margin-top:5px">
-        基準：プライスカードレールには商品の左端に合うように取り付けます</p></div>`;
-    } else if (j.pcStatus === 'ok') {
-      pcBlock = `<div class="vd-box good"><h4>🏷 プライスカード</h4>
-        <p>✅ 商品の左端にそろって取り付けられています${j.pcComment ? '<br>' + esc(j.pcComment) : ''}</p></div>`;
-    } else {
-      pcBlock = `<div class="vd-box"><h4>🏷 プライスカード</h4>
-        <p style="color:var(--gray-text)">${esc(j.pcComment || '写真では確認できませんでした。')}</p>
-        <p style="font-size:.72rem;color:var(--gray-text);margin-top:5px">
-        カードを確実に見るには、撮影箇所で「11. プライスカード」を選び、レールに近づいて撮ってください。</p></div>`;
-    }
-  }
+  // プライスカードはAIに判定させない（見逃しが多く使いものにならなかったため）。
+  // 代わりに、人が確認して指摘を送るための導線を常に出す
+  const pcBlock = `<div class="vd-box">
+      <h4>🏷 プライスカード</h4>
+      <p style="color:var(--gray-text)">AIでは判定していません。写真を拡大して目視で確認してください。</p>
+      <p style="font-size:.72rem;color:var(--gray-text);margin-top:5px">
+      基準：プライスカードレールには、商品の左端に合うように取り付けます</p>
+    </div>`;
 
   return head + `
     <div class="vd-head">
       <span class="vd-cat">🤖 ${esc(j.category || '不明')}</span>
-      <span class="jbadge ${st}">${tag}</span>${pcBadge}
+      <span class="jbadge ${st}">${tag}</span>
       <span style="font-size:.68rem;color:var(--gray-text)">写真${photoIdx + 1}枚目</span>
     </div>
     ${centerNote}${kpis}${observed}${issues}${comment}${pcBlock}${rules}
@@ -1906,35 +1909,27 @@ function openSubmissionList(sub) {
      <span>${esc(sub.submittedBy || '')} ${t} ／ 写真${sub.imageUrls.length}枚${sub.notes ? ' ／ 📝' + esc(sub.notes) : ''}</span>`;
 
   const jOf = i => js.find(x => x && x.idx === i) || js[i];
-  const okN = sub.imageUrls.filter((_, i) => { const j = jOf(i); return j && j.pass === true; }).length;
+  const isUnknown = j => j && j.categoryId === 0;
+  const okN = sub.imageUrls.filter((_, i) => { const j = jOf(i); return j && !isUnknown(j) && j.pass === true; }).length;
   const ngN = sub.imageUrls.filter((_, i) => { const j = jOf(i); return j && j.pass === false; }).length;
-  const pcN = sub.imageUrls.filter((_, i) => {
-    const j = jOf(i); return j && (j.pcStatus === 'check' || j.pcStatus === 'review'); }).length;
+  const unN = sub.imageUrls.filter((_, i) => isUnknown(jOf(i))).length;
 
   const rows = sub.imageUrls.map((url, i) => {
     const j = jOf(i);
-    const cls = !j ? '' : (j.pcStatus === 'check' || j.pcStatus === 'review') ? 'pcng'
-              : (j.pass === false ? 'fail' : 'pass');
+    const cls = !j ? '' : (j.pass === false ? 'fail' : (isUnknown(j) ? '' : 'pass'));
     let badges = '', lines = '';
     if (j && !j.error) {
-      const unknown = j.categoryId === 0;
-      const st  = unknown ? 'unknown' : (j.pass ? 'pass' : 'fail');
-      const tag = unknown ? '判別できず' : (j.pass ? '参考OK' : '要確認かも');
+      const st  = isUnknown(j) ? 'unknown' : (j.pass ? 'pass' : 'fail');
+      const tag = isUnknown(j) ? '判定対象外' : (j.pass ? '参考OK' : '要確認かも');
       badges = `<span class="jbadge ${st}">${tag}</span>`;
-      if (j.pcStatus === 'check') badges += `<span class="jbadge fail">🏷PC要確認</span>`;
-      if (j.pcStatus === 'review') badges += `<span class="jbadge review">👀PC目視</span>`;
-      if (typeof j.holes === 'number' && typeof j.limit === 'number') {
+      if (!isUnknown(j) && typeof j.holes === 'number' && typeof j.limit === 'number') {
         lines += `<div class="lv-line" style="color:var(--gray-text)">穴空き・凹み ${j.holes} / ${j.limit}</div>`;
       }
       if (j.issues && j.issues.length) lines += `<div class="lv-line warn">⚠ ${j.issues.map(esc).join('・')}</div>`;
       if (j.comment) lines += `<div class="lv-line">${esc(j.comment)}</div>`;
-      if (j.pcIssues && j.pcIssues.length) {
-        lines += `<div class="lv-line pc">🏷 ${j.pcIssues.map(esc).join('・')}</div>`;
-      }
     } else {
       lines = `<div class="lv-line" style="color:var(--gray-text)">AI判定はありません</div>`;
     }
-    const needShare = j && (j.pcStatus === 'check' || j.pcStatus === 'review');
     return `
       <div class="lv-row ${cls}">
         <div class="lv-main">
@@ -1949,7 +1944,7 @@ function openSubmissionList(sub) {
         </div>
         <div class="lv-acts">
           <button onclick="openSubmission(S.listSub, ${i}, null)">🔍 拡大して見る</button>
-          ${needShare ? `<button class="line" onclick="shareToLine(${i})">📤 LINEで指示</button>` : ''}
+          <button class="line" onclick="openInstruct(${i})">📤 指摘してLINEで送る</button>
         </div>
       </div>`;
   }).join('');
@@ -1958,14 +1953,16 @@ function openSubmissionList(sub) {
     <div class="lv-sum">
       <div><b class="vgreen">${okN}</b><span>参考OK</span></div>
       <div><b class="vorange">${ngN}</b><span>要確認</span></div>
-      <div><b class="vblue">${pcN}</b><span>PC要確認</span></div>
+      <div><b style="color:var(--gray-text)">${unN}</b><span>判定対象外</span></div>
     </div>
-    ${pcN ? `<div class="card" style="padding:11px 13px;margin-bottom:10px">
-      <div style="font-size:.78rem;line-height:1.6">🏷 プライスカードの指摘が <b>${pcN}件</b> あります。<br>
-      各写真の「📤 LINEで指示」から、写真つきで改善指示を送れます。</div>
-      <button class="btn-sec" style="width:100%;margin-top:8px;font-size:.8rem;border-color:#06C755;color:#06C755"
-        onclick="shareAllPcToLine()">📤 PC指摘まとめてLINEで送る（文章のみ）</button>
-    </div>` : ''}
+    <div class="card" style="padding:11px 13px;margin-bottom:10px">
+      <div style="font-size:.78rem;line-height:1.65">
+        🏷 <b>プライスカードはAIで判定していません。</b><br>
+        日配食品・チルド飲料・オープンケースなどは不備が見落とされるため、
+        写真を拡大してご自身で確認してください。<br>
+        気になる点は各写真の「📤 指摘してLINEで送る」から、写真つきで店舗へ送れます。
+      </div>
+    </div>
     ${rows}
     ${sub.submissionId ? `<div style="padding:4px 0 8px">
       <button class="btn-sec" style="width:100%;border-color:var(--red);color:var(--red)"
@@ -1988,60 +1985,94 @@ function closeListView() {
 //   LINE Notifyは2025年3月で終了しており、Botは別途契約が必要なため、
 //   追加費用なしで写真を送れるこの方法にしている
 // ================================================================
-function buildPcMessage(sub, i, j) {
-  const t = sub.submittedAt
-    ? new Date(sub.submittedAt).toLocaleString('ja-JP', {month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit'}) : '';
-  const std = STANDARDS.find(x => x.id === j.categoryId);
-  const L = [];
-  L.push('【売場チェック】プライスカードの改善をお願いします');
-  L.push('');
-  L.push(`店舗：${sub.storeName}`);
-  L.push(`時間：${sub.slot}時スロット${t ? '（' + t + '）' : ''}`);
-  L.push(`売場：${(j.category || '不明')}（写真${i + 1}枚目）`);
-  L.push('');
-  if (j.pcIssues && j.pcIssues.length) {
-    L.push('■ 気になった点');
-    j.pcIssues.forEach(x => L.push('・' + x));
-    L.push('');
-  }
-  if (j.pcComment) { L.push('■ お願いしたいこと'); L.push(j.pcComment); L.push(''); }
-  L.push('■ 基準（出来栄え基準書 コンプライアンス②）');
-  L.push('プライスカードレールには、商品の左端に合うように取り付けます');
-  if (j.pcStatus === 'review') {
-    L.push('');
-    L.push('※NB（メーカー品）はプライスカードが必要です。');
-    L.push('　オリジナル商品はパッケージに値札があるため不要です。');
-    L.push('　写真では見分けられないので、現物で確認してください。');
-  }
-  if (std && std.center) {
-    L.push('');
-    L.push('※この売場は中央寄せです。棚の左右端があくのは正常です。');
-  }
-  return L.join('\n');
-}
+// 人が指摘を選んで送る。AIに判定させない項目（特にプライスカード）を
+// 現場へ確実に伝えるための導線
+const INSTRUCT_TYPES = [
+  { id:'pc_miss',  label:'プライスカードが無い',
+    body:'プライスカードが付いていない商品があります。価格が分かるように取り付けてください。' },
+  { id:'pc_shift', label:'プライスカードがズレている',
+    body:'プライスカードの位置がずれています。商品の左端に合わせて付け直してください。' },
+  { id:'pc_wrong', label:'プライスカードが違う・古い',
+    body:'商品とプライスカードが合っていません。正しいカードに差し替えてください。' },
+  { id:'face',     label:'前陳・フェイスアップ',
+    body:'商品が手前に揃っていません。前に出して、正面を向けて並べてください。' },
+  { id:'hole',     label:'穴空き・品切れ',
+    body:'棚に空きがあります。商品を補充して、見やすい売場にしてください。' },
+  { id:'other',    label:'その他',
+    body:'' }
+];
 
-async function shareToLine(i) {
+function openInstruct(i) {
   const sub = S.listSub;
   if (!sub) return;
-  const js = Array.isArray(sub.judgments) ? sub.judgments : [];
-  const j  = js.find(x => x && x.idx === i) || js[i];
-  if (!j) return;
+  S.instructIdx = i;
+  const j = (Array.isArray(sub.judgments) ? sub.judgments : []).find(x => x && x.idx === i);
+  document.getElementById('ins-photo').src = driveImg(sub.imageUrls[i], 600);
+  document.getElementById('ins-sub').textContent =
+    `${sub.storeName} ${sub.slot}時スロット ／ ${(j && j.category) || '売場'}（${i + 1}枚目）`;
+  document.getElementById('ins-types').innerHTML = INSTRUCT_TYPES.map(t => `
+    <label class="ins-type">
+      <input type="checkbox" value="${t.id}"> <span>${t.label}</span>
+    </label>`).join('');
+  document.getElementById('ins-note').value = '';
+  document.getElementById('instruct').classList.add('open');
+}
 
-  const text = buildPcMessage(sub, i, j);
-  const btnLabel = '写真を準備しています…';
-  toast(btnLabel);
+function closeInstruct() {
+  document.getElementById('instruct').classList.remove('open');
+}
+
+function buildInstructMessage(sub, i, picked, note) {
+  const j = (Array.isArray(sub.judgments) ? sub.judgments : []).find(x => x && x.idx === i);
+  const t = sub.submittedAt
+    ? new Date(sub.submittedAt).toLocaleString('ja-JP', {month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit'}) : '';
+  const std = j ? STANDARDS.find(x => x.id === j.categoryId) : null;
+  const L = ['【売場チェック】改善のお願い', '',
+             `店舗：${sub.storeName}`,
+             `時間：${sub.slot}時スロット${t ? '（' + t + '）' : ''}`,
+             `売場：${(j && j.category && j.category !== '不明') ? j.category : '写真の売場'}（写真${i + 1}枚目）`, ''];
+  if (picked.length) {
+    L.push('■ 直してほしいこと');
+    picked.forEach(p => {
+      L.push('・' + p.label);
+      if (p.body) L.push('　' + p.body);
+    });
+    L.push('');
+  }
+  if (note) { L.push('■ 補足'); L.push(note); L.push(''); }
+  if (picked.some(p => p.id.indexOf('pc_') === 0)) {
+    L.push('■ 基準（出来栄え基準書 コンプライアンス②）');
+    L.push('プライスカードレールには、商品の左端に合うように取り付けます');
+    L.push('');
+  }
+  if (std && std.center) {
+    L.push('※この売場は中央寄せです。在庫が少ないとき棚の左右端があくのは正常です。');
+  }
+  return L.join('\n').trim();
+}
+
+async function sendInstruct() {
+  const sub = S.listSub, i = S.instructIdx;
+  if (!sub || i == null) return;
+  const picked = [...document.querySelectorAll('#ins-types input:checked')]
+    .map(el => INSTRUCT_TYPES.find(t => t.id === el.value));
+  const note = document.getElementById('ins-note').value.trim();
+  if (!picked.length && !note) { toast('指摘の内容を選ぶか、補足を入力してください', 'warn'); return; }
+
+  const text = buildInstructMessage(sub, i, picked, note);
+  closeInstruct();
+  toast('写真を準備しています…');
 
   let file = null;
   try {
-    // Driveの画像はブラウザから直接読めない（CORS）ためGAS経由で取り出す
     const r = await gasGet({ action: 'getPhotoData', id: sub.imageUrls[i] });
     if (r.success && r.dataUrl) {
       const blob = await (await fetch(r.dataUrl)).blob();
-      file = new File([blob], `売場チェック_${sub.storeName}_${sub.slot}時_${i + 1}.jpg`, { type: blob.type || 'image/jpeg' });
+      file = new File([blob], `売場チェック_${sub.storeName}_${sub.slot}時_${i + 1}.jpg`,
+                      { type: blob.type || 'image/jpeg' });
     }
   } catch (e) { /* 写真なしで文章だけ送る */ }
 
-  // 端末の共有メニューから LINE を選ぶ（写真つきで送れる）
   if (navigator.share) {
     try {
       if (file && navigator.canShare && navigator.canShare({ files: [file] })) {
@@ -2051,10 +2082,9 @@ async function shareToLine(i) {
       }
       return;
     } catch (e) {
-      if (e && e.name === 'AbortError') return;   // ユーザーが共有をやめた
+      if (e && e.name === 'AbortError') return;
     }
   }
-  // 共有機能が使えない端末（PCなど）は文章をLINEへ、写真は別途保存
   fallbackLineShare(text, file);
 }
 
@@ -2072,35 +2102,6 @@ function fallbackLineShare(text, file) {
     toast('文章をコピーしました。LINEに貼り付けてください', 'ok');
   }
   window.open(url, '_blank');
-}
-
-// PC指摘をまとめて1通に（写真は付かない）
-function shareAllPcToLine() {
-  const sub = S.listSub;
-  if (!sub) return;
-  const js = Array.isArray(sub.judgments) ? sub.judgments : [];
-  const targets = sub.imageUrls.map((_, i) => js.find(x => x && x.idx === i) || js[i])
-    .map((j, i) => ({ j, i }))
-    .filter(o => o.j && (o.j.pcStatus === 'check' || o.j.pcStatus === 'review'));
-  if (!targets.length) { toast('PCの指摘はありません', 'ok'); return; }
-
-  const t = sub.submittedAt
-    ? new Date(sub.submittedAt).toLocaleString('ja-JP', {month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit'}) : '';
-  const L = ['【売場チェック】プライスカードの改善をお願いします', '',
-             `店舗：${sub.storeName}`, `時間：${sub.slot}時スロット${t ? '（' + t + '）' : ''}`, ''];
-  targets.forEach(o => {
-    L.push(`■ ${o.j.category || '売場'}（写真${o.i + 1}枚目）`);
-    (o.j.pcIssues || []).forEach(x => L.push('・' + x));
-    if (o.j.pcComment) L.push('→ ' + o.j.pcComment);
-    L.push('');
-  });
-  L.push('■ 基準（出来栄え基準書 コンプライアンス②）');
-  L.push('プライスカードレールには、商品の左端に合うように取り付けます');
-  const text = L.join('\n');
-
-  if (navigator.share) {
-    navigator.share({ text }).catch(e => { if (!e || e.name !== 'AbortError') fallbackLineShare(text, null); });
-  } else fallbackLineShare(text, null);
 }
 
 // 投稿1件をビューアで開く（写真タブ／本日のあなたの投稿 共通）
