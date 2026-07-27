@@ -452,6 +452,10 @@
 const GAS_URL    = 'https://script.google.com/macros/s/AKfycbyrnPSumoTQx7ubPNDpXMToDlDXWfZuCZFnfJ6euSrHloWJL-D3jvxWurGlPU2RC3NeMA/exec';
 const ADMIN_PASS = 'Lawson3963';
 const SLOTS      = [6, 9, 12, 15, 18, 21];
+const MAX_PHOTOS = 20;   // 1投稿の上限（写真が多い店舗で17枚程度あるため）
+// 送信は数枚ずつに分ける。1回にまとめると通信・Drive保存・AI判定が集中して
+// 失敗時に全部やり直しになり、AIも1回の枚数が多いほど1枚あたりの分析が浅くなる
+const CHUNK_SIZE = 5;
 // 撮影箇所の選択肢は STANDARDS（出来栄え基準）から生成し、名称のズレを防ぐ
 // 出来栄え基準書（26年度）売場づくり①〜⑩
 //   slide  … 基準書スライド1枚まるごと（ピンチで拡大して読む）
@@ -595,6 +599,9 @@ const S = {
   _photoCards:  [],
   myRecent:     [],
   lastResult:   null,   // 送信直後のAI判定（写真はdataURLのまま保持）
+  resumeId:     null,   // 途中で失敗した投稿のID（再送で同じ投稿に追記する）
+  resumeDate:   null,
+  _sentCount:   0,
   // 画像ビューア（ピンチ拡大対応）
   viewer:       { images:[], idx:0, title:'', details:[], actions:'' },
 };
@@ -833,7 +840,7 @@ async function handlePhotos(input) {
   if (!files.length) return;
   input.value = '';
   for (const f of files) {
-    if (S.pendingPhotos.length >= 10) { toast('写真は最大10枚です', 'warn'); break; }
+    if (S.pendingPhotos.length >= MAX_PHOTOS) { toast(`写真は最大${MAX_PHOTOS}枚です`, 'warn'); break; }
     try {
       S.pendingPhotos.push(await compressImage(f));
     } catch(e) {
@@ -911,49 +918,102 @@ async function submitForm() {
   btn.textContent = '送信中…AIチェック中';
   saveLocal();
 
-  // AI判定結果カードを「判定中」表示
+  // 写真を数枚ずつの塊に分ける
+  const chunks = [];
+  for (let i = 0; i < photos.length; i += CHUNK_SIZE) chunks.push(photos.slice(i, i + CHUNK_SIZE));
+
   const resCard = document.getElementById('ai-result-card');
   const resBody = document.getElementById('ai-result-body');
   resCard.style.display = 'block';
   const kb = Math.round(photos.reduce((a, p) => a + p.length, 0) * 0.75 / 1024);
-  resBody.innerHTML = `<div class="ai-progress"><div class="spin"></div><br>
-    送信中…AIが売場をチェックしています<br>
-    <span id="submit-elapsed" style="font-size:.8rem;color:var(--gray-text)">写真${photos.length}枚 / 約${kb}KB</span></div>`;
-  resCard.scrollIntoView({ behavior:'smooth', block:'nearest' });
-
-  // 実際にどれくらい掛かっているかを毎回表示する。
-  // 現場が遅いと感じた時に、体感ではなく数字で判断できるようにするため
   const t0 = Date.now();
-  const elapsedTimer = setInterval(() => {
-    const el = document.getElementById('submit-elapsed');
-    if (el) el.textContent = `写真${photos.length}枚 / 約${kb}KB … ${Math.round((Date.now() - t0) / 1000)}秒`;
-  }, 500);
+
+  const showProgress = (done) => {
+    const sec = Math.round((Date.now() - t0) / 1000);
+    resBody.innerHTML = `<div class="ai-progress"><div class="spin"></div><br>
+      送信中…AIが売場をチェックしています
+      <div style="margin:10px auto 0;max-width:280px">
+        <div style="height:8px;background:var(--gray-bg);border-radius:99px;overflow:hidden">
+          <div style="width:${Math.round(done / photos.length * 100)}%;height:100%;background:var(--blue);transition:width .3s"></div>
+        </div>
+        <div style="font-size:.78rem;color:var(--gray-text);margin-top:5px">
+          ${done} / ${photos.length}枚 送信済み ・ 約${kb}KB ・ ${sec}秒</div>
+      </div></div>`;
+  };
+  showProgress(0);
+  resCard.scrollIntoView({ behavior:'smooth', block:'nearest' });
+  const ticker = setInterval(() => showProgress(S._sentCount || 0), 500);
+
+  S._sentCount = 0;
+  let submissionId = S.resumeId || null;
+  let dateStr      = S.resumeDate || null;
+  let allJudgments = [];
+  let ci = 0;
 
   try {
-    const res = await gasPost({
-      action: 'submitShelfCheck',
-      storeId, storeName, slot,
-      submittedBy:  name,
-      notes:        comment,
-      hintCategory: category,
-      images:       photos
-    });
-    if (!res.success) throw new Error(res.error || '送信失敗');
+    for (; ci < chunks.length; ci++) {
+      btn.textContent = `送信中… ${ci + 1}/${chunks.length}`;
+      let res;
+      if (!submissionId) {
+        res = await gasPost({
+          action: 'submitShelfCheck',
+          storeId, storeName, slot,
+          submittedBy:  name,
+          notes:        comment,
+          hintCategory: category,
+          images:       chunks[ci]
+        });
+        if (!res.success) throw new Error(res.error || '送信失敗');
+        submissionId = res.submissionId;
+        dateStr      = res.date;
+      } else {
+        res = await gasPost({
+          action: 'appendShelfCheck',
+          submissionId, date: dateStr,
+          hintCategory: category,
+          images:       chunks[ci]
+        });
+        if (!res.success) throw new Error(res.error || '追加送信失敗');
+      }
+      allJudgments = allJudgments.concat(res.judgments || []);
+      S._sentCount += chunks[ci].length;
+      showProgress(S._sentCount);
+    }
 
-    toast('送信しました！', 'ok');
+    // 全部送れたので入力欄をクリア
+    toast(`送信しました！（${photos.length}枚）`, 'ok');
     S.pendingPhotos = [];
+    S.resumeId = null; S.resumeDate = null;
     renderPreviews();
     document.getElementById('inp-comment').value = '';
     S.dataFetched = false; // ダッシュボード再取得用
 
-    renderAiResult(res, photos, { storeName, slot, submittedBy: name, notes: comment },
+    renderAiResult({ success:true, aiStatus:'judged', judgments: allJudgments },
+                   photos, { storeName, slot, submittedBy: name, notes: comment },
                    Math.round((Date.now() - t0) / 1000));
     loadMyRecent();
+
   } catch(e) {
-    resBody.innerHTML = `<div style="color:var(--red);text-align:center;padding:12px">送信に失敗しました<br><span style="font-size:.78rem">${e.message}</span></div>`;
-    toast('送信に失敗しました: ' + e.message, 'err');
+    // 途中まで送れている分は残す。未送信の写真だけフォームに戻して再送できるようにする
+    const sent = S._sentCount;
+    if (submissionId && sent > 0) {
+      S.pendingPhotos = photos.slice(sent);
+      S.resumeId = submissionId; S.resumeDate = dateStr;
+      renderPreviews();
+      resBody.innerHTML = `<div style="padding:12px;text-align:center">
+        <div style="color:var(--green);font-weight:700">✅ ${sent}枚は送信できました</div>
+        <div style="color:var(--red);margin-top:6px">残り${photos.length - sent}枚の送信に失敗しました</div>
+        <div style="font-size:.76rem;color:var(--gray-text);margin-top:6px">
+          残りの写真はフォームに残しています。<br>電波の良い場所でもう一度「送信」を押してください。<br>
+          同じ投稿に追加されるので、二重投稿にはなりません。</div>
+        <div style="font-size:.7rem;color:var(--gray-text);margin-top:8px">${esc(e.message)}</div></div>`;
+      toast(`${sent}枚送信済み。残り${photos.length - sent}枚を再送してください`, 'warn');
+    } else {
+      resBody.innerHTML = `<div style="color:var(--red);text-align:center;padding:12px">送信に失敗しました<br><span style="font-size:.78rem">${esc(e.message)}</span></div>`;
+      toast('送信に失敗しました: ' + e.message, 'err');
+    }
   } finally {
-    clearInterval(elapsedTimer);
+    clearInterval(ticker);
     btn.disabled    = false;
     btn.textContent = '送信してAIチェック';
   }
