@@ -1232,6 +1232,33 @@ async function renderDashboard() {
   }, 5 * 60 * 1000);
 }
 
+// 実測した1枚の平均サイズから「フル稼働で何GBになるか」を予測して見せる。
+// 見積もりではなく実データで、溢れる前に気づけるようにするため
+function projectionHtml(r) {
+  if (!r.avgPhotoKb || r.projectedGb === null) {
+    return `<div class="vd-note" style="margin-top:6px">
+      写真がまだ少ないため予測を計算できません（投稿が増えると自動で表示されます）</div>`;
+  }
+  const over = r.projectedPct >= 90;
+  const warn = r.projectedPct >= 70;
+  const c = over ? 'var(--red)' : warn ? 'var(--orange)' : 'var(--green)';
+  const bg = over ? 'var(--red-light)' : warn ? 'var(--orange-light)' : 'var(--green-light)';
+  return `
+    <div style="margin-top:8px;padding:9px 11px;background:${bg};border-radius:var(--rs);line-height:1.65">
+      <div style="font-size:.74rem;font-weight:700;color:${c};margin-bottom:3px">📈 満杯になるかの予測（実測値ベース）</div>
+      <div style="font-size:.76rem;color:var(--gray-dark)">
+        写真1枚の平均 <b>${r.avgPhotoKb}KB</b>（実測）<br>
+        フル稼働 <b>${r.plannedPerDay}枚/日</b>${r.todayPhotos ? `（本日の実績 ${r.todayPhotos}枚）` : ''}<br>
+        保管${r.retentionDays}日で <b style="color:${c}">約${r.projectedGb}GB（枠の${r.projectedPct}%）</b>
+      </div>
+      ${over ? `<div style="font-size:.74rem;color:var(--red);font-weight:700;margin-top:5px">
+        ⚠️ このままでは足りません。保管日数を ${r.safeDays}日 以下にしてください
+        （スクリプトプロパティ RETENTION_DAYS）</div>`
+      : `<div style="font-size:.72rem;color:var(--gray-text);margin-top:4px">
+        この枚数なら最大 ${r.safeDays}日分まで保管できます</div>`}
+    </div>`;
+}
+
 // 写真保存容量の見張り。運用が始まってから静かに溢れるのを防ぐ
 async function loadStorageStatus() {
   const body = document.getElementById('storage-body');
@@ -1249,6 +1276,7 @@ async function loadStorageStatus() {
         <b style="color:${color};font-size:.9rem;white-space:nowrap">${r.usedGb} / ${r.limitGb} GB</b>
       </div>
       <div style="color:${color};font-weight:700;font-size:.8rem">${label}（${r.pct}%）</div>
+      ${projectionHtml(r)}
       <div style="margin-top:6px;line-height:1.6">
         保管期間 ${r.retentionDays}日／保存済み ${r.dayFolders}日分${r.oldest ? '（最古 ' + r.oldest + '）' : ''}<br>
         削除方式：<b style="color:${r.purgeMode === 'permanent' ? 'var(--green)' : 'var(--orange)'}">
