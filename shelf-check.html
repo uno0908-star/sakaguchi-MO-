@@ -74,6 +74,7 @@
     .pthumb{position:relative;aspect-ratio:1}
     .pthumb img{width:100%;height:100%;object-fit:cover;border-radius:var(--rs)}
     .pdel{position:absolute;top:3px;right:3px;background:rgba(0,0,0,.55);color:#fff;border:none;border-radius:50%;width:22px;height:22px;font-size:.72rem;cursor:pointer;line-height:22px;text-align:center;padding:0;font-family:var(--font)}
+    .prot{position:absolute;bottom:3px;right:3px;background:rgba(0,0,0,.55);color:#fff;border:none;border-radius:50%;width:24px;height:24px;font-size:.9rem;cursor:pointer;line-height:24px;text-align:center;padding:0;font-family:var(--font)}
 
     /* Buttons */
     .btn-primary{width:100%;padding:14px;border-radius:var(--r);border:none;background:var(--blue);color:#fff;font-family:var(--font);font-size:1rem;font-weight:700;cursor:pointer;transition:background .2s}
@@ -541,7 +542,7 @@ const ADMIN_PASS = 'Lawson3963';
 const SLOTS      = [6, 9, 12, 15, 18, 21];
 // このHTMLが前提としているGASのバージョン。gas-shelf-check.gs の CODE_VERSION と揃える。
 // 「コードは貼ったがデプロイで新しいバージョンを作成し忘れ」を自動で検知するため
-const EXPECTED_GAS_VERSION = '2026-07-27m';
+const EXPECTED_GAS_VERSION = '2026-07-27n';
 const MAX_PHOTOS = 20;   // 1投稿の上限（写真が多い店舗で17枚程度あるため）
 // 送信は数枚ずつに分ける。1回にまとめると通信・Drive保存・AI判定が集中して
 // 失敗時に全部やり直しになり、AIも1回の枚数が多いほど1枚あたりの分析が浅くなる
@@ -945,7 +946,28 @@ async function handlePhotos(input) {
 // 解像度は容量と送信速度に直結するので上げすぎない。
 // 20店舗×6スロット×10枚まで出ても31日で約9GB（無料枠15GB）に収まる設定。
 // プライスカードの細部は、撮影箇所「11. プライスカード」の近接撮影で担保する。
-function compressImage(file, maxPx = 1280, quality = 0.72) {
+async function compressImage(file, maxPx = 1280, quality = 0.72) {
+  // スマホ写真は「撮影時の向き」がEXIFに入っているだけで、画像自体は横のまま。
+  // canvasに描くとその向きが失われて横倒しになるため、向きを反映して読み込む
+  try {
+    if (typeof createImageBitmap === 'function') {
+      const bmp = await createImageBitmap(file, { imageOrientation: 'from-image' });
+      let w = bmp.width, hh = bmp.height;
+      if (w > maxPx || hh > maxPx) {
+        if (w >= hh) { hh = Math.round(hh * maxPx / w); w = maxPx; }
+        else         { w  = Math.round(w  * maxPx / hh); hh = maxPx; }
+      }
+      const c = document.createElement('canvas');
+      c.width = w; c.height = hh;
+      c.getContext('2d').drawImage(bmp, 0, 0, w, hh);
+      bmp.close();
+      return c.toDataURL('image/jpeg', quality);
+    }
+  } catch (e) { /* 非対応ブラウザは下の従来方式へ */ }
+  return compressImageFallback(file, maxPx, quality);
+}
+
+function compressImageFallback(file, maxPx = 1280, quality = 0.72) {
   return new Promise((ok, ng) => {
     const r = new FileReader();
     r.onerror = ng;
@@ -975,12 +997,31 @@ function renderPreviews() {
       <div class="pthumb">
         <img src="${src}" alt="写真${i+1}" onclick="openPreview(${i})">
         <button class="pdel" onclick="removePhoto(${i})">✕</button>
+        <button class="prot" onclick="rotatePhoto(${i})" title="90度回転">↻</button>
       </div>`).join('');
 }
 
 function removePhoto(i) {
   S.pendingPhotos.splice(i, 1);
   renderPreviews();
+}
+
+// 写真が横向きになってしまった時に、送る前に直せるようにする
+function rotatePhoto(i) {
+  const src = S.pendingPhotos[i];
+  if (!src) return;
+  const img = new Image();
+  img.onload = () => {
+    const c = document.createElement('canvas');
+    c.width = img.height; c.height = img.width;   // 縦横を入れ替える
+    const ctx = c.getContext('2d');
+    ctx.translate(c.width / 2, c.height / 2);
+    ctx.rotate(Math.PI / 2);
+    ctx.drawImage(img, -img.width / 2, -img.height / 2);
+    S.pendingPhotos[i] = c.toDataURL('image/jpeg', 0.75);
+    renderPreviews();
+  };
+  img.src = src;
 }
 
 // ================================================================
@@ -1336,9 +1377,9 @@ async function renderDashboard() {
         <div class="improve-item" onclick="openStorePhotos(${m.storeId},${m.slot})">
           <div style="flex:1;min-width:0">
             <div class="ii-store">${m.storeName}（${m.slot}時）</div>
-            <div class="ii-detail">${m.kind === '撮り直し' ? '📷 ' : ''}${m.category}：${m.issues || m.comment || '要確認'}</div>
+            <div class="ii-detail">${m.kind === '撮り直し' ? '📷 ' : (m.kind === 'PC' ? '🏷 ' : '')}${m.category}：${m.issues || m.comment || '要確認'}</div>
           </div>
-          <span class="jbadge ${m.kind === '撮り直し' ? 'review' : 'fail'}">${m.kind === '撮り直し' ? '撮り直し' : '目視確認'}</span>
+          <span class="jbadge ${m.kind === '撮り直し' ? 'review' : 'fail'}">${m.kind === '撮り直し' ? '撮り直し' : (m.kind === 'PC' ? 'PC不備' : '目視確認')}</span>
         </div>`).join('')}
       <button class="btn-sec" style="width:100%;margin-top:6px;font-size:.8rem" onclick="copyImproveList()">📋 一覧をコピー</button>
     </div>` : '';
@@ -1539,6 +1580,18 @@ function getImproveList() {
           category:  j.category || '不明',
           issues:    (j.issues && j.issues.length) ? j.issues.join('・') : '',
           comment:   j.comment || ''
+        });
+      }
+      // ヨーグルト・プリン・ドライゼリーのPC不備（1商品1枚・左下）
+      if (j.pcStatus === 'ng' && j.pcIssues && j.pcIssues.length) {
+        result.push({
+          storeId:   s.storeId,
+          storeName: s.storeName,
+          slot:      s.slot,
+          kind:      'PC',
+          category:  j.category || '不明',
+          issues:    j.pcIssues.join('・'),
+          comment:   '1商品につき左下に1枚プライスカードが必要です'
         });
       }
     });
@@ -1935,14 +1988,27 @@ function aiDetailHtml(sub, j, photoIdx) {
   const rules = std
     ? `<div class="vd-box"><h4>この売場の評価基準</h4>${std.rules.map(r => `<p>☑ ${r}</p>`).join('')}</div>` : '';
 
-  // プライスカードはAIに判定させない（見逃しが多く使いものにならなかったため）。
-  // 代わりに、人が確認して指摘を送るための導線を常に出す
-  const pcBlock = `<div class="vd-box">
-      <h4>🏷 プライスカード</h4>
-      <p style="color:var(--gray-text)">AIでは判定していません。写真を拡大して目視で確認してください。</p>
+  // プライスカードは原則AI判定なし。
+  // ヨーグルト・プリン・ドライゼリーだけ「1商品1枚・左下」のルールが決まっているので判定する
+  let pcBlock;
+  if (j.pcStatus === 'ng') {
+    pcBlock = `<div class="vd-box warn"><h4>🏷 プライスカード：不備あり</h4>
+      <p>${(j.pcIssues || []).map(x => '⚠ ' + esc(x)).join('<br>')}</p>
+      <p style="font-size:.73rem;color:var(--gray-dark);margin-top:6px">
+      ヨーグルト・プリン・ドライゼリーは<b>1商品につき左下に1枚</b>必要です。</p></div>`;
+  } else if (j.pcStatus === 'ok') {
+    pcBlock = `<div class="vd-box good"><h4>🏷 プライスカード</h4>
+      <p>✅ 各商品の左下にカードがそろっています</p></div>`;
+  } else if (j.pcStatus === 'unclear') {
+    pcBlock = `<div class="vd-box review"><h4>🏷 プライスカード</h4>
+      <p>写真では確認できませんでした。拡大して目視で確認してください。</p></div>`;
+  } else {
+    pcBlock = `<div class="vd-box"><h4>🏷 プライスカード</h4>
+      <p style="color:var(--gray-text)">この売場のプライスカードはAI判定していません。拡大して目視で確認してください。</p>
       <p style="font-size:.72rem;color:var(--gray-text);margin-top:5px">
-      基準：プライスカードレールには、商品の左端に合うように取り付けます</p>
-    </div>`;
+      基準：プライスカードレールには、商品の左端に合うように取り付けます<br>
+      ※ヨーグルト・プリン・ドライゼリーのみ「1商品1枚・左下」をAIが確認します</p></div>`;
+  }
 
   return head + `
     <div class="vd-head">
@@ -1987,6 +2053,7 @@ function openSubmissionList(sub) {
       const st  = j.unclear ? 'review' : (isUnknown(j) ? 'unknown' : (j.pass ? 'pass' : 'fail'));
       const tag = j.unclear ? '📷 判定できません' : (isUnknown(j) ? '判定対象外' : (j.pass ? '参考OK' : '要確認かも'));
       badges = `<span class="jbadge ${st}">${tag}</span>`;
+      if (j.pcStatus === 'ng') badges += `<span class="jbadge fail">🏷PC不備</span>`;
       if (j.unclear) {
         lines += `<div class="lv-line pc">📷 ${esc(j.photoIssue || '写真の状態が判定に適していません')}
           ／ 正面から撮り直すか、人の目で確認してください</div>`;
@@ -1994,6 +2061,9 @@ function openSubmissionList(sub) {
         lines += `<div class="lv-line" style="color:var(--gray-text)">穴空き・凹み ${j.holes} / ${j.limit}</div>`;
       }
       if (j.issues && j.issues.length) lines += `<div class="lv-line warn">⚠ ${j.issues.map(esc).join('・')}</div>`;
+      if (j.pcStatus === 'ng' && j.pcIssues && j.pcIssues.length) {
+        lines += `<div class="lv-line warn">🏷 ${j.pcIssues.map(esc).join('・')}</div>`;
+      }
       if (j.comment && !j.unclear) lines += `<div class="lv-line">${esc(j.comment)}</div>`;
     } else {
       lines = `<div class="lv-line" style="color:var(--gray-text)">AI判定はありません</div>`;
