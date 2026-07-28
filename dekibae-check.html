@@ -35,8 +35,12 @@ header{position:sticky;top:0;z-index:50;background:linear-gradient(135deg,var(--
   background-image:url("data:image/svg+xml;charset=UTF-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 8'%3E%3Cpath fill='%230068b7' d='M1 1l5 5 5-5'/%3E%3C/svg%3E");
   background-repeat:no-repeat;background-position:right 10px center;background-size:11px;padding-right:28px;}
 .hdr-sel select option{color:var(--text);background:#fff;}
-.hdr-sel input[type="date"]{flex:0 0 40%;font-weight:600;}
-.hdr-sel input[type="date"]::-webkit-calendar-picker-indicator{opacity:.65;}
+.hdr-dt{display:flex;gap:6px;margin-top:5px;}
+.hdr-dt input{flex:1;min-width:0;padding:8px 10px;border:none;border-radius:9px;
+  background:#fff;color:var(--text);font-size:.84rem;font-weight:600;
+  -webkit-appearance:none;appearance:none;}
+.hdr-dt input[type="time"]{flex:0 0 88px;}
+.hdr-dt input::-webkit-calendar-picker-indicator{opacity:.65;}
 .scorebar{display:flex;align-items:baseline;gap:8px;margin-top:9px;font-size:.75rem;}
 .scorebar .big{font-size:1.5rem;font-weight:800;line-height:1;}
 .scorebar .prog{flex:1;height:7px;background:rgba(255,255,255,.25);border-radius:4px;overflow:hidden;}
@@ -167,7 +171,10 @@ canvas#repcv{max-width:100%;border-radius:9px;border:1px solid var(--line);margi
   </div>
   <div class="hdr-sel">
     <select id="selStore"></select>
+  </div>
+  <div class="hdr-dt">
     <input type="date" id="selDate">
+    <input type="time" id="selTime">
   </div>
   <div class="scorebar">
     <span class="big" id="scNum">–</span>
@@ -556,6 +563,7 @@ function idbDel(store,key){return new Promise((res,rej)=>{const q=tx(store,'read
 const S = {
   storeId: STORES[0].id,
   date:    todayStr(),
+  time:    nowTimeStr(),
   rec:     null,        // 現在の検査レコード
   prev:    null,        // 同一店舗の前回レコード（改善確認用）
   tab:     'C',
@@ -567,6 +575,10 @@ function todayStr(){
   const d=new Date(Date.now()-new Date().getTimezoneOffset()*60000);
   return d.toISOString().slice(0,10);
 }
+function nowTimeStr(){
+  const d=new Date();
+  return d.getHours().toString().padStart(2,'0')+':'+d.getMinutes().toString().padStart(2,'0');
+}
 function keyOf(storeId,date){return storeId+'_'+date;}
 function storeName(id){const s=STORES.find(s=>s.id==id);return s?s.name:'';}
 function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
@@ -575,7 +587,7 @@ function toast(msg,ms){const t=document.getElementById('toast');t.textContent=ms
 
 function blankRec(storeId,date){
   return {id:keyOf(storeId,date),storeId:Number(storeId),storeName:storeName(storeId),
-          date:date,inspector:localStorage.getItem('dekibae_inspector')||'',results:{},updatedAt:''};
+          date:date,time:S.time||'',inspector:localStorage.getItem('dekibae_inspector')||'',results:{},updatedAt:''};
 }
 function resOf(no){
   if(!S.rec.results[no]) S.rec.results[no]={v:'',failed:[],memo:'',photos:[]};
@@ -629,6 +641,9 @@ function initHeader(){
   const dt=document.getElementById('selDate');
   dt.value=S.date;
   dt.onchange=async()=>{S.date=dt.value||todayStr();await loadRec();render();};
+  const tm=document.getElementById('selTime');
+  tm.value=S.time;
+  tm.onchange=()=>{S.time=tm.value;if(S.rec){S.rec.time=S.time;save();}};
   const ip=document.getElementById('selInsp');
   ip.value=localStorage.getItem('dekibae_inspector')||'';
   const setInsp=async()=>{
@@ -927,7 +942,7 @@ function buildText(rec){
   const L=[];
   L.push('━━━━━━━━━━━━━━');
   L.push('【3つの徹底チェック】');
-  L.push(`${rec.storeName}店  ${rec.date.slice(5).replace('-','/')}(${wd(rec.date)})`);
+  L.push(`${rec.storeName}店  ${rec.date.slice(5).replace('-','/')}(${wd(rec.date)}) ${rec.time||''}`.trimEnd());
   L.push(`合計 ${sc.got} / ${sc.denAll}点${sc.denAll!==100?`（100点換算 ${sc.conv}点）`:''}`);
   if(sc.done<ITEMS.length) L.push(`※未入力が${ITEMS.length-sc.done}項目あります（暫定）`);
   L.push('━━━━━━━━━━━━━━');
@@ -1101,7 +1116,7 @@ function drawReport(rec){
   x.font='bold 20px sans-serif'; x.fillText('3つの徹底チェック / 出来栄え基準',pad,44);
   x.font='bold 30px sans-serif'; x.fillText(rec.storeName+'店',pad,88);
   x.font='15px sans-serif';
-  x.fillText(`${rec.date}（${wd(rec.date)}）　実施者：${rec.inspector||'—'}`,pad,116);
+  x.fillText(`${rec.date}（${wd(rec.date)}）${rec.time?' '+rec.time:''}　実施者：${rec.inspector||'—'}`,pad,116);
   x.font='bold 62px sans-serif'; x.textAlign='right';
   x.fillText(String(sc.got),W-pad-92,110);
   x.font='bold 22px sans-serif'; x.fillText(`/ ${sc.denAll}点`,W-pad,110);
