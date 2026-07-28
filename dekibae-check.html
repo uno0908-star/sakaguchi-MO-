@@ -22,12 +22,21 @@ header{position:sticky;top:0;z-index:50;background:linear-gradient(135deg,var(--
   color:#fff;padding:10px 12px calc(10px + env(safe-area-inset-top,0)) ;padding-top:calc(10px + env(safe-area-inset-top,0));}
 .hdr-top{display:flex;align-items:center;gap:8px;}
 .hdr-top h1{font-size:.95rem;font-weight:700;letter-spacing:.02em;flex:1;}
+/* ヘッダーの入力欄は背景が白なので、文字色を必ず濃色で指定する
+   （body側で color:inherit にしているため、指定しないと白文字になり読めない） */
 .hdr-top input{flex:0 0 104px;min-width:0;padding:6px 9px;border:none;border-radius:7px;
-  background:rgba(255,255,255,.92);font-size:.76rem;font-weight:600;}
+  background:#fff;color:var(--text);font-size:.76rem;font-weight:600;}
+.hdr-top input::placeholder{color:#93a2b1;}
 .hdr-sel{display:flex;gap:6px;margin-top:8px;}
 .hdr-sel select,.hdr-sel input{flex:1;min-width:0;padding:9px 10px;border:none;border-radius:9px;
-  background:rgba(255,255,255,.95);font-size:.88rem;font-weight:600;}
-.hdr-sel input{flex:0 0 34%;font-weight:500;}
+  background:#fff;color:var(--text);font-size:.88rem;font-weight:700;
+  -webkit-appearance:none;appearance:none;}
+.hdr-sel select{
+  background-image:url("data:image/svg+xml;charset=UTF-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 8'%3E%3Cpath fill='%230068b7' d='M1 1l5 5 5-5'/%3E%3C/svg%3E");
+  background-repeat:no-repeat;background-position:right 10px center;background-size:11px;padding-right:28px;}
+.hdr-sel select option{color:var(--text);background:#fff;}
+.hdr-sel input[type="date"]{flex:0 0 40%;font-weight:600;}
+.hdr-sel input[type="date"]::-webkit-calendar-picker-indicator{opacity:.65;}
 .scorebar{display:flex;align-items:baseline;gap:8px;margin-top:9px;font-size:.75rem;}
 .scorebar .big{font-size:1.5rem;font-weight:800;line-height:1;}
 .scorebar .prog{flex:1;height:7px;background:rgba(255,255,255,.25);border-radius:4px;overflow:hidden;}
