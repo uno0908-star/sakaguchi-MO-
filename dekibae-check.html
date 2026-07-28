@@ -22,7 +22,8 @@ header{position:sticky;top:0;z-index:50;background:linear-gradient(135deg,var(--
   color:#fff;padding:10px 12px calc(10px + env(safe-area-inset-top,0)) ;padding-top:calc(10px + env(safe-area-inset-top,0));}
 .hdr-top{display:flex;align-items:center;gap:8px;}
 .hdr-top h1{font-size:.95rem;font-weight:700;letter-spacing:.02em;flex:1;}
-.hdr-top .ver{font-size:.6rem;opacity:.7;}
+.hdr-top input{flex:0 0 104px;min-width:0;padding:6px 9px;border:none;border-radius:7px;
+  background:rgba(255,255,255,.92);font-size:.76rem;font-weight:600;}
 .hdr-sel{display:flex;gap:6px;margin-top:8px;}
 .hdr-sel select,.hdr-sel input{flex:1;min-width:0;padding:9px 10px;border:none;border-radius:9px;
   background:rgba(255,255,255,.95);font-size:.88rem;font-weight:600;}
@@ -153,7 +154,7 @@ canvas#repcv{max-width:100%;border-radius:9px;border:1px solid var(--line);margi
 <header>
   <div class="hdr-top">
     <h1>3つの徹底チェック / 出来栄え基準</h1>
-    <span class="ver">26年度版</span>
+    <input id="selInsp" placeholder="実施者名" autocomplete="name">
   </div>
   <div class="hdr-sel">
     <select id="selStore"></select>
@@ -619,6 +620,14 @@ function initHeader(){
   const dt=document.getElementById('selDate');
   dt.value=S.date;
   dt.onchange=async()=>{S.date=dt.value||todayStr();await loadRec();render();};
+  const ip=document.getElementById('selInsp');
+  ip.value=localStorage.getItem('dekibae_inspector')||'';
+  const setInsp=async()=>{
+    const v=ip.value.trim();
+    localStorage.setItem('dekibae_inspector',v);
+    S.rec.inspector=v; await save();
+  };
+  ip.onchange=setInsp; ip.onblur=setInsp;
 }
 function renderTabs(){
   const t=document.getElementById('tabs');
@@ -839,8 +848,7 @@ function renderList(){
     <p class="mini">データはこの端末の中だけに保存されています。端末を初期化したりブラウザのデータを消すと失われます。1日の終わりにバックアップを取っておくと安心です。</p>
     <button class="btn sub" id="btnBackup">💾 バックアップを書き出す（JSON）</button>
     <button class="btn gray" id="btnRestore">📂 バックアップを読み込む</button>
-    <p class="mini">実施者名：<b>${esc(S.rec.inspector||'未設定')}</b>
-      <button class="badge-prev" id="btnInsp" style="border:none;cursor:pointer">変更</button></p>
+    <p class="mini">実施者名：<b>${esc(S.rec.inspector||'未設定')}</b>（画面右上の欄で変更できます）</p>
   </div>`;
   return h;
 }
@@ -854,15 +862,6 @@ function bindList(root){
   if(bk) bk.onclick=backup;
   const rs=root.querySelector('#btnRestore');
   if(rs) rs.onclick=restore;
-  const bi=root.querySelector('#btnInsp');
-  if(bi) bi.onclick=askInspector;
-}
-function askInspector(){
-  const v=prompt('実施者名を入力してください',S.rec.inspector||'');
-  if(v===null) return;
-  S.rec.inspector=v.trim();
-  localStorage.setItem('dekibae_inspector',v.trim());
-  save().then(render);
 }
 
 async function backup(){
@@ -921,6 +920,7 @@ function buildText(rec){
   L.push('【3つの徹底チェック】');
   L.push(`${rec.storeName}店  ${rec.date.slice(5).replace('-','/')}(${wd(rec.date)})`);
   L.push(`合計 ${sc.got} / ${sc.denAll}点${sc.denAll!==100?`（100点換算 ${sc.conv}点）`:''}`);
+  if(sc.done<ITEMS.length) L.push(`※未入力が${ITEMS.length-sc.done}項目あります（暫定）`);
   L.push('━━━━━━━━━━━━━━');
   CATS.forEach(c=>{
     const cs=catScore(rec,c.key);
@@ -1179,7 +1179,6 @@ async function init(){
     else { toast(`保存しました（${sc.done}/${ITEMS.length}項目）`); moveCat(1); }
   };
   render();
-  if(!S.rec.inspector) setTimeout(askInspector,400);
 }
 window.addEventListener('beforeunload',()=>{Object.values(S.urls).forEach(u=>URL.revokeObjectURL(u));});
 init().catch(e=>{
