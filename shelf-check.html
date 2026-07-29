@@ -553,7 +553,7 @@ const ADMIN_PASS = 'Lawson3963';
 const SLOTS      = [6, 9, 12, 15, 18, 21];
 // このHTMLが前提としているGASのバージョン。gas-shelf-check.gs の CODE_VERSION と揃える。
 // 「コードは貼ったがデプロイで新しいバージョンを作成し忘れ」を自動で検知するため
-const EXPECTED_GAS_VERSION = '2026-07-29a';
+const EXPECTED_GAS_VERSION = '2026-07-29b';
 const MAX_PHOTOS = 20;   // 1投稿の上限（写真が多い店舗で17枚程度あるため）
 // 送信は数枚ずつに分ける。1回にまとめると通信・Drive保存・AI判定が集中して
 // 失敗時に全部やり直しになり、AIも1回の枚数が多いほど1枚あたりの分析が浅くなる
@@ -658,6 +658,24 @@ const STANDARDS = [
            '<b style="color:var(--red)">サイドネット売場は、穴空きがないよう定期的に前陳・補充し、見やすく選びやすい売場を保ちます</b>',
            '<b style="color:var(--red)">新商品の棚空けは、可能な限り直前のタイミングで実施します</b>'],
     photos:['10_1.jpg','10_2.jpg'] },
+  // FF・厨房作成状況（AI判定対応）
+  { id:12, name:'FF（ホットスナック）', sub:'フライドチキン・アメリカンドッグ・ポテトフライ等',
+    center:false, freq:'作成後すぐ・補充のたびに', score:'—',
+    point:'全FF商品に品名POPが取り付けられ、ショーケースに空きなく陳列されている',
+    rules:['<b>全商品に品名POP（アレルゲン表示）</b>が取り付けられている',
+           '<b style="color:var(--red)">品名POPのないFF商品は陳列しない（アレルゲン表示のため必須・手書きNG）</b>',
+           'ホットショーケース全体で空き/凹みが<b>2箇所以下</b>である',
+           'ケース内に油汚れ・焦げ・ゴミ等の目立つ汚れがない'],
+    notes:['品名POPはアレルゲン表示のため法的に必須です。不足時はすぐ補充または商品を撤去してください',
+           '商品の外観（焦げ・型崩れ・変色）も確認し、品質が落ちた商品は売場から外してください'],
+    photos:[] },
+  { id:13, name:'厨房作成状況', sub:'店内調理品の陳列ケース',
+    center:true, freq:'作成後すぐ', score:'—',
+    point:'店内調理品が中央からフェイスアップされ、穴あきなく陳列されている',
+    rules:['商品が<b>中央からフェイスアップ</b>されており、見やすく選びやすい売場になっている',
+           '穴空きや凹みが<b>全体で5箇所以下</b>である'],
+    notes:['米飯ケースと同じ基準で前陳・補充します'],
+    photos:[] },
   // コンプライアンス② P2。近接撮影でプライスカードだけを重点チェックする項目
   { id:11, name:'プライスカード', sub:'FF・厨房・日配食品・ソフトドリンク・菓子・日用品は確認必須',
     center:false, freq:'—', score:'3点',
@@ -2027,6 +2045,21 @@ function aiDetailHtml(sub, j, photoIdx) {
   const rules = std
     ? `<div class="vd-box"><h4>この売場の評価基準</h4>${std.rules.map(r => `<p>☑ ${r}</p>`).join('')}</div>` : '';
 
+  // FF品名POP判定ブロック
+  let popBlock = '';
+  if (j.popStatus === 'ng') {
+    popBlock = `<div class="vd-box warn"><h4>🏷 品名POP：不備あり（アレルゲン表示・法的必須）</h4>
+      <p>${(j.popIssues || []).map(x => '⚠ ' + esc(x)).join('<br>') || '品名POPが取り付けられていない商品があります'}</p>
+      <p style="font-size:.73rem;color:var(--gray-dark);margin-top:6px">
+      品名POPのないFF商品は即座に撤去してください（手書きPOP不可）。</p></div>`;
+  } else if (j.popStatus === 'ok') {
+    popBlock = `<div class="vd-box good"><h4>🏷 品名POP</h4>
+      <p>✅ 全商品に品名POPが取り付けられています</p></div>`;
+  } else if (j.popStatus === 'unclear') {
+    popBlock = `<div class="vd-box review"><h4>🏷 品名POP</h4>
+      <p>写真から確認できませんでした。近くから撮り直して目視確認してください。</p></div>`;
+  }
+
   // プライスカードは原則AI判定なし。
   // ヨーグルト・プリン・ドライゼリーだけ「1商品1枚・左下」のルールが決まっているので判定する
   let pcBlock;
@@ -2055,7 +2088,7 @@ function aiDetailHtml(sub, j, photoIdx) {
       <span class="jbadge ${st}">${tag}</span>
       <span style="font-size:.68rem;color:var(--gray-text)">写真${photoIdx + 1}枚目</span>
     </div>
-    ${retake}${centerNote}${j.unclear ? '' : kpis}${observed}${issues}${j.unclear ? '' : comment}${pcBlock}${rules}
+    ${retake}${centerNote}${j.unclear ? '' : kpis}${observed}${issues}${j.unclear ? '' : comment}${popBlock}${pcBlock}${rules}
     <div class="vd-note">※ AIの参考判定です。最終的な合否は人の目で確認してください。</div>`;
 }
 
@@ -2092,6 +2125,7 @@ function openSubmissionList(sub) {
       const st  = j.unclear ? 'review' : (isUnknown(j) ? 'unknown' : (j.pass ? 'pass' : 'fail'));
       const tag = j.unclear ? '📷 判定できません' : (isUnknown(j) ? '判定対象外' : (j.pass ? '参考OK' : '要確認かも'));
       badges = `<span class="jbadge ${st}">${tag}</span>`;
+      if (j.popStatus === 'ng') badges += `<span class="jbadge fail">🏷POP不備</span>`;
       if (j.pcStatus === 'ng') badges += `<span class="jbadge fail">🏷PC不備</span>`;
       if (j.unclear) {
         lines += `<div class="lv-line pc">📷 ${esc(j.photoIssue || '写真の状態が判定に適していません')}
@@ -2100,6 +2134,9 @@ function openSubmissionList(sub) {
         lines += `<div class="lv-line" style="color:var(--gray-text)">穴空き・凹み ${j.holes} / ${j.limit}</div>`;
       }
       if (j.issues && j.issues.length) lines += `<div class="lv-line warn">⚠ ${j.issues.map(esc).join('・')}</div>`;
+      if (j.popStatus === 'ng' && j.popIssues && j.popIssues.length) {
+        lines += `<div class="lv-line warn">🏷POP ${j.popIssues.map(esc).join('・')}</div>`;
+      }
       if (j.pcStatus === 'ng' && j.pcIssues && j.pcIssues.length) {
         lines += `<div class="lv-line warn">🏷 ${j.pcIssues.map(esc).join('・')}</div>`;
       }
