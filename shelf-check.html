@@ -380,6 +380,10 @@
         <label class="flabel">コメント（任意）</label>
         <textarea id="inp-comment" class="finput" placeholder="気になる点・欠品など"></textarea>
       </div>
+      <label style="display:flex;align-items:center;gap:8px;margin-bottom:10px;cursor:pointer;font-size:.82rem;color:var(--gray-text)">
+        <input type="checkbox" id="chk-skip-ai" style="width:18px;height:18px;cursor:pointer" onchange="document.getElementById('submit-btn').textContent=this.checked?'写真を送信（AIなし・高速）':'送信してAIチェック'">
+        AIチェックなし（電波が悪い時・高速送信）
+      </label>
       <button class="btn-primary" id="submit-btn" onclick="submitForm()">送信してAIチェック</button>
     </div>
 
@@ -406,6 +410,13 @@
       <button class="btn-primary" onclick="adminLogin('dash')">ログイン</button>
     </div>
     <div id="dash-content" style="display:none">
+      <div style="display:flex;align-items:center;gap:8px;padding:10px 14px 2px">
+        <label style="font-size:.8rem;font-weight:700;color:var(--gray-text);white-space:nowrap">📅 日付</label>
+        <input type="date" id="dash-date" class="finput" style="flex:1;padding:7px 10px;font-size:.84rem"
+          onchange="S.dataFetched=false;fetchData(true).then(renderDashboard)">
+        <button class="btn-sec" style="white-space:nowrap;padding:7px 12px;font-size:.78rem"
+          onclick="document.getElementById('dash-date').value=todayJST_();S.dataFetched=false;fetchData(true).then(renderDashboard)">今日</button>
+      </div>
       <div id="dash-inner"><div class="loading"><div class="spin"></div><br>読み込み中...</div></div>
     </div>
   </section>
@@ -542,7 +553,7 @@ const ADMIN_PASS = 'Lawson3963';
 const SLOTS      = [6, 9, 12, 15, 18, 21];
 // このHTMLが前提としているGASのバージョン。gas-shelf-check.gs の CODE_VERSION と揃える。
 // 「コードは貼ったがデプロイで新しいバージョンを作成し忘れ」を自動で検知するため
-const EXPECTED_GAS_VERSION = '2026-07-27n';
+const EXPECTED_GAS_VERSION = '2026-07-29a';
 const MAX_PHOTOS = 20;   // 1投稿の上限（写真が多い店舗で17枚程度あるため）
 // 送信は数枚ずつに分ける。1回にまとめると通信・Drive保存・AI判定が集中して
 // 失敗時に全部やり直しになり、AIも1回の枚数が多いほど1枚あたりの分析が浅くなる
@@ -683,6 +694,7 @@ const S = {
   submissions:  [],
   dataFetched:  false,
   lastFetch:    0,
+  fetchedDate:  '',
   pendingPhotos:[],
   currentTab:   'submit',
   refreshTimer: null,
@@ -923,6 +935,8 @@ function unlockAdmin() {
   document.getElementById('dash-content').style.display = 'block';
   document.getElementById('photos-gate').style.display = 'none';
   document.getElementById('photos-content').style.display = 'block';
+  const dd = document.getElementById('dash-date');
+  if (dd && !dd.value) dd.value = todayJST_();
 }
 
 // ================================================================
@@ -1045,10 +1059,11 @@ async function submitForm() {
 
   const storeName = STORES.find(s => s.storeId === storeId)?.storeName || '';
   const category  = document.getElementById('sel-category').value;
+  const skipAI    = document.getElementById('chk-skip-ai')?.checked || false;
   const btn       = document.getElementById('submit-btn');
   const photos    = S.pendingPhotos.slice();
   btn.disabled    = true;
-  btn.textContent = '送信中…AIチェック中';
+  btn.textContent = skipAI ? '送信中…' : '送信中…AIチェック中';
   saveLocal();
 
   // 写真を数枚ずつの塊に分ける
@@ -1092,6 +1107,7 @@ async function submitForm() {
     submittedBy:  name,
     notes:        comment,
     hintCategory: category,
+    skipAI,
     images:       imgs
   });
 
@@ -1106,6 +1122,7 @@ async function submitForm() {
           action: 'appendShelfCheck',
           submissionId, date: dateStr,
           hintCategory: category,
+          skipAI,
           images:       chunks[ci]
         });
         if (res.success) {
@@ -1309,17 +1326,29 @@ async function deleteSubmission(id, source) {
 // ================================================================
 // データフェッチ（5分キャッシュ）
 // ================================================================
+function todayJST_() {
+  const d = new Date(Date.now() - new Date().getTimezoneOffset() * 60000);
+  return d.toISOString().slice(0, 10);
+}
+
 async function fetchData(force = false) {
   if (!GAS_URL) return;
+  const dateEl = document.getElementById('dash-date');
+  const selDate = dateEl ? (dateEl.value || todayJST_()) : todayJST_();
+  const isToday = selDate === todayJST_();
+
   const stale = Date.now() - S.lastFetch > 5 * 60 * 1000;
-  if (!force && S.dataFetched && !stale) return;
+  if (!force && S.dataFetched && !stale && S.fetchedDate === selDate) return;
   try {
-    const res = await gasGet({ action: 'getTodaySubmissions' });
+    const res = isToday
+      ? await gasGet({ action: 'getTodaySubmissions' })
+      : await gasGet({ action: 'getSubmissionsByDate', date: selDate });
     if (!res.success) throw new Error(res.error);
     S.submissions = res.data || [];
     S.dataFetched = true;
     S.lastFetch   = Date.now();
-    checkAlerts();
+    S.fetchedDate = selDate;
+    if (isToday) checkAlerts();
   } catch(e) {
     console.error('fetchData:', e);
     if (!S.dataFetched) throw e;
@@ -1345,9 +1374,11 @@ async function renderDashboard() {
     }
   }
 
-  const now   = new Date();
-  const h     = now.getHours() + now.getMinutes() / 60;
-  const subs  = S.submissions;
+  const now       = new Date();
+  const selDate   = document.getElementById('dash-date')?.value || todayJST_();
+  const isPast    = selDate < todayJST_();
+  const h         = isPast ? 24 : now.getHours() + now.getMinutes() / 60;
+  const subs      = S.submissions;
 
   // サマリー
   const doneSlots = SLOTS.filter(s => h > s + 1);
@@ -1436,7 +1467,11 @@ async function renderDashboard() {
     <div id="gas-version-card"></div>
 
     <div class="card" id="storage-card" style="margin-top:12px">
-      <p class="card-ttl">💾 写真保存容量</p>
+      <p class="card-ttl" style="display:flex;align-items:center;gap:8px">
+        💾 写真保存容量
+        <button class="btn-sec" style="padding:3px 10px;font-size:.72rem;margin-left:auto"
+          onclick="loadStorageStatus(true)">🔄 更新</button>
+      </p>
       <div id="storage-body" style="font-size:.8rem;color:var(--gray-text)">確認中…</div>
     </div>
   `;
@@ -1509,9 +1544,10 @@ async function checkGasVersion() {
 }
 
 // 写真保存容量の見張り。運用が始まってから静かに溢れるのを防ぐ
-async function loadStorageStatus() {
+async function loadStorageStatus(forceRefresh) {
   const body = document.getElementById('storage-body');
   if (!body) return;
+  if (forceRefresh) body.innerHTML = '<span style="color:var(--gray-text)">取得中…</span>';
   try {
     const r = await gasGet({ action: 'getStorageStatus' });
     if (!r.success || r.usedGb === null) throw new Error('取得できませんでした');
@@ -1535,7 +1571,10 @@ async function loadStorageStatus() {
       ${(r.level !== 'ok' || r.purgeMode !== 'permanent') ? `<div style="margin-top:8px;padding:9px 11px;
         background:${r.purgeMode !== 'permanent' ? 'var(--red-light)' : 'var(--orange-light)'};
         border-radius:var(--rs);font-size:.76rem;color:var(--gray-dark);line-height:1.6">
-        ${esc(r.hint)}</div>` : ''}`;
+        ${esc(r.hint)}</div>` : ''}
+      <div style="margin-top:5px;font-size:.7rem;color:var(--gray-text)">
+        ※ Google Driveの容量はキャッシュのため即時反映されません。最終取得: ${new Date().getHours()}:${String(new Date().getMinutes()).padStart(2,'0')}
+      </div>`;
   } catch (e) {
     body.innerHTML = `<span style="color:var(--gray-text)">容量を取得できませんでした（GASを最新版に更新すると表示されます）</span>`;
   }
