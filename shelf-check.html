@@ -553,7 +553,7 @@ const ADMIN_PASS = 'Lawson3963';
 const SLOTS      = [6, 9, 12, 15, 18, 21];
 // このHTMLが前提としているGASのバージョン。gas-shelf-check.gs の CODE_VERSION と揃える。
 // 「コードは貼ったがデプロイで新しいバージョンを作成し忘れ」を自動で検知するため
-const EXPECTED_GAS_VERSION = '2026-07-29b';
+const EXPECTED_GAS_VERSION = '2026-07-29c';
 const MAX_PHOTOS = 20;   // 1投稿の上限（写真が多い店舗で17枚程度あるため）
 // 送信は数枚ずつに分ける。1回にまとめると通信・Drive保存・AI判定が集中して
 // 失敗時に全部やり直しになり、AIも1回の枚数が多いほど1枚あたりの分析が浅くなる
@@ -658,24 +658,6 @@ const STANDARDS = [
            '<b style="color:var(--red)">サイドネット売場は、穴空きがないよう定期的に前陳・補充し、見やすく選びやすい売場を保ちます</b>',
            '<b style="color:var(--red)">新商品の棚空けは、可能な限り直前のタイミングで実施します</b>'],
     photos:['10_1.jpg','10_2.jpg'] },
-  // FF・厨房作成状況（AI判定対応）
-  { id:12, name:'FF（ホットスナック）', sub:'フライドチキン・アメリカンドッグ・ポテトフライ等',
-    center:false, freq:'作成後すぐ・補充のたびに', score:'—',
-    point:'全FF商品に品名POPが取り付けられ、ショーケースに空きなく陳列されている',
-    rules:['<b>全商品に品名POP（アレルゲン表示）</b>が取り付けられている',
-           '<b style="color:var(--red)">品名POPのないFF商品は陳列しない（アレルゲン表示のため必須・手書きNG）</b>',
-           'ホットショーケース全体で空き/凹みが<b>2箇所以下</b>である',
-           'ケース内に油汚れ・焦げ・ゴミ等の目立つ汚れがない'],
-    notes:['品名POPはアレルゲン表示のため法的に必須です。不足時はすぐ補充または商品を撤去してください',
-           '商品の外観（焦げ・型崩れ・変色）も確認し、品質が落ちた商品は売場から外してください'],
-    photos:[] },
-  { id:13, name:'厨房作成状況', sub:'店内調理品の陳列ケース',
-    center:true, freq:'作成後すぐ', score:'—',
-    point:'店内調理品が中央からフェイスアップされ、穴あきなく陳列されている',
-    rules:['商品が<b>中央からフェイスアップ</b>されており、見やすく選びやすい売場になっている',
-           '穴空きや凹みが<b>全体で5箇所以下</b>である'],
-    notes:['米飯ケースと同じ基準で前陳・補充します'],
-    photos:[] },
   // コンプライアンス② P2。近接撮影でプライスカードだけを重点チェックする項目
   { id:11, name:'プライスカード', sub:'FF・厨房・日配食品・ソフトドリンク・菓子・日用品は確認必須',
     center:false, freq:'—', score:'3点',
@@ -688,7 +670,27 @@ const STANDARDS = [
            '新商品・推奨売価変更商品のプライスカード取付・交換は忘れずに実施します',
            '酒類販売のゴンドラには、酒類表示資材をもれなく取り付けます',
            '<b style="color:var(--red)">品名POPのないFF商品は陳列しません（アレルゲン表示のため、品名POPが必要・手書きNG）</b>'],
-    photos:['11_1.jpg','11_2.jpg'] }
+    photos:['11_1.jpg','11_2.jpg'] },
+  // FF・厨房作成状況（AI判定対応）。数の基準は持たず、穴が1つでもあれば埋める注意喚起
+  { id:12, name:'FF（ホットスナック）', sub:'フライドチキン・アメリカンドッグ・ポテトフライ等',
+    center:false, freq:'作成後すぐ・補充のたびに', score:'—',
+    point:'全FF商品に品名POPが取り付けられ、商品の間に穴（歯抜け）がない',
+    rules:['<b>全商品に品名POP（アレルゲン表示）</b>が取り付けられている',
+           '<b style="color:var(--red)">品名POPのないFF商品は陳列しない（アレルゲン表示のため必須・手書きNG）</b>',
+           '<b>在庫の数は問わない</b>（夜間は作成数が少なくてよい）。ただし商品の間に穴があれば<b>横の商品をスライドして埋める</b>',
+           'ケース内に油汚れ・焦げ・ゴミ等の目立つ汚れがない'],
+    notes:['品名POPはアレルゲン表示のため法的に必須です。不足時はすぐ補充または商品を撤去してください',
+           '<b>21時までに在庫があること</b>が基準です。数は少なくてよいので、穴を作らず詰めて陳列します',
+           '商品の外観（焦げ・型崩れ・変色）も確認し、品質が落ちた商品は売場から外してください'],
+    photos:[] },
+  { id:13, name:'厨房作成状況', sub:'店内調理品の陳列ケース',
+    center:true, freq:'作成後すぐ', score:'—',
+    point:'店内調理品が中央からフェイスアップされ、商品の間に穴（歯抜け）がない',
+    rules:['商品が<b>中央からフェイスアップ</b>されており、見やすく選びやすい売場になっている',
+           '<b>在庫の数は問わない</b>（夜間は作成数が少なくてよい）。ただし商品の間に穴があれば<b>横の商品をスライドまたは中央に寄せて埋める</b>'],
+    notes:['<b>21時までに在庫があること</b>が基準です。数は少なくてよいので、穴を作らず中央に詰めて陳列します',
+           '米飯ケースと同じ考え方で前陳・補充します'],
+    photos:[] }
 ];
 
 const STORES     = [
@@ -2024,9 +2026,15 @@ function aiDetailHtml(sub, j, photoIdx) {
   const hasFace  = typeof j.faceRatio === 'number' && j.faceRatio > 0;
   if (hasHoles || hasFace) {
     kpis = '<div class="vd-kpis">' +
-      (hasHoles ? `<div class="vd-kpi ${(typeof j.limit==='number' && j.holes > j.limit) ? 'over' : 'ok'}">
-          <b>${j.holes}${typeof j.limit === 'number' ? `<span style="font-size:.7rem;color:var(--gray-text)"> / ${j.limit}</span>` : ''}</b>
-          <span>穴空き・凹み（上限）</span></div>` : '') +
+      (hasHoles ? (
+        // FF・厨房は数の上限を持たない。穴が1つでもあれば要補充として色を変える
+        j.fillAny
+          ? `<div class="vd-kpi ${j.holes > 0 ? 'over' : 'ok'}">
+               <b>${j.holes}</b><span>穴あき箇所（0が目標）</span></div>`
+          : `<div class="vd-kpi ${(typeof j.limit==='number' && j.holes > j.limit) ? 'over' : 'ok'}">
+               <b>${j.holes}${typeof j.limit === 'number' ? `<span style="font-size:.7rem;color:var(--gray-text)"> / ${j.limit}</span>` : ''}</b>
+               <span>穴空き・凹み（上限）</span></div>`
+      ) : '') +
       (hasFace ? `<div class="vd-kpi ${j.faceRatio >= 70 ? 'ok' : 'over'}"><b>${j.faceRatio}%</b><span>正面向き（70%以上）</span></div>` : '') +
       (typeof j.confidence === 'number' && j.confidence > 0
         ? `<div class="vd-kpi"><b>${j.confidence}%</b><span>AIの自信度</span></div>` : '') +
@@ -2130,6 +2138,11 @@ function openSubmissionList(sub) {
       if (j.unclear) {
         lines += `<div class="lv-line pc">📷 ${esc(j.photoIssue || '写真の状態が判定に適していません')}
           ／ 正面から撮り直すか、人の目で確認してください</div>`;
+      } else if (!isUnknown(j) && j.fillAny && typeof j.holes === 'number') {
+        // FF・厨房：数の上限なし。穴が1つでもあれば横をスライドして埋める注意喚起
+        lines += j.holes > 0
+          ? `<div class="lv-line warn">🕳 穴あき${j.holes}箇所／横の商品をスライドして埋めてください</div>`
+          : `<div class="lv-line" style="color:var(--gray-text)">穴あきなし</div>`;
       } else if (!isUnknown(j) && typeof j.holes === 'number' && typeof j.limit === 'number') {
         lines += `<div class="lv-line" style="color:var(--gray-text)">穴空き・凹み ${j.holes} / ${j.limit}</div>`;
       }
