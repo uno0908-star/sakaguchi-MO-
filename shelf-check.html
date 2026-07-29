@@ -553,7 +553,7 @@ const ADMIN_PASS = 'Lawson3963';
 const SLOTS      = [6, 9, 12, 15, 18, 21];
 // このHTMLが前提としているGASのバージョン。gas-shelf-check.gs の CODE_VERSION と揃える。
 // 「コードは貼ったがデプロイで新しいバージョンを作成し忘れ」を自動で検知するため
-const EXPECTED_GAS_VERSION = '2026-07-29c';
+const EXPECTED_GAS_VERSION = '2026-07-29d';
 const MAX_PHOTOS = 20;   // 1投稿の上限（写真が多い店舗で17枚程度あるため）
 // 送信は数枚ずつに分ける。1回にまとめると通信・Drive保存・AI判定が集中して
 // 失敗時に全部やり直しになり、AIも1回の枚数が多いほど1枚あたりの分析が浅くなる
@@ -672,7 +672,7 @@ const STANDARDS = [
            '<b style="color:var(--red)">品名POPのないFF商品は陳列しません（アレルゲン表示のため、品名POPが必要・手書きNG）</b>'],
     photos:['11_1.jpg','11_2.jpg'] },
   // FF・厨房作成状況（AI判定対応）。数の基準は持たず、穴が1つでもあれば埋める注意喚起
-  { id:12, name:'FF（ホットスナック）', sub:'フライドチキン・アメリカンドッグ・ポテトフライ等',
+  { id:12, name:'FF（ファストフード）', sub:'からあげクン・Lチキ・ホットスナック・中華まん・おでん等',
     center:false, freq:'作成後すぐ・補充のたびに', score:'—',
     point:'全FF商品に品名POPが取り付けられ、商品の間に穴（歯抜け）がない',
     rules:['<b>全商品に品名POP（アレルゲン表示）</b>が取り付けられている',
