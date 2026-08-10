@@ -1,0 +1,1352 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>店舗衛生チェック｜出来栄え基準</title>
+<link rel="icon" href="favicon.png">
+<link rel="apple-touch-icon" href="favicon.png">
+<style>
+:root{
+  --main:#0a7d6e; --main-d:#065f54; --bg:#eef4f2; --card:#fff;
+  --text:#16212c; --muted:#6b7a89; --line:#dde5ee;
+  --ok:#12a150; --ng:#e0344a; --na:#8a97a4; --warn:#e8871a;
+}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+body{font-family:"Hiragino Kaku Gothic ProN","Hiragino Sans","Yu Gothic UI",Meiryo,sans-serif;
+  background:var(--bg);color:var(--text);font-size:15px;line-height:1.55;padding-bottom:96px;}
+button,select,input,textarea{font-family:inherit;font-size:inherit;color:inherit;}
+
+/* ── ヘッダー ── */
+header{position:sticky;top:0;z-index:50;background:linear-gradient(135deg,var(--main),var(--main-d));
+  color:#fff;padding:10px 12px;padding-top:calc(10px + env(safe-area-inset-top,0));}
+.hdr-top{display:flex;align-items:center;gap:8px;}
+.hdr-top h1{font-size:.95rem;font-weight:700;letter-spacing:.02em;flex:1;}
+/* ヘッダーの入力欄は背景が白なので、文字色を必ず濃色で指定する
+   （body側で color:inherit にしているため、指定しないと白文字になり読めない） */
+.hdr-top input{flex:0 0 104px;min-width:0;padding:6px 9px;border:none;border-radius:7px;
+  background:#fff;color:var(--text);font-size:.76rem;font-weight:600;}
+.hdr-top input::placeholder{color:#93a2b1;}
+.hdr-sel{display:flex;gap:6px;margin-top:8px;}
+.hdr-sel select,.hdr-sel input{flex:1;min-width:0;padding:9px 10px;border:none;border-radius:9px;
+  background:#fff;color:var(--text);font-size:.88rem;font-weight:700;
+  -webkit-appearance:none;appearance:none;}
+.hdr-sel select{
+  background-image:url("data:image/svg+xml;charset=UTF-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 8'%3E%3Cpath fill='%230a7d6e' d='M1 1l5 5 5-5'/%3E%3C/svg%3E");
+  background-repeat:no-repeat;background-position:right 10px center;background-size:11px;padding-right:28px;}
+.hdr-sel select option{color:var(--text);background:#fff;}
+.hdr-dt{display:flex;gap:6px;margin-top:5px;}
+.hdr-dt input{flex:1;min-width:0;padding:8px 10px;border:none;border-radius:9px;
+  background:#fff;color:var(--text);font-size:.84rem;font-weight:600;
+  -webkit-appearance:none;appearance:none;}
+.hdr-dt input[type="time"]{flex:0 0 88px;}
+.hdr-dt input::-webkit-calendar-picker-indicator{opacity:.65;}
+/* 店舗条件チップ（厨房・井戸水） */
+.hdr-chip{display:flex;gap:6px;margin-top:6px;}
+.hdr-chip button{flex:1;padding:7px 4px;border:1.5px solid rgba(255,255,255,.5);border-radius:18px;
+  background:transparent;color:#fff;font-size:.73rem;font-weight:700;}
+.hdr-chip button.on{background:#fff;color:var(--main-d);border-color:#fff;}
+.scorebar{display:flex;align-items:baseline;gap:8px;margin-top:9px;font-size:.75rem;}
+.scorebar .big{font-size:1.5rem;font-weight:800;line-height:1;}
+.scorebar .prog{flex:1;height:7px;background:rgba(255,255,255,.25);border-radius:4px;overflow:hidden;}
+.scorebar .prog i{display:block;height:100%;background:#ffdf5e;width:0;transition:width .3s;}
+.judgetag{padding:2px 8px;border-radius:11px;font-size:.7rem;font-weight:800;background:#fff;color:var(--main-d);}
+.judgetag.ng{background:#ffdde1;color:#a4142a;}
+.judgetag.ok{background:#d9f7e6;color:#0a7038;}
+
+/* ── タブ ── */
+nav.tabs{position:sticky;top:0;z-index:40;display:flex;background:var(--card);
+  box-shadow:0 2px 6px rgba(0,0,0,.07);overflow-x:auto;scrollbar-width:none;}
+nav.tabs::-webkit-scrollbar{display:none;}
+nav.tabs button{flex:1 0 auto;padding:11px 12px;border:none;background:none;font-size:.82rem;
+  font-weight:700;color:var(--muted);border-bottom:3px solid transparent;white-space:nowrap;}
+nav.tabs button.on{color:var(--main);border-bottom-color:var(--main);}
+nav.tabs button .cnt{display:inline-block;min-width:17px;margin-left:4px;padding:0 4px;border-radius:9px;
+  background:var(--line);color:var(--muted);font-size:.64rem;font-weight:700;vertical-align:1px;}
+nav.tabs button.on .cnt{background:var(--main);color:#fff;}
+
+main{max-width:720px;margin:0 auto;padding:12px 10px 0;}
+.view{display:none;} .view.on{display:block;}
+
+/* ── 重要管理項目の警告 ── */
+.alert{background:#fff2f4;border:1.5px solid var(--ng);border-radius:12px;padding:11px 12px;
+  margin-bottom:10px;font-size:.82rem;color:#a4142a;font-weight:700;line-height:1.5;}
+.alert b{display:block;font-size:.9rem;margin-bottom:3px;}
+.note{background:#f3f8f7;border:1px solid #cfe3df;border-radius:11px;padding:10px 12px;
+  margin-bottom:10px;font-size:.75rem;color:#3d5a55;line-height:1.55;}
+
+/* ── 項目カード ── */
+.cat-head{display:flex;align-items:center;gap:8px;margin:14px 2px 8px;}
+.cat-head h2{font-size:.9rem;color:var(--main-d);font-weight:800;}
+.cat-head .sc{margin-left:auto;font-size:.78rem;font-weight:700;color:var(--muted);}
+.cat-head .allok{padding:5px 10px;border:1px solid var(--ok);border-radius:20px;background:#fff;
+  color:var(--ok);font-size:.7rem;font-weight:700;}
+.sec-head{margin:14px 4px 7px;font-size:.76rem;font-weight:800;color:var(--muted);
+  border-left:3px solid var(--main);padding-left:7px;}
+
+.item{background:var(--card);border-radius:13px;margin-bottom:9px;overflow:hidden;
+  box-shadow:0 1px 3px rgba(0,0,0,.07);border-left:5px solid var(--line);}
+.item.v-ok{border-left-color:var(--ok);}
+.item.v-ng{border-left-color:var(--ng);}
+.item.v-na{border-left-color:var(--na);}
+.it-head{padding:11px 12px 9px;}
+.it-title{display:flex;align-items:flex-start;gap:7px;}
+.it-no{flex:0 0 auto;min-width:23px;height:23px;border-radius:6px;background:var(--main);color:#fff;
+  font-size:.7rem;font-weight:800;display:flex;align-items:center;justify-content:center;padding:0 4px;}
+.item.vip .it-no{background:var(--ng);}
+.it-name{font-weight:800;font-size:.95rem;flex:1;}
+.it-pt{font-size:.72rem;color:var(--muted);font-weight:700;white-space:nowrap;}
+.item.vip .it-pt{color:var(--ng);}
+.it-check{font-size:.79rem;color:#4a5b6c;margin:6px 0 0;padding-left:30px;}
+.chip{display:inline-block;margin-left:5px;padding:1px 6px;border-radius:8px;font-size:.62rem;font-weight:800;
+  background:#eef2f7;color:#5a6b7c;vertical-align:1px;}
+.chip.vip{background:#ffe4e8;color:#c01c33;}
+.chip.kit{background:#e8f0ff;color:#2657a8;}
+.badge-prev{display:inline-block;margin-left:6px;padding:1px 6px;border-radius:8px;background:#ffe9ec;
+  color:var(--ng);font-size:.63rem;font-weight:800;}
+.badge-fix{background:#e4f7ec;color:var(--ok);}
+
+.judge{display:flex;gap:6px;padding:0 12px 11px;}
+.judge button{flex:1;padding:11px 4px;border:1.5px solid var(--line);border-radius:10px;background:#fff;
+  font-size:.86rem;font-weight:800;color:var(--muted);}
+.judge button small{display:block;font-size:.6rem;font-weight:600;opacity:.85;margin-top:1px;}
+.judge button[data-v="ok"].on{background:var(--ok);border-color:var(--ok);color:#fff;}
+.judge button[data-v="ng"].on{background:var(--ng);border-color:var(--ng);color:#fff;}
+.judge button[data-v="na"].on{background:var(--na);border-color:var(--na);color:#fff;}
+
+.detail{border-top:1px dashed var(--line);padding:10px 12px 12px;background:#fbfcfe;}
+.detail.hide{display:none;}
+.detail h4{font-size:.72rem;color:var(--muted);font-weight:800;margin:0 0 6px;}
+.crit{display:block;padding:8px 9px;margin-bottom:5px;border:1px solid var(--line);border-radius:8px;
+  background:#fff;font-size:.79rem;line-height:1.45;}
+.crit.bad{border-color:var(--ng);background:#fff5f6;}
+.crit input{display:none;}
+.crit .mk{display:inline-block;width:19px;height:19px;border-radius:5px;border:1.5px solid var(--line);
+  margin-right:6px;vertical-align:-4px;text-align:center;line-height:16px;font-size:.75rem;font-weight:800;color:transparent;}
+.crit.bad .mk{background:var(--ng);border-color:var(--ng);color:#fff;}
+.memo{width:100%;padding:9px;border:1px solid var(--line);border-radius:8px;font-size:.82rem;
+  resize:vertical;min-height:52px;margin-top:6px;background:#fff;}
+.tips{margin-top:8px;font-size:.72rem;color:var(--muted);}
+.tips summary{cursor:pointer;font-weight:700;}
+.tips ul{margin:5px 0 0 16px;} .tips li{margin-bottom:2px;}
+
+/* ── 写真 ── */
+.photos{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px;}
+.ph{position:relative;width:70px;height:70px;border-radius:8px;overflow:hidden;background:#e6ecf3;}
+.ph img{width:100%;height:100%;object-fit:cover;display:block;}
+.ph button{position:absolute;top:1px;right:1px;width:20px;height:20px;border:none;border-radius:50%;
+  background:rgba(0,0,0,.6);color:#fff;font-size:.7rem;line-height:20px;padding:0;}
+.addph{width:70px;height:70px;border:1.5px dashed var(--main);border-radius:8px;background:#f0f8f6;
+  color:var(--main);font-size:.66rem;font-weight:700;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;gap:2px;}
+.addph span{font-size:1.2rem;line-height:1;}
+
+/* ── 一覧・レポート ── */
+.panel{background:var(--card);border-radius:13px;padding:13px;margin-bottom:10px;box-shadow:0 1px 3px rgba(0,0,0,.07);}
+.panel h3{font-size:.88rem;font-weight:800;margin-bottom:9px;color:var(--main-d);}
+.storelist{display:grid;grid-template-columns:1fr;gap:6px;}
+.srow{display:flex;align-items:center;gap:9px;padding:9px 10px;border:1px solid var(--line);
+  border-radius:10px;background:#fff;text-align:left;}
+.srow .nm{flex:1;font-size:.85rem;font-weight:700;}
+.srow .st{font-size:.72rem;color:var(--muted);font-weight:700;}
+.srow .sp{font-size:1rem;font-weight:800;}
+.srow.done{border-color:#bfe6cd;background:#f5fdf8;}
+.srow.part{border-color:#ffe0b8;background:#fffbf4;}
+.srow.fail{border-color:#f5c2cb;background:#fff6f7;}
+.btn{display:block;width:100%;padding:13px;border:none;border-radius:11px;background:var(--main);
+  color:#fff;font-size:.92rem;font-weight:800;margin-top:8px;}
+.btn.sub{background:#fff;color:var(--main);border:1.5px solid var(--main);}
+.btn.gray{background:#eef2f7;color:#425464;border:1.5px solid var(--line);}
+.btn:disabled{opacity:.45;}
+.rep{font-size:.8rem;white-space:pre-wrap;background:#f7f9fc;border:1px solid var(--line);
+  border-radius:9px;padding:11px;font-family:ui-monospace,Menlo,Consolas,monospace;line-height:1.6;
+  max-height:340px;overflow:auto;}
+.kv{display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px dotted var(--line);font-size:.82rem;}
+.kv b{font-weight:800;}
+.mini{font-size:.72rem;color:var(--muted);margin-top:6px;line-height:1.5;}
+.repph{display:flex;flex-wrap:wrap;gap:5px;margin-top:7px;}
+.repph img{width:62px;height:62px;object-fit:cover;border-radius:7px;}
+
+/* ── フッター操作 ── */
+.fab{position:fixed;left:0;right:0;bottom:0;z-index:60;background:rgba(255,255,255,.96);
+  border-top:1px solid var(--line);padding:8px 10px calc(8px + env(safe-area-inset-bottom,0));
+  display:flex;gap:7px;backdrop-filter:blur(6px);}
+.fab button{flex:1;padding:12px 4px;border:none;border-radius:10px;font-size:.84rem;font-weight:800;}
+.fab .prev,.fab .next{background:#eef2f7;color:#42566a;flex:0 0 68px;}
+.fab .save{background:var(--main);color:#fff;}
+.toast{position:fixed;left:50%;bottom:96px;transform:translateX(-50%);z-index:99;background:rgba(20,30,40,.93);
+  color:#fff;padding:11px 18px;border-radius:22px;font-size:.83rem;font-weight:700;opacity:0;
+  transition:opacity .25s;pointer-events:none;max-width:88%;text-align:center;}
+.toast.on{opacity:1;}
+canvas#repcv{max-width:100%;border-radius:9px;border:1px solid var(--line);margin-top:8px;}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="hdr-top">
+    <h1>店舗衛生調査 / 出来栄え基準</h1>
+    <input id="selInsp" placeholder="実施者名" autocomplete="name">
+  </div>
+  <div class="hdr-sel">
+    <select id="selStore"></select>
+  </div>
+  <div class="hdr-dt">
+    <input type="date" id="selDate">
+    <input type="time" id="selTime">
+  </div>
+  <div class="hdr-chip">
+    <button id="chipKit">🍳 まちかど厨房あり</button>
+    <button id="chipWell">💧 井戸水使用店</button>
+  </div>
+  <div class="scorebar">
+    <span class="big" id="scNum">–</span>
+    <span>/100点</span>
+    <span class="judgetag" id="scJudge">未入力</span>
+    <span class="prog"><i id="scBar"></i></span>
+    <span id="scDone">0/28</span>
+  </div>
+</header>
+
+<nav class="tabs" id="tabs"></nav>
+
+<main>
+  <div class="view on" id="v-check"></div>
+  <div class="view" id="v-list"></div>
+  <div class="view" id="v-report"></div>
+</main>
+
+<div class="fab">
+  <button class="prev" id="btnPrev">◀</button>
+  <button class="save" id="btnSave">保存して次のカテゴリへ</button>
+  <button class="next" id="btnNext">▶</button>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+/* ================================================================
+   店舗衛生調査 出来栄え基準アプリ
+   出典: 2026年度 店舗衛生調査レポート（FF・厨房共通）／
+         2026年9月改定 店舗衛生調査表 出来栄え基準書（260603更新）
+   合計 28項目 / 100点満点の【減点方式】・80点以下は不合格
+     重要管理項目        7項目  各20点減点（1つでも×なら即不合格）
+     ヒアリング          1項目   2点
+     カウンター内        7項目  32点（No.8含む区分合計）
+     調理区画            9項目  42点
+     事務所              4項目   8点（No.28は井戸水使用店のみ）
+   データは端末内(IndexedDB)に保存。オフラインでも動作する。
+   ================================================================ */
+const APP_VER = '1.0.0';
+
+const STORES = [
+  {id:1, name:'吹田垂水三丁目'},   {id:2, name:'江坂東'},
+  {id:3, name:'江坂駅南口'},       {id:4, name:'吹田警察署前'},
+  {id:5, name:'豊中原田南一丁目'}, {id:6, name:'南金田二丁目'},
+  {id:7, name:'吹田豊津中学校前'}, {id:8, name:'新御堂筋上新田'},
+  {id:9, name:'東淀川大道南'},     {id:10,name:'豊中服部西町三丁目'},
+  {id:11,name:'大道南一丁目'},     {id:12,name:'豊里六丁目'},
+  {id:13,name:'吹田青山台三丁目'}, {id:14,name:'豊中利倉東一丁目'},
+  {id:15,name:'五月ケ丘東'},       {id:16,name:'豊中服部元町一丁目'},
+  {id:17,name:'吹田朝日町'},       {id:18,name:'東淀川豊里五丁目'},
+  {id:19,name:'池田市役所前'},     {id:20,name:'箕面白島二丁目'}
+];
+
+const CATS = [
+  {key:'V', label:'重要',     full:'重要管理項目',           pt:140},
+  {key:'C', label:'カウンター',full:'ヒアリング／カウンター内',pt:32},
+  {key:'K', label:'調理区画', full:'調理区画',               pt:42},
+  {key:'O', label:'事務所',   full:'事務所',                 pt:8}
+];
+
+/* pt   … ×の場合に減点される点数
+   vip  … 重要管理項目（×1つで-20点＝即不合格）
+   naOK … 本部様式に「対象外」欄がある項目
+   kit  … まちかど厨房がない店では対象外にする項目 */
+const ITEMS = [
+/* ── 重要管理項目（7項目・各20点減点）───────────────────── */
+{no:1,cat:'V',sec:'重要管理項目',pt:20,vip:true,name:'サーマルシール発行-貼付',
+ chk:'店内調理品のサーマルシール発行-貼付オペレーションが正しくできている。',
+ cr:['1商品に1枚だけサーマルシールを貼付している',
+     '封をした全てのサーマル商品に正しいサーマルシールを貼付し陳列している',
+     '正しく鮮明にサーマルシールが印字されている',
+     'FFは最大30分、厨房は最初の食材を盛り付けてから1時間を超えずサーマルシールを貼付している'],
+ tip:['【確認】売場の商品を手に取り、二重貼り・貼り忘れ・貼り間違いがないか確認する（セット商品も注意）',
+      '【確認】商品の中身とサーマルシールの商品名が一致し、消費期限が正しく印字されているか確認する',
+      '類似商品名に注意（●●弁当⇔ごはん大盛●●弁当／2個入り⇔4個入り）',
+      '貼り替えできる時間：常温FFは加熱調理後30分以内／厨房は加熱後2時間以内かつ最初の盛り付けから1時間以内。超過したら廃棄',
+      '手書き修正・黒塗りは禁止。値引シールは表示内容に被らないように貼る',
+      'プリンタの電源を入れたら呼出No「9000」でシールを1枚発行し、かすれ・期限を確認する',
+      '1種類ずつ盛り付け→1種類ずつ発行-貼付。同時に複数種類は行わない']},
+
+{no:2,cat:'V',sec:'重要管理項目',pt:20,vip:true,naOK:true,kit:true,name:'【厨房】マニュアル通りの原材料',
+ chk:'【厨房】マニュアル通りの原材料を使用している。',
+ cr:['常温FFはFF調理加工マニュアルを確認して作成している',
+     '厨房は単品カードまたは調理マニュアルを確認して作成している',
+     'マニュアルに記載のない食材・ソースをトッピングしていない',
+     '別添調味料が商品仕様と一致している'],
+ tip:['【確認】常温FFサーマルパック品は中身とサーマルシールの商品名を照合、厨房商品は中身とプライスカードの商品画像を照合する',
+      '作成開始前にマニュアル（FF調理加工マニュアル／調理マニュアル・単品カード）を作業台に置き、見ながら作成する',
+      '盛り付け完了後、単品カードまたは調理マニュアルの商品画像と照合する',
+      '別添調味料が違うとアレルゲン表示が変わる。リニューアル・新商品は最新マニュアルの出来栄え写真を必ず確認する',
+      'NG例：仕様外のトッピング（梅しそ大根等）／ソース違い（マヨネーズ→タルタル）']},
+
+{no:3,cat:'V',sec:'重要管理項目',pt:20,vip:true,name:'原材料・半製品の期限',
+ chk:'原材料と半製品（ごはん）の使用期限および消費・賞味期限が守られている。',
+ cr:['消費期限が過ぎた原材料がない',
+     '賞味期限が過ぎた原材料がない',
+     '解凍・開封後の使用期限が過ぎていない',
+     '炊飯米は炊き上がりから6時間を超えていない'],
+ tip:['【確認】冷蔵庫内・常温保管の全原材料を手に取って期限を確認する',
+      '賞味・消費期限当日の原材料は15時までに使用する',
+      '炊飯米は炊き上がったらタブレット「厨房管理→半製品製造管理」に登録し6時間以内に使用する（厨房用米の使用期限は精米日から60日）',
+      '解凍・開封日シールは期限の長い方に取り消し線を入れ、短い期限で管理する',
+      '期限切れは保管せず速やかに廃棄する（特にカット商品の廃棄忘れに注意）',
+      'マチカフェの牛乳は開封後24時間以内。ミルクタンクに移したら当日24時までに廃棄する']},
+
+{no:4,cat:'V',sec:'重要管理項目',pt:20,vip:true,name:'ホットFF 10分以内陳列',
+ chk:'ホットFFは調理完了後10分以内にホットケースへ陳列し、陳列後10分以内にタブレット登録している。',
+ cr:['調理完了（揚げ終わり）から油切含め10分以内にホットケースへ陳列している',
+     '陳列後10分以内にタブレットに作成実績を登録している',
+     'フライヤー周辺に加熱済み商品が10分以上放置されていない'],
+ tip:['【確認】タブレットの登録画面で作成実績の登録漏れがないか確認する',
+      '【確認】フライヤー周辺に加熱済み商品が置きっぱなしになっていないか確認する',
+      '作り置きはしない。タブレット登録漏れだけの場合はこの項目の減点対象外']},
+
+{no:5,cat:'V',sec:'重要管理項目',pt:20,vip:true,name:'常温FF 20分以内陳列・登録',
+ chk:'常温FFは油切後20分以内に常温ケースに陳列しタブレット登録している。サーマルパック品も油切から20分以内に登録している。',
+ cr:['調理完了から10分以内に油切・粗熱取りを完了している',
+     '油切・粗熱取り完了後20分以内に陳列・タブレット作成実績登録をしている',
+     'サーマルパック品は20分以内に袋とじ・シール貼付・POT検品・登録まで完了している',
+     'フライヤー・レンジ周辺に加熱済み商品が10分以上置かれていない'],
+ tip:['【確認】油切・粗熱取り、陳列時間、登録時間の各工程が時間内か確認する',
+      '封を完全に閉じ、サーマルシールを貼ってから陳列しているか確認する',
+      'サーマルパック品は1種類ずつ発行-貼付する',
+      'NG例：フライヤー周辺に加熱済み常温FF商品が30分を超えて置かれている']},
+
+{no:6,cat:'V',sec:'重要管理項目',pt:20,vip:true,naOK:true,kit:true,name:'【厨房】加熱完了から2時間以内',
+ chk:'【厨房】加熱する原材料の加熱完了から、盛り付け・シール発行貼付・POT検品・タブレット登録までを2時間以内に完了している。',
+ cr:['加熱完了から登録完了までを2時間以内に完了している',
+     '調理区画内に盛り付けされていない加熱済み原材料が2時間を超えて放置されていない'],
+ tip:['加熱済み厨房原材料は作り置きせず、バットに2時間を超えて放置しない',
+      '1商品ずつ盛り付け、1商品ずつサーマルシール発行-貼付する（同時並行はしない）',
+      'NG例：最初の原材料加熱完了から2時間を超えて放置（未盛り付け・シール未貼付）']},
+
+{no:7,cat:'V',sec:'重要管理項目',pt:20,vip:true,naOK:true,kit:true,name:'【厨房】最初の盛り付けから1時間以内',
+ chk:'【厨房】作成時に最初の食材を盛り付けてから、シール発行貼付・POT検品・タブレット登録までを1時間以内に完了している。',
+ cr:['最初の食材の盛り付け開始から1時間以内に登録まで完了している',
+     '複数商品が盛り付け途中で放置されていない（1時間超は廃棄）',
+     '1商品ずつ盛り付け、1商品ずつシール発行-貼付している'],
+ tip:['【確認】盛り付け途中で蓋を閉めずに作り置きされていないか確認する',
+      '同時に複数商品の盛り付けやサーマルシール発行-貼付は実施しない']},
+
+/* ── ヒアリング（1項目・2点）─────────────────────────── */
+{no:8,cat:'C',sec:'ヒアリング',pt:2,name:'指差し確認',
+ chk:'からあげクンの作成時とすべての原材料の加熱調理時に指差し確認をしている。',
+ cr:['からあげクンの原材料袋とパッケージの「番号」または「商品名」を指差し確認している',
+     '加熱するすべての原材料の「加熱時間」（油調・レンジ等）を指差し確認している'],
+ tip:['【確認】現認またはヒアリングで、原材料袋・タイマーボタン・タイマー表示の3つを指差し確認しているか確認する',
+      'からあげクンの入れ間違い防止のため、油調前に原材料袋とパッケージの番号を指差し確認する',
+      '加熱不足防止のため、加熱する際は加熱時間を指差し確認する',
+      '声出し確認もするとより効果的',
+      '加熱時間・調理方法の動画：ストコン→お仕事→クルー募集・活用支援室→トレーニング']},
+
+/* ── カウンター内（7項目・32点）──────────────────────── */
+{no:9,cat:'C',sec:'カウンター内',pt:10,name:'販売許容・鮮度管理表の登録',
+ chk:'陳列されている商品の販売許容が守られている。および、店内調理品を鮮度管理表に全て登録している。',
+ cr:['陳列している全商品（サーマル商品含む）がタブレットに作成実績登録されている',
+     '販売許容時間切れの商品が陳列されていない',
+     '陳列数とタブレット画面の個数が一致している'],
+ tip:['【確認箇所】ホットFF／常温FF／厨房商品／中華まん／おでん／その他',
+      'おでんを除く店内調理品の販売許容時間は、消費期限の1時間前に撤去する',
+      '作成実績の登録タイミング：ホットFF＝陳列した直後／常温FF(サーマル含む)＝POT検品した直後／おでん＝鍋に具材を入れた直後／中華まん＝什器に入れた直後／焼き芋＝保温台に陳列した直後／厨房＝POT検品した直後',
+      '15分前と販売許容時間にアラームが鳴ったら該当商品を売場から撤去する']},
+
+{no:10,cat:'C',sec:'カウンター内',pt:2,name:'原材料使用期限チェックの登録',
+ chk:'FF・厨房原材料使用期限チェックと半製品鮮度管理（ごはん）を直近1週間分、全て登録している。',
+ cr:['タブレットの「FF・厨房原料使用期限チェック」を直近1週間分、毎日記録している',
+     '【厨房】炊き上がった炊飯米を「半製品製造管理」に登録している'],
+ tip:['1日1回以上、期限チェックを実施しワークスケジュールの項目に登録する',
+      '推奨チェック時間：FF店＝24時前／厨房店＝15時前・24時前（1日2回推奨）',
+      'チェック時は実際に原材料を手に取り、消費・賞味・解凍開封後の使用期限を確認する']},
+
+{no:11,cat:'C',sec:'カウンター内',pt:2,name:'就業前衛生点検記録表',
+ chk:'就業前衛生点検記録表を直近1週間分、全て登録している。',
+ cr:['直近1週間分の記録漏れがない',
+     '出勤した「調理する従業員」全員分の記録がある'],
+ tip:['【確認】調査当日のシフト表とタブレット「店舗衛生レポート→就業前衛生点検記録表」を照合し、入力漏れがないか確認する',
+      '出勤時に、調理する従業員はタブレットの「就業前衛生点検記録表」に登録する',
+      '手指の傷や手荒れが化膿している場合は調理しない',
+      '体調不良の場合は店舗責任者に連絡し、出勤可否の指示を仰ぐ']},
+
+{no:12,cat:'C',sec:'カウンター内',pt:2,name:'フライヤー油の管理',
+ chk:'フライヤー油を正しく管理している。',
+ cr:['酸価（AV）2.5未満である',
+     'AVチェックの在庫がある',
+     'AVチェックが有効期限内である（変色していない）',
+     '油酸価度チェックを直近1週間分、全て登録している（フライヤー台数分）'],
+ tip:['毎日フライヤー油の酸価を測定する。2.5に近づいたら油交換の準備をする',
+      '油交換後はワークスケジュールの「フライヤー清掃(油交換)」に実施登録する',
+      '酸価上昇を防ぐため油カスをこまめに取る（朝・昼・夕・FF作成後など1日3回以上推奨）',
+      '試験紙は切断して使用しない（正確に測定できない）。説明書どおりに保管する',
+      'フライヤーが2台ある店は2台分とも登録する']},
+
+{no:13,cat:'C',sec:'カウンター内',pt:2,name:'加温・要冷機器の温度チェック',
+ chk:'加温・要冷機器の温度チェックを決められた回数実施し、記録している。',
+ cr:['1日最低2回、温度チェックを実施している',
+     'タブレット「什器温度チェック」に記録漏れ（未入力・df表記）がない',
+     '温度チェックが必要な什器が全て「店舗什器情報」に登録されている'],
+ tip:['時短店はオープン時・クローズ時の2回チェック',
+      '改装での什器増設、中華まん販売開始時などはタブレット「店舗什器情報」から什器登録する',
+      '連続で温度異常があった場合は店舗責任者に報告する',
+      '冷凍ストッカーの温度計が故障した場合は修繕を依頼し、届くまで市販の温度計で代用する（-18℃以下）']},
+
+{no:14,cat:'C',sec:'カウンター内',pt:10,naOK:true,kit:true,name:'【厨房】中心温度測定',
+ chk:'【厨房】中心温度測定が必要な原材料を加熱調理後3分後に測定し、登録している。',
+ cr:['「中心温度計測」の記載がある原材料は加熱調理ごとに計測している',
+     '加熱調理後3分後に測定しタブレットに登録している',
+     '記録漏れがない'],
+ tip:['【確認】タブレット「作成管理→まちかど厨房」の対象商品と「厨房管理→中心温度記録」を照合し記録漏れを確認する',
+      '中心温度が75℃未満なら1分再加熱。2回追加しても達しない場合はその商品を廃棄する',
+      '中心温度計のセンサーは先端から2cmの位置。横から刺して中心部で計測する',
+      '食品衛生責任者は毎月の記録漏れをチェックし、タブレットの「責任者チェック」を登録する']},
+
+{no:15,cat:'C',sec:'カウンター内',pt:2,name:'コーヒーマシン・什器・調理器具の清掃',
+ chk:'コーヒーマシン、FF・厨房什器、調理器具、備品の清掃が十分行き届いている。',
+ cr:['コーヒーマシン（ミルクタンク・抽出口・ホッパー・本体）',
+     'コーヒーマシンの日次清掃記録を全て登録している',
+     'コンディメント什器',
+     'コーヒーマシンとカウンターの間',
+     'FF什器',
+     '厨房什器',
+     '万能トング',
+     '中華まん什器',
+     'おでん鍋',
+     'カウンター・催事台',
+     'その他'],
+ tip:['清掃頻度：FF什器＝1日数回／中華まん什器＝1日1回／おでん鍋＝1日2回／万能トング＝都度／カウンター・催事台＝1日1回／厨房什器＝1日1回',
+      'コーヒーマシンは1日1回、フルシステムクリーニング・本体/ミルククーラー・ミルクタンク・抽出口・排水トレイ・マシン下・ディスプレイ・排水タンクを清掃する',
+      'ミルクタンクの白い固まり、ホッパー内側の油分、抽出口周辺の付着物に注意する',
+      'コーヒーマシンとカウンターの隙間のコーヒー豆・黒ずみ・ホコリを確認する',
+      'FF什器はガラス面の手跡・油汚れ・揚げカス、おでん鍋は鍋・ヒーターの汚れや汁を確認する',
+      '清掃後はワークスケジュールの各項目に実施登録する']},
+
+/* ── 調理区画（9項目・42点）─────────────────────────── */
+{no:16,cat:'K',sec:'調理区画',pt:10,name:'からあげクンの作成',
+ chk:'からあげクンはオペレーションマニュアル通りに作成している。（未作成の場合はヒアリング）',
+ cr:['パッケージを作成前に正しく準備している',
+     'フレーバー毎にバットを準備している',
+     'フライヤーとバットの位置を固定している',
+     '2段仕切りバスケットを正しく使用している',
+     'フレーバー毎にバットを分けて油切をしている'],
+ tip:['油調前に、調理するフレーバーのパッケージをバット付近に設置する',
+      '複数種類を同時に調理する場合はフライヤーとバットの位置（左右・手前奥）を固定する',
+      'バットが1つしかない場合は1商品ずつ作成する',
+      '2段調理可能な原材料は必ず2段仕切りバスケットを使用する',
+      '「浮き上がり防止器具」はFF調理加工マニュアルに記載された商品以外には使用不可',
+      '未作成の場合はパッケージの置き場所とタイミングをヒアリングする']},
+
+{no:17,cat:'K',sec:'調理区画',pt:10,name:'加熱調理・盛り付け',
+ chk:'マニュアル通りに加熱調理、盛り付けをしている。（からあげクンを除く）',
+ cr:['作成時にマニュアルを確認している（FFはフライヤー付近に掲示、厨房は調理区画内に掲示・保管）',
+     '1つのバスケットで1種類ずつ作成している（2段仕切りバスケットを正しく使用している）',
+     '投入数量・加熱時間が守られている',
+     '【厨房】異なる具材は1商品ずつ盛り付けしている'],
+ tip:['一緒に盛り付けて良い共通食材はごはん・キャベツ・パン・バンズ（まとめるのは3商品まで。4商品まとめてはNG）',
+      '投入数量NG例：からあげクン30粒投入×→1段調理最大20粒／ふっくらあじフライ4枚×→最大3枚',
+      '2段式調理で加熱時間が変わる商品に注意（からあげクン等）',
+      '単品カードには投入数量の記載がないため、必ず調理マニュアルを確認する',
+      'FF調理加工マニュアルがない場合は担当SVに発注依頼。厨房調理マニュアル（単品カード）はストコン-お知らせ一覧-厨)調理マニュアル から印刷できる']},
+
+{no:18,cat:'K',sec:'調理区画',pt:10,name:'シール発行・貼付・POT検品',
+ chk:'サーマルシールの発行、貼付、POT検品（またはダブルチェック）が正しく行われている。',
+ cr:['最新のサーマルプリンタ呼出No.表をみて発行している',
+     '【厨房】単品カードまたは調理マニュアルの「品番」を見て発行している',
+     '1商品ずつ発行している',
+     '1商品ずつ貼付している',
+     '封またはフタ閉め後、すぐにサーマルシールを発行-貼付している',
+     '常温FFはFFスキャンシートを使用してPOT検品している',
+     '厨房は単品カードを使用してPOT検品している'],
+ tip:['店舗で作成した呼出No表・過去の呼出No表は使用しない。呼出No表は毎週印刷して使用する',
+      '1つ目のサーマルシールを全て貼ってから、次のシールを発行する',
+      'POT検品は必ず陳列前に実施する。同時に「別添調味料」と「商品仕様」も確認する',
+      '単品カードの紛失やFFスキャンシートに記載がない場合は、調理マニュアルを使い2名で目視チェックする',
+      'FFスキャンシートの印刷：タブレット-オペレーションマニュアル-その他-FFスキャンシート']},
+
+{no:19,cat:'K',sec:'調理区画',pt:2,name:'解凍・開封日シール',
+ chk:'原材料を解凍・開封した際に解凍・開封日シールを正しく貼っている。（FFは手書きで開封日管理）',
+ cr:['正しい使用期限の解凍・開封日シールを貼付している',
+     'FFは手書きで解凍・開封日を記入している',
+     '解凍ルールを守っている',
+     '要冷凍・冷蔵保存の原材料が正しい温度帯で保存されている',
+     '【厨房】原材料の解凍・開封日シールへ賞味期限を転記している'],
+ tip:['貼り忘れ防止のため、解凍・開封する「前」にシールを発行-貼付する',
+      '記憶やメモ書きの番号でシールを発行しない。D+●は単品カードまたは調理マニュアルで確認する',
+      'FFは食材袋の開封(解凍)日欄に油性ペンで日付を記入してから開封する。不明な食材は廃棄する',
+      '解凍・開封後に保存温度帯が変わる原材料がある（厨房用ソース類：開封前は常温・開封後は冷蔵）',
+      'マニュアルに記載のない流水解凍・常温解凍はしない',
+      '食材使用後はすみやかに封をして冷凍・冷蔵庫に戻す']},
+
+{no:20,cat:'K',sec:'調理区画',pt:2,name:'手洗い設備・手洗い',
+ chk:'手洗いマニュアルシールを手洗い場に掲示し、正しい手洗いをしている。（手洗い設備が清潔で使用可能なことも含む）',
+ cr:['手洗いマニュアルシールが正しく掲示されている',
+     'ハンドソープが補充されている',
+     'ペーパータオルが補充されている',
+     'アルコール除菌スプレーが設置・補充されている',
+     '手洗い設備が破損（水が出ない・詰まり等）していない',
+     '手洗い設備が荷物置き場になっていない'],
+ tip:['手洗いが必要なタイミング：勤務に就く前／ファストフーズを扱う前／トイレの後／清掃の後／調理開始前 など',
+      'ハンドソープ・ペーパータオル・アルコールスプレーはなくなる前に補充する',
+      '手洗いマニュアルシールが剥がれた場合は担当SVへ連絡し発注を依頼する',
+      '設備の破損（水が出ない・詰まり）は修繕を依頼する']},
+
+{no:21,cat:'K',sec:'調理区画',pt:2,name:'身だしなみ',
+ chk:'マニュアル通りの身だしなみが守られている。（爪、マニキュア、腕時計、指輪、ピアス等）',
+ cr:['爪を短く整え、マニキュア・つけ爪をしていない',
+     '腕時計・指輪・ブレスレット・ピアス等の装飾品を身につけていない',
+     '【厨房店】マスク・帽子・コックコート・エプロンを着用している',
+     '厨房作成時は手袋を着用している',
+     'FF作成時はトングを使用している'],
+ tip:['指のはら側から見て爪がはみ出していないか確認する',
+      '出勤時にタブレットTOPの「就業前衛生点検記録表」で個人衛生状況を確認してから勤務する',
+      'やむを得ず指輪が外せない場合は手袋を着用する',
+      '手指に傷や手荒れがある場合は「薄手ニトリル手袋」＋「ポリ手袋」の二重で調理する（化膿している場合は調理しない）',
+      '生肉原材料用と加熱済食材用のトングを使い分ける']},
+
+{no:22,cat:'K',sec:'調理区画',pt:2,name:'持ち込み物・調理器具',
+ chk:'調理区画への持ち込み物はマニュアルに従っている。調理器具が正しく使用できる状態である。',
+ cr:['金タワシ・折刃式カッターや金属類等の持ち込みがない',
+     'フライヤーバスケット・調理器具が壊れていない'],
+ tip:['シャープペン（芯含む）・クリップ・ホッチキス等、本体と分離するものも持ち込まない',
+      '板バネ式トングは使用しない',
+      'フライヤーバスケットの網の穴開き、炊飯ジャー内側の剥がれ等に気づいたら使用せず、担当SVに修繕依頼する']},
+
+{no:23,cat:'K',sec:'調理区画',pt:2,name:'調理区画・カウンター内の清掃',
+ chk:'調理区画内やカウンター内の備品、什器、調理器具は正しく清掃し清潔な状態である。',
+ cr:['シンク内・収納部',
+     '業務用冷蔵・冷凍庫',
+     'フライヤー',
+     '調理区画内の棚',
+     'カウンタークロスの洗浄状況（使い分けできている）',
+     'その他（製氷機、食洗器等）'],
+ tip:['シンク内側＝1日1回、シンク下の収納部＝月1回（推奨）',
+      '業務用冷凍・冷蔵庫は週1回、中性除菌洗浄剤100倍液で清掃。庫内の食材カス・扉パッキンの汚れやカビに注意',
+      'フライヤーは油交換時に本体・下部・油槽周辺・換気フードを清掃する',
+      'カウンタークロスは1日2回洗浄・殺菌。「ピンク」＝食材や調理器具が直接触れる場所、「ブルー」＝直接触れない場所',
+      'クロスの殺菌消毒は専用タッパーで。蓋付は12時間ごと、蓋なしは1時間ごとに液体を交換する',
+      '製氷機はカビが発生しやすいため、汚れを見つけたら都度清掃する']},
+
+{no:24,cat:'K',sec:'調理区画',pt:2,name:'調理器具・原材料・薬品の保管',
+ chk:'調理器具、原材料、包材は水跳ねしない場所、洗剤・殺菌消毒剤の汚染リスクがない場所（方法）で保管している。',
+ cr:['水跳ねしない場所で保管している',
+     '健康被害につながる強い薬品は誤ってつかない場所で保管している',
+     '薬品名（内容物名）を容器に明記している'],
+ tip:['シンクや手洗い器など水跳ねのある場所から目安60cm以上離す。仕切り板を活用する',
+      '油用強力洗剤・殺菌消毒剤はシンク上の水切り台や、天井付近の扉がない棚に置かない（清掃用具入れまたはシンク下の収納部へ）',
+      'アルコール除菌スプレー・中性除菌洗浄剤はシンク周りに置いてよい',
+      '自店で用意した詰め替え容器にも薬品名（内容物名）を明記する。ラベルが剥がれたら手書きやテプラで表示する',
+      '中身が不明な液体は使用せず店舗責任者に確認する']},
+
+/* ── 事務所（4項目・8点）────────────────────────────── */
+{no:25,cat:'O',sec:'事務所',pt:2,name:'食品衛生責任者セルフチェック',
+ chk:'月に1回以上、食品衛生責任者によるセルフチェックを実施している。',
+ cr:['月に1回以上、タブレット月次レポート「衛生チェック」で実施している',
+     '不合格の場合、改善指導を行い当月中に再チェックして合格している'],
+ tip:['食品衛生責任者はセルフチェック結果を店舗従業員全員に共有する',
+      '不合格が発生した場合は改善指導し、該当月に合格するまで再チェックする',
+      '毎月の実施週を固定し、実施漏れがないようにする']},
+
+{no:26,cat:'O',sec:'事務所',pt:2,name:'害虫・害獣セルフチェック',
+ chk:'月に1回、害虫・害獣セルフチェックシートでゴキブリ、ネズミの発生状況を確認し、対策をとっている。',
+ cr:['月に1回、害虫・害獣セルフチェックシートを実施・記入している',
+     '直近1年分の記録を印刷して保管している',
+     '生息・兆候があれば対策をとっている',
+     '防虫・防鼠用具の期限が切れていない'],
+ tip:['記録したチェックシートはオペレーションノート等に保管する',
+      '生息・兆候が確認された場合はすみやかに店舗責任者へ報告し、必要に応じて害虫駆除業者へ連絡する',
+      '重点箇所（コーヒーマシン・シンク等）の清掃を徹底する',
+      '消耗品台帳の「虫よけシート」等の防虫・防鼠用具を、お客様から見えない場所に設置する']},
+
+{no:27,cat:'O',sec:'事務所',pt:2,name:'衛生管理計画書の保管',
+ chk:'衛生管理計画書を保管している。（厨房店は厨房用とあわせて2枚保管）',
+ cr:['衛生管理計画書を保管している',
+     '全従業員が保管場所を把握している',
+     '【厨房店】厨房用の衛生管理計画書とあわせて2枚保管している'],
+ tip:['FF・厨房共通（1枚目）：①原材料・商品の受入確認 ②冷機器・温調設備の温度確認 ③二次汚染・異物混入の防止 ④トイレの洗浄・消毒 ⑤個人衛生管理',
+      '厨房追加項目（2枚目）：⑥器具等の洗浄・消毒・殺菌 ⑦衛生的な手洗いの実施 ⑧加熱調理',
+      '衛生管理計画書はオペレーションノート等に保管し、全従業員に保管場所を周知する',
+      '入手先：ストコン-お知らせ一覧-セミナー＆営業情報']},
+
+{no:28,cat:'O',sec:'事務所（井戸水使用店のみ）',pt:2,naOK:true,well:true,name:'【井戸水】残留塩素濃度測定',
+ chk:'【井戸水使用店】残留塩素濃度測定を毎週実施し、漏れなく記録している。',
+ cr:['週1回、残留塩素濃度を測定し記録している',
+     '測定値が基準（0.1〜1.0mg/L）を満たしている',
+     '直近1ヶ月分の測定日・測定値が記録されている',
+     '「アクアチェックLC（水質検査試験紙）」の在庫があり使用期限内である'],
+ tip:['測定値が基準から外れたら再測定。それでも外れる場合は担当SVへ報告し、滅菌器の修繕・メンテナンスを依頼する',
+      '担当者と実施日を決めて記録漏れがないよう管理する。記録表はオペレーションノート等に保管する',
+      '井戸水を使用していない店舗は「対象外」でよい']}
+];
+
+const BASE_PT   = 100;   // 満点
+const PASS_LINE = 81;    // 81点以上で合格（80点以下は不合格）
+const byNo = {}; ITEMS.forEach(i=>byNo[i.no]=i);
+const KIT_ITEMS  = ITEMS.filter(i=>i.kit).map(i=>i.no);   // 厨房なし店で対象外にする項目
+const WELL_ITEMS = ITEMS.filter(i=>i.well).map(i=>i.no);  // 井戸水使用店のみの項目
+
+/* ================================================================
+   IndexedDB（端末内保存）
+   checks : {id:'storeId_YYYY-MM-DD', storeId, storeName, date, time, inspector,
+             kitchen, well, results:{ no: {v,failed[],memo,photos[pid]} }, updatedAt}
+   photos : {pid, blob, w, h}
+   ================================================================ */
+let DB=null;
+function openDB(){
+  return new Promise((res,rej)=>{
+    const r=indexedDB.open('hygiene',1);
+    r.onupgradeneeded=e=>{
+      const db=e.target.result;
+      if(!db.objectStoreNames.contains('checks')) db.createObjectStore('checks',{keyPath:'id'});
+      if(!db.objectStoreNames.contains('photos')) db.createObjectStore('photos',{keyPath:'pid'});
+    };
+    r.onsuccess=e=>{DB=e.target.result;res(DB);};
+    r.onerror=e=>rej(e.target.error);
+  });
+}
+function tx(store,mode){return DB.transaction(store,mode).objectStore(store);}
+function idbPut(store,val){return new Promise((res,rej)=>{const q=tx(store,'readwrite').put(val);q.onsuccess=()=>res(val);q.onerror=()=>rej(q.error);});}
+function idbGet(store,key){return new Promise((res,rej)=>{const q=tx(store,'readonly').get(key);q.onsuccess=()=>res(q.result||null);q.onerror=()=>rej(q.error);});}
+function idbAll(store){return new Promise((res,rej)=>{const q=tx(store,'readonly').getAll();q.onsuccess=()=>res(q.result||[]);q.onerror=()=>rej(q.error);});}
+function idbDel(store,key){return new Promise((res,rej)=>{const q=tx(store,'readwrite').delete(key);q.onsuccess=()=>res();q.onerror=()=>rej(q.error);});}
+
+/* ================================================================
+   状態
+   ================================================================ */
+const S = {
+  storeId: STORES[0].id,
+  date:    todayStr(),
+  time:    nowTimeStr(),
+  rec:     null,        // 現在の調査レコード
+  prev:    null,        // 同一店舗の前回レコード（改善確認用）
+  tab:     'V',
+  urls:    {},          // pid -> objectURL
+  allRecs: []
+};
+
+function todayStr(){
+  const d=new Date(Date.now()-new Date().getTimezoneOffset()*60000);
+  return d.toISOString().slice(0,10);
+}
+function nowTimeStr(){
+  const d=new Date();
+  return d.getHours().toString().padStart(2,'0')+':'+d.getMinutes().toString().padStart(2,'0');
+}
+function keyOf(storeId,date){return storeId+'_'+date;}
+function storeName(id){const s=STORES.find(s=>s.id==id);return s?s.name:'';}
+function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+function toast(msg,ms){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('on');
+  clearTimeout(toast._t);toast._t=setTimeout(()=>t.classList.remove('on'),ms||1800);}
+
+/* 店舗ごとの条件（厨房の有無・井戸水）は端末に覚えさせる */
+function storeCfg(id){
+  let all={};
+  try{ all=JSON.parse(localStorage.getItem('hygiene_storecfg')||'{}'); }catch(e){}
+  return all[id] || {kitchen:false, well:false};
+}
+function saveStoreCfg(id,cfg){
+  let all={};
+  try{ all=JSON.parse(localStorage.getItem('hygiene_storecfg')||'{}'); }catch(e){}
+  all[id]=cfg;
+  localStorage.setItem('hygiene_storecfg',JSON.stringify(all));
+}
+
+function blankRec(storeId,date){
+  const cfg=storeCfg(storeId);
+  return {id:keyOf(storeId,date),storeId:Number(storeId),storeName:storeName(storeId),
+          date:date,time:S.time||'',inspector:localStorage.getItem('hygiene_inspector')||'',
+          kitchen:!!cfg.kitchen, well:!!cfg.well, results:{},updatedAt:''};
+}
+function resOf(no){
+  if(!S.rec.results[no]) S.rec.results[no]={v:'',failed:[],memo:'',photos:[]};
+  return S.rec.results[no];
+}
+
+/* 厨房なし → 【厨房】項目を対象外に。井戸水でない → No.28 を対象外に。
+   条件を満たす側に切り替えたときは、対象外だけを解除する（○×は消さない）。 */
+function applyCond(){
+  KIT_ITEMS.forEach(no=>{
+    const r=resOf(no);
+    if(!S.rec.kitchen) r.v='na';
+    else if(r.v==='na') r.v='';
+  });
+  WELL_ITEMS.forEach(no=>{
+    const r=resOf(no);
+    if(!S.rec.well) r.v='na';
+    else if(r.v==='na') r.v='';
+  });
+}
+
+/* ================================================================
+   採点（100点満点の減点方式・80点以下不合格）
+   ○=減点なし ／ ×=その項目の点数を減点 ／ 対象外=減点なし
+   ================================================================ */
+function itemDeduct(it,r){ return (r && r.v==='ng') ? it.pt : 0; }
+function calcScore(rec){
+  let ded=0,done=0,na=0,ngV=0,ngN=0;
+  ITEMS.forEach(it=>{
+    const r=rec.results[it.no];
+    if(!r||!r.v) return;
+    done++;
+    if(r.v==='na'){na++;return;}
+    if(r.v==='ng'){ ded+=it.pt; ngN++; if(it.vip) ngV++; }
+  });
+  const score=Math.max(0,BASE_PT-ded);
+  return {ded,done,na,ngV,ngN,score,
+          full: done===ITEMS.length,
+          pass: score>=PASS_LINE};
+}
+function catStat(rec,cat){
+  let ded=0,done=0,n=0,na=0;
+  ITEMS.filter(i=>i.cat===cat).forEach(it=>{
+    n++;
+    const r=rec.results[it.no];
+    if(r&&r.v){done++; if(r.v==='na')na++; else if(r.v==='ng')ded+=it.pt;}
+  });
+  return {ded,done,n,na};
+}
+
+/* ================================================================
+   ヘッダー・タブ
+   ================================================================ */
+function initHeader(){
+  const sel=document.getElementById('selStore');
+  sel.innerHTML=STORES.map(s=>`<option value="${s.id}">${s.id}. ${esc(s.name)}</option>`).join('');
+  sel.value=S.storeId;
+  sel.onchange=async()=>{S.storeId=Number(sel.value);await loadRec();render();};
+  const dt=document.getElementById('selDate');
+  dt.value=S.date;
+  dt.onchange=async()=>{S.date=dt.value||todayStr();await loadRec();render();};
+  const tm=document.getElementById('selTime');
+  tm.value=S.time;
+  tm.onchange=()=>{S.time=tm.value;if(S.rec){S.rec.time=S.time;save();}};
+  const ip=document.getElementById('selInsp');
+  ip.value=localStorage.getItem('hygiene_inspector')||'';
+  const setInsp=async()=>{
+    const v=ip.value.trim();
+    localStorage.setItem('hygiene_inspector',v);
+    S.rec.inspector=v; await save();
+  };
+  ip.onchange=setInsp; ip.onblur=setInsp;
+
+  document.getElementById('chipKit').onclick=async()=>{
+    S.rec.kitchen=!S.rec.kitchen;
+    saveStoreCfg(S.rec.storeId,{kitchen:S.rec.kitchen,well:S.rec.well});
+    applyCond(); await save(); render();
+    toast(S.rec.kitchen?'まちかど厨房ありに設定しました':'厨房なし → 【厨房】項目を対象外にしました');
+  };
+  document.getElementById('chipWell').onclick=async()=>{
+    S.rec.well=!S.rec.well;
+    saveStoreCfg(S.rec.storeId,{kitchen:S.rec.kitchen,well:S.rec.well});
+    applyCond(); await save(); render();
+    toast(S.rec.well?'井戸水使用店に設定しました':'No.28 を対象外にしました');
+  };
+}
+function renderTabs(){
+  const t=document.getElementById('tabs');
+  const parts=CATS.map(c=>{
+    const cs=catStat(S.rec,c.key);
+    return `<button data-tab="${c.key}" class="${S.tab===c.key?'on':''}">${c.label}<span class="cnt">${cs.done}/${cs.n}</span></button>`;
+  });
+  parts.push(`<button data-tab="list" class="${S.tab==='list'?'on':''}">全店一覧</button>`);
+  parts.push(`<button data-tab="report" class="${S.tab==='report'?'on':''}">📤 店長FB</button>`);
+  t.innerHTML=parts.join('');
+  t.querySelectorAll('button').forEach(b=>b.onclick=()=>{S.tab=b.dataset.tab;render();window.scrollTo(0,0);});
+}
+function renderScore(){
+  const sc=calcScore(S.rec);
+  document.getElementById('scNum').textContent = sc.done?sc.score:'–';
+  const jt=document.getElementById('scJudge');
+  if(!sc.done){ jt.textContent='未入力'; jt.className='judgetag'; }
+  else{
+    jt.textContent = (sc.pass?'合格':'不合格') + (sc.full?'':'(暫定)');
+    jt.className   = 'judgetag '+(sc.pass?'ok':'ng');
+  }
+  document.getElementById('scBar').style.width = (sc.done?sc.score:0)+'%';
+  document.getElementById('scDone').textContent = sc.done+'/'+ITEMS.length;
+  const ck=document.getElementById('chipKit'), cw=document.getElementById('chipWell');
+  ck.classList.toggle('on',!!S.rec.kitchen);
+  cw.classList.toggle('on',!!S.rec.well);
+  ck.textContent = S.rec.kitchen ? '🍳 まちかど厨房あり' : '🍳 厨房なし（4項目 対象外）';
+  cw.textContent = S.rec.well    ? '💧 井戸水 使用' : '💧 井戸水なし（対象外）';
+}
+
+/* ================================================================
+   チェック画面
+   ================================================================ */
+function prevResult(no){ return S.prev && S.prev.results ? S.prev.results[no] : null; }
+
+function renderCheck(){
+  const cat=CATS.find(c=>c.key===S.tab); if(!cat) return '';
+  const items=ITEMS.filter(i=>i.cat===cat.key);
+  const cs=catStat(S.rec,cat.key);
+  let h=`<div class="cat-head"><h2>${esc(cat.full)}（${items.length}項目）</h2>
+    <span class="sc">減点 ${cs.ded}点</span>
+    <button class="allok" id="btnAllOk">全て○</button></div>`;
+
+  if(cat.key==='V'){
+    const sc=calcScore(S.rec);
+    if(sc.ngV) h+=`<div class="alert"><b>⚠ 重要管理項目に × が ${sc.ngV}件あります</b>
+      1件で20点減点。この時点で ${sc.score}点（${sc.pass?'合格':'不合格'}）です。原因と再発防止を必ず店長と共有してください。</div>`;
+    else h+=`<div class="note">重要管理項目は<b>1項目でも×だと20点減点</b>＝80点となり、その時点で不合格です。ここは特に慎重に確認してください。</div>`;
+  }
+
+  let curSec='';
+  items.forEach(it=>{
+    if(it.sec!==curSec){ curSec=it.sec; h+=`<div class="sec-head">${esc(curSec)}</div>`; }
+    const r=resOf(it.no);
+    const cls = r.v==='ok'?'v-ok' : r.v==='ng'?'v-ng' : r.v==='na'?'v-na' : '';
+    const pv=prevResult(it.no);
+    let badge='';
+    if(pv&&pv.v==='ng'){
+      const fixed = r.v==='ok';
+      badge=`<span class="badge-prev ${fixed?'badge-fix':''}">${fixed?'✓改善':'前回×'}</span>`;
+    }
+    let chips='';
+    if(it.vip) chips+=`<span class="chip vip">重要 -${it.pt}</span>`;
+    if(it.kit) chips+=`<span class="chip kit">厨房</span>`;
+    if(it.well) chips+=`<span class="chip kit">井戸水</span>`;
+
+    const judge = it.naOK
+      ? [['ok','○','基準どおり'],['ng','×','要改善'],['na','対象外','該当なし']]
+      : [['ok','○','基準どおり'],['ng','×',`-${it.pt}点`]];
+
+    h+=`<div class="item ${cls} ${it.vip?'vip':''}" data-no="${it.no}">
+      <div class="it-head">
+        <div class="it-title"><span class="it-no">${it.no}</span>
+          <span class="it-name">${esc(it.name)}${chips}${badge}</span>
+          <span class="it-pt">×で-${it.pt}</span></div>
+        <p class="it-check">${esc(it.chk)}</p>
+      </div>
+      <div class="judge">${judge.map(([v,l,s])=>
+        `<button data-v="${v}" class="${r.v===v?'on':''}">${l}${s?`<small>${s}</small>`:''}</button>`).join('')}</div>
+      <div class="detail ${needDetail(r)?'':'hide'}">
+        <h4>できていない箇所にチェック（評価基準）</h4>
+        ${it.cr.map((c,i)=>`<label class="crit ${r.failed.includes(i)?'bad':''}">
+            <input type="checkbox" data-ci="${i}" ${r.failed.includes(i)?'checked':''}>
+            <span class="mk">✕</span>${esc(c)}</label>`).join('')}
+        <textarea class="memo" placeholder="店長へのコメント・改善指示（例：AVチェックを発注済み。明日中に油交換）">${esc(r.memo)}</textarea>
+        <div class="photos" data-ph="${it.no}"></div>
+        <details class="tips"><summary>基準・確認方法・管理方法を見る</summary>
+          <ul>${it.tip.map(t=>`<li>${esc(t)}</li>`).join('')}</ul></details>
+      </div>
+    </div>`;
+  });
+  return h;
+}
+function needDetail(r){
+  return r.v==='ng'||r.failed.length>0||r.memo||r.photos.length>0;
+}
+
+function bindCheck(root){
+  const allok=root.querySelector('#btnAllOk');
+  if(allok) allok.onclick=async()=>{
+    const cat=S.tab;
+    ITEMS.filter(i=>i.cat===cat).forEach(it=>{
+      const r=resOf(it.no);
+      if(r.v) return;                 // すでに判定済み・対象外は上書きしない
+      r.v='ok';
+    });
+    await save(); render(); toast('未判定の項目を○にしました');
+  };
+
+  root.querySelectorAll('.item').forEach(card=>{
+    const no=Number(card.dataset.no), r=resOf(no);
+    card.querySelectorAll('.judge button').forEach(b=>b.onclick=async()=>{
+      r.v = (r.v===b.dataset.v) ? '' : b.dataset.v;
+      if(r.v==='ok'||r.v==='na') r.failed=[];
+      await save(); render();
+    });
+    card.querySelectorAll('.crit input').forEach(cb=>cb.onchange=async()=>{
+      const i=Number(cb.dataset.ci);
+      if(cb.checked){ if(!r.failed.includes(i)) r.failed.push(i); }
+      else r.failed=r.failed.filter(x=>x!==i);
+      cb.closest('.crit').classList.toggle('bad',cb.checked);
+      if(r.failed.length && r.v!=='ng'){ r.v='ng'; await save(); render(); return; }
+      await save(); renderScore();
+    });
+    const ta=card.querySelector('.memo');
+    if(ta) ta.onchange=async()=>{r.memo=ta.value.trim();await save();};
+    const box=card.querySelector('.photos');
+    if(box) renderPhotos(box,no);
+  });
+}
+/* ================================================================
+   写真（項目別・複数枚）
+   撮影した写真は長辺1280pxのJPEGに圧縮してIndexedDBへ保存する
+   ================================================================ */
+function compress(file,max,q){
+  return new Promise((res,rej)=>{
+    const fr=new FileReader();
+    fr.onload=()=>{
+      const img=new Image();
+      img.onload=()=>{
+        let{width:w,height:h}=img;
+        const sc=Math.min(1,max/Math.max(w,h));
+        w=Math.round(w*sc); h=Math.round(h*sc);
+        const cv=document.createElement('canvas'); cv.width=w; cv.height=h;
+        cv.getContext('2d').drawImage(img,0,0,w,h);
+        cv.toBlob(b=>b?res({blob:b,w,h}):rej(new Error('画像変換に失敗')),'image/jpeg',q);
+      };
+      img.onerror=()=>rej(new Error('画像を読み込めません'));
+      img.src=fr.result;
+    };
+    fr.onerror=()=>rej(new Error('ファイルを読み込めません'));
+    fr.readAsDataURL(file);
+  });
+}
+function phUrl(pid,blob){
+  if(!S.urls[pid]) S.urls[pid]=URL.createObjectURL(blob);
+  return S.urls[pid];
+}
+async function renderPhotos(box,no){
+  const r=resOf(no);
+  box.innerHTML='';
+  for(const pid of r.photos){
+    const p=await idbGet('photos',pid);
+    const d=document.createElement('div'); d.className='ph';
+    if(p){ const im=new Image(); im.src=phUrl(pid,p.blob); im.loading='lazy'; d.appendChild(im); }
+    const x=document.createElement('button'); x.textContent='✕';
+    x.onclick=async()=>{
+      r.photos=r.photos.filter(v=>v!==pid);
+      await idbDel('photos',pid); await save(); renderPhotos(box,no);
+    };
+    d.appendChild(x); box.appendChild(d);
+  }
+  const add=document.createElement('button'); add.className='addph';
+  add.innerHTML='<span>📷</span>写真を追加';
+  add.onclick=()=>{
+    const inp=document.createElement('input');
+    inp.type='file'; inp.accept='image/*'; inp.multiple=true;
+    inp.onchange=async()=>{
+      const files=[...inp.files];
+      if(!files.length) return;
+      toast('写真を保存中…',6000);
+      for(const f of files){
+        try{
+          const{blob,w,h}=await compress(f,1280,.72);
+          const pid='P'+Date.now().toString(36)+Math.random().toString(36).slice(2,7);
+          await idbPut('photos',{pid,blob,w,h});
+          r.photos.push(pid);
+        }catch(e){ toast('保存できない写真がありました'); }
+      }
+      await save(); renderPhotos(box,no); render();
+      toast(files.length+'枚追加しました');
+    };
+    inp.click();
+  };
+  box.appendChild(add);
+}
+
+/* ================================================================
+   保存・読み込み
+   ================================================================ */
+let saveTimer=null;
+async function save(){
+  S.rec.updatedAt=new Date().toISOString();
+  S.rec.storeName=storeName(S.rec.storeId);
+  const insp=S.rec.inspector||localStorage.getItem('hygiene_inspector')||'';
+  S.rec.inspector=insp;
+  await idbPut('checks',JSON.parse(JSON.stringify(S.rec)));
+  clearTimeout(saveTimer); saveTimer=setTimeout(refreshAll,120);
+}
+async function refreshAll(){ S.allRecs=await idbAll('checks'); }
+async function loadRec(){
+  const id=keyOf(S.storeId,S.date);
+  const found=await idbGet('checks',id);
+  S.rec = found || blankRec(S.storeId,S.date);
+  if(!S.rec.results) S.rec.results={};
+  if(S.rec.kitchen===undefined) S.rec.kitchen=!!storeCfg(S.storeId).kitchen;
+  if(S.rec.well===undefined)    S.rec.well   =!!storeCfg(S.storeId).well;
+  applyCond();
+  await refreshAll();
+  // 同一店舗の直近（今回より前）の記録を改善確認用に持つ
+  S.prev = S.allRecs.filter(r=>r.storeId==S.storeId && r.date < S.date)
+                    .sort((a,b)=>b.date.localeCompare(a.date))[0] || null;
+}
+
+/* ================================================================
+   全店一覧
+   ================================================================ */
+function renderList(){
+  const recs={}; S.allRecs.filter(r=>r.date===S.date).forEach(r=>recs[r.storeId]=r);
+  const scored=Object.values(recs).map(r=>calcScore(r)).filter(s=>s.full);
+  const doneN=scored.length;
+  const failN=scored.filter(s=>!s.pass).length;
+  let h=`<div class="panel"><h3>${esc(S.date)} の進捗（${doneN}/20店舗 完了${failN?`・不合格${failN}店`:''}）</h3>
+    <div class="storelist">`;
+  STORES.forEach(s=>{
+    const r=recs[s.id];
+    const sc=r?calcScore(r):null;
+    const state = !sc||!sc.done ? '' : !sc.full ? 'part' : sc.pass ? 'done' : 'fail';
+    const label = !sc||!sc.done ? '未実施' : !sc.full ? `${sc.done}/${ITEMS.length}項目`
+                : sc.pass ? '合格' : '不合格';
+    h+=`<button class="srow ${state}" data-go="${s.id}">
+      <span class="it-no">${s.id}</span><span class="nm">${esc(s.name)}</span>
+      <span class="st">${label}</span>
+      <span class="sp" style="color:${!sc||!sc.done?'#c3ccd6':sc.score>=PASS_LINE?'var(--ok)':'var(--ng)'}">${sc&&sc.done?sc.score+'点':'–'}</span></button>`;
+  });
+  h+=`</div>
+    <p class="mini">「不合格」は80点以下です。重要管理項目が1つでも×だと必ず不合格になります。</p>
+  </div>
+  <div class="panel"><h3>データ管理</h3>
+    <p class="mini">データはこの端末の中だけに保存されています。端末を初期化したりブラウザのデータを消すと失われます。1日の終わりにバックアップを取っておくと安心です。</p>
+    <button class="btn sub" id="btnBackup">💾 バックアップを書き出す（JSON）</button>
+    <button class="btn gray" id="btnRestore">📂 バックアップを読み込む</button>
+    <p class="mini">実施者名：<b>${esc(S.rec.inspector||'未設定')}</b>（画面右上の欄で変更できます）</p>
+  </div>`;
+  return h;
+}
+function bindList(root){
+  root.querySelectorAll('[data-go]').forEach(b=>b.onclick=async()=>{
+    S.storeId=Number(b.dataset.go);
+    document.getElementById('selStore').value=S.storeId;
+    await loadRec(); S.tab='V'; render(); window.scrollTo(0,0);
+  });
+  const bk=root.querySelector('#btnBackup');
+  if(bk) bk.onclick=backup;
+  const rs=root.querySelector('#btnRestore');
+  if(rs) rs.onclick=restore;
+}
+
+async function backup(){
+  toast('書き出し中…',8000);
+  const checks=await idbAll('checks');
+  const photos=await idbAll('photos');
+  const ph=[];
+  for(const p of photos){
+    ph.push({pid:p.pid,w:p.w,h:p.h,data:await blobToDataUrl(p.blob)});
+  }
+  const json=JSON.stringify({app:'hygiene',ver:APP_VER,exportedAt:new Date().toISOString(),checks,photos:ph});
+  dl(new Blob([json],{type:'application/json'}),`店舗衛生チェック_backup_${S.date}.json`);
+  toast('バックアップを書き出しました');
+}
+function restore(){
+  const inp=document.createElement('input'); inp.type='file'; inp.accept='.json,application/json';
+  inp.onchange=async()=>{
+    const f=inp.files[0]; if(!f) return;
+    try{
+      const o=JSON.parse(await f.text());
+      if(o.app!=='hygiene') throw new Error('このアプリのバックアップではありません');
+      if(!confirm(`調査${(o.checks||[]).length}件・写真${(o.photos||[]).length}枚を読み込みます。\n同じ店舗・同じ日付の記録は上書きされます。よろしいですか？`)) return;
+      for(const c of (o.checks||[])) await idbPut('checks',c);
+      for(const p of (o.photos||[])) await idbPut('photos',{pid:p.pid,w:p.w,h:p.h,blob:dataUrlToBlob(p.data)});
+      await loadRec(); render(); toast('読み込みました');
+    }catch(e){ alert('読み込めませんでした：'+e.message); }
+  };
+  inp.click();
+}
+function blobToDataUrl(b){return new Promise(r=>{const f=new FileReader();f.onload=()=>r(f.result);f.readAsDataURL(b);});}
+function dataUrlToBlob(u){
+  const[m,b64]=u.split(',');const mime=m.match(/:(.*?);/)[1];const bin=atob(b64);
+  const arr=new Uint8Array(bin.length);for(let i=0;i<bin.length;i++)arr[i]=bin.charCodeAt(i);
+  return new Blob([arr],{type:mime});
+}
+function dl(blob,name){
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=name;
+  document.body.appendChild(a);a.click();
+  setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove();},1500);
+}
+/* ================================================================
+   店長フィードバック
+   ================================================================ */
+function ngItems(rec){
+  return ITEMS.filter(it=>{
+    const r=rec.results[it.no];
+    return r&&r.v==='ng';
+  });
+}
+function wd(ds){return['日','月','火','水','木','金','土'][new Date(ds+'T00:00:00').getDay()];}
+
+function buildText(rec){
+  const sc=calcScore(rec);
+  const L=[];
+  L.push('━━━━━━━━━━━━━━');
+  L.push('【店舗衛生調査】');
+  L.push(`${rec.storeName}店  ${rec.date.slice(5).replace('-','/')}(${wd(rec.date)}) ${rec.time||''}`.trimEnd());
+  L.push(`合計 ${sc.score} / 100点　判定：${sc.pass?'合格':'不合格'}${sc.full?'':'（暫定）'}`);
+  L.push('※80点以下は不合格');
+  if(!sc.full) L.push(`※未入力が${ITEMS.length-sc.done}項目あります`);
+  L.push('━━━━━━━━━━━━━━');
+  if(sc.ngV){
+    L.push(`⚠ 重要管理項目に×が${sc.ngV}件（-${sc.ngV*20}点）`);
+    L.push('　1件でも×は即不合格です。');
+    L.push('');
+  }
+  CATS.forEach(c=>{
+    const cs=catStat(rec,c.key);
+    L.push(`${c.label.padEnd(6,'　')} -${cs.ded}点${cs.na?`（対象外${cs.na}）`:''}`);
+  });
+  const ngs=ngItems(rec);
+  if(!ngs.length){
+    L.push('');L.push('■ 指摘なし。この状態を維持してください。');
+  }else{
+    L.push('');L.push(`■ 指摘事項 ${ngs.length}件（合計 -${sc.ded}点）`);
+    ngs.forEach(it=>{
+      const r=rec.results[it.no];
+      L.push('');
+      L.push(`【${it.no}】${it.name}  -${it.pt}点${it.vip?'　★重要管理項目':''}`);
+      (r.failed||[]).forEach(i=>L.push(`  ・${it.cr[i]}`));
+      if(r.memo) L.push(`  → ${r.memo}`);
+      if(r.photos.length) L.push(`  📷 写真${r.photos.length}枚あり`);
+    });
+  }
+  const fixed=fixedItems(rec);
+  if(fixed.length){
+    L.push('');L.push('■ 前回から改善できた項目 ✓');
+    fixed.forEach(it=>L.push(`  ・${it.name}`));
+  }
+  L.push('');
+  L.push(`実施者：${rec.inspector||'—'}`);
+  return L.join('\n');
+}
+function fixedItems(rec){
+  const prev=S.allRecs.filter(r=>r.storeId==rec.storeId&&r.date<rec.date)
+                      .sort((a,b)=>b.date.localeCompare(a.date))[0];
+  if(!prev) return [];
+  return ITEMS.filter(it=>{
+    const p=prev.results[it.no],r=rec.results[it.no];
+    if(!p||!r) return false;
+    return p.v==='ng' && r.v==='ok';
+  });
+}
+
+function renderReport(){
+  const rec=S.rec, sc=calcScore(rec);
+  if(!sc.done) return `<div class="panel"><h3>店長フィードバック</h3>
+    <p class="mini">まだこの店舗・この日付のチェックが入力されていません。上のタブから入力してください。</p></div>`;
+  const ngs=ngItems(rec);
+  const nPh=ITEMS.reduce((s,it)=>s+((rec.results[it.no]||{}).photos||[]).length,0);
+  let h='';
+  if(sc.ngV) h+=`<div class="alert"><b>⚠ 重要管理項目に × が ${sc.ngV}件</b>
+    -${sc.ngV*20}点。重要管理項目は1件でも×だと不合格です。原因と再発防止策を必ず記録してください。</div>`;
+  h+=`<div class="panel">
+    <h3>${esc(rec.storeName)}店　${esc(rec.date)}（${wd(rec.date)}）</h3>
+    <div class="kv"><span>合計点</span><b style="font-size:1.15rem;color:${sc.pass?'var(--ok)':'var(--ng)'}">${sc.score} / 100点</b></div>
+    <div class="kv"><span>判定</span><b style="color:${sc.pass?'var(--ok)':'var(--ng)'}">${sc.pass?'合格':'不合格'}${sc.full?'':'（暫定）'}</b></div>`;
+  CATS.forEach(c=>{const cs=catStat(rec,c.key);
+    h+=`<div class="kv"><span>${esc(c.full)}</span><b style="color:${cs.ded?'var(--ng)':'var(--ok)'}">-${cs.ded}点${cs.na?`（対象外${cs.na}）`:''}</b></div>`;});
+  h+=`<div class="kv"><span>指摘事項</span><b>${ngs.length}件</b></div>
+      <div class="kv"><span>添付写真</span><b>${nPh}枚</b></div>
+      <div class="kv"><span>未入力</span><b>${ITEMS.length-sc.done}項目</b></div>
+      <div class="kv"><span>店舗条件</span><b>${rec.kitchen?'厨房あり':'厨房なし'}／${rec.well?'井戸水あり':'井戸水なし'}</b></div>
+    </div>
+
+    <div class="panel"><h3>① LINEに貼り付けるテキスト</h3>
+      <div class="rep" id="repText">${esc(buildText(rec))}</div>
+      <button class="btn" id="btnCopy">📋 コピーする</button>
+      <p class="mini">コピーしてLINEの店長トークに貼り付けてください。</p>
+    </div>
+
+    <div class="panel"><h3>② 指摘箇所の写真（${nPh}枚）</h3>`;
+  if(!nPh){ h+=`<p class="mini">写真はありません。</p>`; }
+  else{
+    ngs.concat(ITEMS.filter(it=>!ngs.includes(it)&&((rec.results[it.no]||{}).photos||[]).length))
+       .forEach(it=>{
+      const r=rec.results[it.no]||{};
+      if(!r.photos||!r.photos.length) return;
+      h+=`<div style="margin-bottom:10px"><b style="font-size:.82rem">【${it.no}】${esc(it.name)}</b>
+        <div class="repph" data-rp="${it.no}"></div></div>`;
+    });
+    h+=`<button class="btn sub" id="btnShare">📤 写真をまとめて送る／保存</button>
+        <p class="mini">Androidは「共有」からLINEを選べます。表示されない端末では写真が個別にダウンロードされます。</p>`;
+  }
+  h+=`</div>
+
+    <div class="panel"><h3>③ レポート画像（1枚）</h3>
+      <button class="btn sub" id="btnPng">🖼 スコアカードを画像で書き出す</button>
+      <canvas id="repcv" style="display:none"></canvas>
+      <p class="mini">LINEに1枚貼るだけで点数と指摘事項が伝わります。</p>
+    </div>`;
+  return h;
+}
+
+async function bindReport(root){
+  root.querySelectorAll('[data-rp]').forEach(async box=>{
+    const r=S.rec.results[Number(box.dataset.rp)];
+    for(const pid of r.photos){
+      const p=await idbGet('photos',pid); if(!p) continue;
+      const im=new Image(); im.src=phUrl(pid,p.blob); im.loading='lazy'; box.appendChild(im);
+    }
+  });
+  const c=root.querySelector('#btnCopy');
+  if(c) c.onclick=async()=>{
+    const t=buildText(S.rec);
+    try{ await navigator.clipboard.writeText(t); toast('コピーしました'); }
+    catch(e){
+      const ta=document.createElement('textarea'); ta.value=t; document.body.appendChild(ta);
+      ta.select(); document.execCommand('copy'); ta.remove(); toast('コピーしました');
+    }
+  };
+  const sh=root.querySelector('#btnShare');
+  if(sh) sh.onclick=sharePhotos;
+  const pg=root.querySelector('#btnPng');
+  if(pg) pg.onclick=()=>drawReport(S.rec);
+}
+
+async function sharePhotos(){
+  const rec=S.rec, files=[];
+  for(const it of ITEMS){
+    const r=rec.results[it.no]; if(!r||!r.photos) continue;
+    let n=0;
+    for(const pid of r.photos){
+      const p=await idbGet('photos',pid); if(!p) continue;
+      n++;
+      files.push(new File([p.blob],`${rec.storeName}_${it.no}_${it.name}_${n}.jpg`,{type:'image/jpeg'}));
+    }
+  }
+  if(!files.length) return toast('写真がありません');
+  if(navigator.canShare&&navigator.canShare({files})){
+    try{ await navigator.share({files,title:`${rec.storeName}店 店舗衛生調査`,text:buildText(rec)}); return; }
+    catch(e){ if(e.name==='AbortError') return; }
+  }
+  files.forEach((f,i)=>setTimeout(()=>dl(f,f.name),i*350));
+  toast(files.length+'枚を保存しました');
+}
+
+/* ── スコアカードPNG ─────────────────────────────── */
+function drawReport(rec){
+  const sc=calcScore(rec), ngs=ngItems(rec), fx=fixedItems(rec);
+  const W=760, pad=30;
+  const lines=[];
+  if(sc.ngV) lines.push({t:`⚠ 重要管理項目に×が${sc.ngV}件（-${sc.ngV*20}点）＝不合格`,b:true});
+  ngs.forEach(it=>{
+    const r=rec.results[it.no];
+    lines.push({t:`【${it.no}】${it.name}　-${it.pt}点${it.vip?'　★重要管理項目':''}`,b:true});
+    (r.failed||[]).forEach(i=>lines.push({t:'・'+it.cr[i]}));
+    if(r.memo) lines.push({t:'→ '+r.memo,em:true});
+  });
+  if(fx.length){ lines.push({t:''}); lines.push({t:`✓ 前回から改善：${fx.map(i=>i.name).join('、')}`,ok:true}); }
+
+  const wrap=[];
+  const cv=document.getElementById('repcv'), g=cv.getContext('2d');
+  g.font='15px sans-serif';
+  lines.forEach(l=>{
+    if(!l.t){wrap.push(l);return;}
+    let cur='';
+    for(const ch of l.t){
+      if(g.measureText(cur+ch).width > W-pad*2-14){ wrap.push({...l,t:cur}); cur='　'+ch; }
+      else cur+=ch;
+    }
+    wrap.push({...l,t:cur});
+  });
+
+  const headH=200, catH=CATS.length*30+16, bodyH=wrap.length*24+50;
+  const H=headH+catH+bodyH+40;
+  cv.width=W; cv.height=H;
+  const x=g;
+  x.fillStyle='#fff'; x.fillRect(0,0,W,H);
+  // ヘッダー
+  const grd=x.createLinearGradient(0,0,W,headH); grd.addColorStop(0,'#0a7d6e'); grd.addColorStop(1,'#065f54');
+  x.fillStyle=grd; x.fillRect(0,0,W,headH);
+  x.fillStyle='#fff';
+  x.font='bold 20px sans-serif'; x.fillText('店舗衛生調査 / 出来栄え基準',pad,44);
+  x.font='bold 30px sans-serif'; x.fillText(rec.storeName+'店',pad,88);
+  x.font='15px sans-serif';
+  x.fillText(`${rec.date}（${wd(rec.date)}）${rec.time?' '+rec.time:''}　実施者：${rec.inspector||'—'}`,pad,116);
+  x.font='bold 62px sans-serif'; x.textAlign='right';
+  x.fillText(String(sc.score),W-pad-92,110);
+  x.font='bold 22px sans-serif'; x.fillText('/ 100点',W-pad,110);
+  x.textAlign='left';
+  // 全体バー
+  x.fillStyle='rgba(255,255,255,.28)'; x.fillRect(pad,144,W-pad*2,16);
+  x.fillStyle= sc.pass?'#8ce6b4':'#ff9aa6'; x.fillRect(pad,144,(W-pad*2)*(sc.score/100),16);
+  x.fillStyle='#fff'; x.font='bold 15px sans-serif';
+  x.fillText(`判定：${sc.pass?'合格':'不合格'}${sc.full?'':'（暫定）'}　※80点以下は不合格`,pad,180);
+  x.font='13px sans-serif'; x.textAlign='right';
+  x.fillText(`入力 ${sc.done}/${ITEMS.length}項目　指摘 ${ngs.length}件`,W-pad,180); x.textAlign='left';
+
+  // カテゴリ別（減点）
+  let y=headH+30;
+  CATS.forEach(c=>{
+    const cs=catStat(rec,c.key), ratio=cs.ded? Math.min(1,cs.ded/40) : 0;
+    x.fillStyle='#16212c'; x.font='bold 15px sans-serif';
+    x.fillText(c.full,pad,y);
+    x.fillStyle='#e6ecf3'; x.fillRect(pad+230,y-13,290,16);
+    x.fillStyle= cs.ded===0?'#12a150' : '#e0344a';
+    x.fillRect(pad+230,y-13, cs.ded===0?290:290*Math.max(.08,ratio),16);
+    x.fillStyle='#16212c'; x.font='bold 15px sans-serif'; x.textAlign='right';
+    x.fillText(`-${cs.ded}点`,W-pad,y); x.textAlign='left';
+    y+=30;
+  });
+
+  // 指摘事項
+  y+=22;
+  x.fillStyle='#065f54'; x.font='bold 16px sans-serif';
+  x.fillText(ngs.length?`■ 指摘事項（${ngs.length}件・合計 -${sc.ded}点）`:'■ 指摘なし。この状態を維持してください。',pad,y);
+  y+=26;
+  wrap.forEach(l=>{
+    if(!l.t){y+=12;return;}
+    x.font=(l.b?'bold ':'')+'15px sans-serif';
+    x.fillStyle= l.ok?'#12a150' : l.b?'#e0344a' : l.em?'#065f54' : '#3c4b5a';
+    x.fillText(l.t,pad+(l.b?0:8),y);
+    y+=24;
+  });
+  x.fillStyle='#8a97a4'; x.font='12px sans-serif';
+  x.fillText('有限会社阪口商店　2026年度 店舗衛生調査レポート（FF・厨房共通）に基づく',pad,H-16);
+
+  cv.style.display='block';
+  cv.toBlob(b=>{ dl(b,`店舗衛生チェック_${rec.storeName}_${rec.date}.png`); toast('画像を保存しました'); },'image/png');
+}
+
+/* ================================================================
+   描画・起動
+   ================================================================ */
+function render(){
+  renderTabs(); renderScore();
+  const vc=document.getElementById('v-check'),
+        vl=document.getElementById('v-list'),
+        vr=document.getElementById('v-report');
+  [vc,vl,vr].forEach(v=>v.classList.remove('on'));
+  const fab=document.querySelector('.fab');
+  if(S.tab==='list'){ vl.classList.add('on'); vl.innerHTML=renderList(); bindList(vl); fab.style.display='none'; }
+  else if(S.tab==='report'){ vr.classList.add('on'); vr.innerHTML=renderReport(); bindReport(vr); fab.style.display='none'; }
+  else{ vc.classList.add('on'); vc.innerHTML=renderCheck(); bindCheck(vc); fab.style.display='flex'; }
+}
+
+function moveCat(dir){
+  const keys=CATS.map(c=>c.key);
+  let i=keys.indexOf(S.tab);
+  if(i<0){S.tab=keys[0];render();window.scrollTo(0,0);return;}
+  i+=dir;
+  if(i<0){S.tab='list';}
+  else if(i>=keys.length){S.tab='report';}
+  else S.tab=keys[i];
+  render(); window.scrollTo(0,0);
+}
+
+async function init(){
+  await openDB();
+  initHeader();
+  await loadRec();
+  if(!S.rec.inspector){
+    const saved=localStorage.getItem('hygiene_inspector');
+    if(saved) S.rec.inspector=saved;
+  }
+  document.getElementById('btnPrev').onclick=()=>moveCat(-1);
+  document.getElementById('btnNext').onclick=()=>moveCat(1);
+  document.getElementById('btnSave').onclick=async()=>{
+    await save();
+    const sc=calcScore(S.rec);
+    if(sc.full){ S.tab='report'; render(); window.scrollTo(0,0); toast('全項目入力完了。店長FBを作成できます'); }
+    else { toast(`保存しました（${sc.done}/${ITEMS.length}項目）`); moveCat(1); }
+  };
+  render();
+}
+window.addEventListener('beforeunload',()=>{Object.values(S.urls).forEach(u=>URL.revokeObjectURL(u));});
+init().catch(e=>{
+  document.querySelector('main').innerHTML=
+    `<div class="panel"><h3>起動できませんでした</h3><p class="mini">${esc(e.message||e)}<br>
+     プライベートブラウズを解除するか、別のブラウザ（Chrome / Safari）でお試しください。</p></div>`;
+});
+</script>
+</body>
+</html>
