@@ -160,6 +160,21 @@ input,select,textarea,button{font-family:inherit;font-size:14px}
 .bar-warn{background:var(--orange)}
 .bar-bad{background:var(--red)}
 .bar-legend{display:flex;gap:10px;margin-top:4px;font-size:10px;color:var(--text-sub)}
+/* 店舗別 人員構成テーブル */
+.stf-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch;background:#fff;border-radius:var(--radius);box-shadow:0 1px 3px rgba(0,0,0,0.08)}
+.stf-table{border-collapse:separate;border-spacing:0;font-size:12px;width:100%}
+.stf-table th,.stf-table td{padding:7px 6px;border-bottom:1px solid var(--border);text-align:right;white-space:nowrap}
+.stf-table th{background:#F3F4F6;font-size:11px;color:var(--text-sub);font-weight:700;position:sticky;top:0;z-index:2}
+.stf-table td:first-child,.stf-table th:first-child{text-align:left;position:sticky;left:0;background:#fff;z-index:1;font-weight:600;white-space:normal;line-height:1.25;min-width:6.5em;max-width:8.5em;box-shadow:1px 0 0 var(--border)}
+.stf-table th:first-child{background:#F3F4F6;z-index:3}
+.stf-table tr.stf-total td,.stf-table tr.stf-total td:first-child{background:#EFF6FF;font-weight:700;border-top:2px solid var(--blue)}
+.stf-table tr.stf-detail td,.stf-table tr.stf-detail td:first-child{position:static;text-align:left;white-space:normal;background:#F9FAFB;font-weight:400;max-width:none;box-shadow:none}
+.stf-num{font-weight:700}
+.stf-zero{color:#D1D5DB;font-weight:400}
+.stf-tot{color:var(--blue);font-weight:800}
+.stf-names{font-size:12px;line-height:1.8}
+.stf-names b{display:inline-block;min-width:5.5em;color:var(--text-sub)}
+.stf-legend{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px;font-size:11px;color:var(--text-sub)}
 .checkbox-group{display:flex;flex-wrap:wrap;gap:8px}
 .checkbox-item{display:flex;align-items:center;gap:5px;font-size:13px;cursor:pointer}
 .checkbox-item input[type=checkbox]{width:16px;height:16px;cursor:pointer;accent-color:var(--blue)}
@@ -274,6 +289,25 @@ input,select,textarea,button{font-family:inherit;font-size:14px}
   <div class="view-content" id="store-analysis-content"></div>
 </div>
 
+<div id="view-staff-composition" class="view">
+  <div class="search-bar">
+    <select id="stf-axis" onchange="App.renderStaffComposition()" style="flex:1;min-width:150px">
+      <option value="type">区分別（正社員/契約/クルー）</option>
+      <option value="crewRole">クルー役割別</option>
+      <option value="cert">資格・認定別</option>
+    </select>
+    <select id="stf-status" onchange="App.renderStaffComposition()" style="flex:1;min-width:120px">
+      <option value="active">在籍中のみ</option>
+      <option value="withRest">在籍中＋休職中</option>
+    </select>
+    <select id="stf-sort" onchange="App.renderStaffComposition()" style="flex:1;min-width:120px">
+      <option value="store">店舗名順</option>
+      <option value="total">人数の多い順</option>
+    </select>
+  </div>
+  <div class="view-content" id="staff-composition-content"></div>
+</div>
+
 <div id="view-discussion" class="view">
   <div class="search-bar">
     <select id="disc-filter-store" onchange="App.renderDiscussion()"><option value="">全店舗</option></select>
@@ -359,6 +393,11 @@ input,select,textarea,button{font-family:inherit;font-size:14px}
       <div class="menu-item" onclick="App.showView('improvement')">
         <span class="menu-icon">⚠️</span>
         <div><strong>改善必要者一覧</strong><p>△・✕のあるクルー</p></div>
+        <span>›</span>
+      </div>
+      <div class="menu-item" onclick="App.showView('staff-composition')">
+        <span class="menu-icon">👥</span>
+        <div><strong>店舗別 人員構成</strong><p>店舗ごとの正社員・契約社員・クルーの人数</p></div>
         <span>›</span>
       </div>
       <div class="menu-item" onclick="App.showView('store-analysis')">
@@ -1231,7 +1270,7 @@ const App={
   goBack(){const p=this._history.pop();if(p)this.showView(p,false)},
 
   _updateHeader(viewId){
-    const titles={login:'接客評価システム',dashboard:'阪口商店 接客評価',employees:'クルー一覧','employee-detail':'クルー詳細',evaluation:'評価入力',observation:'気づきメモ',improvement:'改善必要者','store-analysis':'店舗別分析','analysis-menu':'分析','employee-form':'クルー登録・編集',settings:'管理設定',discussion:'目線合わせ','item-ranking':'項目別弱点ランキング',compliance:'コンプラ回答状況','coaching-week':'週間指導レポート'};
+    const titles={login:'接客評価システム',dashboard:'阪口商店 接客評価',employees:'クルー一覧','employee-detail':'クルー詳細',evaluation:'評価入力',observation:'気づきメモ',improvement:'改善必要者','store-analysis':'店舗別分析','analysis-menu':'分析','employee-form':'クルー登録・編集',settings:'管理設定',discussion:'目線合わせ','item-ranking':'項目別弱点ランキング',compliance:'コンプラ回答状況','coaching-week':'週間指導レポート','staff-composition':'店舗別 人員構成'};
     let title=titles[viewId]||'';
     if(viewId==='dashboard'){const u=DB.user();if(u&&u.role==='一般クルー'&&u.employeeId)title='マイカルテ';else if(u&&u.role==='店舗責任者'&&u.store)title=u.store}
     document.getElementById('header-title').textContent=title;
@@ -1244,7 +1283,7 @@ const App={
   },
 
   _renderView(viewId){
-    const map={dashboard:'renderDashboard',employees:'renderEmployeeList','employee-detail':'renderEmployeeDetail',evaluation:'renderEvaluation',observation:'renderObservations',improvement:'renderImprovement','store-analysis':'renderStoreAnalysis','employee-form':'renderEmployeeForm',settings:'renderSettings',discussion:'renderDiscussion','item-ranking':'renderItemRanking',compliance:'renderCompliance','coaching-week':'renderCoachingWeek'};
+    const map={dashboard:'renderDashboard',employees:'renderEmployeeList','employee-detail':'renderEmployeeDetail',evaluation:'renderEvaluation',observation:'renderObservations',improvement:'renderImprovement','store-analysis':'renderStoreAnalysis','employee-form':'renderEmployeeForm',settings:'renderSettings',discussion:'renderDiscussion','item-ranking':'renderItemRanking',compliance:'renderCompliance','coaching-week':'renderCoachingWeek','staff-composition':'renderStaffComposition'};
     if(map[viewId])this[map[viewId]]();
   },
 
@@ -1632,6 +1671,116 @@ const App={
       return`<div class="card"><div style="font-weight:700;margin-bottom:10px">${st}（${se.length}名）</div>${bars}</div>`;
     }).join('');
     document.getElementById('store-analysis-content').innerHTML=html||'<div class="empty-state"><p>データがありません</p></div>';
+  },
+
+  /* ===== 店舗別 人員構成 =====
+     区分（正社員/契約社員/クルー）・クルー役割・資格の3軸で、全店舗の人数内訳を一覧表示。
+     店舗名タップで該当クルーの氏名を展開。表はコピーしてExcelに貼付け可能。 */
+  _stfOpen:{},
+
+  _stfCols(axis){
+    if(axis==='crewRole')return[{k:'リーダー',l:'リーダー'},{k:'サブリーダー',l:'サブL'},{k:'レギュラー',l:'レギュラー'},{k:'ルーキー（新人）',l:'ルーキー'},{k:'_none',l:'未設定'}];
+    if(axis==='cert')return[{k:'認定店長',l:'認定店長'},{k:'GF',l:'GF'},{k:'F',l:'F'},{k:'_none',l:'なし'}];
+    return[{k:'FullTimeEmployee',l:'正社員'},{k:'ContractEmployee',l:'契約社員'},{k:'Crew',l:'クルー'},{k:'_none',l:'未設定'}];
+  },
+
+  /* 1人がどの列に入るかを返す（資格軸のみ複数該当あり） */
+  _stfKeys(axis,e){
+    if(axis==='crewRole'){
+      const r=Array.isArray(e.crewRoles)?e.crewRoles:[];
+      // 上位役割を1つだけ計上（重複カウント防止）
+      const hit=['リーダー','サブリーダー','レギュラー','ルーキー（新人）'].find(o=>r.includes(o));
+      return[hit||'_none'];
+    }
+    if(axis==='cert'){
+      const c=Array.isArray(e.certifications)?e.certifications:[];
+      const out=[];
+      if(c.includes('認定店長'))out.push('認定店長');
+      if(c.some(x=>x.indexOf('グランドファンタジスタ')===0))out.push('GF');
+      if(c.some(x=>x.indexOf('ファンタジスタ')===0))out.push('F');
+      return out.length?out:['_none'];
+    }
+    return[['FullTimeEmployee','ContractEmployee','Crew'].includes(e.type)?e.type:'_none'];
+  },
+
+  renderStaffComposition(){
+    const axis=document.getElementById('stf-axis')?.value||'type';
+    const stMode=document.getElementById('stf-status')?.value||'active';
+    const sort=document.getElementById('stf-sort')?.value||'store';
+    const user=DB.user();
+    let emps=DB.employees().filter(e=>stMode==='active'?e.status==='在籍中':e.status!=='退職');
+    // 店舗責任者は自店のみ（他店の人員情報は見せない）
+    if(user&&user.role==='店舗責任者')emps=emps.filter(e=>e.store===user.store);
+
+    let cols=this._stfCols(axis);
+    const base=(user&&user.role==='店舗責任者')?[user.store]:STORES;
+    const stores=[...new Set([...base,...emps.map(e=>(e.store||'').trim()||'(店舗未設定)')])];
+    const data={};
+    const mk=()=>{const o={total:0,cnt:{},names:{}};cols.forEach(c=>{o.cnt[c.k]=0;o.names[c.k]=[]});return o};
+    stores.forEach(s=>{data[s]=mk()});
+    emps.forEach(e=>{
+      const s=(e.store||'').trim()||'(店舗未設定)';
+      if(!data[s]){data[s]=mk();stores.push(s)}
+      data[s].total++;
+      this._stfKeys(axis,e).forEach(k=>{if(data[s].cnt[k]==null)return;data[s].cnt[k]++;data[s].names[k].push(e.name)});
+    });
+    // 誰もいない「未設定」列は非表示にして見やすくする
+    const sum=k=>stores.reduce((a,s)=>a+data[s].cnt[k],0);
+    cols=cols.filter(c=>c.k!=='_none'||sum('_none')>0);
+
+    const rows=stores.slice().sort((a,b)=>sort==='total'?(data[b].total-data[a].total||a.localeCompare(b,'ja')):a.localeCompare(b,'ja'));
+    const totalAll=stores.reduce((a,s)=>a+data[s].total,0);
+    const totals={};cols.forEach(c=>{totals[c.k]=sum(c.k)});
+    const storeCount=rows.filter(s=>data[s].total>0).length;
+    const avg=storeCount?(totalAll/storeCount).toFixed(1):'0.0';
+
+    // 全社サマリ
+    const pct=v=>totalAll?Math.round(v/totalAll*100):0;
+    const summary=`<div class="card">
+      <div style="font-weight:700;margin-bottom:8px">📋 全体サマリ（${stMode==='active'?'在籍中':'在籍中＋休職中'}）</div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <div class="stat-card" style="flex:1;min-width:80px"><div class="stat-num">${totalAll}</div><div class="stat-label">総人数</div></div>
+        <div class="stat-card" style="flex:1;min-width:80px"><div class="stat-num">${storeCount}</div><div class="stat-label">店舗数</div></div>
+        <div class="stat-card" style="flex:1;min-width:80px"><div class="stat-num">${avg}</div><div class="stat-label">1店平均</div></div>
+      </div>
+      <div class="stf-legend">${cols.map(c=>`<span>${c.l}：<b style="color:var(--text)">${totals[c.k]}名</b>（${pct(totals[c.k])}%）</span>`).join('')}</div>
+      ${axis==='cert'?'<div class="text-sub" style="margin-top:6px">※ 資格は1人で複数該当するため、列の合計は総人数と一致しません</div>':''}
+    </div>`;
+
+    const head=`<tr><th>店舗（${rows.length}）</th><th>合計</th>${cols.map(c=>`<th>${c.l}</th>`).join('')}</tr>`;
+    const body=rows.map(s=>{
+      const o=data[s];const open=!!this._stfOpen[s];
+      const cells=cols.map(c=>`<td class="stf-num ${o.cnt[c.k]?'':'stf-zero'}">${o.cnt[c.k]}</td>`).join('');
+      const detail=open?`<tr class="stf-detail"><td colspan="${cols.length+2}"><div class="stf-names">${
+        cols.map(c=>o.names[c.k].length?`<div><b>${c.l}(${o.names[c.k].length})</b> ${o.names[c.k].join('、')}</div>`:'').join('')||'<span class="text-sub">在籍者がいません</span>'
+      }</div></td></tr>`:'';
+      return`<tr onclick="App.toggleStfStore('${String(s).replace(/'/g,"\\'")}')" style="cursor:pointer"><td>${open?'▼':'▸'} ${s}</td><td class="stf-tot">${o.total}</td>${cells}</tr>${detail}`;
+    }).join('');
+    const totalRow=`<tr class="stf-total"><td>合計</td><td class="stf-tot">${totalAll}</td>${cols.map(c=>`<td class="stf-num">${totals[c.k]}</td>`).join('')}</tr>`;
+
+    document.getElementById('staff-composition-content').innerHTML=summary+
+      `<div class="stf-scroll"><table class="stf-table"><thead>${head}</thead><tbody>${body}${totalRow}</tbody></table></div>
+       <div class="text-sub" style="margin:8px 2px">店舗名をタップすると氏名が表示されます。</div>
+       <button class="btn btn-secondary btn-full" onclick="App.copyStaffComposition()">📋 表をコピー（Excel貼付け用）</button>`;
+  },
+
+  toggleStfStore(store){this._stfOpen[store]=!this._stfOpen[store];this.renderStaffComposition()},
+
+  /* TSVでコピー（Excel・スプレッドシートにそのまま貼付け可能） */
+  copyStaffComposition(){
+    const tbl=document.querySelector('#staff-composition-content .stf-table');if(!tbl)return;
+    const lines=[...tbl.querySelectorAll('tr')].filter(tr=>!tr.classList.contains('stf-detail')).map(tr=>
+      [...tr.children].map((td,i)=>i===0?td.textContent.replace(/^[▼▸]\s*/,'').trim():td.textContent.trim()).join('\t')
+    ).join('\n');
+    const done=()=>this.showToast('コピーしました。Excelに貼り付けできます','success');
+    if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(lines).then(done).catch(()=>this._copyFallback(lines,done))}
+    else this._copyFallback(lines,done);
+  },
+  _copyFallback(text,done){
+    const ta=document.createElement('textarea');ta.value=text;ta.style.position='fixed';ta.style.opacity='0';
+    document.body.appendChild(ta);ta.select();
+    try{document.execCommand('copy');done()}catch(e){this.showToast('コピーできませんでした','error')}
+    document.body.removeChild(ta);
   },
 
   /* ===== 目線合わせ ===== */
