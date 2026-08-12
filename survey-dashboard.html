@@ -293,7 +293,7 @@
             <thead>
               <tr>
                 <th>店舗</th>
-                <th>クルー数</th>
+                <th>対象人数</th>
                 <th>回答数</th>
                 <th>回答率</th>
                 <th>店長スコア</th>
@@ -405,8 +405,10 @@ const CT_Q  = ['仕事サポート', '困時に助ける', '明るく接する',
 //   crewCounts  … 表示中の月に適用される人数（getCrew が参照）
 let monthlyCrew = JSON.parse(localStorage.getItem('crewMonthly') || '{}');
 let liveCrew    = JSON.parse(localStorage.getItem('crewCounts') || 'null');
+let liveAll     = JSON.parse(localStorage.getItem('staffAll') || 'null');    // 在籍中の全従業員数（クルー＋契約社員＋正社員）
 let legacyCrew  = JSON.parse(localStorage.getItem('crewLegacy') || 'null');  // アンケートGASの旧保存値（最後の砦）
 let crewCounts  = liveCrew || legacyCrew || {};
+let crewAll     = liveAll || {};
 // 表示中の月の人数がどこから来たか：当月 / 確定済み / 手動修正 / 未確定 / 旧保存値 / 取得失敗
 let crewSource  = { mode: '当月', at: '', month: '' };
 
@@ -458,18 +460,40 @@ function currentMonthLabel() {
 function countsForMonth(month) {
   const rec = monthlyCrew[month];
   const isCurrent = (month === currentMonthLabel());
-  if (rec && rec.mode === '手動') return { counts: rec.counts, mode: '手動修正', at: rec.at || '' };
-  if (isCurrent && liveCrew)      return { counts: liveCrew,   mode: '当月',    at: new Date().toLocaleDateString('ja-JP') };
-  if (rec)                        return { counts: rec.counts, mode: '確定済み', at: rec.at || '' };
-  if (liveCrew)                   return { counts: liveCrew,   mode: '未確定',  at: '' };
-  if (legacyCrew)                 return { counts: legacyCrew, mode: '旧保存値', at: '' };  // 在籍マスタが取れない時の保険
-  return { counts: {}, mode: '取得失敗', at: '' };
+  const recAll = (rec && rec.all && Object.keys(rec.all).length) ? rec.all : null;
+  if (rec && rec.mode === '手動') return { counts: rec.counts, all: recAll || liveAll || {}, mode: '手動修正', at: rec.at || '' };
+  if (isCurrent && liveCrew)      return { counts: liveCrew,   all: liveAll || {},           mode: '当月',    at: new Date().toLocaleDateString('ja-JP') };
+  if (rec)                        return { counts: rec.counts, all: recAll || {},            mode: '確定済み', at: rec.at || '' };
+  if (liveCrew)                   return { counts: liveCrew,   all: liveAll || {},           mode: '未確定',  at: '' };
+  if (legacyCrew)                 return { counts: legacyCrew, all: liveAll || {},           mode: '旧保存値', at: '' };
+  return { counts: {}, all: {}, mode: '取得失敗', at: '' };
 }
 
 function resolveCrewForMonth(month) {
   const r = countsForMonth(month);
   crewCounts = r.counts;
+  crewAll = r.all || {};
   crewSource = { mode: r.mode, at: r.at, month };
+}
+
+// 店舗の全従業員数（クルー＋契約社員＋正社員）。不明は null
+function getAll(store) {
+  const v = crewAll ? crewAll[store] : undefined;
+  return (v === 0 || Number.isFinite(v)) ? v : null;
+}
+
+// 回答率の分母を決める。
+//   回答数がクルー数を超えた店舗は正社員・契約社員も回答しているとみなし、
+//   分母を「在籍中の全従業員数」に切り替える。
+function denomFor(store, answers, counts, allCounts) {
+  const c = counts || crewCounts, a = allCounts || crewAll;
+  let crew = c ? c[store] : undefined;
+  crew = (crew === 0 || Number.isFinite(crew)) ? crew : null;
+  let all = a ? a[store] : undefined;
+  all = (all === 0 || Number.isFinite(all)) ? all : null;
+  if (crew === null) return { n: all, expanded: all !== null };
+  if (answers > crew && all !== null && all > crew) return { n: all, expanded: true };
+  return { n: crew, expanded: false };
 }
 
 // ============================================================
@@ -493,14 +517,16 @@ async function fetchCrewFromMasterOnce() {
     if (!res.ok) throw new Error('HTTP ' + res.status);
     const d = await res.json();
     if (!d.ok || !Array.isArray(d.employees)) throw new Error(d.error || 'データ形式エラー');
-    const counts = Object.fromEntries(STORE_LIST.map(s => [s, 0]));
+    const crew = Object.fromEntries(STORE_LIST.map(s => [s, 0]));
+    const all  = Object.fromEntries(STORE_LIST.map(s => [s, 0]));
     d.employees.forEach(e => {
       if (e.status !== '在籍中') return;          // 退職・休職は除外
-      if (e.type !== 'Crew') return;              // 正社員・契約社員は除外
       const st = String(e.store || '').trim();
-      if (st in counts) counts[st]++;             // 一覧にない店舗名は無視
+      if (!(st in all)) return;                   // 一覧にない店舗名は無視
+      all[st]++;                                  // 全従業員（正社員・契約社員を含む）
+      if (e.type === 'Crew') crew[st]++;          // クルーのみ
     });
-    return counts;
+    return { crew, all };
   } finally {
     clearTimeout(timer);
   }
@@ -541,7 +567,8 @@ function openCrewModal() {
   document.getElementById('crewModalTitle').textContent = `👥 クルー在籍人数（${month}）`;
   document.getElementById('crewGrid').innerHTML = STORE_LIST.map(store =>
     `<div class="crew-row"><div class="crew-label">${store}</div>` +
-    `<input type="number" class="crew-input" id="crew_${store.replace(/\s/g,'_')}" value="${getCrew(store) === null ? '' : getCrew(store)}" min="0" max="99"></div>`
+    `<input type="number" class="crew-input" id="crew_${store.replace(/\s/g,'_')}" value="${getCrew(store) === null ? '' : getCrew(store)}" min="0" max="99">` +
+    `<div style="font-size:10px;color:#805ad5;width:42px;text-align:right">${getAll(store) === null ? '' : '全' + getAll(store)}</div></div>`
   ).join('');
 
   const note = {
@@ -553,7 +580,8 @@ function openCrewModal() {
     '取得失敗': `⚠️ クルー人数を取得できませんでした。「🔄 最新を取得」を押すか、この画面で人数を入力して「確定」してください。`
   }[crewSource.mode] || '';
   document.getElementById('crewModalSub').innerHTML =
-    note + '<br>※正社員・契約社員は含みません（在籍中のクルーのみ）。';
+    note + '<br>※入力欄はクルー数（正社員・契約社員を含まない）。右の「全○」は正社員・契約社員を含む在籍者数です。'
+    + '<br>※回答数がクルー数を超えた店舗は、分母を自動で「全○」に切り替えて回答率を計算します。';
   document.getElementById('crewResetBtn').style.display = (crewSource.mode === '手動修正') ? '' : 'none';
   document.getElementById('crewModal').classList.add('open');
 }
@@ -574,9 +602,9 @@ async function saveCrewCounts() {
   const btn = document.getElementById('crewSaveBtn');
   if (btn) { btn.disabled = true; btn.textContent = '保存中...'; }
   try {
-    const ok = await saveMonthlyCrew(month, counts, '手動');
+    const ok = await saveMonthlyCrew(month, counts, '手動', crewAll);
     if (!ok) throw new Error('GAS保存エラー');
-    monthlyCrew[month] = { counts, mode: '手動', at: new Date().toLocaleString('ja-JP') };
+    monthlyCrew[month] = { counts, all: crewAll || {}, mode: '手動', at: new Date().toLocaleString('ja-JP') };
     localStorage.setItem('crewMonthly', JSON.stringify(monthlyCrew));
     closeCrewModal();
     renderDashboard();
@@ -593,7 +621,7 @@ async function resetCrewMonth() {
   try {
     const d = await fetchJson(GAS_URL + '?action=resetCrewMonthly&month=' + encodeURIComponent(month), 45000);
     if (!d.ok) throw new Error(d.error || '不明なエラー');
-    if (d.counts) monthlyCrew[month] = { counts: d.counts, mode: '自動', at: new Date().toLocaleString('ja-JP') };
+    if (d.counts) monthlyCrew[month] = { counts: d.counts, all: d.all || {}, mode: '自動', at: new Date().toLocaleString('ja-JP') };
     else delete monthlyCrew[month];
     localStorage.setItem('crewMonthly', JSON.stringify(monthlyCrew));
     closeCrewModal();
@@ -604,10 +632,11 @@ async function resetCrewMonth() {
 }
 
 /* 月別人数をGASへ保存 */
-async function saveMonthlyCrew(month, counts, mode) {
+async function saveMonthlyCrew(month, counts, mode, allCounts) {
   const url = GAS_URL + '?action=setCrewMonthly&month=' + encodeURIComponent(month)
             + '&mode=' + encodeURIComponent(mode)
-            + '&counts=' + encodeURIComponent(JSON.stringify(counts));
+            + '&counts=' + encodeURIComponent(JSON.stringify(counts))
+            + '&all=' + encodeURIComponent(JSON.stringify(allCounts || crewAll || {}));
   const d = await fetchJson(url, 45000);
   return !!d.ok;
 }
@@ -617,8 +646,10 @@ async function refreshCrewCounts() {
   const btn = document.getElementById('crewReloadBtn');
   if (btn) { btn.disabled = true; btn.textContent = '取得中...'; }
   try {
-    liveCrew = await fetchCrewFromMaster();
+    const m = await fetchCrewFromMaster();
+    liveCrew = m.crew; liveAll = m.all;
     localStorage.setItem('crewCounts', JSON.stringify(liveCrew));
+    localStorage.setItem('staffAll', JSON.stringify(liveAll));
     await syncCurrentMonth();
     renderDashboard();
     openCrewModal();
@@ -638,8 +669,8 @@ async function syncCurrentMonth() {
   if (rec && JSON.stringify(rec.counts) === JSON.stringify(liveCrew)) return;  // 変化なし
   try {
     // GAS保存が成功した時だけ記録する（未対応GASに対して架空の確定値を作らない）
-    if (await saveMonthlyCrew(month, liveCrew, '自動')) {
-      monthlyCrew[month] = { counts: liveCrew, mode: '自動', at: new Date().toLocaleString('ja-JP') };
+    if (await saveMonthlyCrew(month, liveCrew, '自動', liveAll)) {
+      monthlyCrew[month] = { counts: liveCrew, all: liveAll || {}, mode: '自動', at: new Date().toLocaleString('ja-JP') };
       localStorage.setItem('crewMonthly', JSON.stringify(monthlyCrew));
     }
   } catch (e) { console.warn('当月人数の保存失敗:', e); }
@@ -690,8 +721,10 @@ async function loadData() {
 
     // 在籍マスタの最新値（当月の計算に使用）
     if (masterRes.status === 'fulfilled') {
-      liveCrew = masterRes.value;
+      liveCrew = masterRes.value.crew;
+      liveAll  = masterRes.value.all;
       localStorage.setItem('crewCounts', JSON.stringify(liveCrew));
+      localStorage.setItem('staffAll', JSON.stringify(liveAll));
       syncCurrentMonth();   // ★保存の完了は待たない（画面を止めないため）
     } else {
       console.warn('在籍マスタ取得失敗のため前回値を使用:', masterRes.reason);
@@ -721,13 +754,15 @@ function renderDashboard() {
   const md = allData.filter(r => r.yearMonth === month);
 
   resolveCrewForMonth(month);   // ★表示中の月に対応する人数を適用（過去月は確定値で固定）
-  const totalCrewAll = STORE_LIST.reduce((s,st) => s + crewNum(st), 0);
+  const ansPerStore = {};
+  md.forEach(r => { ansPerStore[r.store] = (ansPerStore[r.store] || 0) + 1; });
+  const totalCrewAll = STORE_LIST.reduce((s,st) => s + (denomFor(st, ansPerStore[st] || 0).n || 0), 0);
   const srcLabel = {
     '当月':'当月・自動反映', '確定済み':'確定値', '手動修正':'手動修正済み',
     '未確定':'⚠️未確定', '旧保存値':'⚠️旧保存値', '取得失敗':'⚠️人数不明'
   }[crewSource.mode] || '';
   document.getElementById('headerSub').textContent =
-    `${month} ｜ ${md.length}件の回答 ｜ 対象クルー ${totalCrewAll}名（${srcLabel}）`;
+    `${month} ｜ ${md.length}件の回答 ｜ 対象人数 ${totalCrewAll}名（${srcLabel}）`;
 
   // 人数が信頼できない時ははっきり知らせる（仮の数字で判定させない）
   const warn = document.getElementById('crewWarn');
@@ -755,7 +790,16 @@ function renderDashboard() {
 // ============================================================
 function renderManagerSection(md) {
   // 全店舗合計クルー数
-  const totalCrew = STORE_LIST.reduce((s,st) => s + crewNum(st), 0);
+  // 店舗ごとの回答数（分母の判定に使う）
+  const ansByStore = {};
+  md.forEach(r => { ansByStore[r.store] = (ansByStore[r.store] || 0) + 1; });
+  // 全体の分母＝各店舗の分母の合計（100%超の店舗は社員込みに切替）
+  let expandedStores = 0;
+  const totalCrew = STORE_LIST.reduce((s,st) => {
+    const d = denomFor(st, ansByStore[st] || 0);
+    if (d.expanded) expandedStores++;
+    return s + (d.n || 0);
+  }, 0);
   const rate = md.length ? calcRate(md.length, totalCrew) : 0;
 
   // 店長スコア（100点換算）
@@ -786,14 +830,16 @@ function renderManagerSection(md) {
     ? 'まだ回答がありません'
     : both ? '定性評価：○（基準達成）' : '定性評価：×（基準未達）';
   document.getElementById('judgeSub').innerHTML = noData ? '' :
-    `回答率 <b>${rate.toFixed(1)}%</b>（基準70%以上）　／　平均スコア <b>${scoreAvg?scoreAvg.toFixed(1):'--'}点</b>（基準80点以上）`;
+    `回答率 <b>${rate.toFixed(1)}%</b>（基準70%以上）　／　平均スコア <b>${scoreAvg?scoreAvg.toFixed(1):'--'}点</b>（基準80点以上）`
+    + (expandedStores ? `<br><span style="color:#805ad5">※ ${expandedStores}店舗は回答数がクルー数を超えたため、分母を全従業員（クルー＋契約社員＋正社員）に切替</span>` : '');
 
   // 店舗別テーブル
   const tbody = document.getElementById('mgrTableBody');
   tbody.innerHTML = '';
   STORE_LIST.forEach(store => {
     const rows = md.filter(r => r.store === store);
-    const crew = getCrew(store);
+    const d = denomFor(store, rows.length);
+    const crew = d.n;
     const rate_s = calcRate(rows.length, crew);
     const scores = rows.map(r => {
       const v = [r.mgr1,r.mgr2,r.mgr3,r.mgr4,r.mgr5].filter(v=>v!==null&&v!=='');
@@ -810,7 +856,7 @@ function renderManagerSection(md) {
     tbody.innerHTML += `
       <tr>
         <td><b>${store}</b></td>
-        <td>${crew === null ? '－' : crew + '名'}</td>
+        <td>${crew === null ? '－' : crew + '名'}${d.expanded ? '<div style="font-size:9px;color:#805ad5;font-weight:700">社員込</div>' : ''}</td>
         <td>${rows.length}件</td>
         <td>
           <div class="bar-wrap">
@@ -851,7 +897,9 @@ function renderContractSection(md) {
 
   // 契約社員対象店舗の回答数（ct1が入力されているもの）
   const ctRows = md.filter(r => ctStores.includes(r.store));
-  const totalCtCrew = ctStores.reduce((s,st)=>s+crewNum(st),0);
+  const ctAnsByStore = {};
+  ctRows.forEach(r => { ctAnsByStore[r.store] = (ctAnsByStore[r.store] || 0) + 1; });
+  const totalCtCrew = ctStores.reduce((s,st)=> s + (denomFor(st, ctAnsByStore[st] || 0).n || 0), 0);
   const ctRate = ctRows.length ? calcRate(ctRows.length, totalCtCrew) : 0;
 
   const ctScores100 = [];
@@ -925,8 +973,11 @@ function renderTrend() {
   const mgrTrend = [], rateTrend = [];
   months.forEach(m => {
     const md = allData.filter(r => r.yearMonth === m);
-    const mc = countsForMonth(m).counts || {};   // その月の人数で計算
-    const totalCrew = STORE_LIST.reduce((s,st)=>s+(Number.isFinite(mc[st])?mc[st]:0),0);
+    const mr = countsForMonth(m);                // その月の人数で計算
+    const mAns = {};
+    md.forEach(r => { mAns[r.store] = (mAns[r.store] || 0) + 1; });
+    const totalCrew = STORE_LIST.reduce((s,st) =>
+      s + (denomFor(st, mAns[st] || 0, mr.counts, mr.all).n || 0), 0);
     const rate = md.length ? calcRate(md.length, totalCrew) : null;
     const scores = md.map(r=>{
       const v=[r.mgr1,r.mgr2,r.mgr3,r.mgr4,r.mgr5].filter(v=>v!==null&&v!=='');
