@@ -178,6 +178,25 @@
   .q-bar-ct  { height: 100%; border-radius: 5px; background: linear-gradient(90deg, #553c9a, #805ad5); }
   .q-score { font-size: 13px; font-weight: 700; width: 44px; text-align: right; }
 
+  /* 項目別フィードバック */
+  .fb-sel { flex: 1; min-width: 140px; padding: 9px 10px; border: 2px solid #e2e8f0; border-radius: 8px; font-size: 14px; font-weight: 600; color: #003087; background: #fff; }
+  .fb-item { border: 1px solid #e2e8f0; border-radius: 10px; padding: 12px; margin-bottom: 10px; }
+  .fb-item.worst { border: 2px solid #fc8181; background: #fff5f5; }
+  .fb-rank { display: inline-block; background: #003087; color: #fff; font-size: 10px; font-weight: 700; padding: 2px 7px; border-radius: 10px; margin-right: 6px; }
+  .fb-rank.bad { background: #e53e3e; }
+  .fb-rank.good { background: #38a169; }
+  .fb-q { font-size: 13px; font-weight: 700; color: #2d3748; line-height: 1.4; }
+  .fb-nums { display: flex; align-items: baseline; gap: 10px; margin: 8px 0 6px; flex-wrap: wrap; }
+  .fb-score { font-size: 22px; font-weight: 800; color: #003087; }
+  .fb-lost { font-size: 12px; font-weight: 700; color: #9b2335; }
+  .fb-diff { font-size: 11px; font-weight: 700; }
+  .fb-dist { display: flex; gap: 3px; margin-top: 6px; }
+  .fb-dist-cell { flex: 1; text-align: center; font-size: 10px; color: #718096; }
+  .fb-dist-bar { height: 26px; display: flex; align-items: flex-end; }
+  .fb-dist-fill { width: 100%; border-radius: 3px 3px 0 0; background: #cbd5e0; }
+  .fb-advice { font-size: 12px; color: #2c5282; background: #ebf8ff; border-radius: 8px; padding: 8px 10px; margin-top: 8px; line-height: 1.5; }
+  .fb-note { font-size: 11px; color: #718096; line-height: 1.6; margin-top: 8px; }
+
   /* 契約社員カード */
   .ct-note {
     background: #faf5ff; border: 1px solid #d6bcfa; border-radius: 8px;
@@ -320,6 +339,22 @@
       <!-- ========== 区切り ========== -->
       <hr class="divider">
 
+      <!-- ========== 項目別フィードバック ========== -->
+      <hr class="divider">
+      <div class="section-label">🎯 項目別フィードバック（本人に渡す用・匿名集計）</div>
+      <div class="card">
+        <div class="card-title">🔍 どの項目で減点されているか</div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px">
+          <select class="fb-sel" id="fbStore" onchange="renderFeedback()"></select>
+          <select class="fb-sel" id="fbTarget" onchange="renderFeedback()">
+            <option value="mgr">店長について</option>
+            <option value="ct">契約社員について</option>
+          </select>
+        </div>
+        <div id="fbContent"></div>
+        <button class="modal-save" style="width:100%;margin-top:10px" onclick="copyFeedback()">📋 本人に渡す文面をコピー（LINE用）</button>
+      </div>
+
       <!-- ========== 契約社員アンケート ========== -->
       <div class="section-label">👥 契約社員アンケート（更新面談用参考情報）</div>
 
@@ -397,6 +432,36 @@ const STORES_WITH_CT = {
 };
 
 const MGR_Q = ['相談しやすい', '公平に接する', '仕事を教える', '感謝の言葉', 'ルールを伝える'];
+// アンケート本文（survey-form.html と同じ文言）
+const MGR_Q_FULL = [
+  '店長に相談しやすいですか？',
+  '店長はみんなに公平に接していますか？',
+  '店長は仕事のやり方をわかりやすく教えてくれますか？',
+  '店長は「ありがとう」など感謝の言葉をかけてくれますか？',
+  '店長はお店のルールや決まりをわかりやすく伝えてくれますか？',
+];
+const CT_Q_FULL = [
+  '契約社員はあなたの仕事をサポートしてくれますか？',
+  '困ったとき、契約社員は助けてくれますか？',
+  '契約社員は明るく、気持ちよく接してくれますか？',
+  '契約社員は仕事のやり方をわかりやすく伝えてくれますか？',
+  '契約社員はお店のルールをしっかり守っていますか？',
+];
+// 改善アクション例（項目ごとの定番の打ち手）
+const MGR_ADVICE = [
+  '出勤・退勤時に必ず一声かける。「困っていることない？」を口ぐせにする。',
+  'シフトや仕事の割り振りの基準を口に出して説明する。特定の人にだけ頼まない。',
+  '「やって見せる→やらせる→確認」の順で教える。外国人クルーには短い言葉＋実演で。',
+  '退勤時に「ありがとう、助かった」を具体的な行動とセットで伝える。',
+  '変更点は掲示と口頭の両方で伝える。ルールは理由もセットで説明する。',
+];
+const CT_ADVICE = [
+  '忙しい時間帯は自分から手伝いに入る。手が空いたら声をかける。',
+  '呼ばれる前に気づいて動く。質問しやすい雰囲気をつくる。',
+  '自分から先にあいさつする。表情と声のトーンを意識する。',
+  '手順を分解して、1回に1つずつ教える。できたらその場で確認する。',
+  '身だしなみ・時間・私語など、自分が手本になる行動を徹底する。',
+];
 const CT_Q  = ['仕事サポート', '困時に助ける', '明るく接する', '仕事を教える', 'ルールを守る'];
 
 // クルー人数
@@ -747,6 +812,149 @@ async function loadData() {
 }
 
 // ============================================================
+// 項目別フィードバック（本人に「どこで減点されたか」を伝えるため）
+//   回答は匿名。回答者名は元々収集していない。
+//   回答が2件以下の店舗は個人が推測されうるため、点数の分布は伏せる。
+// ============================================================
+function prevMonthLabel(month) {
+  const m = /^(\d+)年(\d+)月$/.exec(month || '');
+  if (!m) return '';
+  const d = new Date(Number(m[1]), Number(m[2]) - 1, 1);
+  d.setMonth(d.getMonth() - 1);
+  return `${d.getFullYear()}年${d.getMonth()+1}月`;
+}
+
+// 指定の月・店舗・対象（mgr/ct）の設問別スコアを集計
+function itemStats(month, store, target) {
+  const rows = allData.filter(r => r.yearMonth === month && (!store || r.store === store));
+  const keys = [1,2,3,4,5].map(i => `${target}${i}`);
+  const out = keys.map((k, i) => {
+    const vals = rows.map(r => r[k]).filter(v => v !== null && v !== '' && !isNaN(v)).map(Number);
+    const a = avg(vals);
+    const dist = {5:0,4:0,3:0,2:0,1:0};
+    vals.forEach(v => { if (dist[v] !== undefined) dist[v]++; });
+    return { i, key: k, n: vals.length, avg5: a, score: a === null ? null : a / 5 * 100, dist };
+  });
+  const n = Math.max(...out.map(o => o.n), 0);
+  return { items: out, n };
+}
+
+function renderFeedback() {
+  const month = document.getElementById('monthSelect').value;
+  const sel = document.getElementById('fbStore');
+  if (!sel.options.length) {
+    STORE_LIST.slice().sort((a,b)=>a.localeCompare(b,'ja')).forEach(st => {
+      const o = document.createElement('option'); o.value = st; o.textContent = st; sel.appendChild(o);
+    });
+  }
+  const store = sel.value || sel.options[0].value;
+  const target = document.getElementById('fbTarget').value;
+  const box = document.getElementById('fbContent');
+  const QS = target === 'mgr' ? MGR_Q_FULL : CT_Q_FULL;
+  const ADV = target === 'mgr' ? MGR_ADVICE : CT_ADVICE;
+  const who = target === 'mgr' ? '店長' : '契約社員';
+
+  if (target === 'ct' && !STORES_WITH_CT[store]) {
+    box.innerHTML = `<div class="fb-note">${store} には契約社員アンケートの対象者がいません。</div>`;
+    _fbText = ''; return;
+  }
+
+  const cur  = itemStats(month, store, target);
+  const prev = itemStats(prevMonthLabel(month), store, target);
+  const allS = itemStats(month, null, target);   // 全店平均
+
+  if (!cur.n) {
+    box.innerHTML = `<div class="fb-note">${month} の ${store} は、${who}についての回答がまだありません。</div>`;
+    _fbText = ''; return;
+  }
+
+  const scored = cur.items.filter(o => o.score !== null);
+  const total = avg(scored.map(o => o.score));
+  const prevScored = prev.items.filter(o => o.score !== null);
+  const prevTotal = prevScored.length ? avg(prevScored.map(o => o.score)) : null;
+  const diffTotal = prevTotal === null ? null : total - prevTotal;
+
+  // 減点（100点満点との差）が大きい順＝改善すべき順
+  const order = scored.slice().sort((a,b) => (b.score === null ? -1 : a.score - b.score));
+  // 減点10点以上を「改善対象」とみなす（それ未満は良好扱い）
+  const needFix = order.filter(o => (100 - o.score) >= 10);
+
+  const head = `<div style="background:#f7fafc;border-radius:10px;padding:12px;margin-bottom:12px">
+    <div style="font-size:13px;font-weight:700;color:#2d3748">${store}／${who}　${month}</div>
+    <div style="display:flex;align-items:baseline;gap:10px;margin-top:6px;flex-wrap:wrap">
+      <span style="font-size:28px;font-weight:800;color:${total>=80?'#276749':'#9b2335'}">${total.toFixed(1)}</span>
+      <span style="font-size:12px;color:#4a5568">点（基準80点以上）</span>
+      ${diffTotal===null?'':`<span class="fb-diff" style="color:${diffTotal>=0?'#276749':'#9b2335'}">前月比 ${diffTotal>=0?'+':''}${diffTotal.toFixed(1)}点</span>`}
+      <span style="font-size:11px;color:#718096">回答 ${cur.n}件（匿名）</span>
+    </div>
+  </div>`;
+
+  const rows = order.map((o, rank) => {
+    const lostV = 100 - o.score;
+    const fixIdx = needFix.indexOf(o);                 // 改善対象の中での順位（-1なら良好）
+    const badge = fixIdx === 0 ? ['最優先', 'bad'] : fixIdx > 0 ? ['改善' + (fixIdx + 1), ''] : ['良好', 'good'];
+    const q = QS[o.i], lost = 100 - o.score;
+    const allScore = allS.items[o.i].score;
+    const diffAll = allScore === null ? null : o.score - allScore;
+    const pv = prev.items[o.i].score;
+    const diffPrev = pv === null ? null : o.score - pv;
+    const maxD = Math.max(...Object.values(o.dist), 1);
+    const dist = cur.n >= 3
+      ? `<div class="fb-dist">${[5,4,3,2,1].map(v => `<div class="fb-dist-cell">
+           <div class="fb-dist-bar"><div class="fb-dist-fill" style="height:${Math.round(o.dist[v]/maxD*26)||2}px;background:${v>=4?'#38a169':v==3?'#cbd5e0':'#e53e3e'}"></div></div>
+           <div>${v}点</div><div style="font-weight:700;color:#4a5568">${o.dist[v]}</div></div>`).join('')}</div>`
+      : `<div class="fb-note">※ 回答が${cur.n}件のため、個人が特定されないよう点数の内訳は非表示にしています。</div>`;
+    return `<div class="fb-item ${fixIdx===0?'worst':''}">
+      <div><span class="fb-rank ${badge[1]}">${badge[0]}</span><span class="fb-q">${q}</span></div>
+      <div class="fb-nums">
+        <span class="fb-score">${o.score.toFixed(1)}</span><span style="font-size:11px;color:#718096">点</span>
+        <span class="fb-lost">−${lost.toFixed(1)}点</span>
+        ${diffAll===null?'':`<span class="fb-diff" style="color:${diffAll>=0?'#276749':'#9b2335'}">全店平均比 ${diffAll>=0?'+':''}${diffAll.toFixed(1)}</span>`}
+        ${diffPrev===null?'':`<span class="fb-diff" style="color:${diffPrev>=0?'#276749':'#9b2335'}">前月比 ${diffPrev>=0?'+':''}${diffPrev.toFixed(1)}</span>`}
+      </div>
+      ${dist}
+      ${fixIdx >= 0 && fixIdx < 2 ? `<div class="fb-advice">💡 ${ADV[o.i]}</div>` : ''}
+    </div>`;
+  }).join('');
+
+  box.innerHTML = head + rows +
+    `<div class="fb-note">・点数は5点満点を100点換算したもの。「−○点」が減点の大きさです（100点との差）。<br>
+     ・回答者は匿名です。誰が何点を付けたかは記録していません。<br>
+     ・減点10点以上を改善対象とし、大きい順に並べています（それ未満は「良好」）。<br>
+     ${cur.n < 3 ? '・回答が少ないため、1人の回答で点数が大きく動きます。傾向としてご覧ください。' : ''}</div>`;
+
+  // コピー用テキスト（本人に渡す）
+  _fbText = `【${month} アンケート結果】${store}／${who}\n`
+    + `総合 ${total.toFixed(1)}点（基準80点以上）${diffTotal===null?'':`　前月比 ${diffTotal>=0?'+':''}${diffTotal.toFixed(1)}点`}\n`
+    + `回答 ${cur.n}件（匿名）\n\n`
+    + order.map((o, rank) => {
+        const allScore = allS.items[o.i].score;
+        const d = allScore === null ? '' : `／全店平均比 ${o.score-allScore>=0?'+':''}${(o.score-allScore).toFixed(1)}`;
+        return `${rank+1}. ${QS[o.i]}\n   ${o.score.toFixed(1)}点（−${(100-o.score).toFixed(1)}）${d}`;
+      }).join('\n')
+    + (needFix.length
+        ? `\n\n▼ 重点的に取り組むこと\n` + needFix.slice(0,2).map((o,i) => `${i+1}) ${ADV[o.i]}`).join('\n')
+        : `\n\n▼ 全項目で大きな減点はありません。今のやり方を続けてください。`);
+}
+
+let _fbText = '';
+
+function copyFeedback() {
+  if (!_fbText) { alert('コピーできる内容がありません。'); return; }
+  const done = () => alert('コピーしました。LINEなどに貼り付けて本人に渡せます。');
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(_fbText).then(done).catch(() => fbCopyFallback(done));
+  } else fbCopyFallback(done);
+}
+function fbCopyFallback(done) {
+  const ta = document.createElement('textarea');
+  ta.value = _fbText; ta.style.position = 'fixed'; ta.style.opacity = '0';
+  document.body.appendChild(ta); ta.select();
+  try { document.execCommand('copy'); done(); } catch (e) { alert('コピーできませんでした'); }
+  document.body.removeChild(ta);
+}
+
+// ============================================================
 // ダッシュボード描画
 // ============================================================
 function renderDashboard() {
@@ -781,6 +989,7 @@ function renderDashboard() {
   document.getElementById('dashContent').style.display = 'block';
 
   renderManagerSection(md);
+  renderFeedback();
   renderContractSection(md);
   renderTrend();
 }
