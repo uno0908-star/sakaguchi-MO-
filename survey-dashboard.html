@@ -403,6 +403,19 @@ function getCrew(store) {
 // 回答率（分母0のときは0%）
 function calcRate(answers, crew) { return crew > 0 ? answers / crew * 100 : 0; }
 
+// タイムアウト付きJSON取得（GASが無応答でも画面が固まらないようにする）
+async function fetchJson(url, timeoutMs) {
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), timeoutMs || 30000);
+  try {
+    const res = await fetch(url, { redirect: 'follow', signal: ctrl.signal });
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    return await res.json();
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
 // 当月ラベル（例：2026年8月）
 function currentMonthLabel() {
   const d = new Date();
@@ -538,8 +551,7 @@ async function resetCrewMonth() {
   const month = document.getElementById('monthSelect').value || currentMonthLabel();
   if (!confirm(`${month} の手動修正を取り消して、自動反映に戻しますか？`)) return;
   try {
-    const res = await fetch(GAS_URL + '?action=resetCrewMonthly&month=' + encodeURIComponent(month));
-    const d = await res.json();
+    const d = await fetchJson(GAS_URL + '?action=resetCrewMonthly&month=' + encodeURIComponent(month), 45000);
     if (!d.ok) throw new Error(d.error || '不明なエラー');
     if (d.counts) monthlyCrew[month] = { counts: d.counts, mode: '自動', at: new Date().toLocaleString('ja-JP') };
     else delete monthlyCrew[month];
@@ -556,8 +568,7 @@ async function saveMonthlyCrew(month, counts, mode) {
   const url = GAS_URL + '?action=setCrewMonthly&month=' + encodeURIComponent(month)
             + '&mode=' + encodeURIComponent(mode)
             + '&counts=' + encodeURIComponent(JSON.stringify(counts));
-  const res = await fetch(url);
-  const d = await res.json();
+  const d = await fetchJson(url, 45000);
   return !!d.ok;
 }
 
@@ -598,26 +609,41 @@ async function syncCurrentMonth() {
 // データ読み込み
 // ============================================================
 async function loadData() {
-  document.getElementById('loadingMsg').style.display = 'block';
-  document.getElementById('dashContent').style.display = 'none';
+  const box = document.getElementById('loadingMsg');
+
+  // ① 前回の内容をすぐ表示（GASは応答が遅いため、待たせずに見せる）
+  const cache = JSON.parse(localStorage.getItem('surveyCache') || 'null');
+  if (cache && Array.isArray(cache.data) && cache.data.length) {
+    allData = cache.data;
+    renderDashboard();
+    box.style.display = 'block';
+    box.innerHTML = '<span class="spinner"></span>最新データに更新しています...';
+  } else {
+    box.style.display = 'block';
+    box.innerHTML = '<span class="spinner"></span>データを読み込んでいます...（初回は30秒ほどかかります）';
+    document.getElementById('dashContent').style.display = 'none';
+  }
+
+  // ② 裏で最新を取得
   try {
     const [surveyRes, monthlyRes, masterRes] = await Promise.allSettled([
-      fetch(GAS_URL + '?action=get'),
-      fetch(GAS_URL + '?action=getCrewMonthly'),
+      fetchJson(GAS_URL + '?action=get', 60000),
+      fetchJson(GAS_URL + '?action=getCrewMonthly', 30000),
       fetchCrewFromMaster()   // ★接客評価システムの在籍マスタ（在籍中のクルーのみ）
     ]);
-    if (surveyRes.status !== 'fulfilled') throw new Error('アンケートデータ取得失敗');
-    const surveyJson = await surveyRes.value.json();
-    allData = surveyJson.data || [];
+
+    if (surveyRes.status === 'fulfilled') {
+      allData = surveyRes.value.data || [];
+      localStorage.setItem('surveyCache', JSON.stringify({ data: allData, at: Date.now() }));
+    } else if (!allData.length) {
+      throw surveyRes.reason || new Error('アンケートデータ取得失敗');
+    }
 
     // 月別の確定人数（過去月はここに保存された値で固定される）
-    if (monthlyRes.status === 'fulfilled') {
-      const mj = await monthlyRes.value.json();
-      if (mj.months) {
-        monthlyCrew = mj.months;
-        localStorage.setItem('crewMonthly', JSON.stringify(monthlyCrew));
-      }
-    } else {
+    if (monthlyRes.status === 'fulfilled' && monthlyRes.value.months) {
+      monthlyCrew = monthlyRes.value.months;
+      localStorage.setItem('crewMonthly', JSON.stringify(monthlyCrew));
+    } else if (monthlyRes.status !== 'fulfilled') {
       console.warn('月別人数の取得に失敗。前回値を使用:', monthlyRes.reason);
     }
 
@@ -625,14 +651,18 @@ async function loadData() {
     if (masterRes.status === 'fulfilled') {
       liveCrew = masterRes.value;
       localStorage.setItem('crewCounts', JSON.stringify(liveCrew));
-      await syncCurrentMonth();
+      syncCurrentMonth();   // ★保存の完了は待たない（画面を止めないため）
     } else {
       console.warn('在籍マスタ取得失敗のため前回値を使用:', masterRes.reason);
     }
   } catch(e) {
-    allData = generateSampleData();
+    console.warn('データ取得に失敗:', e);
+    if (!allData.length) allData = generateSampleData();
+  } finally {
+    box.style.display = 'none';
+    box.innerHTML = '<span class="spinner"></span>データを読み込んでいます...';
+    renderDashboard();
   }
-  renderDashboard();
 }
 
 // ============================================================
