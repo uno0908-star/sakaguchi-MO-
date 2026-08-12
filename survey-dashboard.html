@@ -115,6 +115,20 @@
     box-shadow: 0 20px 60px rgba(0,0,0,0.3);
   }
   .modal-title { font-size: 16px; font-weight: 700; color: #003087; margin-bottom: 4px; }
+  /* 閉じる操作は常に見える位置に固定（下までスクロールしないと閉じられない事故を防ぐ） */
+  .modal-head {
+    position: sticky; top: -24px; background: white; z-index: 2;
+    display: flex; align-items: center; justify-content: space-between; gap: 8px;
+    padding: 24px 0 6px; margin: -24px 0 0;
+  }
+  .modal-x {
+    flex-shrink: 0; width: 34px; height: 34px; border: none; border-radius: 50%;
+    background: #edf2f7; color: #4a5568; font-size: 16px; line-height: 1; cursor: pointer;
+  }
+  .modal-foot {
+    position: sticky; bottom: -24px; background: white; z-index: 2;
+    padding: 10px 0 24px; margin-bottom: -24px; box-shadow: 0 -8px 12px -8px rgba(0,0,0,0.15);
+  }
   .modal-sub { font-size: 12px; color: #718096; margin-bottom: 16px; }
   .crew-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 16px; }
   .crew-row { display: flex; align-items: center; gap: 6px; }
@@ -201,18 +215,23 @@
 </div>
 
 <!-- ===== クルー人数入力モーダル ===== -->
-<div class="modal-overlay" id="crewModal">
+<div class="modal-overlay" id="crewModal" onclick="if(event.target===this)closeCrewModal()">
   <div class="modal-box">
-    <div class="modal-title" id="crewModalTitle">👥 クルー在籍人数</div>
+    <div class="modal-head">
+      <div class="modal-title" id="crewModalTitle">👥 クルー在籍人数</div>
+      <button class="modal-x" onclick="closeCrewModal()" aria-label="閉じる">✕</button>
+    </div>
     <div class="modal-sub" id="crewModalSub"></div>
     <div class="crew-grid" id="crewGrid"></div>
-    <div class="modal-btn-row" style="margin-bottom:8px">
-      <button class="modal-cancel" onclick="closeCrewModal()">閉じる</button>
-      <button class="modal-save" id="crewSaveBtn" onclick="saveCrewCounts()">💾 この月の人数を確定</button>
-    </div>
-    <div class="modal-btn-row">
-      <button class="modal-cancel" style="flex:1" id="crewReloadBtn" onclick="refreshCrewCounts()">🔄 最新を取得</button>
-      <button class="modal-cancel" style="flex:1" id="crewResetBtn" onclick="resetCrewMonth()">↩️ 自動に戻す</button>
+    <div class="modal-foot">
+      <div class="modal-btn-row" style="margin-bottom:8px">
+        <button class="modal-cancel" onclick="closeCrewModal()">閉じる</button>
+        <button class="modal-save" id="crewSaveBtn" onclick="saveCrewCounts()">💾 この月の人数を確定</button>
+      </div>
+      <div class="modal-btn-row">
+        <button class="modal-cancel" style="flex:1" id="crewReloadBtn" onclick="refreshCrewCounts()">🔄 最新を取得</button>
+        <button class="modal-cancel" style="flex:1" id="crewResetBtn" onclick="resetCrewMonth()">↩️ 自動に戻す</button>
+      </div>
     </div>
   </div>
 </div>
