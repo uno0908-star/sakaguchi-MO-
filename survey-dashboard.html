@@ -124,6 +124,7 @@
     border-radius: 6px; font-size: 14px; font-weight: 700; text-align: center; color: #003087;
   }
   .crew-input:focus { outline: none; border-color: #003087; }
+  .crew-view { width: 56px; padding: 6px 8px; background: #edf2f7; border-radius: 6px; font-size: 14px; font-weight: 700; text-align: center; color: #003087; }
   .modal-btn-row { display: flex; gap: 8px; }
   .modal-save { flex: 1; padding: 11px; background: #003087; color: white; border: none; border-radius: 8px; font-size: 14px; font-weight: 700; cursor: pointer; }
   .modal-cancel { padding: 11px 16px; background: #e2e8f0; color: #4a5568; border: none; border-radius: 8px; font-size: 14px; cursor: pointer; }
@@ -202,12 +203,12 @@
 <!-- ===== クルー人数入力モーダル ===== -->
 <div class="modal-overlay" id="crewModal">
   <div class="modal-box">
-    <div class="modal-title">👥 クルー在籍人数の入力</div>
-    <div class="modal-sub">今月の各店舗の在籍クルー数を入力してください（回答率の計算に使用）</div>
+    <div class="modal-title">👥 クルー在籍人数（自動反映）</div>
+    <div class="modal-sub" id="crewModalSub"></div>
     <div class="crew-grid" id="crewGrid"></div>
     <div class="modal-btn-row">
-      <button class="modal-cancel" onclick="closeCrewModal()">キャンセル</button>
-      <button class="modal-save" onclick="saveCrewCounts()">💾 保存して反映</button>
+      <button class="modal-cancel" onclick="closeCrewModal()">閉じる</button>
+      <button class="modal-save" id="crewReloadBtn" onclick="refreshCrewCounts()">🔄 最新を取得</button>
     </div>
   </div>
 </div>
@@ -350,6 +351,8 @@
 // ============================================================
 const PASSWORD  = 'Lawson3963';
 const GAS_URL   = 'https://script.google.com/macros/s/AKfycbxiEpYmlJ1JMdCgVa3e9uQZ0WUR8CAPEhXmgGATmZI8GNYEDpbOaHe8yslw5HoXT4X2/exec';
+// 接客評価システムのGAS（クルー在籍マスタ）。ここから当月のクルー人数を自動取得する。
+const EVAL_GAS_URL = 'https://script.google.com/macros/s/AKfycbyHEBH5Q8VBcZFBzfH5tYQm46RCa_fYw3PDlKp1qA5E9EWmR44OQ8UA1JTXFa-stnbG8g/exec';
 
 const STORE_LIST = [
   '吹田垂水三丁目','江坂東','江坂駅南口','吹田警察署前','豊中原田南一丁目',
@@ -371,9 +374,11 @@ const STORES_WITH_CT = {
 const MGR_Q = ['相談しやすい', '公平に接する', '仕事を教える', '感謝の言葉', 'ルールを伝える'];
 const CT_Q  = ['仕事サポート', '困時に助ける', '明るく接する', '仕事を教える', 'ルールを守る'];
 
-// クルー人数（GASから読み込み、fallbackはlocalStorage→デフォルト15名）
+// クルー人数（接客評価システムの在籍マスタから自動取得。失敗時はlocalStorage→アンケートGAS→15名）
 let crewCounts = JSON.parse(localStorage.getItem('crewCounts') || 'null')
   || Object.fromEntries(STORE_LIST.map(s => [s, 15]));
+// 人数の取得元：auto=接客評価マスタから自動反映 / cache=前回取得値
+let crewSource = { mode: 'cache', at: localStorage.getItem('crewCountsAt') || '', total: 0 };
 
 let allData = [];
 
@@ -381,6 +386,39 @@ let allData = [];
 // ユーティリティ
 // ============================================================
 function avg(arr) { return arr.length ? arr.reduce((a,b)=>a+b,0)/arr.length : null; }
+
+// 店舗のクルー人数を取得（0名も正しく0として扱う。未取得の店舗だけ15名で仮置き）
+function getCrew(store) {
+  const v = crewCounts[store];
+  return (v === 0 || Number.isFinite(v)) ? v : (parseInt(v) || 15);
+}
+// 回答率（分母0のときは0%）
+function calcRate(answers, crew) { return crew > 0 ? answers / crew * 100 : 0; }
+
+// ============================================================
+// クルー在籍人数の自動取得（接客評価システムのマスタ）
+//   条件：status=在籍中 かつ type=Crew（正社員 FullTimeEmployee・契約社員 ContractEmployee は除外）
+// ============================================================
+async function fetchCrewFromMaster() {
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), 30000);
+  try {
+    const res = await fetch(EVAL_GAS_URL + '?action=getEmployees', { redirect: 'follow', signal: ctrl.signal });
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const d = await res.json();
+    if (!d.ok || !Array.isArray(d.employees)) throw new Error(d.error || 'データ形式エラー');
+    const counts = Object.fromEntries(STORE_LIST.map(s => [s, 0]));
+    d.employees.forEach(e => {
+      if (e.status !== '在籍中') return;          // 退職・休職は除外
+      if (e.type !== 'Crew') return;              // 正社員・契約社員は除外
+      const st = String(e.store || '').trim();
+      if (st in counts) counts[st]++;             // 一覧にない店舗名は無視
+    });
+    return counts;
+  } finally {
+    clearTimeout(timer);
+  }
+}
 
 // ============================================================
 // ログイン
@@ -413,17 +451,13 @@ function buildMonthSelect() {
 // ============================================================
 function openCrewModal() {
   const grid = document.getElementById('crewGrid');
-  grid.innerHTML = '';
-  STORE_LIST.forEach(store => {
-    const row = document.createElement('div');
-    row.className = 'crew-row';
-    row.innerHTML = `
-      <div class="crew-label">${store}</div>
-      <input type="number" class="crew-input" id="crew_${store.replace(/\s/g,'_')}"
-        value="${crewCounts[store] || 15}" min="1" max="99">
-    `;
-    grid.appendChild(row);
-  });
+  const total = STORE_LIST.reduce((s,st) => s + getCrew(st), 0);
+  grid.innerHTML = STORE_LIST.map(store =>
+    `<div class="crew-row"><div class="crew-label">${store}</div><div class="crew-view">${getCrew(store)}名</div></div>`
+  ).join('');
+  document.getElementById('crewModalSub').innerHTML = crewSource.mode === 'auto'
+    ? `接客評価システムの在籍データから自動反映しています（${crewSource.at} 時点／合計 <b>${total}名</b>）。<br>正社員・契約社員は含みません。人数を直すには接客評価システムで在籍情報を更新してください。`
+    : `⚠️ 在籍データを取得できなかったため、前回取得した人数（合計 <b>${total}名</b>）で計算しています。電波の良い場所で「🔄 更新」をお試しください。`;
   document.getElementById('crewModal').classList.add('open');
 }
 
@@ -431,18 +465,34 @@ function closeCrewModal() {
   document.getElementById('crewModal').classList.remove('open');
 }
 
-function saveCrewCounts() {
-  STORE_LIST.forEach(store => {
-    const id = 'crew_' + store.replace(/\s/g,'_');
-    const el = document.getElementById(id);
-    if (el) crewCounts[store] = parseInt(el.value) || 15;
-  });
-  localStorage.setItem('crewCounts', JSON.stringify(crewCounts));
-  closeCrewModal();
-  renderDashboard();
-  // GASに共有保存（非同期・バックグラウンド）
-  fetch(GAS_URL + '?action=setCrewCounts&counts=' + encodeURIComponent(JSON.stringify(crewCounts)))
-    .catch(e => console.warn('クルー人数のGAS保存失敗:', e));
+/* 在籍マスタから取り直して即反映 */
+async function refreshCrewCounts() {
+  const btn = document.getElementById('crewReloadBtn');
+  if (btn) { btn.disabled = true; btn.textContent = '取得中...'; }
+  try {
+    const counts = await fetchCrewFromMaster();
+    applyCrewCounts(counts);
+    renderDashboard();
+    openCrewModal();
+  } catch (e) {
+    alert('在籍データを取得できませんでした（' + e.message + '）');
+  }
+  if (btn) { btn.disabled = false; btn.textContent = '🔄 最新を取得'; }
+}
+
+/* 取得した人数を保存して反映（アンケート側GASにも共有保存し、他端末の初期値にする） */
+function applyCrewCounts(counts) {
+  crewCounts = counts;
+  crewSource = { mode: 'auto', at: new Date().toLocaleDateString('ja-JP'), total: Object.values(counts).reduce((a,b)=>a+b,0) };
+  const json = JSON.stringify(crewCounts);
+  localStorage.setItem('crewCounts', json);
+  localStorage.setItem('crewCountsAt', crewSource.at);
+  // 人数が変わった時だけGASへ共有保存（毎回の書き込みを避ける）
+  if (localStorage.getItem('crewCountsSynced') !== json) {
+    fetch(GAS_URL + '?action=setCrewCounts&counts=' + encodeURIComponent(json))
+      .then(() => localStorage.setItem('crewCountsSynced', json))
+      .catch(e => console.warn('クルー人数のGAS保存失敗:', e));
+  }
 }
 
 // ============================================================
@@ -452,17 +502,28 @@ async function loadData() {
   document.getElementById('loadingMsg').style.display = 'block';
   document.getElementById('dashContent').style.display = 'none';
   try {
-    const [surveyRes, crewRes] = await Promise.all([
+    const [surveyRes, crewRes, masterRes] = await Promise.allSettled([
       fetch(GAS_URL + '?action=get'),
-      fetch(GAS_URL + '?action=getCrewCounts')
+      fetch(GAS_URL + '?action=getCrewCounts'),
+      fetchCrewFromMaster()   // ★接客評価システムの在籍マスタ（クルーのみ）
     ]);
-    const surveyJson = await surveyRes.json();
+    if (surveyRes.status !== 'fulfilled') throw new Error('アンケートデータ取得失敗');
+    const surveyJson = await surveyRes.value.json();
     allData = surveyJson.data || [];
-    const crewJson = await crewRes.json();
-    if (crewJson.counts && Object.keys(crewJson.counts).length > 0) {
-      crewCounts = crewJson.counts;
-      Object.keys(crewCounts).forEach(k => { crewCounts[k] = parseInt(crewCounts[k]) || 15; });
-      localStorage.setItem('crewCounts', JSON.stringify(crewCounts));
+
+    if (masterRes.status === 'fulfilled') {
+      // ★在籍マスタを最優先。当月の在籍クルー数（正社員・契約社員を除く）を自動反映
+      applyCrewCounts(masterRes.value);
+    } else if (crewRes.status === 'fulfilled') {
+      // マスタが取れない時だけ、従来のアンケートGAS保存値にフォールバック
+      console.warn('在籍マスタ取得失敗のため保存値を使用:', masterRes.reason);
+      const crewJson = await crewRes.value.json();
+      if (crewJson.counts && Object.keys(crewJson.counts).length > 0) {
+        crewCounts = crewJson.counts;
+        Object.keys(crewCounts).forEach(k => { crewCounts[k] = parseInt(crewCounts[k]) || 15; });
+        localStorage.setItem('crewCounts', JSON.stringify(crewCounts));
+      }
+      crewSource = { mode: 'cache', at: localStorage.getItem('crewCountsAt') || '', total: 0 };
     }
   } catch(e) {
     allData = generateSampleData();
@@ -477,7 +538,10 @@ function renderDashboard() {
   const month = document.getElementById('monthSelect').value;
   const md = allData.filter(r => r.yearMonth === month);
 
-  document.getElementById('headerSub').textContent = `${month} ｜ ${md.length}件の回答`;
+  const totalCrewAll = STORE_LIST.reduce((s,st) => s + getCrew(st), 0);
+  document.getElementById('headerSub').textContent =
+    `${month} ｜ ${md.length}件の回答 ｜ 対象クルー ${totalCrewAll}名`
+    + (crewSource.mode === 'auto' ? `（在籍データ自動反映 ${crewSource.at}）` : '（前回取得値）');
   document.getElementById('loadingMsg').style.display = 'none';
   document.getElementById('dashContent').style.display = 'block';
 
@@ -491,8 +555,8 @@ function renderDashboard() {
 // ============================================================
 function renderManagerSection(md) {
   // 全店舗合計クルー数
-  const totalCrew = STORE_LIST.reduce((s,st) => s + (crewCounts[st]||15), 0);
-  const rate = md.length ? md.length / totalCrew * 100 : 0;
+  const totalCrew = STORE_LIST.reduce((s,st) => s + getCrew(st), 0);
+  const rate = md.length ? calcRate(md.length, totalCrew) : 0;
 
   // 店長スコア（100点換算）
   const mgrScores100 = [];
@@ -529,8 +593,8 @@ function renderManagerSection(md) {
   tbody.innerHTML = '';
   STORE_LIST.forEach(store => {
     const rows = md.filter(r => r.store === store);
-    const crew = crewCounts[store] || 15;
-    const rate_s = rows.length / crew * 100;
+    const crew = getCrew(store);
+    const rate_s = calcRate(rows.length, crew);
     const scores = rows.map(r => {
       const v = [r.mgr1,r.mgr2,r.mgr3,r.mgr4,r.mgr5].filter(v=>v!==null&&v!=='');
       return v.length ? avg(v)/5*100 : null;
@@ -587,8 +651,8 @@ function renderContractSection(md) {
 
   // 契約社員対象店舗の回答数（ct1が入力されているもの）
   const ctRows = md.filter(r => ctStores.includes(r.store));
-  const totalCtCrew = ctStores.reduce((s,st)=>s+(crewCounts[st]||15),0);
-  const ctRate = ctRows.length ? ctRows.length / totalCtCrew * 100 : 0;
+  const totalCtCrew = ctStores.reduce((s,st)=>s+getCrew(st),0);
+  const ctRate = ctRows.length ? calcRate(ctRows.length, totalCtCrew) : 0;
 
   const ctScores100 = [];
   ctRows.forEach(r => {
@@ -611,7 +675,7 @@ function renderContractSection(md) {
     });
     const allVals = rows.flatMap(r=>[r.ct1,r.ct2,r.ct3,r.ct4,r.ct5].filter(v=>v!==null&&v!==''));
     const sc = allVals.length ? (avg(allVals)/5*100).toFixed(1) : null;
-    const crew = crewCounts[store] || 15;
+    const crew = getCrew(store);
     tbody.innerHTML += `
       <tr>
         <td><b>${store}</b></td>
@@ -662,8 +726,8 @@ function renderTrend() {
   const mgrTrend = [], rateTrend = [];
   months.forEach(m => {
     const md = allData.filter(r => r.yearMonth === m);
-    const totalCrew = STORE_LIST.reduce((s,st)=>s+(crewCounts[st]||15),0);
-    const rate = md.length ? md.length/totalCrew*100 : null;
+    const totalCrew = STORE_LIST.reduce((s,st)=>s+getCrew(st),0);
+    const rate = md.length ? calcRate(md.length, totalCrew) : null;
     const scores = md.map(r=>{
       const v=[r.mgr1,r.mgr2,r.mgr3,r.mgr4,r.mgr5].filter(v=>v!==null&&v!=='');
       return v.length ? avg(v)/5*100 : null;
@@ -746,7 +810,7 @@ function generateSampleData() {
     const d = new Date(now.getFullYear(), now.getMonth()-mo, 1);
     const ym = `${d.getFullYear()}年${d.getMonth()+1}月`;
     STORE_LIST.forEach(store => {
-      const crew = crewCounts[store] || 15;
+      const crew = getCrew(store);
       const cnt = Math.floor(crew * (0.65+Math.random()*0.35));
       for (let c=0; c<cnt; c++) {
         const r = { yearMonth:ym, store };
