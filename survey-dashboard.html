@@ -196,6 +196,10 @@
   .fb-dist-fill { width: 100%; border-radius: 3px 3px 0 0; background: #cbd5e0; }
   .fb-advice { font-size: 12px; color: #2c5282; background: #ebf8ff; border-radius: 8px; padding: 8px 10px; margin-top: 8px; line-height: 1.5; }
   .fb-note { font-size: 11px; color: #718096; line-height: 1.6; margin-top: 8px; }
+  .fb-block { margin-bottom: 6px; }
+  .fb-block-title { font-size: 14px; font-weight: 800; color: #003087; padding: 8px 10px; border-radius: 8px; background: #ebf1fa; margin-bottom: 10px; }
+  .fb-block-title.ct { color: #553c9a; background: #f3ecfd; }
+  .fb-block-title small { display: block; font-size: 11px; font-weight: 600; color: #718096; margin-top: 2px; }
 
   /* 契約社員カード */
   .ct-note {
@@ -346,13 +350,8 @@
         <div class="card-title">🔍 どの項目で減点されているか</div>
         <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px">
           <select class="fb-sel" id="fbStore" onchange="renderFeedback()"></select>
-          <select class="fb-sel" id="fbTarget" onchange="renderFeedback()">
-            <option value="mgr">店長について</option>
-            <option value="ct">契約社員について</option>
-          </select>
         </div>
         <div id="fbContent"></div>
-        <button class="modal-save" style="width:100%;margin-top:10px" onclick="copyFeedback()">📋 本人に渡す文面をコピー（LINE用）</button>
       </div>
 
       <!-- ========== 契約社員アンケート ========== -->
@@ -399,6 +398,12 @@
       <div class="card">
         <div class="card-title">📋 設問別 平均スコア（契約社員）</div>
         <div class="q-grid" id="ctQGrid"></div>
+      </div>
+
+      <!-- 契約社員：月別推移 -->
+      <div class="card">
+        <div class="card-title">📈 月別スコア推移（契約社員）</div>
+        <canvas id="ctTrendChart" height="200"></canvas>
       </div>
 
     </div><!-- /dashContent -->
@@ -848,24 +853,34 @@ function renderFeedback() {
     });
   }
   const store = sel.value || sel.options[0].value;
-  const target = document.getElementById('fbTarget').value;
-  const box = document.getElementById('fbContent');
-  const QS = target === 'mgr' ? MGR_Q_FULL : CT_Q_FULL;
+  _fbTexts = { mgr: '', ct: '' };
+
+  // 店長・契約社員の両方を同じ形式で表示する
+  let html = feedbackBlock(month, store, 'mgr');
+  html += STORES_WITH_CT[store]
+    ? '<hr class="divider">' + feedbackBlock(month, store, 'ct')
+    : `<hr class="divider"><div class="fb-block-title ct">契約社員<small>${store} には契約社員アンケートの対象者がいません</small></div>`;
+  document.getElementById('fbContent').innerHTML = html;
+}
+
+// 1人（1役割）分のフィードバックを組み立てる
+function feedbackBlock(month, store, target) {
+  const QS  = target === 'mgr' ? MGR_Q_FULL : CT_Q_FULL;
   const ADV = target === 'mgr' ? MGR_ADVICE : CT_ADVICE;
   const who = target === 'mgr' ? '店長' : '契約社員';
-
-  if (target === 'ct' && !STORES_WITH_CT[store]) {
-    box.innerHTML = `<div class="fb-note">${store} には契約社員アンケートの対象者がいません。</div>`;
-    _fbText = ''; return;
-  }
+  const cls = target === 'mgr' ? '' : 'ct';
+  const names = target === 'ct' ? (STORES_WITH_CT[store] || '') : '';
+  const shared = target === 'ct' && names.indexOf('・') >= 0;
+  const title = `<div class="fb-block-title ${cls}">${who}${names ? '：' + names : ''}`
+    + `<small>${store}／${month}${shared ? '　※2名まとめての集計です（個別の点数は出せません）' : ''}</small></div>`;
 
   const cur  = itemStats(month, store, target);
   const prev = itemStats(prevMonthLabel(month), store, target);
   const allS = itemStats(month, null, target);   // 全店平均
 
   if (!cur.n) {
-    box.innerHTML = `<div class="fb-note">${month} の ${store} は、${who}についての回答がまだありません。</div>`;
-    _fbText = ''; return;
+    _fbTexts[target] = '';
+    return `<div class="fb-block">${title}<div class="fb-note">${month} は${who}についての回答がまだありません。</div></div>`;
   }
 
   const scored = cur.items.filter(o => o.score !== null);
@@ -874,14 +889,12 @@ function renderFeedback() {
   const prevTotal = prevScored.length ? avg(prevScored.map(o => o.score)) : null;
   const diffTotal = prevTotal === null ? null : total - prevTotal;
 
-  // 減点（100点満点との差）が大きい順＝改善すべき順
-  const order = scored.slice().sort((a,b) => (b.score === null ? -1 : a.score - b.score));
-  // 減点10点以上を「改善対象」とみなす（それ未満は良好扱い）
+  // 減点（100点満点との差）が大きい順＝直すべき順
+  const order = scored.slice().sort((a,b) => a.score - b.score);
   const needFix = order.filter(o => (100 - o.score) >= 10);
 
   const head = `<div style="background:#f7fafc;border-radius:10px;padding:12px;margin-bottom:12px">
-    <div style="font-size:13px;font-weight:700;color:#2d3748">${store}／${who}　${month}</div>
-    <div style="display:flex;align-items:baseline;gap:10px;margin-top:6px;flex-wrap:wrap">
+    <div style="display:flex;align-items:baseline;gap:10px;flex-wrap:wrap">
       <span style="font-size:28px;font-weight:800;color:${total>=80?'#276749':'#9b2335'}">${total.toFixed(1)}</span>
       <span style="font-size:12px;color:#4a5568">点（基準80点以上）</span>
       ${diffTotal===null?'':`<span class="fb-diff" style="color:${diffTotal>=0?'#276749':'#9b2335'}">前月比 ${diffTotal>=0?'+':''}${diffTotal.toFixed(1)}点</span>`}
@@ -889,11 +902,10 @@ function renderFeedback() {
     </div>
   </div>`;
 
-  const rows = order.map((o, rank) => {
-    const lostV = 100 - o.score;
-    const fixIdx = needFix.indexOf(o);                 // 改善対象の中での順位（-1なら良好）
-    const badge = fixIdx === 0 ? ['最優先', 'bad'] : fixIdx > 0 ? ['改善' + (fixIdx + 1), ''] : ['良好', 'good'];
+  const rows = order.map(o => {
     const q = QS[o.i], lost = 100 - o.score;
+    const fixIdx = needFix.indexOf(o);
+    const badge = fixIdx === 0 ? ['最優先', 'bad'] : fixIdx > 0 ? ['改善' + (fixIdx + 1), ''] : ['良好', 'good'];
     const allScore = allS.items[o.i].score;
     const diffAll = allScore === null ? null : o.score - allScore;
     const pv = prev.items[o.i].score;
@@ -917,16 +929,10 @@ function renderFeedback() {
     </div>`;
   }).join('');
 
-  box.innerHTML = head + rows +
-    `<div class="fb-note">・点数は5点満点を100点換算したもの。「−○点」が減点の大きさです（100点との差）。<br>
-     ・回答者は匿名です。誰が何点を付けたかは記録していません。<br>
-     ・減点10点以上を改善対象とし、大きい順に並べています（それ未満は「良好」）。<br>
-     ${cur.n < 3 ? '・回答が少ないため、1人の回答で点数が大きく動きます。傾向としてご覧ください。' : ''}</div>`;
-
-  // コピー用テキスト（本人に渡す）
-  _fbText = `【${month} アンケート結果】${store}／${who}\n`
+  // 本人に渡すテキスト
+  _fbTexts[target] = `【${month} アンケート結果】${store}／${who}${names ? '（' + names + '）' : ''}\n`
     + `総合 ${total.toFixed(1)}点（基準80点以上）${diffTotal===null?'':`　前月比 ${diffTotal>=0?'+':''}${diffTotal.toFixed(1)}点`}\n`
-    + `回答 ${cur.n}件（匿名）\n\n`
+    + `回答 ${cur.n}件（匿名）${shared ? '／2名まとめての集計' : ''}\n\n`
     + order.map((o, rank) => {
         const allScore = allS.items[o.i].score;
         const d = allScore === null ? '' : `／全店平均比 ${o.score-allScore>=0?'+':''}${(o.score-allScore).toFixed(1)}`;
@@ -935,20 +941,30 @@ function renderFeedback() {
     + (needFix.length
         ? `\n\n▼ 重点的に取り組むこと\n` + needFix.slice(0,2).map((o,i) => `${i+1}) ${ADV[o.i]}`).join('\n')
         : `\n\n▼ 全項目で大きな減点はありません。今のやり方を続けてください。`);
+
+  const note = `<div class="fb-note">・点数は5点満点を100点換算。「−○点」が減点の大きさです。<br>
+     ・回答者は匿名です。誰が何点を付けたかは記録していません。<br>
+     ・減点10点以上を改善対象とし、大きい順に並べています（それ未満は「良好」）。
+     ${cur.n < 3 ? '<br>・回答が少ないため、1人の回答で点数が大きく動きます。傾向としてご覧ください。' : ''}</div>`;
+
+  const btn = `<button class="modal-save" style="width:100%;margin-top:10px" onclick="copyFeedback('${target}')">📋 ${who}に渡す文面をコピー（LINE用）</button>`;
+
+  return `<div class="fb-block">${title}${head}${rows}${note}${btn}</div>`;
 }
 
-let _fbText = '';
+let _fbTexts = { mgr: '', ct: '' };
 
-function copyFeedback() {
-  if (!_fbText) { alert('コピーできる内容がありません。'); return; }
+function copyFeedback(target) {
+  const text = _fbTexts[target] || '';
+  if (!text) { alert('コピーできる内容がありません。'); return; }
   const done = () => alert('コピーしました。LINEなどに貼り付けて本人に渡せます。');
   if (navigator.clipboard && navigator.clipboard.writeText) {
-    navigator.clipboard.writeText(_fbText).then(done).catch(() => fbCopyFallback(done));
-  } else fbCopyFallback(done);
+    navigator.clipboard.writeText(text).then(done).catch(() => fbCopyFallback(text, done));
+  } else fbCopyFallback(text, done);
 }
-function fbCopyFallback(done) {
+function fbCopyFallback(text, done) {
   const ta = document.createElement('textarea');
-  ta.value = _fbText; ta.style.position = 'fixed'; ta.style.opacity = '0';
+  ta.value = text; ta.style.position = 'fixed'; ta.style.opacity = '0';
   document.body.appendChild(ta); ta.select();
   try { document.execCommand('copy'); done(); } catch (e) { alert('コピーできませんでした'); }
   document.body.removeChild(ta);
@@ -1179,7 +1195,7 @@ function renderTrend() {
     months.push(`${d.getFullYear()}年${d.getMonth()+1}月`);
   }
 
-  const mgrTrend = [], rateTrend = [];
+  const mgrTrend = [], rateTrend = [], ctTrend = [];
   months.forEach(m => {
     const md = allData.filter(r => r.yearMonth === m);
     const mr = countsForMonth(m);                // その月の人数で計算
@@ -1192,12 +1208,30 @@ function renderTrend() {
       const v=[r.mgr1,r.mgr2,r.mgr3,r.mgr4,r.mgr5].filter(v=>v!==null&&v!=='');
       return v.length ? avg(v)/5*100 : null;
     }).filter(v=>v!==null);
+    const ctScores = md.map(r=>{
+      const v=[r.ct1,r.ct2,r.ct3,r.ct4,r.ct5].filter(v=>v!==null&&v!=='');
+      return v.length ? avg(v)/5*100 : null;
+    }).filter(v=>v!==null);
     mgrTrend.push(avg(scores) ? avg(scores).toFixed(1) : null);
     rateTrend.push(rate ? rate.toFixed(1) : null);
+    ctTrend.push(avg(ctScores) ? avg(ctScores).toFixed(1) : null);
   });
 
-  const canvas = document.getElementById('mgrTrendChart');
+  drawTrend('mgrTrendChart', months, [
+    { vals: mgrTrend,  color: '#003087', label: '店長スコア（点）' },
+    { vals: rateTrend, color: '#38a169', label: '回答率（%）' },
+  ]);
+  drawTrend('ctTrendChart', months, [
+    { vals: ctTrend, color: '#805ad5', label: '契約社員スコア（点）' },
+  ]);
+}
+
+// 折れ線グラフを描く（0〜100点、基準線80点つき）
+function drawTrend(canvasId, months, series) {
+  const canvas = document.getElementById(canvasId);
+  if (!canvas) return;
   const ctx = canvas.getContext('2d');
+  if (!ctx) return;
   canvas.width = canvas.offsetWidth || 600;
   canvas.height = 220;
   const W=canvas.width, H=canvas.height;
@@ -1230,7 +1264,7 @@ function renderTrend() {
     ctx.fillText(m.replace('年','/').replace('月',''), x, H-pad.bottom+16);
   });
 
-  function drawLine(vals, color, dotColor) {
+  function drawLine(vals, color) {
     ctx.strokeStyle=color; ctx.lineWidth=2.5;
     ctx.beginPath(); let started=false;
     vals.forEach((v,i)=>{
@@ -1242,22 +1276,23 @@ function renderTrend() {
     vals.forEach((v,i)=>{
       if(!v) return;
       const x=pad.left+i*step, y=pad.top+gH-(v/100*gH);
-      ctx.fillStyle=dotColor||color; ctx.beginPath(); ctx.arc(x,y,5,0,Math.PI*2); ctx.fill();
+      ctx.fillStyle=color; ctx.beginPath(); ctx.arc(x,y,5,0,Math.PI*2); ctx.fill();
       ctx.fillStyle='white'; ctx.beginPath(); ctx.arc(x,y,2.5,0,Math.PI*2); ctx.fill();
       ctx.fillStyle='#2d3748'; ctx.font='bold 10px sans-serif'; ctx.textAlign='center';
       ctx.fillText(v, x, y-10);
     });
   }
 
-  drawLine(mgrTrend, '#003087');
-  drawLine(rateTrend, '#38a169');
+  series.forEach(sr => drawLine(sr.vals, sr.color));
 
   // 凡例
-  ctx.fillStyle='#003087'; ctx.fillRect(pad.left, H-20, 16, 4);
-  ctx.fillStyle='#2d3748'; ctx.font='11px sans-serif'; ctx.textAlign='left';
-  ctx.fillText('店長スコア（点）', pad.left+20, H-16);
-  ctx.fillStyle='#38a169'; ctx.fillRect(pad.left+120, H-20, 16, 4);
-  ctx.fillStyle='#2d3748'; ctx.fillText('回答率（%）', pad.left+140, H-16);
+  let lx = pad.left;
+  series.forEach(sr => {
+    ctx.fillStyle=sr.color; ctx.fillRect(lx, H-20, 16, 4);
+    ctx.fillStyle='#2d3748'; ctx.font='11px sans-serif'; ctx.textAlign='left';
+    ctx.fillText(sr.label, lx+20, H-16);
+    lx += 20 + ctx.measureText(sr.label).width + 16;
+  });
 }
 
 // ============================================================
