@@ -469,17 +469,52 @@ const CT_ADVICE = [
 ];
 const CT_Q  = ['仕事サポート', '困時に助ける', '明るく接する', '仕事を教える', 'ルールを守る'];
 
+// ============================================================
+// localStorage の安全ラッパー
+//   スマホ（特にiOS Safari・プライベートモード・容量いっぱい）では
+//   localStorage の読み書きが例外を投げることがある。
+//   素で使うと、その例外で後続の処理（＝クルー人数の反映）が丸ごと飛んでしまうため
+//   必ずこのラッパー経由で読み書きする。
+// ============================================================
+function lsGet(key, fallback) {
+  try {
+    const v = localStorage.getItem(key);
+    if (v === null || v === undefined || v === '') return fallback;
+    return JSON.parse(v);
+  } catch (e) {
+    console.warn('localStorage読込失敗:', key, e);
+    try { localStorage.removeItem(key); } catch (_) {}
+    return fallback;
+  }
+}
+function lsSet(key, value) {
+  try {
+    localStorage.setItem(key, JSON.stringify(value));
+    return true;
+  } catch (e) {
+    // 容量オーバー時：一番大きいキャッシュを捨ててもう一度だけ試す
+    console.warn('localStorage保存失敗:', key, e);
+    try {
+      localStorage.removeItem('surveyCache');
+      localStorage.setItem(key, JSON.stringify(value));
+      return true;
+    } catch (e2) {
+      return false;   // 保存できなくても画面は動かす（ここで例外を外に出さない）
+    }
+  }
+}
+
 // クルー人数
 //   monthlyCrew … GASに保存された月別の確定人数 { '2026年8月': {counts:{}, mode:'自動'|'手動', at:''} }
 //   liveCrew    … 接客評価マスタの「今の」在籍クルー数（当月の計算に使用）
 //   crewCounts  … 表示中の月に適用される人数（getCrew が参照）
-let monthlyCrew = JSON.parse(localStorage.getItem('crewMonthly') || '{}');
-let liveCrew    = JSON.parse(localStorage.getItem('crewCounts') || 'null');
-let liveAll     = JSON.parse(localStorage.getItem('staffAll') || 'null');    // 在籍中の全従業員数（クルー＋契約社員＋正社員）
-let legacyCrew  = JSON.parse(localStorage.getItem('crewLegacy') || 'null');  // アンケートGASの旧保存値（最後の砦）
+let monthlyCrew = lsGet('crewMonthly', {}) || {};
+let liveCrew    = lsGet('crewCounts', null);
+let liveAll     = lsGet('staffAll', null);    // 在籍中の全従業員数（クルー＋契約社員＋正社員）
+let legacyCrew  = lsGet('crewLegacy', null);  // アンケートGASの旧保存値（最後の砦）
 let crewCounts  = liveCrew || legacyCrew || {};
 let crewAll     = liveAll || {};
-// 表示中の月の人数がどこから来たか：当月 / 確定済み / 手動修正 / 未確定 / 旧保存値 / 取得失敗
+// 表示中の月の人数がどこから来たか：当月 / 確定済み / 手動修正 / 未確定 / 旧保存値 / 直近参考値 / 取得失敗
 let crewSource  = { mode: '当月', at: '', month: '' };
 
 let allData = [];
@@ -501,17 +536,32 @@ function crewNum(store) { const v = getCrew(store); return v === null ? 0 : v; }
 // 回答率（分母0のときは0%）
 function calcRate(answers, crew) { return crew > 0 ? answers / crew * 100 : 0; }
 
+// スマホ回線はGASのコールドスタートと合わせて遅くなりやすいので待ち時間を長めにする
+const IS_MOBILE = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+function tmo(ms) { return IS_MOBILE ? Math.round(ms * 2) : ms; }
+function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+
 // タイムアウト付きJSON取得（GASが無応答でも画面が固まらないようにする）
 async function fetchJson(url, timeoutMs) {
   const ctrl = new AbortController();
-  const timer = setTimeout(() => ctrl.abort(), timeoutMs || 30000);
+  const timer = setTimeout(() => ctrl.abort(), tmo(timeoutMs || 30000));
   try {
-    const res = await fetch(url, { redirect: 'follow', signal: ctrl.signal });
+    const res = await fetch(url, { redirect: 'follow', signal: ctrl.signal, cache: 'no-store' });
     if (!res.ok) throw new Error('HTTP ' + res.status);
     return await res.json();
   } finally {
     clearTimeout(timer);
   }
+}
+
+// 失敗したら少し待って数回やり直す（スマホの電波ゆらぎ・GASのコールドスタート対策）
+async function fetchJsonRetry(url, timeoutMs, tries) {
+  let last;
+  for (let i = 0; i < (tries || 3); i++) {
+    try { return await fetchJson(url, timeoutMs); }
+    catch (e) { last = e; if (i < (tries || 3) - 1) await sleep(1200 * (i + 1)); }
+  }
+  throw last;
 }
 
 // 当月ラベル（例：2026年8月）
@@ -527,6 +577,22 @@ function currentMonthLabel() {
 //   ③ 過去月で確定済み → 保存された月末時点の確定値（変わらない）
 //   ④ 過去月で未確定   → 現在値で仮計算し「未確定」と表示（手動で確定できる）
 // ============================================================
+// 月ラベル（2026年8月）を比較用の数値（202608）に変換
+function monthKey(label) {
+  const m = /^(\d+)年(\d+)月$/.exec(label || '');
+  return m ? Number(m[1]) * 100 + Number(m[2]) : 0;
+}
+// monthlyCrew の中から、指定月にいちばん近い（できれば過去の）記録を探す
+function nearestCrewRecord(month) {
+  const target = monthKey(month);
+  const keys = Object.keys(monthlyCrew).filter(k => monthlyCrew[k] && monthlyCrew[k].counts
+                                                  && Object.keys(monthlyCrew[k].counts).length);
+  if (!keys.length) return null;
+  keys.sort((a, b) => Math.abs(monthKey(a) - target) - Math.abs(monthKey(b) - target)
+                   || monthKey(b) - monthKey(a));
+  return { month: keys[0], rec: monthlyCrew[keys[0]] };
+}
+
 function countsForMonth(month) {
   const rec = monthlyCrew[month];
   const isCurrent = (month === currentMonthLabel());
@@ -536,6 +602,13 @@ function countsForMonth(month) {
   if (rec)                        return { counts: rec.counts, all: recAll || {},            mode: '確定済み', at: rec.at || '' };
   if (liveCrew)                   return { counts: liveCrew,   all: liveAll || {},           mode: '未確定',  at: '' };
   if (legacyCrew)                 return { counts: legacyCrew, all: liveAll || {},           mode: '旧保存値', at: '' };
+  // 在籍マスタが取れなくても、別の月の確定値があればそれを流用する（人数不明で真っ白にしない）
+  const near = nearestCrewRecord(month);
+  if (near) return {
+    counts: near.rec.counts,
+    all: (near.rec.all && Object.keys(near.rec.all).length) ? near.rec.all : {},
+    mode: '直近参考値', at: near.month
+  };
   return { counts: {}, all: {}, mode: '取得失敗', at: '' };
 }
 
@@ -571,19 +644,24 @@ function denomFor(store, answers, counts, allCounts) {
 //   条件：status=在籍中 かつ type=Crew（正社員 FullTimeEmployee・契約社員 ContractEmployee は除外）
 // ============================================================
 async function fetchCrewFromMaster() {
-  try {
-    return await fetchCrewFromMasterOnce();
-  } catch (e) {
-    console.warn('在籍マスタ取得を再試行します:', e);
-    return await fetchCrewFromMasterOnce();   // GASのコールドスタート等で1回目が落ちることがある
+  let last;
+  // GASのコールドスタート・スマホの電波ゆらぎで1回目が落ちることがあるので3回まで試す
+  for (let i = 0; i < 3; i++) {
+    try { return await fetchCrewFromMasterOnce(); }
+    catch (e) {
+      last = e;
+      console.warn('在籍マスタ取得に失敗（' + (i + 1) + '回目）:', e);
+      if (i < 2) await sleep(1500 * (i + 1));
+    }
   }
+  throw last;
 }
 
 async function fetchCrewFromMasterOnce() {
   const ctrl = new AbortController();
-  const timer = setTimeout(() => ctrl.abort(), 30000);
+  const timer = setTimeout(() => ctrl.abort(), tmo(30000));
   try {
-    const res = await fetch(EVAL_GAS_URL + '?action=getEmployees', { redirect: 'follow', signal: ctrl.signal });
+    const res = await fetch(EVAL_GAS_URL + '?action=getEmployees', { redirect: 'follow', signal: ctrl.signal, cache: 'no-store' });
     if (!res.ok) throw new Error('HTTP ' + res.status);
     const d = await res.json();
     if (!d.ok || !Array.isArray(d.employees)) throw new Error(d.error || 'データ形式エラー');
@@ -647,6 +725,7 @@ function openCrewModal() {
     '手動修正': `<b>${month}</b> は<b>手動で修正済み</b>です（${crewSource.at}／合計 <b>${total}名</b>）。自動更新の対象外になります。`,
     '未確定':  `⚠️ <b>${month}</b> の確定人数が未保存のため、<b>現在の在籍数（合計 ${total}名）で仮計算</b>しています。正しい人数を入れて「確定保存」してください。`,
     '旧保存値': `⚠️ 在籍データを取得できないため、<b>以前に保存した人数</b>（合計 <b>${total}名</b>）を表示しています。「🔄 最新を取得」をお試しください。`,
+    '直近参考値': `⚠️ 在籍データを取得できないため、<b>${crewSource.at}</b> の確定人数（合計 <b>${total}名</b>）を流用しています。「🔄 最新を取得」をお試しください。`,
     '取得失敗': `⚠️ クルー人数を取得できませんでした。「🔄 最新を取得」を押すか、この画面で人数を入力して「確定」してください。`
   }[crewSource.mode] || '';
   document.getElementById('crewModalSub').innerHTML =
@@ -675,7 +754,7 @@ async function saveCrewCounts() {
     const ok = await saveMonthlyCrew(month, counts, '手動', crewAll);
     if (!ok) throw new Error('GAS保存エラー');
     monthlyCrew[month] = { counts, all: crewAll || {}, mode: '手動', at: new Date().toLocaleString('ja-JP') };
-    localStorage.setItem('crewMonthly', JSON.stringify(monthlyCrew));
+    lsSet('crewMonthly', monthlyCrew);
     closeCrewModal();
     renderDashboard();
   } catch (e) {
@@ -693,7 +772,7 @@ async function resetCrewMonth() {
     if (!d.ok) throw new Error(d.error || '不明なエラー');
     if (d.counts) monthlyCrew[month] = { counts: d.counts, all: d.all || {}, mode: '自動', at: new Date().toLocaleString('ja-JP') };
     else delete monthlyCrew[month];
-    localStorage.setItem('crewMonthly', JSON.stringify(monthlyCrew));
+    lsSet('crewMonthly', monthlyCrew);
     closeCrewModal();
     renderDashboard();
   } catch (e) {
@@ -718,8 +797,8 @@ async function refreshCrewCounts() {
   try {
     const m = await fetchCrewFromMaster();
     liveCrew = m.crew; liveAll = m.all;
-    localStorage.setItem('crewCounts', JSON.stringify(liveCrew));
-    localStorage.setItem('staffAll', JSON.stringify(liveAll));
+    lsSet('crewCounts', liveCrew);
+    lsSet('staffAll', liveAll);
     await syncCurrentMonth();
     renderDashboard();
     openCrewModal();
@@ -727,6 +806,33 @@ async function refreshCrewCounts() {
     alert('在籍データを取得できませんでした（' + e.message + '）');
   }
   if (btn) { btn.disabled = false; btn.textContent = '🔄 最新を取得'; }
+}
+
+/* 画面上の警告からの再取得（人数まわりだけを取り直す。アンケート本体は触らない） */
+async function retryCrew(btn) {
+  if (btn) { btn.disabled = true; btn.textContent = '取得中...'; }
+  const [masterRes, monthlyRes] = await Promise.allSettled([
+    fetchCrewFromMaster(),
+    fetchJsonRetry(GAS_URL + '?action=getCrewMonthly', 30000, 3)
+  ]);
+  if (monthlyRes.status === 'fulfilled' && monthlyRes.value && monthlyRes.value.months) {
+    monthlyCrew = monthlyRes.value.months;
+    lsSet('crewMonthly', monthlyCrew);
+  }
+  if (masterRes.status === 'fulfilled') {
+    liveCrew = masterRes.value.crew;
+    liveAll  = masterRes.value.all;
+    lsSet('crewCounts', liveCrew);
+    lsSet('staffAll', liveAll);
+    syncCurrentMonth();
+    renderDashboard();
+    return;
+  }
+  renderDashboard();
+  if (crewSource.mode === '取得失敗') {
+    alert('まだ取得できません。電波の良い場所でもう一度お試しいただくか、'
+        + '「👥 クルー人数」から手動で入力して「確定」してください。');
+  }
 }
 
 /* 当月ぶんの人数をGASに保存しておく（月が変わればそのまま確定値になる）。
@@ -741,7 +847,7 @@ async function syncCurrentMonth() {
     // GAS保存が成功した時だけ記録する（未対応GASに対して架空の確定値を作らない）
     if (await saveMonthlyCrew(month, liveCrew, '自動', liveAll)) {
       monthlyCrew[month] = { counts: liveCrew, all: liveAll || {}, mode: '自動', at: new Date().toLocaleString('ja-JP') };
-      localStorage.setItem('crewMonthly', JSON.stringify(monthlyCrew));
+      lsSet('crewMonthly', monthlyCrew);
     }
   } catch (e) { console.warn('当月人数の保存失敗:', e); }
 }
@@ -753,7 +859,7 @@ async function loadData() {
   const box = document.getElementById('loadingMsg');
 
   // ① 前回の内容をすぐ表示（GASは応答が遅いため、待たせずに見せる）
-  const cache = JSON.parse(localStorage.getItem('surveyCache') || 'null');
+  const cache = lsGet('surveyCache', null);
   if (cache && Array.isArray(cache.data) && cache.data.length) {
     allData = cache.data;
     renderDashboard();
@@ -766,55 +872,81 @@ async function loadData() {
   }
 
   // ② 裏で最新を取得
+  //    4本すべて独立して処理する。1本が失敗しても他の反映は止めない。
+  //    （以前は途中の例外でクルー人数の反映ごと飛んでいた＝スマホで「人数を取得できませんでした」の原因）
+  const [surveyRes, monthlyRes, masterRes, legacyRes] = await Promise.allSettled([
+    fetchJsonRetry(GAS_URL + '?action=get', 60000, 2),
+    fetchJsonRetry(GAS_URL + '?action=getCrewMonthly', 30000, 3),
+    fetchCrewFromMaster(),  // ★接客評価システムの在籍マスタ（在籍中のクルーのみ）
+    fetchJsonRetry(GAS_URL + '?action=getCrewCounts', 30000, 2)   // 旧保存値（マスタが取れない時の保険）
+  ]);
+
+  // --- 月別の確定人数（過去月はここに保存された値で固定される）※小さいので先に保存 ---
   try {
-    const [surveyRes, monthlyRes, masterRes, legacyRes] = await Promise.allSettled([
-      fetchJson(GAS_URL + '?action=get', 60000),
-      fetchJson(GAS_URL + '?action=getCrewMonthly', 30000),
-      fetchCrewFromMaster(),  // ★接客評価システムの在籍マスタ（在籍中のクルーのみ）
-      fetchJson(GAS_URL + '?action=getCrewCounts', 30000)   // 旧保存値（マスタが取れない時の保険）
-    ]);
-
-    if (surveyRes.status === 'fulfilled') {
-      allData = surveyRes.value.data || [];
-      localStorage.setItem('surveyCache', JSON.stringify({ data: allData, at: Date.now() }));
-    } else if (!allData.length) {
-      throw surveyRes.reason || new Error('アンケートデータ取得失敗');
-    }
-
-    // 月別の確定人数（過去月はここに保存された値で固定される）
-    if (monthlyRes.status === 'fulfilled' && monthlyRes.value.months) {
+    if (monthlyRes.status === 'fulfilled' && monthlyRes.value && monthlyRes.value.months) {
       monthlyCrew = monthlyRes.value.months;
-      localStorage.setItem('crewMonthly', JSON.stringify(monthlyCrew));
+      lsSet('crewMonthly', monthlyCrew);
     } else if (monthlyRes.status !== 'fulfilled') {
       console.warn('月別人数の取得に失敗。前回値を使用:', monthlyRes.reason);
     }
+  } catch (e) { console.warn('月別人数の反映に失敗:', e); }
 
-    // 在籍マスタの最新値（当月の計算に使用）
+  // --- 在籍マスタの最新値（当月の計算に使用） ---
+  try {
     if (masterRes.status === 'fulfilled') {
       liveCrew = masterRes.value.crew;
       liveAll  = masterRes.value.all;
-      localStorage.setItem('crewCounts', JSON.stringify(liveCrew));
-      localStorage.setItem('staffAll', JSON.stringify(liveAll));
+      lsSet('crewCounts', liveCrew);
+      lsSet('staffAll', liveAll);
       syncCurrentMonth();   // ★保存の完了は待たない（画面を止めないため）
     } else {
       console.warn('在籍マスタ取得失敗のため前回値を使用:', masterRes.reason);
     }
+  } catch (e) { console.warn('在籍マスタの反映に失敗:', e); }
 
-    // 旧保存値（アンケートGASのCrewCountsシート）。在籍マスタが取れない時だけ使う
-    if (legacyRes.status === 'fulfilled' && legacyRes.value.counts && Object.keys(legacyRes.value.counts).length) {
+  // --- 旧保存値（アンケートGASのCrewCountsシート）。在籍マスタが取れない時だけ使う ---
+  try {
+    if (legacyRes.status === 'fulfilled' && legacyRes.value && legacyRes.value.counts
+        && Object.keys(legacyRes.value.counts).length) {
       legacyCrew = {};
       Object.keys(legacyRes.value.counts).forEach(k => { legacyCrew[k] = parseInt(legacyRes.value.counts[k]) || 0; });
-      localStorage.setItem('crewLegacy', JSON.stringify(legacyCrew));
+      lsSet('crewLegacy', legacyCrew);
     }
-  } catch(e) {
-    console.warn('データ取得に失敗:', e);
-    if (!allData.length) allData = generateSampleData();
-  } finally {
-    box.style.display = 'none';
-    box.innerHTML = '<span class="spinner"></span>データを読み込んでいます...';
-    renderDashboard();
+  } catch (e) { console.warn('旧保存値の反映に失敗:', e); }
+
+  // --- アンケート本体（保存はいちばん大きいので最後。容量オーバーしても人数は守られる） ---
+  let surveyFailed = false;
+  try {
+    if (surveyRes.status === 'fulfilled') {
+      allData = (surveyRes.value && surveyRes.value.data) || [];
+      lsSet('surveyCache', { data: allData, at: Date.now() });
+    } else {
+      surveyFailed = !allData.length;
+      console.warn('アンケートデータ取得に失敗:', surveyRes.reason);
+    }
+  } catch (e) { console.warn('アンケートデータの反映に失敗:', e); }
+
+  box.style.display = 'none';
+  box.innerHTML = '<span class="spinner"></span>データを読み込んでいます...';
+  // 取得できなかった時に架空のサンプルデータを出さない（本物と誤認するため）
+  if (surveyFailed) {
+    document.getElementById('dashContent').style.display = 'none';
+    box.style.display = 'block';
+    box.innerHTML = '⚠️ アンケートデータを取得できませんでした。'
+      + '<button class="icon-btn" style="margin-left:8px" onclick="loadData()">🔄 もう一度</button>';
+    return;
   }
+  renderDashboard();
 }
+
+// スマホでは読み込み中に画面を消す・他アプリに切り替えると通信が中断される。
+// 戻ってきた時に人数が取れていなければ静かに取り直す。
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState !== 'visible') return;
+  if (document.getElementById('mainScreen').style.display === 'none') return;
+  if (liveCrew || legacyCrew || Object.keys(monthlyCrew).length) return;
+  loadData();
+});
 
 // ============================================================
 // 項目別フィードバック（本人に「どこで減点されたか」を伝えるため）
@@ -983,7 +1115,7 @@ function renderDashboard() {
   const totalCrewAll = STORE_LIST.reduce((s,st) => s + (denomFor(st, ansPerStore[st] || 0).n || 0), 0);
   const srcLabel = {
     '当月':'当月・自動反映', '確定済み':'確定値', '手動修正':'手動修正済み',
-    '未確定':'⚠️未確定', '旧保存値':'⚠️旧保存値', '取得失敗':'⚠️人数不明'
+    '未確定':'⚠️未確定', '旧保存値':'⚠️旧保存値', '直近参考値':'⚠️直近参考値', '取得失敗':'⚠️人数不明'
   }[crewSource.mode] || '';
   document.getElementById('headerSub').textContent =
     `${month} ｜ ${md.length}件の回答 ｜ 対象人数 ${totalCrewAll}名（${srcLabel}）`;
@@ -993,11 +1125,15 @@ function renderDashboard() {
   if (crewSource.mode === '取得失敗') {
     warn.innerHTML = '<div class="card" style="background:#fff5f5;border:2px solid #fc8181;color:#9b2335;font-size:13px">'
       + '⚠️ クルー人数を取得できませんでした。回答率は計算できません（人数は「－」表示）。<br>'
-      + '電波の良い場所で「🔄 更新」を押すか、「👥 クルー人数」から手動で入力してください。</div>';
-  } else if (crewSource.mode === '旧保存値') {
+      + '電波の良い場所で下のボタンを押すか、「👥 クルー人数」から手動で入力してください。<br>'
+      + '<button class="icon-btn" style="margin-top:8px" onclick="retryCrew(this)">🔄 クルー人数を再取得</button></div>';
+  } else if (crewSource.mode === '旧保存値' || crewSource.mode === '直近参考値') {
+    const src = crewSource.mode === '直近参考値'
+      ? `<b>${crewSource.at}</b> の確定人数を流用`
+      : '<b>以前に保存した人数</b>を使用';
     warn.innerHTML = '<div class="card" style="background:#fffaf0;border:2px solid #f6ad55;color:#9c4221;font-size:13px">'
-      + '⚠️ 接客評価システムの在籍データを取得できないため、<b>以前に保存した人数</b>で計算しています。'
-      + '「🔄 更新」で再取得できます。</div>';
+      + '⚠️ 接客評価システムの在籍データを取得できないため、' + src + 'して計算しています。<br>'
+      + '<button class="icon-btn" style="margin-top:8px" onclick="retryCrew(this)">🔄 クルー人数を再取得</button></div>';
   } else {
     warn.innerHTML = '';
   }
