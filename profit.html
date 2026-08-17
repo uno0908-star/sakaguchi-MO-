@@ -141,9 +141,23 @@ tbody td:nth-child(2){text-align:center}
 .cause-comp{background:#e3f2fd;color:#1565c0}
 .cause-waste{background:#fff3e0;color:#e65100}
 .cause-ok{background:#e8f5e9;color:#2e7d32}
+/* ===== 前週対比 ===== */
+.mover-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.mover-col h4{font-size:12px;font-weight:700;margin-bottom:8px;padding:5px 8px;border-radius:6px}
+.mover-col.down h4{background:#ffebee;color:#c62828}
+.mover-col.up   h4{background:#e8f5e9;color:#2e7d32}
+.mover-item{display:flex;justify-content:space-between;align-items:center;gap:6px;background:#f8f9fb;border-radius:8px;padding:8px 10px;margin-bottom:6px;cursor:pointer}
+.mover-item:hover{box-shadow:0 2px 8px rgba(0,0,0,.12)}
+.mover-name{font-size:12px;font-weight:700;line-height:1.3}
+.mover-sub{font-size:10px;color:#888;margin-top:2px}
+.mover-val{font-size:15px;font-weight:700;white-space:nowrap}
+.trend-chart{width:100%;height:auto}
+.trend-note{font-size:11px;color:#777;line-height:1.6;margin-top:10px}
+.trend-warn{background:#fff3e0;color:#e65100;border-radius:8px;padding:10px 12px;font-size:12px;font-weight:600;margin-bottom:14px}
 @media(max-width:640px){
   .pa-grid3{grid-template-columns:1fr}
   .cat-impact-grid{grid-template-columns:repeat(2,1fr)}
+  .mover-grid{grid-template-columns:1fr}
 }
 @media(max-width:480px){
   .top-bar h1{font-size:14px}
@@ -159,6 +173,7 @@ tbody td:nth-child(2){text-align:center}
   <div class="tab-row">
     <button class="tab-btn active" onclick="switchTab('profit')">📊 店利益着地</button>
     <button class="tab-btn" onclick="switchTab('waste')">♻️ 廃棄検証</button>
+    <button class="tab-btn" onclick="switchTab('trend')">📈 前週対比</button>
   </div>
   <div class="sc-row">
     <span class="sc-label">担当SC：</span>
@@ -252,6 +267,35 @@ tbody td:nth-child(2){text-align:center}
   </div>
 </div>
 
+<!-- =========== TAB 3: 前週対比 =========== -->
+<div class="tab-panel" id="panel-trend">
+  <div id="trendWarn"></div>
+  <div class="card-grid" id="trendCards"></div>
+  <div class="section">
+    <div class="section-title">📉 前週から大きく動いた店舗　<span style="font-size:11px;font-weight:400;color:#888" id="trendRangeLabel"></span></div>
+    <div class="mover-grid" id="trendMovers"></div>
+  </div>
+  <div class="section">
+    <div class="section-title">📈 週次推移（着地 / 予算）</div>
+    <div id="trendChart"></div>
+  </div>
+  <div class="section">
+    <div class="section-title">全店舗 前週対比一覧　<span style="font-size:11px;font-weight:400;color:#888">着地の下がり幅が大きい順</span></div>
+    <div class="table-wrap"><table><thead>
+      <tr>
+        <th>店名</th><th>担当SC</th>
+        <th>前週<br>着地(千円)</th>
+        <th>今週<br>着地(千円)</th>
+        <th style="background:#1b5e20">着地<br>前週差</th>
+        <th>平均日販<br>前週差</th>
+        <th>総荒利実績<br>前週差(千円)</th>
+        <th>廃棄超過<br>前週差<br><span style="font-size:9px;font-weight:400;opacity:.8">＋は悪化</span></th>
+      </tr>
+    </thead><tbody id="trendBody"></tbody></table></div>
+    <div class="trend-note" id="trendNote"></div>
+  </div>
+</div>
+
 </div><!-- /content -->
 
 <!-- ===== POPUP ===== -->
@@ -279,6 +323,233 @@ const SC_MAP = {
 };
 
 const SC_LIST = [...new Set(Object.values(SC_MAP))];
+
+// 現在表示中のデータの月度・時点（update_profit_final.py が日付置換で自動更新）
+const CUR_LABEL = {month:'26年8月度', date:'8/16時点'};
+
+// 週次スナップショット（古い→新しい）。更新スクリプトが毎週1件追記する
+const HISTORY = [
+  {month:'26年6月度', date:'6/7時点', stores:{
+    '吹田警察署前':{landing:196,budget:406,nisshu:474.264,gpa:4450,wact:27.164,wbench:19.579},
+    '吹田朝日町':{landing:1748,budget:1510,nisshu:672.086,gpa:6899,wact:15.204,wbench:28.925},
+    '池田市役所前':{landing:754,budget:784,nisshu:394.498,gpa:3925,wact:12.408,wbench:15.85},
+    '吹田青山台三丁目':{landing:463,budget:554,nisshu:642.652,gpa:6208,wact:27.877,wbench:26.002},
+    '五月ケ丘東':{landing:1010,budget:953,nisshu:364.701,gpa:3190,wact:5.157,wbench:9.633},
+    '江坂東':{landing:815,budget:711,nisshu:652.151,gpa:6303,wact:18.514,wbench:27.692},
+    '吹田豊津中学校前':{landing:1332,budget:1233,nisshu:604.996,gpa:5851,wact:25.344,wbench:25.79},
+    '豊中利倉東一丁目':{landing:957,budget:831,nisshu:664.818,gpa:6226,wact:26.831,wbench:24.599},
+    '豊中服部元町一丁目':{landing:1180,budget:1292,nisshu:624.665,gpa:5848,wact:19.393,wbench:26.663},
+    '東淀川大道南':{landing:654,budget:610,nisshu:565.944,gpa:5137,wact:8.105,wbench:20.746},
+    '大道南一丁目':{landing:116,budget:403,nisshu:497.958,gpa:4374,wact:14.365,wbench:16.478},
+    '豊里六丁目':{landing:794,budget:731,nisshu:444.854,gpa:3758,wact:5.777,wbench:11.242},
+    '東淀川豊里五丁目':{landing:832,budget:829,nisshu:682.575,gpa:6184,wact:20.666,wbench:25.821},
+    '豊中原田南一丁目':{landing:888,budget:753,nisshu:516.612,gpa:4849,wact:19.904,wbench:20.425},
+    '南金田二丁目':{landing:1256,budget:1193,nisshu:780.518,gpa:7298,wact:29.823,wbench:31.379},
+    '豊中服部西町三丁目':{landing:758,budget:737,nisshu:403.396,gpa:3649,wact:9.716,wbench:13.688},
+    '箕面白島二丁目':{landing:696,budget:479,nisshu:591.153,gpa:5366,wact:25.386,wbench:25.195},
+    '吹田垂水三丁目':{landing:540,budget:438,nisshu:355.963,gpa:3330,wact:6.295,wbench:12.814},
+    '新御堂筋上新田':{landing:1090,budget:1098,nisshu:754.343,gpa:7056,wact:23.332,wbench:28.777},
+    '江坂駅南口':{landing:1158,budget:1817,nisshu:1071.7,gpa:10031,wact:38.682,wbench:43.425},
+  }},
+  {month:'26年6月度', date:'6/14時点', stores:{
+    '吹田警察署前':{landing:160,budget:406,nisshu:457.928,gpa:4297,wact:28.523,wbench:18.848},
+    '吹田朝日町':{landing:1662,budget:1510,nisshu:665.041,gpa:6827,wact:17.322,wbench:29.069},
+    '池田市役所前':{landing:770,budget:781,nisshu:388.655,gpa:3868,wact:12.651,wbench:15.675},
+    '吹田青山台三丁目':{landing:379,budget:557,nisshu:635.438,gpa:6138,wact:31.348,wbench:26.301},
+    '五月ケ丘東':{landing:981,budget:953,nisshu:360.585,gpa:3154,wact:4.719,wbench:9.152},
+    '江坂東':{landing:835,budget:710,nisshu:655.424,gpa:6335,wact:19.445,wbench:27.672},
+    '吹田豊津中学校前':{landing:1193,budget:1233,nisshu:573.926,gpa:5551,wact:27.652,wbench:25.309},
+    '豊中利倉東一丁目':{landing:885,budget:831,nisshu:649.117,gpa:6080,wact:25.912,wbench:24.274},
+    '豊中服部元町一丁目':{landing:1136,budget:1277,nisshu:616.247,gpa:5770,wact:22.169,wbench:26.259},
+    '東淀川大道南':{landing:599,budget:607,nisshu:541.702,gpa:4918,wact:9.275,wbench:20.011},
+    '大道南一丁目':{landing:145,budget:403,nisshu:483.862,gpa:4250,wact:15.939,wbench:15.553},
+    '豊里六丁目':{landing:728,budget:731,nisshu:436.115,gpa:3684,wact:6.342,wbench:10.974},
+    '東淀川豊里五丁目':{landing:789,budget:814,nisshu:675.244,gpa:6118,wact:20.533,wbench:25.083},
+    '豊中原田南一丁目':{landing:815,budget:753,nisshu:517.187,gpa:4855,wact:19.832,wbench:20.003},
+    '南金田二丁目':{landing:1271,budget:1193,nisshu:789.433,gpa:7382,wact:29.861,wbench:31.432},
+    '豊中服部西町三丁目':{landing:805,budget:737,nisshu:405.6,gpa:3670,wact:8.935,wbench:13.502},
+    '箕面白島二丁目':{landing:618,budget:469,nisshu:588.851,gpa:5346,wact:29.806,wbench:24.94},
+    '吹田垂水三丁目':{landing:504,budget:423,nisshu:349.551,gpa:3271,wact:7.124,wbench:12.381},
+    '新御堂筋上新田':{landing:1078,budget:1098,nisshu:741.035,gpa:6932,wact:24.26,wbench:29.737},
+    '江坂駅南口':{landing:1231,budget:1817,nisshu:1093.304,gpa:10233,wact:42.159,wbench:43.463},
+  }},
+  {month:'26年6月度', date:'6/21時点', stores:{
+    '吹田警察署前':{landing:144,budget:406,nisshu:458.559,gpa:4303,wact:27.895,wbench:18.659},
+    '吹田朝日町':{landing:1680,budget:1510,nisshu:666.834,gpa:6846,wact:16.654,wbench:29.339},
+    '池田市役所前':{landing:738,budget:781,nisshu:386.254,gpa:3844,wact:13.137,wbench:15.512},
+    '吹田青山台三丁目':{landing:359,budget:557,nisshu:630.192,gpa:6088,wact:33.309,wbench:25.912},
+    '五月ケ丘東':{landing:989,budget:953,nisshu:361.316,gpa:3161,wact:5.54,wbench:9.026},
+    '江坂東':{landing:870,budget:710,nisshu:662.769,gpa:6406,wact:18.731,wbench:27.59},
+    '吹田豊津中学校前':{landing:1140,budget:1233,nisshu:567.661,gpa:5490,wact:26.751,wbench:24.969},
+    '豊中利倉東一丁目':{landing:872,budget:831,nisshu:639.396,gpa:5989,wact:26.379,wbench:23.937},
+    '豊中服部元町一丁目':{landing:1132,budget:1277,nisshu:611.355,gpa:5724,wact:24.395,wbench:25.974},
+    '東淀川大道南':{landing:610,budget:607,nisshu:538.705,gpa:4890,wact:9.155,wbench:20.138},
+    '大道南一丁目':{landing:183,budget:403,nisshu:482.469,gpa:4238,wact:13.003,wbench:15.632},
+    '豊里六丁目':{landing:710,budget:731,nisshu:431.934,gpa:3649,wact:6.489,wbench:10.991},
+    '東淀川豊里五丁目':{landing:818,budget:814,nisshu:676.975,gpa:6133,wact:19.086,wbench:25.256},
+    '豊中原田南一丁目':{landing:843,budget:753,nisshu:511.438,gpa:4801,wact:20.901,wbench:19.711},
+    '南金田二丁目':{landing:1237,budget:1193,nisshu:790.805,gpa:7395,wact:29.109,wbench:31.297},
+    '豊中服部西町三丁目':{landing:791,budget:737,nisshu:404.517,gpa:3660,wact:9.376,wbench:13.533},
+    '箕面白島二丁目':{landing:621,budget:469,nisshu:590.529,gpa:5361,wact:29.953,wbench:24.97},
+    '吹田垂水三丁目':{landing:512,budget:423,nisshu:345.053,gpa:3229,wact:6.644,wbench:12.398},
+    '新御堂筋上新田':{landing:1045,budget:1098,nisshu:736.675,gpa:6891,wact:23.555,wbench:29.788},
+    '江坂駅南口':{landing:1289,budget:1817,nisshu:1096.648,gpa:10265,wact:41.356,wbench:43.382},
+  }},
+  {month:'26年6月度', date:'6/28時点', stores:{
+    '吹田警察署前':{landing:226,budget:406,nisshu:466.303,gpa:4376,wact:25.138,wbench:18.765},
+    '吹田朝日町':{landing:1639,budget:1510,nisshu:659.639,gpa:6772,wact:16.78,wbench:28.911},
+    '池田市役所前':{landing:726,budget:781,nisshu:384.644,gpa:3828,wact:13.235,wbench:15.538},
+    '吹田青山台三丁目':{landing:353,budget:557,nisshu:623.146,gpa:6020,wact:31.833,wbench:25.466},
+    '五月ケ丘東':{landing:975,budget:953,nisshu:364.078,gpa:3185,wact:5.804,wbench:8.895},
+    '江坂東':{landing:874,budget:710,nisshu:662.244,gpa:6401,wact:17.57,wbench:27.502},
+    '吹田豊津中学校前':{landing:1162,budget:1233,nisshu:565.296,gpa:5468,wact:25.178,wbench:24.843},
+    '豊中利倉東一丁目':{landing:812,budget:831,nisshu:628.625,gpa:5888,wact:27.422,wbench:23.406},
+    '豊中服部元町一丁目':{landing:1086,budget:1277,nisshu:610.184,gpa:5713,wact:25.427,wbench:25.772},
+    '東淀川大道南':{landing:632,budget:607,nisshu:544.555,gpa:4943,wact:8.357,wbench:20.202},
+    '大道南一丁目':{landing:295,budget:403,nisshu:486.535,gpa:4274,wact:10.909,wbench:15.476},
+    '豊里六丁目':{landing:740,budget:731,nisshu:433.612,gpa:3663,wact:5.92,wbench:10.954},
+    '東淀川豊里五丁目':{landing:812,budget:814,nisshu:678.274,gpa:6145,wact:18.249,wbench:25.116},
+    '豊中原田南一丁目':{landing:817,budget:753,nisshu:503.307,gpa:4725,wact:20.154,wbench:19.56},
+    '南金田二丁目':{landing:1318,budget:1193,nisshu:797.576,gpa:7458,wact:27.473,wbench:31.425},
+    '豊中服部西町三丁目':{landing:749,budget:737,nisshu:399.971,gpa:3619,wact:10.081,wbench:13.236},
+    '箕面白島二丁目':{landing:632,budget:469,nisshu:588.548,gpa:5343,wact:28.019,wbench:24.769},
+    '吹田垂水三丁目':{landing:496,budget:423,nisshu:344.853,gpa:3227,wact:6.409,wbench:12.377},
+    '新御堂筋上新田':{landing:1104,budget:1098,nisshu:737.555,gpa:6899,wact:20.881,wbench:29.752},
+    '江坂駅南口':{landing:1284,budget:1817,nisshu:1101.919,gpa:10314,wact:37.813,wbench:43.261},
+  }},
+  {month:'26年7月度', date:'7/5時点', stores:{
+    '吹田警察署前':{landing:501,budget:580,nisshu:513.981,gpa:4823,wact:15.48,wbench:20.45},
+    '吹田朝日町':{landing:1875,budget:1593,nisshu:697.7,gpa:7618,wact:13.021,wbench:29.438},
+    '池田市役所前':{landing:728,budget:858,nisshu:394.76,gpa:4059,wact:16.549,wbench:15.61},
+    '吹田青山台三丁目':{landing:705,budget:759,nisshu:615.262,gpa:6332,wact:22.981,wbench:24.924},
+    '五月ケ丘東':{landing:1092,budget:1069,nisshu:354.934,gpa:3097,wact:6.483,wbench:9.12},
+    '江坂東':{landing:746,budget:865,nisshu:662.334,gpa:6613,wact:21.743,wbench:27.171},
+    '吹田豊津中学校前':{landing:1240,budget:1426,nisshu:601.609,gpa:6197,wact:20.543,wbench:25.859},
+    '豊中利倉東一丁目':{landing:870,budget:878,nisshu:655.343,gpa:6137,wact:17.464,wbench:23.346},
+    '豊中服部元町一丁目':{landing:1038,budget:1303,nisshu:635.438,gpa:6148,wact:34.263,wbench:25.992},
+    '東淀川大道南':{landing:561,budget:627,nisshu:552.277,gpa:5181,wact:9.519,wbench:20.446},
+    '大道南一丁目':{landing:464,budget:498,nisshu:484.487,gpa:4395,wact:6.982,wbench:14.698},
+    '豊里六丁目':{landing:772,budget:770,nisshu:444.753,gpa:3883,wact:7.479,wbench:10.719},
+    '東淀川豊里五丁目':{landing:1256,budget:1094,nisshu:725.078,gpa:6786,wact:7.402,wbench:26.369},
+    '豊中原田南一丁目':{landing:848,budget:896,nisshu:525.554,gpa:5095,wact:18.439,wbench:19.595},
+    '南金田二丁目':{landing:1890,budget:1407,nisshu:851.66,gpa:8493,wact:15.683,wbench:33.825},
+    '豊中服部西町三丁目':{landing:872,budget:691,nisshu:411.789,gpa:3850,wact:5.367,wbench:13.338},
+    '箕面白島二丁目':{landing:706,budget:570,nisshu:573.484,gpa:5376,wact:24.715,wbench:24.105},
+    '吹田垂水三丁目':{landing:532,budget:491,nisshu:324.989,gpa:3141,wact:5.974,wbench:11.817},
+    '新御堂筋上新田':{landing:990,budget:1110,nisshu:724.685,gpa:7005,wact:32.041,wbench:28.85},
+    '江坂駅南口':{landing:1623,budget:2156,nisshu:1117.096,gpa:11147,wact:34.598,wbench:43.298},
+  }},
+  {month:'26年7月度', date:'7/13時点', stores:{
+    '吹田警察署前':{landing:423,budget:580,nisshu:484.782,gpa:4549,wact:21.118,wbench:18.634},
+    '吹田朝日町':{landing:1856,budget:1593,nisshu:663.146,gpa:7240,wact:13.642,wbench:27.899},
+    '池田市役所前':{landing:681,budget:858,nisshu:378.498,gpa:3892,wact:17.117,wbench:15.135},
+    '吹田青山台三丁目':{landing:645,budget:759,nisshu:636.139,gpa:6547,wact:27.221,wbench:26.11},
+    '五月ケ丘東':{landing:1041,budget:1069,nisshu:364.719,gpa:3183,wact:6.839,wbench:8.985},
+    '江坂東':{landing:779,budget:865,nisshu:636.193,gpa:6352,wact:21.088,wbench:25.894},
+    '吹田豊津中学校前':{landing:1265,budget:1426,nisshu:570.819,gpa:5880,wact:22.848,wbench:24.497},
+    '豊中利倉東一丁目':{landing:949,budget:878,nisshu:643.109,gpa:6023,wact:16.542,wbench:23.346},
+    '豊中服部元町一丁目':{landing:1239,budget:1303,nisshu:622.539,gpa:6023,wact:28.768,wbench:25.654},
+    '東淀川大道南':{landing:508,budget:627,nisshu:531.055,gpa:4982,wact:9.122,wbench:19.098},
+    '大道南一丁目':{landing:432,budget:498,nisshu:484.203,gpa:4392,wact:6.275,wbench:14.872},
+    '豊里六丁目':{landing:755,budget:770,nisshu:421.21,gpa:3677,wact:5.942,wbench:10.392},
+    '東淀川豊里五丁目':{landing:1101,budget:1094,nisshu:688.321,gpa:6442,wact:8.942,wbench:25.413},
+    '豊中原田南一丁目':{landing:822,budget:896,nisshu:498.967,gpa:4837,wact:19.044,wbench:19.079},
+    '南金田二丁目':{landing:1702,budget:1407,nisshu:830.211,gpa:8279,wact:25.954,wbench:32.792},
+    '豊中服部西町三丁目':{landing:835,budget:691,nisshu:415.973,gpa:3889,wact:6.774,wbench:14.571},
+    '箕面白島二丁目':{landing:808,budget:570,nisshu:592.834,gpa:5557,wact:20.969,wbench:24.555},
+    '吹田垂水三丁目':{landing:507,budget:491,nisshu:332.749,gpa:3216,wact:8.08,wbench:11.569},
+    '新御堂筋上新田':{landing:868,budget:1110,nisshu:714.695,gpa:6908,wact:24.463,wbench:28.328},
+    '江坂駅南口':{landing:1524,budget:2156,nisshu:1090.009,gpa:10877,wact:36.151,wbench:41.66},
+  }},
+  {month:'26年7月度', date:'7/19時点', stores:{
+    '吹田警察署前':{landing:420,budget:580,nisshu:491.827,gpa:4615,wact:21.814,wbench:18.862},
+    '吹田朝日町':{landing:1869,budget:1593,nisshu:664.71,gpa:7257,wact:13.368,wbench:28.117},
+    '池田市役所前':{landing:700,budget:858,nisshu:389.784,gpa:4008,wact:17.963,wbench:15.396},
+    '吹田青山台三丁目':{landing:638,budget:759,nisshu:639.047,gpa:6577,wact:30.669,wbench:26.203},
+    '五月ケ丘東':{landing:1060,budget:1069,nisshu:368.361,gpa:3215,wact:6.794,wbench:8.993},
+    '江坂東':{landing:784,budget:865,nisshu:641.659,gpa:6407,wact:20.097,wbench:26.189},
+    '吹田豊津中学校前':{landing:1340,budget:1426,nisshu:580.415,gpa:5979,wact:23.513,wbench:24.74},
+    '豊中利倉東一丁目':{landing:934,budget:878,nisshu:646.548,gpa:6055,wact:19.253,wbench:23.541},
+    '豊中服部元町一丁目':{landing:1265,budget:1303,nisshu:630.642,gpa:6102,wact:33.22,wbench:25.755},
+    '東淀川大道南':{landing:495,budget:627,nisshu:525.668,gpa:4931,wact:10.203,wbench:18.812},
+    '大道南一丁目':{landing:428,budget:498,nisshu:489.659,gpa:4442,wact:6.341,wbench:14.929},
+    '豊里六丁目':{landing:740,budget:770,nisshu:418.832,gpa:3656,wact:5.95,wbench:10.369},
+    '東淀川豊里五丁目':{landing:1050,budget:1094,nisshu:688.717,gpa:6446,wact:10.262,wbench:24.928},
+    '豊中原田南一丁目':{landing:954,budget:896,nisshu:516.999,gpa:5012,wact:17.792,wbench:19.633},
+    '南金田二丁目':{landing:1656,budget:1380,nisshu:831.755,gpa:8295,wact:29.815,wbench:32.687},
+    '豊中服部西町三丁目':{landing:818,budget:691,nisshu:426.868,gpa:3991,wact:8.006,wbench:14.895},
+    '箕面白島二丁目':{landing:781,budget:570,nisshu:592.333,gpa:5553,wact:22.994,wbench:24.411},
+    '吹田垂水三丁目':{landing:514,budget:491,nisshu:330.831,gpa:3198,wact:8.159,wbench:11.645},
+    '新御堂筋上新田':{landing:989,budget:1110,nisshu:724.896,gpa:7007,wact:25.414,wbench:28.5},
+    '江坂駅南口':{landing:1624,budget:2156,nisshu:1112.733,gpa:11104,wact:37.88,wbench:42.282},
+  }},
+  {month:'26年7月度', date:'7/26時点', stores:{
+    '吹田警察署前':{landing:446,budget:580,nisshu:485.229,gpa:4553,wact:21.861,wbench:18.497},
+    '吹田朝日町':{landing:1883,budget:1593,nisshu:665.564,gpa:7267,wact:14.192,wbench:27.827},
+    '池田市役所前':{landing:713,budget:858,nisshu:388.547,gpa:3995,wact:18.054,wbench:15.379},
+    '吹田青山台三丁目':{landing:627,budget:759,nisshu:653.416,gpa:6725,wact:31.499,wbench:26.662},
+    '五月ケ丘東':{landing:1058,budget:1069,nisshu:374.515,gpa:3268,wact:6.941,wbench:9.074},
+    '江坂東':{landing:820,budget:865,nisshu:643.641,gpa:6427,wact:20.377,wbench:26.119},
+    '吹田豊津中学校前':{landing:1363,budget:1426,nisshu:575.258,gpa:5926,wact:24.659,wbench:24.379},
+    '豊中利倉東一丁目':{landing:944,budget:878,nisshu:651.152,gpa:6098,wact:20.793,wbench:23.518},
+    '豊中服部元町一丁目':{landing:1231,budget:1303,nisshu:626.744,gpa:6064,wact:34.36,wbench:25.184},
+    '東淀川大道南':{landing:561,budget:627,nisshu:529.812,gpa:4970,wact:9.776,wbench:18.748},
+    '大道南一丁目':{landing:426,budget:498,nisshu:488.794,gpa:4434,wact:6.821,wbench:15.014},
+    '豊里六丁目':{landing:749,budget:770,nisshu:419.073,gpa:3658,wact:5.698,wbench:10.431},
+    '東淀川豊里五丁目':{landing:1104,budget:1094,nisshu:696.488,gpa:6518,wact:9.772,wbench:25.344},
+    '豊中原田南一丁目':{landing:965,budget:896,nisshu:516.595,gpa:5008,wact:19.02,wbench:19.487},
+    '南金田二丁目':{landing:1637,budget:1380,nisshu:832.968,gpa:8307,wact:29.764,wbench:32.638},
+    '豊中服部西町三丁目':{landing:732,budget:691,nisshu:424.37,gpa:3968,wact:10.412,wbench:14.747},
+    '箕面白島二丁目':{landing:805,budget:570,nisshu:599.519,gpa:5620,wact:23.342,wbench:24.586},
+    '吹田垂水三丁目':{landing:513,budget:491,nisshu:330.619,gpa:3196,wact:7.905,wbench:11.484},
+    '新御堂筋上新田':{landing:1045,budget:1110,nisshu:735.077,gpa:7105,wact:24.709,wbench:28.99},
+    '江坂駅南口':{landing:1699,budget:2156,nisshu:1114.274,gpa:11119,wact:37.451,wbench:42.256},
+  }},
+  {month:'26年7月度', date:'7/31時点', stores:{
+    '吹田警察署前':{landing:467,budget:580,nisshu:486.727,gpa:4567,wact:21.233,wbench:18.517},
+    '吹田朝日町':{landing:1853,budget:1593,nisshu:666.415,gpa:7276,wact:14.162,wbench:27.761},
+    '池田市役所前':{landing:755,budget:858,nisshu:391.919,gpa:4030,wact:17.046,wbench:15.567},
+    '吹田青山台三丁目':{landing:582,budget:759,nisshu:648.317,gpa:6672,wact:30.711,wbench:26.52},
+    '五月ケ丘東':{landing:1054,budget:1069,nisshu:371.535,gpa:3242,wact:6.537,wbench:9.03},
+    '江坂東':{landing:824,budget:865,nisshu:643.98,gpa:6430,wact:20.367,wbench:25.981},
+    '吹田豊津中学校前':{landing:1399,budget:1426,nisshu:577.137,gpa:5945,wact:24.591,wbench:24.367},
+    '豊中利倉東一丁目':{landing:902,budget:878,nisshu:646.889,gpa:6058,wact:21.355,wbench:23.451},
+    '豊中服部元町一丁目':{landing:1211,budget:1303,nisshu:618.211,gpa:5981,wact:34.916,wbench:24.856},
+    '東淀川大道南':{landing:546,budget:627,nisshu:525.484,gpa:4929,wact:9.395,wbench:18.62},
+    '大道南一丁目':{landing:396,budget:498,nisshu:487.445,gpa:4421,wact:7.391,wbench:14.969},
+    '豊里六丁目':{landing:751,budget:770,nisshu:420.052,gpa:3667,wact:5.804,wbench:10.36},
+    '東淀川豊里五丁目':{landing:1112,budget:1094,nisshu:695.337,gpa:6508,wact:10.256,wbench:25.39},
+    '豊中原田南一丁目':{landing:979,budget:896,nisshu:518.912,gpa:5030,wact:18.362,wbench:19.478},
+    '南金田二丁目':{landing:1647,budget:1380,nisshu:833.204,gpa:8309,wact:28.911,wbench:32.668},
+    '豊中服部西町三丁目':{landing:706,budget:691,nisshu:421.867,gpa:3944,wact:11.558,wbench:14.505},
+    '箕面白島二丁目':{landing:816,budget:570,nisshu:598.816,gpa:5614,wact:22.622,wbench:24.58},
+    '吹田垂水三丁目':{landing:503,budget:491,nisshu:330.175,gpa:3191,wact:8.24,wbench:11.435},
+    '新御堂筋上新田':{landing:999,budget:1110,nisshu:733.347,gpa:7088,wact:26.372,wbench:29.033},
+    '江坂駅南口':{landing:1690,budget:2156,nisshu:1108.23,gpa:11059,wact:37.995,wbench:42.033},
+  }},
+  {month:'26年8月度', date:'8/9時点', stores:{
+    '吹田警察署前':{landing:518,budget:402,nisshu:513.23,gpa:4819,wact:15.036,wbench:18.604},
+    '吹田朝日町':{landing:1586,budget:1372,nisshu:686.879,gpa:7289,wact:13.043,wbench:28.664},
+    '池田市役所前':{landing:779,budget:802,nisshu:411.578,gpa:4360,wact:15.87,wbench:15.915},
+    '吹田青山台三丁目':{landing:556,budget:565,nisshu:716.816,gpa:6931,wact:28.508,wbench:27.2},
+    '五月ケ丘東':{landing:917,budget:955,nisshu:390.939,gpa:3290,wact:6.996,wbench:9.313},
+    '江坂東':{landing:712,budget:581,nisshu:681.571,gpa:6596,wact:16.017,wbench:25.777},
+    '吹田豊津中学校前':{landing:942,budget:1000,nisshu:611.124,gpa:5729,wact:20.55,wbench:24.972},
+    '豊中利倉東一丁目':{landing:1168,budget:1123,nisshu:687.842,gpa:7081,wact:22.919,wbench:24.221},
+    '豊中服部元町一丁目':{landing:1181,budget:1202,nisshu:619.851,gpa:5999,wact:24.118,wbench:23.623},
+    '東淀川大道南':{landing:517,budget:567,nisshu:559.904,gpa:5252,wact:9.296,wbench:19.107},
+    '大道南一丁目':{landing:507,budget:432,nisshu:543.418,gpa:4929,wact:6.637,wbench:15.989},
+    '豊里六丁目':{landing:753,budget:662,nisshu:463.071,gpa:3899,wact:4.618,wbench:10.986},
+    '東淀川豊里五丁目':{landing:905,budget:965,nisshu:723.745,gpa:6776,wact:13.335,wbench:25.249},
+    '豊中原田南一丁目':{landing:872,budget:717,nisshu:564.801,gpa:5477,wact:27.482,wbench:20.071},
+    '南金田二丁目':{landing:1714,budget:1191,nisshu:906.464,gpa:8759,wact:22.486,wbench:34.177},
+    '豊中服部西町三丁目':{landing:525,budget:616,nisshu:414.296,gpa:3615,wact:13.825,wbench:12.727},
+    '箕面白島二丁目':{landing:912,budget:432,nisshu:641.793,gpa:6016,wact:19.537,wbench:26.389},
+    '吹田垂水三丁目':{landing:310,budget:316,nisshu:349.449,gpa:3379,wact:5.658,wbench:11.527},
+    '新御堂筋上新田':{landing:1167,budget:1146,nisshu:782.297,gpa:7562,wact:24.271,wbench:29.945},
+    '江坂駅南口':{landing:1550,budget:1784,nisshu:1176.327,gpa:11377,wact:25.173,wbench:43.649},
+  }},
+];
 
 // 店利益データ
 // fjIncome=FJ収入実績, miscBudget=雑益予算, laborBudget=人件費予算, otherExp=その他経費予算
@@ -520,7 +791,7 @@ function filterSC(sc) {
 }
 function switchTab(tab) {
   currentTab = tab;
-  document.querySelectorAll('.tab-btn').forEach((b,i)=>b.classList.toggle('active',['profit','waste'][i]===tab));
+  document.querySelectorAll('.tab-btn').forEach((b,i)=>b.classList.toggle('active',['profit','waste','trend'][i]===tab));
   document.querySelectorAll('.tab-panel').forEach(p=>p.classList.toggle('active',p.id==='panel-'+tab));
   renderAll();
 }
@@ -1100,11 +1371,195 @@ function closePopup(e) {
 }
 
 // ===================================================================
+// RENDER 前週対比
+// ===================================================================
+// 直前スナップショット（同一月度を優先。無ければ前月度＝月度またぎ）
+function prevSnapshot() {
+  if (!HISTORY.length) return null;
+  const same = HISTORY.filter(h => h.month === CUR_LABEL.month && h.date !== CUR_LABEL.date);
+  if (same.length) return {snap: same[same.length-1], sameMonth: true};
+  return {snap: HISTORY[HISTORY.length-1], sameMonth: false};
+}
+
+const sg  = v => v == null ? '—' : (v > 0 ? '+' : '') + Math.round(v).toLocaleString();
+const sg1 = v => v == null ? '—' : (v > 0 ? '+' : '') + v.toFixed(1);
+const cls = (v, goodIsPlus=true) => v == null || Math.abs(v) < 0.05 ? ''
+                                  : (v > 0) === goodIsPlus ? 'pos' : 'neg';
+
+function renderTrend() {
+  const p  = prevSnapshot();
+  const fp = filteredProfit();
+  const warnEl = document.getElementById('trendWarn');
+
+  if (!p || !fp.length) {
+    warnEl.innerHTML = '<div class="trend-warn">前週のデータがまだありません。次回の更新から比較できます。</div>';
+    ['trendCards','trendMovers','trendChart','trendBody','trendNote'].forEach(id=>document.getElementById(id).innerHTML='');
+    return;
+  }
+  const prev = p.snap;
+  document.getElementById('trendRangeLabel').textContent = `${prev.date} → ${CUR_LABEL.date}`;
+  warnEl.innerHTML = p.sameMonth ? '' :
+    `<div class="trend-warn">⚠️ 前週(${prev.month} ${prev.date})は月度が異なるため、着地・予算の比較は参考値です。日販・総荒利・廃棄は比較できます。</div>`;
+
+  // 店舗ごとの前週差
+  const rows = fp.map(s => {
+    const q = prev.stores[s.name] || null;
+    const w = WASTE.find(x => x.name === s.name);
+    const prevWasteDiff = (q && q.wact != null && q.wbench != null) ? q.wact - q.wbench : null;
+    return {
+      s, q, sc: SC_MAP[s.name] || '',
+      dLanding: q && q.landing != null ? s.landing - q.landing : null,
+      dNisshu : q && q.nisshu  != null ? s.nisshu  - q.nisshu  : null,
+      dGp     : q && q.gpa != null && s.gpa != null ? s.gpa - q.gpa : null,
+      dWaste  : (w && prevWasteDiff != null) ? w.total.diff - prevWasteDiff : null,
+    };
+  });
+
+  // ── サマリーカード ──
+  const sum = k => rows.reduce((a,r)=>a + (r[k] || 0), 0);
+  const nNisshu = rows.filter(r=>r.dNisshu != null).length;
+  const tLanding = sum('dLanding'), tGp = sum('dGp'), tWaste = sum('dWaste');
+  const avgNisshu = nNisshu ? sum('dNisshu')/nNisshu : null;
+  const upCnt = rows.filter(r=>r.dLanding != null && r.dLanding > 0).length;
+  const dnCnt = rows.filter(r=>r.dLanding != null && r.dLanding < 0).length;
+
+  document.getElementById('trendCards').innerHTML = `
+    <div class="card ${tLanding>=0?'green':'red'}">
+      <div class="card-label">着地 前週差（合算）</div>
+      <div class="card-value" style="color:${tLanding>=0?'#2e7d32':'#e53935'}">${sg(tLanding)}<span class="card-unit">千円</span></div>
+      <div class="card-sub">改善${upCnt}店 / 悪化${dnCnt}店</div>
+    </div>
+    <div class="card ${(avgNisshu||0)>=0?'blue':'amber'}">
+      <div class="card-label">平均日販 前週差</div>
+      <div class="card-value" style="color:${(avgNisshu||0)>=0?'#1565c0':'#f57c00'}">${sg1(avgNisshu)}<span class="card-unit">千円/日</span></div>
+      <div class="card-sub">対象 ${nNisshu}店の平均</div>
+    </div>
+    <div class="card ${tGp>=0?'green':'red'}">
+      <div class="card-label">総荒利実績 前週差</div>
+      <div class="card-value" style="color:${tGp>=0?'#2e7d32':'#e53935'}">${sg(tGp)}<span class="card-unit">千円</span></div>
+      <div class="card-sub">実績ベースの積み上がり</div>
+    </div>
+    <div class="card ${tWaste<=0?'green':'red'}">
+      <div class="card-label">廃棄超過 前週差</div>
+      <div class="card-value" style="color:${tWaste<=0?'#2e7d32':'#e53935'}">${sg1(tWaste)}<span class="card-unit">千円/日</span></div>
+      <div class="card-sub">＋は指標超過が拡大</div>
+    </div>`;
+
+  // ── 大きく動いた店舗 TOP5 ──
+  const key = p.sameMonth ? 'dLanding' : 'dGp';
+  const keyLabel = p.sameMonth ? '着地' : '総荒利';
+  const ranked = rows.filter(r=>r[key] != null).sort((a,b)=>a[key]-b[key]);
+  const down = ranked.filter(r=>r[key] < 0).slice(0, 5);
+  const up   = ranked.filter(r=>r[key] > 0).slice(-5).reverse();
+
+  const moverHtml = (r, isDown) => {
+    const bits = [];
+    if (r.dNisshu != null) bits.push(`日販 ${sg1(r.dNisshu)}`);
+    if (r.dGp != null && key !== 'dGp') bits.push(`荒利 ${sg(r.dGp)}`);
+    if (r.dWaste != null) bits.push(`廃棄超過 ${sg1(r.dWaste)}`);
+    return `<div class="mover-item" onclick="showStoreDetail('${r.s.name}')">
+      <div>
+        <div class="mover-name">${r.s.name}</div>
+        <div class="mover-sub">${r.sc}｜${bits.join('　')}</div>
+      </div>
+      <div class="mover-val" style="color:${isDown?'#e53935':'#2e7d32'}">${sg(r[key])}</div>
+    </div>`;
+  };
+  document.getElementById('trendMovers').innerHTML = `
+    <div class="mover-col down">
+      <h4>▼ ${keyLabel}が下がった店 TOP5（千円）</h4>
+      ${down.length ? down.map(r=>moverHtml(r,true)).join('') : '<div style="color:#999;font-size:12px;padding:8px">下がった店舗なし</div>'}
+    </div>
+    <div class="mover-col up">
+      <h4>▲ ${keyLabel}が上がった店 TOP5（千円）</h4>
+      ${up.length ? up.map(r=>moverHtml(r,false)).join('') : '<div style="color:#999;font-size:12px;padding:8px">上がった店舗なし</div>'}
+    </div>`;
+
+  // ── 週次推移チャート ──
+  document.getElementById('trendChart').innerHTML = trendChartSvg(fp);
+
+  // ── 全店テーブル ──
+  const sorted = [...rows].sort((a,b)=>(a.dLanding ?? 9e9) - (b.dLanding ?? 9e9));
+  document.getElementById('trendBody').innerHTML = sorted.map(r => `
+    <tr onclick="showStoreDetail('${r.s.name}')">
+      <td>${r.s.name}</td>
+      <td><span class="sc-chip">${r.sc}</span></td>
+      <td>${r.q && r.q.landing != null ? r.q.landing.toLocaleString() : '—'}</td>
+      <td><strong>${r.s.landing.toLocaleString()}</strong></td>
+      <td class="${cls(r.dLanding)}"><strong>${sg(r.dLanding)}</strong></td>
+      <td class="${cls(r.dNisshu)}">${sg1(r.dNisshu)}</td>
+      <td class="${cls(r.dGp)}">${sg(r.dGp)}</td>
+      <td class="${cls(r.dWaste, false)}">${sg1(r.dWaste)}</td>
+    </tr>`).join('');
+
+  document.getElementById('trendNote').innerHTML =
+    `※ 着地・総荒利は千円、平均日販・廃棄超過は千円/日。<br>
+     ※ 廃棄超過＝（廃棄実績−指標）。前週差が<strong style="color:#e53935">＋</strong>なら超過が拡大（悪化）、<strong style="color:#2e7d32">−</strong>なら改善。<br>
+     ※ 予算は月度内で固定のため、着地の前週差＝予算差異の前週差と一致します。<br>
+     ※ 平均日販・総荒利・廃棄は月度の累計ベースの数値です。前週差は「直近1週間が月初からの平均より上だったか下だったか」を表します。`;
+}
+
+// 週次推移チャート（着地合計・予算合計）
+function trendChartSvg(fp) {
+  const names = new Set(fp.map(s=>s.name));
+  const pts = HISTORY.map(h => {
+    let la = 0, bu = 0, n = 0;
+    for (const nm of names) {
+      const q = h.stores[nm];
+      if (q && q.landing != null) { la += q.landing; bu += (q.budget || 0); n++; }
+    }
+    return n ? {label: h.date.replace('時点',''), month: h.month, landing: la, budget: bu} : null;
+  }).filter(Boolean);
+  pts.push({
+    label: CUR_LABEL.date.replace('時点',''), month: CUR_LABEL.month,
+    landing: fp.reduce((a,s)=>a+s.landing,0), budget: fp.reduce((a,s)=>a+s.budget,0)
+  });
+  if (pts.length < 2) return '<div style="color:#999;font-size:12px">推移を描くにはデータが足りません</div>';
+
+  const W = 640, H = 230, ml = 62, mr = 12, mt = 16, mb = 52;
+  const vals = pts.flatMap(p=>[p.landing, p.budget]);
+  const max = Math.max(...vals) * 1.08, min = Math.min(...vals) * 0.92;
+  const x = i => ml + (W-ml-mr) * (pts.length===1 ? 0.5 : i/(pts.length-1));
+  const y = v => mt + (H-mt-mb) * (1 - (v-min)/(max-min || 1));
+
+  const line  = key => pts.map((p,i)=>`${x(i).toFixed(1)},${y(p[key]).toFixed(1)}`).join(' ');
+  const dots  = pts.map((p,i)=>`<circle cx="${x(i).toFixed(1)}" cy="${y(p.landing).toFixed(1)}" r="${i===pts.length-1?5.5:4}" fill="#003087"/>`).join('');
+  const labels = pts.map((p,i)=>{
+    const isLast = i === pts.length-1;
+    return `<text x="${x(i).toFixed(1)}" y="${H-30}" font-size="15" text-anchor="middle" fill="${isLast?'#003087':'#888'}" font-weight="${isLast?700:400}">${p.label}</text>`;
+  }).join('');
+  // 月度の切替位置に区切り線
+  const seps = pts.map((p,i)=> i>0 && pts[i-1].month !== p.month
+    ? `<line x1="${((x(i-1)+x(i))/2).toFixed(1)}" y1="${mt}" x2="${((x(i-1)+x(i))/2).toFixed(1)}" y2="${H-mb}" stroke="#bbb" stroke-dasharray="3 3"/>
+       <text x="${((x(i-1)+x(i))/2+4).toFixed(1)}" y="${mt+13}" font-size="13" fill="#999">${p.month}</text>` : '').join('');
+  const gy = [0,0.5,1].map(t=>{
+    const v = min + (max-min)*t;
+    return `<line x1="${ml}" y1="${y(v).toFixed(1)}" x2="${W-mr}" y2="${y(v).toFixed(1)}" stroke="#eee"/>
+            <text x="${ml-6}" y="${(y(v)+5).toFixed(1)}" font-size="13" fill="#999" text-anchor="end">${Math.round(v).toLocaleString()}</text>`;
+  }).join('');
+
+  return `<div class="table-wrap"><svg class="trend-chart" viewBox="0 0 ${W} ${H}" style="min-width:440px;max-width:760px">
+    ${gy}${seps}
+    <polyline points="${line('budget')}"  fill="none" stroke="#f57c00" stroke-width="2" stroke-dasharray="5 4"/>
+    <polyline points="${line('landing')}" fill="none" stroke="#003087" stroke-width="2.5"/>
+    ${dots}${labels}
+    <g font-size="14">
+      <rect x="${ml}" y="${H-16}" width="16" height="3" fill="#003087"/>
+      <text x="${ml+22}" y="${H-9}" fill="#555">着地合計</text>
+      <rect x="${ml+104}" y="${H-16}" width="16" height="3" fill="#f57c00"/>
+      <text x="${ml+126}" y="${H-9}" fill="#555">予算合計</text>
+      <text x="${W-mr}" y="${H-9}" text-anchor="end" fill="#999">単位：千円</text>
+    </g>
+  </svg></div>`;
+}
+
+// ===================================================================
 // MAIN RENDER
 // ===================================================================
 function renderAll() {
   renderProfit();
   renderWaste();
+  renderTrend();
 }
 
 renderAll();
