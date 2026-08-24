@@ -85,6 +85,8 @@ tbody td:nth-child(2){text-align:center}
 .h2{background:#ffcc80;color:#bf360c;font-weight:700}
 .h3{background:#ef5350;color:#fff;font-weight:700}
 .hg{background:#c8e6c9;color:#1b5e20;font-weight:700}
+/* 合計セル内の超過幅（小さく併記） */
+.tot-diff{font-size:9px;font-weight:700;opacity:.85;line-height:1.2;margin-top:1px}
 
 /* ===== POPUP ===== */
 .overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:200;align-items:center;justify-content:center}
@@ -241,7 +243,7 @@ tbody td:nth-child(2){text-align:center}
     <div class="donut-grid" id="wasteScDonutGrid"></div>
   </div>
   <div class="section">
-    <div class="section-title">全店舗 カテゴリ別 廃棄差異（実績−指標 / 千円/日）　<span style="font-size:11px;font-weight:400;color:#888">■赤＝超過　■緑＝適正以下</span></div>
+    <div class="section-title">全店舗 カテゴリ別 廃棄差異（実績−指標 / 千円/日）　<span style="font-size:11px;font-weight:400;color:#888">■赤＝超過　■緑＝適正以下　／　合計の実績は指標超過で着色（黄→橙→赤）、下段は超過幅</span></div>
     <div class="table-wrap"><table>
       <thead>
         <tr>
@@ -1044,6 +1046,18 @@ function renderWaste() {
     return 'h3';
   }
   function fd(d) { return d===0?'—':(d>0?'+':'')+d.toFixed(2); }
+  // 合計用：実績が指標を1円でも上回れば必ず着色（黄→橙→赤）、指標以下は緑
+  function tcls(d) {
+    if (d <= 0)  return 'hg';   // 適正以下
+    if (d < 1.5) return 'h1';   // 軽微超過
+    if (d < 4)   return 'h2';   // 超過
+    return 'h3';                // 大幅超過
+  }
+  // 合計セル（実績）：色＋超過幅を小さく併記
+  function totalCell(t) {
+    return `<td class="${tcls(t.diff)}"><strong>${t.actual.toFixed(1)}</strong>`
+         + `<div class="tot-diff">${t.diff>0?'+':''}${t.diff.toFixed(1)}</div></td>`;
+  }
   let rows = '';
   fw.forEach(s => {
     const sc = SC_MAP[s.name]||'';
@@ -1055,7 +1069,7 @@ function renderWaste() {
       <td>${s.ff.actual.toFixed(2)}</td><td>${s.ff.bench.toFixed(2)}</td><td class="${hcls(s.ff.diff,2)}">${fd(s.ff.diff)}</td>
       <td>${s.kitch.bench===0?'—':s.kitch.actual.toFixed(2)}</td><td>${s.kitch.bench===0?'—':s.kitch.bench.toFixed(2)}</td><td class="${s.kitch.bench===0?'h0':hcls(s.kitch.diff,1)}">${s.kitch.bench===0?'—':fd(s.kitch.diff)}</td>
       <td>${s.dry.actual.toFixed(2)}</td><td>${s.dry.bench.toFixed(2)}</td><td class="${hcls(s.dry.diff,0.3)}">${fd(s.dry.diff)}</td>
-      <td><strong>${s.total.actual.toFixed(1)}</strong></td><td><strong>${s.total.bench.toFixed(1)}</strong></td>
+      ${totalCell(s.total)}<td><strong>${s.total.bench.toFixed(1)}</strong></td>
     </tr>`;
   });
   // 平均行
@@ -1072,7 +1086,11 @@ function renderWaste() {
     <td>${av.ff.actual.toFixed(2)}</td><td>${av.ff.bench.toFixed(2)}</td><td class="${hcls(av.ff.diff,2)}">${fd(av.ff.diff)}</td>
     <td>${av.kitch.actual.toFixed(2)}</td><td>${av.kitch.bench.toFixed(2)}</td><td class="${hcls(av.kitch.diff,1)}">${fd(av.kitch.diff)}</td>
     <td>${av.dry.actual.toFixed(2)}</td><td>${av.dry.bench.toFixed(2)}</td><td class="${hcls(av.dry.diff,0.3)}">${fd(av.dry.diff)}</td>
-    <td><strong>${(fw.reduce((a,s)=>a+s.total.actual,0)/fw.length).toFixed(1)}</strong></td>
+    ${totalCell({
+      actual: fw.reduce((a,s)=>a+s.total.actual,0)/fw.length,
+      bench:  fw.reduce((a,s)=>a+s.total.bench, 0)/fw.length,
+      diff:   fw.reduce((a,s)=>a+s.total.diff,  0)/fw.length
+    })}
     <td><strong>${(fw.reduce((a,s)=>a+s.total.bench, 0)/fw.length).toFixed(1)}</strong></td>
   </tr>`;
   document.getElementById('wasteBody').innerHTML = rows;
