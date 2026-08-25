@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>理念・心得チェック 提出状況 | 阪口商店</title>
+<link rel="icon" href="favicon.png">
+<link rel="apple-touch-icon" href="favicon.png">
+<style>
+  :root{
+    --navy:#16304F; --navy-light:#2C4A6E; --gold:#B8892B;
+    --paper:#F4F6F9; --card:#FFF; --line:#D5DCE6; --text:#1C242F; --muted:#6B7686;
+    --ok:#2E7D32; --warn:#E08A1E; --bad:#C0392B;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{font-family:"Hiragino Kaku Gothic ProN","Hiragino Sans","Yu Gothic UI",Meiryo,sans-serif;
+    background:var(--paper);color:var(--text);line-height:1.6;-webkit-text-size-adjust:100%;}
+  header{background:linear-gradient(135deg,var(--navy),var(--navy-light));color:#fff;padding:16px 14px;text-align:center;}
+  header h1{font-size:16px;font-weight:700;}
+  header p{font-size:11.5px;opacity:.8;margin-top:3px;}
+  main{max-width:900px;margin:0 auto;padding:14px 12px 60px;}
+
+  .bar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:14px;}
+  .bar select,.bar button{
+    font-family:inherit;font-size:13px;padding:9px 12px;border-radius:9px;border:1px solid var(--line);
+    background:#fff;color:var(--text);
+  }
+  .bar button{background:var(--navy);color:#fff;border:none;font-weight:700;cursor:pointer;}
+  .bar button.ghost{background:#fff;color:var(--navy);border:1px solid var(--line);}
+
+  .cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:9px;margin-bottom:16px;}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:11px;padding:13px 12px;}
+  .card .lbl{font-size:11px;color:var(--muted);font-weight:700;margin-bottom:4px;}
+  .card .val{font-size:26px;font-weight:700;line-height:1.15;}
+  .card .val small{font-size:13px;font-weight:600;color:var(--muted);}
+  .card .sub{font-size:11px;color:var(--muted);margin-top:3px;}
+
+  .sec{background:var(--card);border:1px solid var(--line);border-radius:11px;padding:14px 13px;margin-bottom:14px;}
+  .sec h2{font-size:13.5px;color:var(--navy);font-weight:700;margin-bottom:11px;
+    border-bottom:2px solid var(--gold);padding-bottom:7px;}
+
+  .tbl-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;}
+  table{width:100%;border-collapse:collapse;font-size:12px;white-space:nowrap;}
+  th,td{padding:8px 9px;text-align:left;border-bottom:1px solid var(--line);}
+  th{background:#F0F3F7;color:var(--muted);font-size:11px;font-weight:700;position:sticky;top:0;}
+  td.num{text-align:right;font-variant-numeric:tabular-nums;}
+  tr.done td{background:#F6FAF6;}
+  .pill{display:inline-block;padding:2px 8px;border-radius:10px;font-size:10.5px;font-weight:700;}
+  .pill.ok{background:#E3F1E4;color:var(--ok);}
+  .pill.no{background:#FBE6E3;color:var(--bad);}
+  .pill.role{background:#EDE9F6;color:#4527A0;}
+  .sc-hi{color:var(--ok);font-weight:700;}
+  .sc-mid{color:var(--warn);font-weight:700;}
+  .sc-lo{color:var(--bad);font-weight:700;}
+
+  .weakbar{display:flex;align-items:center;gap:8px;margin-bottom:6px;}
+  .weakbar .nm{flex:1;font-size:12px;min-width:0;overflow:hidden;text-overflow:ellipsis;}
+  .weakbar .track{flex:0 0 90px;height:7px;background:#EDF0F4;border-radius:4px;overflow:hidden;}
+  .weakbar .track span{display:block;height:100%;background:var(--bad);}
+  .weakbar .ct{flex:0 0 34px;text-align:right;font-size:11px;color:var(--muted);font-weight:700;}
+
+  .msg{padding:14px;text-align:center;color:var(--muted);font-size:13px;}
+  .msg.err{color:var(--bad);}
+  .note{font-size:11px;color:var(--muted);margin-top:9px;line-height:1.6;}
+</style>
+</head>
+<body>
+
+<header>
+  <h1>🏛️ 理念・心得チェック 提出状況</h1>
+  <p>オーナー用ダッシュボード</p>
+</header>
+
+<main>
+  <div class="bar">
+    <select id="month" onchange="render()"></select>
+    <select id="roleF" onchange="render()">
+      <option value="">全役職</option>
+      <option value="店長">店長</option>
+      <option value="SC">SC</option>
+      <option value="SI">SI</option>
+    </select>
+    <button onclick="loadAll()">🔄 再読込</button>
+    <button class="ghost" onclick="exportCsv()">⬇ CSV出力</button>
+  </div>
+
+  <div id="body"><div class="msg">読み込み中…</div></div>
+</main>
+
+<script>
+const GAS_URL = 'https://script.google.com/macros/s/AKfycbyHEBH5Q8VBcZFBzfH5tYQm46RCa_fYw3PDlKp1qA5E9EWmR44OQ8UA1JTXFa-stnbG8g/exec';
+const CACHE_KEY = 'creedAdmin_cache_v1';
+
+const ROLE_ITEMS = {
+  '店長':['お客様第一','ルールを守り誠実','人を育てる','清潔で魅力ある売場','売上と利益','仲間を尊重','問題から逃げない','自ら手本','地域に必要とされる','常に学び挑戦'],
+  'SC'  :['理念を理解し実践','数字と現場の両方','売上と利益','考える力を育てる','原因を現場で','隠さず先送りせず','会社全体を考える','良き相談相手','学び現場に伝える','店舗と会社の未来'],
+  'SI'  :['理念を理解し実践','可能性を信じる','「できた」まで教育','自ら考える力','できていることを見つける','一人で悩ませない','人によって教え方を変える','店長と共に育てる','自ら手本','成長を未来につなげる']
+};
+
+let checks = [];
+let staff  = [];
+let loadErr = '';
+
+function esc(s){ return String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+function thisMonth(){ const d=new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`; }
+
+// GASはコールドスタートが遅いので、まずキャッシュを描いてから裏で最新を取る
+function loadCache(){
+  try{
+    const c = JSON.parse(localStorage.getItem(CACHE_KEY)||'null');
+    if(c && Array.isArray(c.checks)){ checks=c.checks; staff=c.staff||[]; return true; }
+  }catch(e){}
+  return false;
+}
+function saveCache(){
+  try{ localStorage.setItem(CACHE_KEY, JSON.stringify({checks, staff, at:Date.now()})); }catch(e){}
+}
+
+async function loadAll(){
+  loadErr='';
+  try{
+    const [r1,r2] = await Promise.all([
+      fetch(`${GAS_URL}?action=getCreedChecks`,{redirect:'follow'}).then(r=>r.json()),
+      fetch(`${GAS_URL}?action=getStaffList`,{redirect:'follow'}).then(r=>r.json())
+    ]);
+    if(r1 && r1.ok) checks = r1.checks||[];
+    if(r2 && r2.ok) staff  = r2.staff||[];
+    saveCache();
+  }catch(e){
+    loadErr = '最新データを取得できませんでした（表示はキャッシュです）';
+  }
+  buildMonths();
+  render();
+}
+
+function buildMonths(){
+  const sel = document.getElementById('month');
+  const keep = sel.value;
+  const set = new Set(checks.map(c=>String(c['対象年月'])).filter(Boolean));
+  set.add(thisMonth());
+  const months = [...set].sort().reverse();
+  sel.innerHTML = months.map(m=>`<option value="${esc(m)}">${esc(m)}</option>`).join('');
+  sel.value = (keep && months.includes(keep)) ? keep : months[0];
+}
+
+function scoreClass(s){ return s>=90?'sc-hi':s>=70?'sc-mid':'sc-lo'; }
+
+function render(){
+  const month = document.getElementById('month').value || thisMonth();
+  const roleF = document.getElementById('roleF').value;
+  let rows = checks.filter(c=>String(c['対象年月'])===month);
+  if(roleF) rows = rows.filter(c=>String(c['役職'])===roleF);
+
+  const submittedIds = new Set(rows.map(r=>String(r['従業員番号'])));
+  const target = staff.filter(s=>true);   // 社員・契約社員（在籍中）が提出対象候補
+  const notYet = target.filter(s=>!submittedIds.has(String(s.id)));
+
+  const scores = rows.map(r=>Number(r['スコア'])||0);
+  const avg = scores.length ? Math.round(scores.reduce((a,b)=>a+b,0)/scores.length) : null;
+  const low = rows.filter(r=>Number(r['スコア'])<70).length;
+
+  // 項目別の弱点集計（点数詳細JSONから 3点以下を数える）
+  const weakCount = {};
+  rows.forEach(r=>{
+    let d={};
+    try{ d = JSON.parse(r['点数詳細']||'{}'); }catch(e){}
+    const role = String(r['役職']);
+    Object.keys(d).forEach(k=>{
+      if(Number(d[k])<=3){
+        const key = role+'|'+k;
+        weakCount[key] = (weakCount[key]||0)+1;
+      }
+    });
+  });
+  const weakTop = Object.entries(weakCount).sort((a,b)=>b[1]-a[1]).slice(0,8);
+  const maxW = weakTop.length ? weakTop[0][1] : 1;
+
+  let html = '';
+  if(loadErr) html += `<div class="msg err">${esc(loadErr)}</div>`;
+
+  html += `<div class="cards">
+    <div class="card"><div class="lbl">提出</div>
+      <div class="val">${rows.length}<small> / ${target.length}人</small></div>
+      <div class="sub">未提出 ${notYet.length}人</div></div>
+    <div class="card"><div class="lbl">平均スコア</div>
+      <div class="val ${avg!==null?scoreClass(avg):''}">${avg!==null?avg:'—'}<small> / 100</small></div>
+      <div class="sub">${month}</div></div>
+    <div class="card"><div class="lbl">70点未満</div>
+      <div class="val" style="color:${low?'var(--bad)':'var(--ok)'}">${low}<small>人</small></div>
+      <div class="sub">重点フォロー対象</div></div>
+  </div>`;
+
+  // 提出一覧
+  html += `<div class="sec"><h2>提出一覧（${esc(month)}）</h2><div class="tbl-wrap"><table>
+    <thead><tr><th>氏名</th><th>店舗</th><th>役職</th><th>スコア</th><th>重点強化項目</th><th>提出日</th></tr></thead><tbody>`;
+  if(!rows.length){
+    html += `<tr><td colspan="6" style="color:var(--muted)">提出はまだありません</td></tr>`;
+  }else{
+    rows.sort((a,b)=>(Number(a['スコア'])||0)-(Number(b['スコア'])||0)).forEach(r=>{
+      const s = Number(r['スコア'])||0;
+      const dt = String(r['提出日時']||'').slice(0,10);
+      html += `<tr class="done">
+        <td>${esc(r['氏名'])}</td>
+        <td>${esc(r['店舗'])}</td>
+        <td><span class="pill role">${esc(r['役職'])}</span></td>
+        <td class="num ${scoreClass(s)}">${s}</td>
+        <td style="white-space:normal;font-size:11px;color:var(--muted)">${esc(r['重点強化項目']||'—')}</td>
+        <td>${esc(dt)}</td></tr>`;
+    });
+  }
+  html += `</tbody></table></div></div>`;
+
+  // 未提出
+  html += `<div class="sec"><h2>未提出（${notYet.length}人）</h2><div class="tbl-wrap"><table>
+    <thead><tr><th>氏名</th><th>店舗</th><th>区分</th><th>状況</th></tr></thead><tbody>`;
+  if(!notYet.length){
+    html += `<tr><td colspan="4" style="color:var(--ok);font-weight:700">全員提出済みです</td></tr>`;
+  }else{
+    notYet.forEach(s=>{
+      html += `<tr><td>${esc(s.name)}</td><td>${esc(s.store)}</td>
+        <td style="font-size:11px;color:var(--muted)">${s.type==='FullTimeEmployee'?'社員':'契約社員'}</td>
+        <td><span class="pill no">未提出</span></td></tr>`;
+    });
+  }
+  html += `</tbody></table></div>
+    <div class="note">※ 提出対象の候補として「在籍中の社員・契約社員」を表示しています。マスタに店長／SC／SIの区分がないため、役職に就いていない方も含まれます。</div></div>`;
+
+  // 弱点ランキング
+  html += `<div class="sec"><h2>「できていない」が多い項目</h2>`;
+  if(!weakTop.length){
+    html += `<div class="msg">該当なし</div>`;
+  }else{
+    weakTop.forEach(([key,ct])=>{
+      const [role,no] = key.split('|');
+      const label = (ROLE_ITEMS[role]&&ROLE_ITEMS[role][Number(no)-1]) || ('第'+no+'条');
+      html += `<div class="weakbar">
+        <div class="nm"><span class="pill role">${esc(role)}</span> ${esc(no)}. ${esc(label)}</div>
+        <div class="track"><span style="width:${Math.round(ct/maxW*100)}%"></span></div>
+        <div class="ct">${ct}人</div></div>`;
+    });
+  }
+  html += `</div>`;
+
+  document.getElementById('body').innerHTML = html;
+}
+
+function exportCsv(){
+  const month = document.getElementById('month').value;
+  const rows = checks.filter(c=>String(c['対象年月'])===month);
+  const head = ['対象年月','従業員番号','氏名','店舗','役職','スコア','重点強化項目','言語','提出日時'];
+  const lines = [head.join(',')];
+  rows.forEach(r=>{
+    lines.push(head.map(h=>{
+      const v = String(r[h]==null?'':r[h]).replace(/"/g,'""');
+      return /[",\n]/.test(v) ? `"${v}"` : v;
+    }).join(','));
+  });
+  // Excelで開いたとき文字化けしないようBOM付き
+  const blob = new Blob(['﻿'+lines.join('\n')], {type:'text/csv;charset=utf-8'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `理念心得チェック_${month}.csv`;
+  a.click();
+  URL.revokeObjectURL(a.href);
+}
+
+// 初期化：キャッシュ即表示 → 裏で最新取得
+(function init(){
+  if(loadCache()){ buildMonths(); render(); }
+  loadAll();
+})();
+</script>
+</body>
+</html>
