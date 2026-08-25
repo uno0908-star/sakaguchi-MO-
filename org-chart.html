@@ -139,6 +139,16 @@
   .modal-loading{
     color:#fff; text-align:center; padding:60px 20px; font-size:14px;
   }
+
+  /* 保存状態バー */
+  .save-bar{
+    max-width:720px; margin:0 auto; padding:8px 16px 0;
+    font-size:11.5px; color:var(--muted); text-align:right;
+  }
+  .save-bar .saved{ color:var(--asc); font-weight:700; }
+
+  /* 画像書き出し中は編集ボタンを隠す（配布用にきれいな図にする） */
+  #chart.exporting .node-actions{ display:none; }
 </style>
 </head>
 <body>
@@ -147,9 +157,14 @@
   <h1>組織図ビルダー</h1>
   <div class="btns">
     <button class="btn-ghost" onclick="addRoot()">＋ 新しいルート</button>
+    <button class="btn-ghost" onclick="resetChart()">初期状態に戻す</button>
     <button class="btn-primary" onclick="exportPng()">画像で保存</button>
   </div>
 </header>
+
+<div class="save-bar">
+  <span id="saveStatus">この端末に自動保存されます</span>
+</div>
 
 <div class="canvas-wrap">
   <div id="chart"></div>
@@ -169,16 +184,65 @@
 let idSeq = 0;
 function node(title, name, role){ idSeq++; return {id:'n'+idSeq, title, name, role: role||'', children:[]}; }
 
-// 初期データ（神田様の組織構成をベースに作成。自由に編集・追加できます）
-let roots = [
-  (function(){
-    const gm = node('統括マネージャー','神田 渉','gm');
-    const scNames = ['髙橋','五島','プラカス','ダハル','ビスワス','フィ'];
-    scNames.forEach(n => gm.children.push(node('SC', n, 'sc')));
-    ['サントス','スラズ'].forEach(n => gm.children.push(node('ASC', n, 'asc')));
-    return gm;
-  })()
-];
+// 入力された文字をそのままHTMLに埋めると「<」等で表示が壊れるためエスケープ
+function esc(s){
+  return String(s == null ? '' : s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+}
+
+// 初期データ（自由に編集・追加できます）
+function buildInitial(){
+  idSeq = 0;
+  const gm = node('統括マネージャー','神田 渉','gm');
+  const scNames = ['髙橋','五島','プラカス','ダハル','ビスワス','フィ'];
+  scNames.forEach(n => gm.children.push(node('SC', n, 'sc')));
+  ['サントス','スラズ'].forEach(n => gm.children.push(node('ASC', n, 'asc')));
+  return [gm];
+}
+
+// ─── 保存（この端末のブラウザに自動保存）─────────────────────────
+const LS_KEY = 'orgChart_v1';
+let saveTimer = null;
+
+function save(){
+  try{
+    localStorage.setItem(LS_KEY, JSON.stringify({roots, idSeq}));
+    showSaved();
+  }catch(e){
+    document.getElementById('saveStatus').textContent = '保存できませんでした（ブラウザの設定をご確認ください）';
+  }
+}
+function saveLater(){          // 文字入力のたびに書き込まないよう少し待つ
+  clearTimeout(saveTimer);
+  saveTimer = setTimeout(save, 400);
+}
+function showSaved(){
+  const el = document.getElementById('saveStatus');
+  el.textContent = '✓ 保存しました';
+  el.className = 'saved';
+  clearTimeout(showSaved._t);
+  showSaved._t = setTimeout(()=>{
+    el.textContent = 'この端末に自動保存されます';
+    el.className = '';
+  }, 1800);
+}
+function loadSaved(){
+  try{
+    const raw = localStorage.getItem(LS_KEY);
+    if(!raw) return null;
+    const data = JSON.parse(raw);
+    if(!data || !Array.isArray(data.roots)) return null;
+    idSeq = data.idSeq || 0;
+    return data.roots;
+  }catch(e){ return null; }
+}
+function resetChart(){
+  if(!confirm('編集内容を破棄して初期状態に戻します。よろしいですか？')) return;
+  roots = buildInitial();
+  save();
+  render();
+}
+
+let roots = loadSaved() || buildInitial();
 
 function findNode(list, id){
   for(const n of list){
@@ -201,16 +265,19 @@ function addChild(id){
   const n = findNode(roots, id);
   if(!n) return;
   n.children.push(node('役職','新規メンバー',''));
+  save();
   render();
 }
 function addRoot(){
   roots.push(node('役職','新規ノード',''));
+  save();
   render();
 }
 function deleteNode(id){
   if(roots.length===1 && roots[0].id===id){
     if(!confirm('最後のルートノードを削除しますか？')) return;
     roots = [];
+    save();
     render();
     return;
   }
@@ -218,12 +285,13 @@ function deleteNode(id){
   if(list){
     const idx = list.findIndex(n=>n.id===id);
     if(idx>-1) list.splice(idx,1);
+    save();
     render();
   }
 }
 function updateField(id, field, value){
   const n = findNode(roots, id);
-  if(n) n[field] = value;
+  if(n){ n[field] = value; saveLater(); }
 }
 
 function renderNode(n){
@@ -237,9 +305,9 @@ function renderNode(n){
         <div class="node-card ${roleClass}">
           <div class="node-text">
             <div class="node-title" contenteditable="true" data-id="${n.id}" data-field="title"
-              oninput="updateField('${n.id}','title',this.innerText)">${n.title}</div>
+              oninput="updateField('${n.id}','title',this.innerText)">${esc(n.title)}</div>
             <div class="node-name" contenteditable="true" data-id="${n.id}" data-field="name"
-              oninput="updateField('${n.id}','name',this.innerText)">${n.name}</div>
+              oninput="updateField('${n.id}','name',this.innerText)">${esc(n.name)}</div>
           </div>
           <div class="node-actions">
             <button class="btn-add" onclick="addChild('${n.id}')">＋</button>
@@ -274,6 +342,7 @@ function exportPng(){
   hint.style.display = 'none';
   overlay.classList.add('show');
 
+  chart.classList.add('exporting');
   html2canvas(chart, {backgroundColor:'#F5F6F8', scale:2}).then(canvas=>{
     img.src = canvas.toDataURL('image/png');
     loading.style.display = 'none';
@@ -281,6 +350,8 @@ function exportPng(){
     hint.style.display = 'block';
   }).catch(err=>{
     loading.textContent = '画像の作成に失敗しました。もう一度お試しください。';
+  }).finally(()=>{
+    chart.classList.remove('exporting');
   });
 }
 
