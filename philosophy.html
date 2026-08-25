@@ -1,0 +1,603 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>企業理念・心得 | 有限会社阪口商店</title>
+<link rel="icon" href="favicon.png">
+<link rel="apple-touch-icon" href="favicon.png">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<style>
+  :root{
+    --navy:#16304F;
+    --navy-light:#2C4A6E;
+    --gold:#B8892B;
+    --gold-soft:#F3E7CE;
+    --paper:#F4F6F9;
+    --card:#FFFFFF;
+    --line:#D5DCE6;
+    --text:#1C242F;
+    --muted:#6B7686;
+    --ok:#2E7D32;
+    --warn:#E08A1E;
+    --bad:#C0392B;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{
+    font-family:"Hiragino Kaku Gothic ProN","Hiragino Sans","Yu Gothic UI",Meiryo,sans-serif;
+    background:var(--paper); color:var(--text);
+    line-height:1.7; -webkit-text-size-adjust:100%;
+  }
+
+  /* ===== ヘッダー ===== */
+  header{
+    background:linear-gradient(135deg,var(--navy),var(--navy-light));
+    color:#fff; padding:18px 16px 14px; text-align:center;
+  }
+  header h1{font-size:17px;font-weight:700;letter-spacing:.04em;}
+  header p{font-size:11.5px;opacity:.8;margin-top:4px;}
+
+  /* ===== タブ ===== */
+  .tabs{
+    display:flex; gap:6px; overflow-x:auto; padding:10px 12px;
+    background:#fff; border-bottom:1px solid var(--line);
+    position:sticky; top:0; z-index:20;
+    -webkit-overflow-scrolling:touch;
+  }
+  .tabs::-webkit-scrollbar{display:none;}
+  .tab-btn{
+    flex:0 0 auto; border:1px solid var(--line); background:#fff; color:var(--muted);
+    border-radius:20px; padding:8px 14px; font-size:12.5px; font-weight:700;
+    font-family:inherit; cursor:pointer; white-space:nowrap;
+  }
+  .tab-btn.active{background:var(--navy); color:#fff; border-color:var(--navy);}
+
+  main{max-width:720px;margin:0 auto;padding:16px 14px 70px;}
+  .panel{display:none;}
+  .panel.show{display:block;}
+
+  /* ===== 共通パーツ ===== */
+  .sheet{
+    background:var(--card); border:1px solid var(--line); border-radius:12px;
+    padding:20px 18px; margin-bottom:14px;
+    box-shadow:0 1px 4px rgba(20,30,50,.06);
+  }
+  .sheet-head{
+    text-align:center; border-bottom:2px solid var(--gold);
+    padding-bottom:10px; margin-bottom:16px;
+  }
+  .sheet-head h2{font-size:16px;font-weight:700;color:var(--navy);letter-spacing:.08em;}
+  .sheet-head .sub{font-size:12px;color:var(--gold);margin-top:5px;font-weight:600;}
+
+  /* 企業理念 */
+  .creed-main{
+    text-align:center; padding:22px 10px;
+    background:var(--gold-soft); border-radius:10px; margin-bottom:6px;
+  }
+  .creed-main .t{font-size:11.5px;color:var(--gold);font-weight:700;letter-spacing:.14em;margin-bottom:8px;}
+  .creed-main .v{font-size:19px;font-weight:700;color:var(--navy);line-height:1.6;letter-spacing:.03em;}
+
+  /* 経営理念 */
+  .mg-item{padding:12px 0;border-bottom:1px dashed var(--line);}
+  .mg-item:last-child{border-bottom:none;}
+  .mg-item .t{font-size:14.5px;font-weight:700;color:var(--navy);margin-bottom:3px;}
+  .mg-item .b{font-size:13px;color:#3B4655;}
+
+  /* 5宣言 */
+  .dec-item{
+    display:flex; gap:11px; align-items:flex-start;
+    padding:11px 0; border-bottom:1px dashed var(--line);
+  }
+  .dec-item:last-child{border-bottom:none;}
+  .dec-mark{
+    flex:0 0 auto; font-size:11.5px; font-weight:700; color:var(--gold);
+    border:1px solid var(--gold); border-radius:4px; padding:2px 7px; margin-top:3px;
+  }
+  .dec-item .b{font-size:14px;font-weight:600;color:var(--text);}
+
+  /* 10ヶ条 */
+  .art{padding:13px 0;border-bottom:1px dashed var(--line);}
+  .art:last-child{border-bottom:none;}
+  .art-t{display:flex;gap:9px;align-items:flex-start;}
+  .art-no{
+    flex:0 0 auto; width:24px; height:24px; border-radius:50%;
+    background:var(--navy); color:#fff; font-size:12px; font-weight:700;
+    display:flex; align-items:center; justify-content:center; margin-top:2px;
+  }
+  .art-main{font-size:14px;font-weight:700;color:var(--text);flex:1;}
+  .art-note{font-size:12px;color:var(--muted);margin-top:5px;padding-left:33px;}
+
+  /* ===== 操作ボタン ===== */
+  .actions{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px;}
+  .btn{
+    font-family:inherit; border:none; border-radius:9px; padding:11px 14px;
+    font-size:12.5px; font-weight:700; cursor:pointer; flex:1; min-width:120px;
+  }
+  .btn:active{transform:scale(.97);}
+  .btn-navy{background:var(--navy);color:#fff;}
+  .btn-gold{background:var(--gold);color:#fff;}
+  .btn-line{background:#fff;color:var(--navy);border:1px solid var(--line);}
+  .hint{font-size:11px;color:var(--muted);margin-bottom:14px;line-height:1.6;}
+
+  /* ===== 自己チェック ===== */
+  .field{margin-bottom:12px;}
+  .field label{display:block;font-size:11.5px;font-weight:700;color:var(--muted);margin-bottom:5px;}
+  .field input, .field select{
+    width:100%; padding:11px 12px; border:1px solid var(--line); border-radius:9px;
+    font-size:15px; font-family:inherit; background:#fff; color:var(--text);
+  }
+  .chk-item{padding:14px 0;border-bottom:1px solid var(--line);}
+  .chk-item:last-of-type{border-bottom:none;}
+  .chk-q{display:flex;gap:9px;align-items:flex-start;margin-bottom:9px;}
+  .chk-opts{display:grid;grid-template-columns:repeat(4,1fr);gap:5px;padding-left:33px;}
+  .chk-opts button{
+    font-family:inherit; border:1px solid var(--line); background:#fff; color:var(--muted);
+    border-radius:8px; padding:9px 2px; font-size:11px; font-weight:700; cursor:pointer;
+    line-height:1.35;
+  }
+  .chk-opts button.on{color:#fff;border-color:transparent;}
+  .chk-opts button.on[data-v="10"]{background:var(--ok);}
+  .chk-opts button.on[data-v="7"]{background:#7CB342;}
+  .chk-opts button.on[data-v="3"]{background:var(--warn);}
+  .chk-opts button.on[data-v="0"]{background:var(--bad);}
+
+  .score-box{
+    background:var(--navy); color:#fff; border-radius:12px;
+    padding:18px 16px; text-align:center; margin-bottom:14px;
+  }
+  .score-box .n{font-size:38px;font-weight:700;line-height:1.1;}
+  .score-box .n small{font-size:15px;font-weight:600;opacity:.75;}
+  .score-box .lbl{font-size:11.5px;opacity:.8;margin-bottom:4px;}
+  .score-bar{height:8px;background:rgba(255,255,255,.2);border-radius:4px;margin-top:12px;overflow:hidden;}
+  .score-bar span{display:block;height:100%;background:var(--gold);border-radius:4px;transition:width .4s;}
+  .score-note{font-size:12px;margin-top:10px;opacity:.9;}
+  .weak-list{margin-top:12px;}
+  .weak-list .w{
+    background:#fff; border-left:4px solid var(--bad); border-radius:7px;
+    padding:9px 11px; margin-bottom:7px; font-size:12.5px; color:var(--text);
+  }
+  .weak-list .w b{color:var(--bad);font-size:11px;}
+  .prev-note{font-size:11.5px;color:var(--muted);text-align:center;margin-bottom:12px;}
+
+  footer{text-align:center;font-size:11px;color:var(--muted);padding:0 20px 26px;}
+
+  /* ===== 画像プレビュー ===== */
+  .overlay{
+    display:none; position:fixed; inset:0; z-index:100;
+    background:rgba(15,20,30,.88); padding:18px; overflow-y:auto;
+  }
+  .overlay.show{display:block;}
+  .ov-inner{max-width:520px;margin:6px auto 0;background:#fff;border-radius:10px;padding:10px;}
+  .ov-img{width:100%;border-radius:5px;display:block;}
+  .ov-hint{color:#fff;text-align:center;font-size:13px;padding:12px 10px 0;line-height:1.6;}
+  .ov-hint b{color:#F0C46A;}
+  .ov-loading{color:#fff;text-align:center;padding:70px 20px;font-size:14px;}
+  .ov-close{
+    display:block;margin:16px auto 30px;background:rgba(255,255,255,.15);color:#fff;
+    border:none;padding:11px 26px;border-radius:20px;font-family:inherit;font-size:13px;
+    font-weight:700;cursor:pointer;
+  }
+
+  /* ===== 印刷（掲示物・PDF保存用）===== */
+  @media print{
+    body{background:#fff;}
+    header, .tabs, .actions, .hint, footer, .overlay, .no-print{display:none !important;}
+    main{max-width:none;padding:0;}
+    /* 印刷時は全部出す。1枚ずつページを分けて掲示できるように */
+    .panel{display:block !important;}
+    .panel.print-skip{display:none !important;}
+    .sheet{
+      border:none; box-shadow:none; border-radius:0;
+      padding:14mm 12mm; margin:0;
+      page-break-after:always; break-after:page;
+    }
+    .sheet:last-of-type{page-break-after:auto;break-after:auto;}
+    .sheet-head h2{font-size:17pt;}
+    .creed-main .v{font-size:16pt;}
+    .art-main, .dec-item .b{font-size:11pt;}
+    .art-note, .mg-item .b{font-size:9.5pt;}
+    .art, .dec-item, .mg-item{page-break-inside:avoid;break-inside:avoid;}
+  }
+  @page{size:A4 portrait;margin:10mm;}
+</style>
+</head>
+<body>
+
+<header>
+  <h1>有限会社阪口商店</h1>
+  <p>企業理念・経営理念・5宣言・心得</p>
+</header>
+
+<div class="tabs no-print">
+  <button class="tab-btn active" onclick="switchTab('creed',this)">理念・5宣言</button>
+  <button class="tab-btn" onclick="switchTab('tencho',this)">店長10ヶ条</button>
+  <button class="tab-btn" onclick="switchTab('sc',this)">SCの心得</button>
+  <button class="tab-btn" onclick="switchTab('si',this)">SIの心得</button>
+  <button class="tab-btn" onclick="switchTab('check',this)">✅ 自己チェック</button>
+</div>
+
+<main>
+  <div class="actions no-print" id="viewActions">
+    <button class="btn btn-navy" onclick="window.print()">🖨 掲示用に印刷／PDF保存</button>
+    <button class="btn btn-gold" onclick="exportPng()">🖼 画像で保存</button>
+  </div>
+  <div class="hint no-print" id="viewHint">
+    「印刷／PDF保存」は理念・店長10ヶ条・SCの心得・SIの心得を<b>A4で1枚ずつ</b>出力します（バックルーム掲示用）。「画像で保存」は今開いているページをPNGにします（LINEで送る用）。
+  </div>
+
+  <!-- 理念・5宣言 -->
+  <div class="panel show" id="panel-creed"></div>
+  <!-- 各心得 -->
+  <div class="panel" id="panel-tencho"></div>
+  <div class="panel" id="panel-sc"></div>
+  <div class="panel" id="panel-si"></div>
+  <!-- 自己チェック（印刷対象外） -->
+  <div class="panel print-skip" id="panel-check"></div>
+</main>
+
+<footer class="no-print">有限会社阪口商店</footer>
+
+<div class="overlay" id="overlay">
+  <div class="ov-loading" id="ovLoading">画像を作成しています…</div>
+  <div class="ov-inner" id="ovInner" style="display:none;"><img id="ovImg" class="ov-img"></div>
+  <div class="ov-hint" id="ovHint" style="display:none;">画像を<b>長押し</b>して「写真に追加」を選ぶと保存できます</div>
+  <button class="ov-close" onclick="closeOverlay()">閉じる</button>
+</div>
+
+<script>
+// ===================================================================
+// 理念データ（文言の変更はここだけ直せば全ページ・印刷・チェックに反映）
+// ===================================================================
+const KANJI = ['一','二','三','四','五','六','七','八','九','十'];
+
+const CREED = {
+  company: '人を育て、売場を育て、地域を育てる。',
+  management: [
+    {t:'人を育てる',   b:'一人ひとりの可能性を信じ、挑戦する機会をつくり、共に成長できる会社をつくります。'},
+    {t:'売場を育てる', b:'清潔で魅力ある売場と心のこもった接客・サービスを磨き、お客様に選ばれる店をつくります。'},
+    {t:'地域を育てる', b:'地域に必要とされ、信頼され、「この店があって良かった」と思っていただける店をつくります。'}
+  ],
+  declarations: [
+    '私たちは、ルールを守り、誠実な仕事をします。',
+    '私たちは、お客様が感動する売場をつくります。',
+    '私たちは、仲間を育て、一人で悩ませません。',
+    '私たちは、売場と接客で、健全な利益をつくります。',
+    '私たちは、昨日より今日、今日より明日へ、一歩ずつ成長します。'
+  ]
+};
+
+const ROLES = {
+  tencho: {
+    title:'店長10ヶ条', sub:'', short:'店長',
+    items:[
+      {m:'店長は、お客様第一で考え、行動します。', n:'すべての判断は、お客様にとってどうかを基準にします。'},
+      {m:'店長は、ルールを守り、誠実な仕事を実践します。', n:'信頼は、一つひとつの正しい行動の積み重ねから生まれます。'},
+      {m:'店長は、人を育てることを最も大切な仕事と考えます。', n:'教えるだけではなく、一人ひとりの可能性を信じ、挑戦と成長を支えます。'},
+      {m:'店長は、清潔で魅力ある売場をつくり、お客様に感動を届けます。', n:'清潔・品揃え・接客の積み重ねが、お客様から選ばれるお店をつくります。'},
+      {m:'店長は、売上と利益を理解し、健全な利益をつくります。', n:'数字は日々の行動の結果です。正しい方法で売上と利益をつくります。'},
+      {m:'店長は、仲間を尊重し、誰も一人で悩ませません。', n:'仲間を支え、声を掛け合い、相談しやすい職場をつくることも店長の責任です。'},
+      {m:'店長は、問題から逃げず、現場で考え、現場で解決します。', n:'問題を隠したり先送りしたりせず、分からないことは一人で抱えず、すぐに相談します。'},
+      {m:'店長は、自ら学び、自ら行動し、自ら手本になります。', n:'店長の声が、お店の空気をつくります。店長の行動が、仲間の行動を変えていきます。'},
+      {m:'店長は、地域に必要とされる店づくりを目指します。', n:'地域のお客様とのつながりを大切にし、信頼され、「この店があって良かった」と思っていただける店をつくります。'},
+      {m:'店長は、常に学び、常に挑戦し、会社の未来をつくります。', n:'昨日より今日、今日より明日へ。一歩ずつ成長し続けることが、店長自身と会社の未来につながります。'}
+    ]
+  },
+  sc: {
+    title:'SCの心得', sub:'— 店舗経営を支え、健全な利益をつくる —', short:'SC',
+    items:[
+      {m:'SCは、会社の理念を理解し、自ら実践します。', n:'店長へ伝える前に、まず自分自身が企業理念・経営理念・5宣言を判断と行動の基準にします。'},
+      {m:'SCは、数字と現場の両方を見ます。', n:'売上・利益などの数字だけで判断せず、売場・接客・人・お客様の状況を自分の目で確認します。'},
+      {m:'SCは、売上と利益を理解し、健全な利益をつくります。', n:'利益だけを追うのではなく、ルールを守り、お客様から選ばれる正しい商売によって利益を生み出します。'},
+      {m:'SCは、店長に答えを与えるだけでなく、考える力を育てます。', n:'何でもSCが決めるのではなく、店長自身が数字を理解し、考え、判断できるよう支援します。'},
+      {m:'SCは、問題を数字だけで判断せず、原因を現場で見つけます。', n:'売上や利益が悪いという結果だけを見るのではなく、「なぜそうなったのか」を売場と行動から考えます。'},
+      {m:'SCは、問題を隠さず、先送りせず、必要な時はすぐに相談します。', n:'自分だけで判断できないことを抱え込むことは責任ではありません。早い報告・相談が、会社と仲間を守ります。'},
+      {m:'SCは、一店舗だけでなく、会社全体を考えて行動します。', n:'担当店舗だけが良ければいいのではなく、人・商品・情報・成功事例を共有し、会社全体の成長につなげます。'},
+      {m:'SCは、店長の良き相談相手になります。', n:'指摘するだけの存在ではなく、困った時に最初に相談してもらえる信頼関係をつくります。'},
+      {m:'SCは、自ら学び、現場に伝え、共に成長します。', n:'知っているだけではSCの仕事ではありません。学んだことを店長が理解し、行動できるところまで伝えます。'},
+      {m:'SCは、店舗の未来と会社の未来をつくります。', n:'今日の数字だけでなく、半年後、一年後を考え、店長と店舗を育て、継続して利益を生み出せる会社をつくります。'}
+    ]
+  },
+  si: {
+    title:'SIの心得', sub:'— 人を育て、成長を支える —', short:'SI',
+    items:[
+      {m:'SIは、会社の理念を理解し、自ら実践します。', n:'人に教える立場だからこそ、まず自分自身が企業理念・経営理念・5宣言を理解し、日々の判断と行動で示します。'},
+      {m:'SIは、一人ひとりの可能性を信じます。', n:'今できることだけで判断せず、その人がこれから何をできるようになるのかを考え、成長を支えます。'},
+      {m:'SIは、「教えた」ではなく「できた」までを教育と考えます。', n:'説明して終わりではありません。相手が理解し、自分で実践できるところまで確認することが教育です。'},
+      {m:'SIは、答えを与えるだけでなく、自ら考える力を育てます。', n:'何でも答えを教えるのではなく、「なぜそうするのか」を理解させ、自分で考え、判断し、行動できる人を育てます。'},
+      {m:'SIは、できていないことだけでなく、できていることを見つけます。', n:'注意や指摘だけでは人は育ちません。良い行動や成長を見つけ、認め、次の成長につなげます。'},
+      {m:'SIは、誰も一人で悩ませません。', n:'困っている人に気付き、声を掛け、相談できる環境をつくります。SI自身も問題を一人で抱え込まず、必要な時はすぐに相談します。'},
+      {m:'SIは、人によって教え方を変えます。', n:'年齢・経験・国籍・日本語力など、一人ひとりの違いを理解し、「伝えた」ではなく「伝わった」を大切にします。'},
+      {m:'SIは、店長と共に人を育てます。', n:'SIがすべての教育をするのではありません。店長自身がクルーを育てられるよう支援し、人を育てる文化を店舗に根付かせます。'},
+      {m:'SIは、自ら学び、自ら手本となります。', n:'挨拶・接客・売場・ルール・仲間への接し方まで、言葉だけではなく自分の行動で「会社が大切にする仕事」を示します。'},
+      {m:'SIは、人の成長を会社の未来につなげます。', n:'一人の成長が店舗を変え、店舗の成長が会社を変えます。次の店長、次のSI、次のSCを育てることもSIの大切な使命です。'}
+    ]
+  }
+};
+
+function esc(s){
+  return String(s==null?'':s).replace(/[&<>"]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+}
+
+// ===================================================================
+// 描画：理念・5宣言
+// ===================================================================
+function renderCreed(){
+  const mg = CREED.management.map((m,i)=>`
+    <div class="mg-item">
+      <div class="t">${KANJI[i]}、${esc(m.t)}</div>
+      <div class="b">${esc(m.b)}</div>
+    </div>`).join('');
+
+  const dec = CREED.declarations.map(d=>`
+    <div class="dec-item">
+      <div class="dec-mark">一つ</div>
+      <div class="b">${esc(d)}</div>
+    </div>`).join('');
+
+  document.getElementById('panel-creed').innerHTML = `
+    <div class="sheet">
+      <div class="sheet-head"><h2>企 業 理 念</h2></div>
+      <div class="creed-main">
+        <div class="t">企 業 理 念</div>
+        <div class="v">${esc(CREED.company)}</div>
+      </div>
+
+      <div class="sheet-head" style="margin-top:24px"><h2>経 営 理 念</h2></div>
+      ${mg}
+
+      <div class="sheet-head" style="margin-top:24px"><h2>5 宣 言</h2></div>
+      ${dec}
+    </div>`;
+}
+
+// ===================================================================
+// 描画：各心得
+// ===================================================================
+function renderRole(key){
+  const r = ROLES[key];
+  const items = r.items.map((it,i)=>`
+    <div class="art">
+      <div class="art-t">
+        <div class="art-no">${KANJI[i]}</div>
+        <div class="art-main">${esc(it.m)}</div>
+      </div>
+      <div class="art-note">※ ${esc(it.n)}</div>
+    </div>`).join('');
+
+  document.getElementById('panel-'+key).innerHTML = `
+    <div class="sheet">
+      <div class="sheet-head">
+        <h2>${esc(r.title)}</h2>
+        ${r.sub ? `<div class="sub">${esc(r.sub)}</div>` : ''}
+      </div>
+      ${items}
+    </div>`;
+}
+
+// ===================================================================
+// 自己チェック
+// ===================================================================
+const LS_KEY = 'creedCheck_v1';
+const OPTS = [
+  {v:10, l:'できて<br>いる'},
+  {v:7,  l:'だいたい<br>できている'},
+  {v:3,  l:'あまり<br>できていない'},
+  {v:0,  l:'できて<br>いない'}
+];
+let chkRole = 'tencho';
+let answers = {};      // index -> 点数
+let chkMeta = {store:'', name:''};
+
+let history = [];   // [{date:'YYYY-MM-DD', role, score}] 実施日ごとの記録
+
+function today(){
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+}
+function loadChk(){
+  try{ return JSON.parse(localStorage.getItem(LS_KEY) || 'null'); }
+  catch(e){ return null; }
+}
+function saveChk(){
+  // 全項目そろったら「その日の記録」として保存（同じ日に直したら上書き）
+  if(isDone(answers)){
+    const d = today(), sc = calcScore(answers);
+    const hit = history.find(h=>h.date===d && h.role===chkRole);
+    if(hit) hit.score = sc;
+    else history.push({date:d, role:chkRole, score:sc});
+    history = history.slice(-24);
+  }
+  const data = {role:chkRole, answers, store:chkMeta.store, name:chkMeta.name, history};
+  try{ localStorage.setItem(LS_KEY, JSON.stringify(data)); }catch(e){}
+}
+// 前回＝今日より前の、同じ役職の直近の記録
+function prevRecord(){
+  const d = today();
+  const past = history.filter(h=>h.role===chkRole && h.date < d);
+  return past.length ? past[past.length-1] : null;
+}
+function isDone(a){ return a && Object.keys(a).length === 10; }
+function calcScore(a){ return Object.values(a).reduce((s,v)=>s+v,0); }
+
+function renderCheck(){
+  const r = ROLES[chkRole];
+  const prev = prevRecord();
+  const prevScore = prev ? prev.score : null;
+
+  const items = r.items.map((it,i)=>`
+    <div class="chk-item">
+      <div class="chk-q">
+        <div class="art-no">${KANJI[i]}</div>
+        <div class="art-main">${esc(it.m)}</div>
+      </div>
+      <div class="chk-opts">
+        ${OPTS.map(o=>`<button data-v="${o.v}" class="${answers[i]===o.v?'on':''}"
+          onclick="pick(${i},${o.v})">${o.l}</button>`).join('')}
+      </div>
+    </div>`).join('');
+
+  const done = isDone(answers);
+  const score = done ? calcScore(answers) : null;
+
+  // 弱い順トップ3（0点・3点のみ拾う）
+  let weak = '';
+  if(done){
+    const list = r.items.map((it,i)=>({i, v:answers[i], m:it.m}))
+      .filter(x=>x.v <= 3).sort((a,b)=>a.v-b.v).slice(0,3);
+    if(list.length){
+      weak = `<div class="weak-list">${list.map(x=>`
+        <div class="w"><b>${KANJI[x.i]}、</b> ${esc(x.m)}</div>`).join('')}</div>`;
+    }
+  }
+
+  document.getElementById('panel-check').innerHTML = `
+    <div class="sheet">
+      <div class="sheet-head">
+        <h2>自己チェック</h2>
+        <div class="sub">10項目・100点満点</div>
+      </div>
+
+      <div class="field">
+        <label>役職を選ぶ</label>
+        <select onchange="changeRole(this.value)">
+          <option value="tencho" ${chkRole==='tencho'?'selected':''}>店長10ヶ条</option>
+          <option value="sc" ${chkRole==='sc'?'selected':''}>SCの心得</option>
+          <option value="si" ${chkRole==='si'?'selected':''}>SIの心得</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>店舗名</label>
+        <input type="text" value="${esc(chkMeta.store)}" placeholder="例）江坂駅南口"
+          oninput="chkMeta.store=this.value;saveChk()">
+      </div>
+      <div class="field">
+        <label>氏名</label>
+        <input type="text" value="${esc(chkMeta.name)}" placeholder="例）山田 太郎"
+          oninput="chkMeta.name=this.value;saveChk()">
+      </div>
+
+      ${prevScore!==null ? `<div class="prev-note">前回（${esc(prev.date)}）のスコア：${prevScore}点</div>` : ''}
+
+      <div class="score-box">
+        <div class="lbl">現在のスコア</div>
+        <div class="n">${done ? score : '—'}<small> / 100点</small></div>
+        <div class="score-bar"><span style="width:${done ? score : 0}%"></span></div>
+        <div class="score-note">${done
+          ? (score>=90 ? 'よくできています。この状態を続けましょう。'
+            : score>=70 ? 'あと一歩。下の項目を重点的に。'
+            : '重点的に取り組む項目があります。')
+          : `未回答 ${10-Object.keys(answers).length} 項目`}</div>
+        ${done && prevScore!==null ? `<div class="score-note">前回比 ${score-prevScore>=0?'+':''}${score-prevScore}点</div>` : ''}
+      </div>
+
+      ${weak ? `<div style="font-size:12px;font-weight:700;color:var(--muted);margin-bottom:7px">重点強化項目</div>${weak}` : ''}
+
+      ${items}
+
+      <div class="actions" style="margin-top:16px;margin-bottom:0">
+        <button class="btn btn-navy" onclick="copyResult()">📋 結果をコピー（LINE用）</button>
+        <button class="btn btn-line" onclick="clearCheck()">回答をリセット</button>
+      </div>
+    </div>`;
+}
+
+function pick(i, v){
+  answers[i] = v;
+  saveChk();
+  renderCheck();
+}
+function changeRole(v){
+  chkRole = v;
+  answers = {};
+  saveChk();
+  renderCheck();
+}
+function clearCheck(){
+  if(!confirm('回答をすべて消します。よろしいですか？')) return;
+  answers = {};
+  saveChk();
+  renderCheck();
+}
+function copyResult(){
+  const r = ROLES[chkRole];
+  if(!isDone(answers)){ alert('すべての項目に回答してください。'); return; }
+  const score = calcScore(answers);
+  const d = new Date();
+  const ymd = `${d.getFullYear()}/${d.getMonth()+1}/${d.getDate()}`;
+  const weak = r.items.map((it,i)=>({i,v:answers[i],m:it.m}))
+    .filter(x=>x.v<=3).sort((a,b)=>a.v-b.v).slice(0,3);
+  let txt = `【${r.title} 自己チェック】\n${ymd}\n`;
+  if(chkMeta.store) txt += `店舗：${chkMeta.store}\n`;
+  if(chkMeta.name)  txt += `氏名：${chkMeta.name}\n`;
+  txt += `スコア：${score}点 / 100点\n`;
+  if(weak.length){
+    txt += `\n■ 重点強化項目\n` + weak.map(x=>`${KANJI[x.i]}、${x.m}`).join('\n');
+  }else{
+    txt += `\n全項目で「できている / だいたいできている」でした。`;
+  }
+  navigator.clipboard.writeText(txt).then(()=>{
+    alert('コピーしました。LINEに貼り付けて送れます。');
+  }).catch(()=>{
+    prompt('下のテキストをコピーしてください', txt);
+  });
+}
+
+// ===================================================================
+// タブ・画像保存
+// ===================================================================
+let currentTab = 'creed';
+function switchTab(key, btn){
+  currentTab = key;
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('show'));
+  document.getElementById('panel-'+key).classList.add('show');
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+  if(btn) btn.classList.add('active');
+  // 自己チェック中は掲示用ボタンを隠す
+  const show = key !== 'check';
+  document.getElementById('viewActions').style.display = show ? 'flex' : 'none';
+  document.getElementById('viewHint').style.display   = show ? 'block' : 'none';
+  window.scrollTo(0,0);
+}
+
+function exportPng(){
+  const target = document.querySelector('#panel-'+currentTab+' .sheet');
+  if(!target) return;
+  const ov = document.getElementById('overlay');
+  const loading = document.getElementById('ovLoading');
+  const inner = document.getElementById('ovInner');
+  const hint = document.getElementById('ovHint');
+  const img = document.getElementById('ovImg');
+
+  loading.style.display='block'; inner.style.display='none'; hint.style.display='none';
+  ov.classList.add('show');
+
+  html2canvas(target, {backgroundColor:'#FFFFFF', scale:2}).then(canvas=>{
+    img.src = canvas.toDataURL('image/png');
+    loading.style.display='none';
+    inner.style.display='block';
+    hint.style.display='block';
+  }).catch(()=>{
+    loading.textContent = '画像の作成に失敗しました。もう一度お試しください。';
+  });
+}
+function closeOverlay(){ document.getElementById('overlay').classList.remove('show'); }
+
+// ===================================================================
+// 初期化
+// ===================================================================
+(function init(){
+  renderCreed();
+  ['tencho','sc','si'].forEach(renderRole);
+  const saved = loadChk();
+  if(saved){
+    chkRole = ROLES[saved.role] ? saved.role : 'tencho';
+    answers = saved.answers || {};
+    chkMeta.store = saved.store || '';
+    chkMeta.name  = saved.name  || '';
+    history = Array.isArray(saved.history) ? saved.history : [];
+  }
+  renderCheck();
+})();
+</script>
+</body>
+</html>
