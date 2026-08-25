@@ -147,20 +147,43 @@
   .ov-close{display:block;margin:16px auto 30px;background:rgba(255,255,255,.15);color:#fff;border:none;padding:11px 26px;border-radius:20px;font-family:inherit;font-size:13px;font-weight:700;cursor:pointer;}
 
   @media print{
-    body{background:#fff;}
+    body{background:#fff;line-height:1.45;}
     header,.tabs,.actions,.hint,footer,.overlay,.no-print{display:none !important;}
-    main{max-width:none;padding:0;}
+    main{max-width:none;padding:0;margin:0;}
     .panel{display:block !important;}
     .panel.print-skip{display:none !important;}
-    .sheet{border:none;box-shadow:none;border-radius:0;padding:14mm 12mm;margin:0;page-break-after:always;break-after:page;}
-    .sheet:last-of-type{page-break-after:auto;break-after:auto;}
-    .sheet-head h2{font-size:17pt;}
-    .creed-main .v{font-size:16pt;}
-    .art-main,.dec-item .b{font-size:11pt;}
-    .art-note,.mg-item .b{font-size:9.5pt;}
+
+    /* 1種類＝A4縦1枚。理念→店長→SC→SI の順に改ページし、
+       最後のSIだけ改ページしない（末尾に空白ページを出さないため） */
+    .sheet{border:none;box-shadow:none;border-radius:0;padding:5mm 8mm;margin:0;}
+    #panel-creed .sheet,
+    #panel-tencho .sheet,
+    #panel-sc .sheet{page-break-after:always;break-after:page;}
+    #panel-si .sheet{page-break-after:auto;break-after:auto;}
+
+    /* 10項目＋注釈が1枚に収まるよう、文字と余白を圧縮 */
+    .sheet-head{padding-bottom:4px;margin-bottom:7px;}
+    .sheet-head h2{font-size:15pt;}
+    .sheet-head .sub{font-size:9pt;margin-top:2px;}
+
+    .creed-main{padding:9mm 6mm;}
+    .creed-main .t{font-size:8pt;margin-bottom:4px;}
+    .creed-main .v{font-size:15pt;}
+    .mg-item{padding:3mm 0;}
+    .mg-item .t{font-size:11pt;margin-bottom:1px;}
+    .dec-item{padding:3mm 0;}
+    .dec-mark{font-size:8.5pt;padding:1px 5px;}
+
+    .art{padding:2.6mm 0;}
+    .art-no{width:18px;height:18px;font-size:9pt;margin-top:1px;}
+    .art-main,.dec-item .b{font-size:10pt;}
+    .art-note,.mg-item .b{font-size:8.5pt;}
+    .art-note{margin-top:2px;padding-left:27px;}
+
+    /* 1項目が途中で切れて次ページにまたぐのを防ぐ */
     .art,.dec-item,.mg-item{page-break-inside:avoid;break-inside:avoid;}
   }
-  @page{size:A4 portrait;margin:10mm;}
+  @page{size:A4 portrait;margin:9mm;}
 </style>
 </head>
 <body>
