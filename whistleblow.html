@@ -1,0 +1,748 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>公益通報・コンプライアンス相談窓口 / Compliance Hotline</title>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  :root{--blue:#005BAC;--blue-d:#004080;--green:#00A651;--red:#E53E3E;--gray:#6B7280;--bg:#F3F4F6;--border:#E5E7EB;--warn:#B91C1C}
+  body{font-family:-apple-system,"Segoe UI","Hiragino Kaku Gothic ProN","Meiryo",sans-serif;background:var(--bg);color:#1F2937;line-height:1.6;-webkit-text-size-adjust:100%}
+  .wrap{max-width:600px;margin:0 auto;min-height:100vh;background:#fff;display:flex;flex-direction:column}
+  header{background:var(--blue);color:#fff;padding:14px 16px;position:sticky;top:0;z-index:10}
+  header .t1{font-size:17px;font-weight:800;text-align:center}
+  header .t2{font-size:11px;opacity:.9;margin-top:2px;text-align:center}
+  .langbar{display:flex;gap:6px;margin-top:10px;justify-content:center;flex-wrap:wrap}
+  .langbar button{flex:1;min-width:70px;padding:8px 4px;font-size:13px;font-weight:700;border:2px solid rgba(255,255,255,.5);background:transparent;color:#fff;border-radius:8px;cursor:pointer}
+  .langbar button.on{background:#fff;color:var(--blue);border-color:#fff}
+  .content{padding:16px;flex:1}
+  .card{background:#fff;border:1px solid var(--border);border-radius:12px;padding:16px;margin-bottom:14px;box-shadow:0 1px 3px rgba(0,0,0,.05)}
+  .lead{background:#EBF3FB;border:1px solid #BFDBFE;border-radius:12px;padding:14px;margin-bottom:14px}
+  .lead .h{font-size:17px;font-weight:800;color:var(--blue-d)}
+  .lead .b{font-size:14px;margin-top:6px}
+  .protect{background:#F0FDF4;border:1px solid #A7F3D0;border-radius:12px;padding:14px;margin-bottom:14px}
+  .protect .h{font-size:15px;font-weight:800;color:#047857;margin-bottom:8px}
+  .protect ul{list-style:none}
+  .protect li{font-size:13.5px;padding-left:24px;position:relative;margin-bottom:7px}
+  .protect li::before{content:"✓";position:absolute;left:4px;color:var(--green);font-weight:800}
+  .label{font-weight:700;font-size:15px;margin-bottom:2px}
+  .req{color:var(--red);font-size:12px;margin-left:4px}
+  .hint{font-size:12px;color:var(--gray);margin:4px 0 10px}
+  .warnnote{background:#FFFBEB;border:1px solid #FDE68A;border-radius:8px;padding:9px 11px;font-size:12.5px;color:#92400E;margin:8px 0}
+  input[type=text],input[type=tel],input[type=password],input[type=date],select,textarea{width:100%;padding:13px;font-size:16px;border:2px solid var(--border);border-radius:10px;font-family:inherit;background:#fff}
+  textarea{min-height:150px;resize:vertical;line-height:1.6}
+  input:focus,select:focus,textarea:focus{outline:none;border-color:var(--blue)}
+  .pinin{text-align:center;letter-spacing:6px;font-size:20px}
+  .fld{margin-bottom:16px}
+  .btn{display:block;width:100%;padding:15px;font-size:16px;font-weight:700;border:none;border-radius:10px;cursor:pointer;text-align:center;font-family:inherit}
+  .btn-primary{background:var(--blue);color:#fff}
+  .btn-primary:disabled{background:#9CA3AF;cursor:not-allowed}
+  .btn-green{background:var(--green);color:#fff}
+  .btn-ghost{background:#fff;color:var(--blue);border:2px solid var(--blue)}
+  .btn+.btn{margin-top:10px}
+  .choice{display:block;border:2px solid var(--border);border-radius:10px;padding:13px;margin-bottom:8px;cursor:pointer;font-size:14px}
+  .choice.on{border-color:var(--blue);background:#EBF3FB}
+  .choice input{margin-right:8px;width:18px;height:18px;vertical-align:-3px}
+  .choice .sub{display:block;font-size:12px;color:var(--gray);margin-top:3px;padding-left:26px}
+  .cats{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+  .cat{border:2px solid var(--border);border-radius:10px;padding:12px 8px;text-align:center;cursor:pointer;font-size:12.5px;font-weight:600;line-height:1.35}
+  .cat.on{border-color:var(--blue);background:#EBF3FB;color:var(--blue-d)}
+  .cat .ic{display:block;font-size:24px;margin-bottom:4px}
+  .chk{display:flex;align-items:flex-start;gap:10px;padding:12px;background:#FFFBEB;border:1px solid #FDE68A;border-radius:10px;margin-bottom:9px}
+  .chk input{width:24px;height:24px;flex-shrink:0;margin-top:1px}
+  .chk label{font-size:13.5px;font-weight:600}
+  .photos{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
+  .photos .ph{position:relative;width:88px;height:88px;border-radius:8px;overflow:hidden;border:1px solid var(--border)}
+  .photos .ph img{width:100%;height:100%;object-fit:cover}
+  .photos .ph button{position:absolute;top:2px;right:2px;width:22px;height:22px;border-radius:50%;border:none;background:rgba(0,0,0,.6);color:#fff;font-size:13px;cursor:pointer;line-height:22px;padding:0}
+  .addph{width:88px;height:88px;border:2px dashed var(--border);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:28px;color:var(--gray);cursor:pointer;background:#fff}
+  .ticketbox{background:#F0FDF4;border:2px solid var(--green);border-radius:12px;padding:18px;text-align:center;margin-bottom:14px}
+  .ticketbox .k{font-size:12px;color:var(--gray);font-weight:700}
+  .ticketbox .v{font-size:28px;font-weight:800;letter-spacing:2px;color:#047857;margin:4px 0 12px}
+  .ext{background:#F9FAFB;border:1px solid var(--border);border-radius:12px;padding:14px;margin-bottom:14px}
+  .ext .h{font-size:14px;font-weight:800;margin-bottom:4px}
+  .ext .b{font-size:12.5px;color:var(--gray);margin-bottom:10px}
+  .ext .row{border-top:1px solid var(--border);padding:9px 0;font-size:13px}
+  .ext .row .n{font-weight:700}
+  .ext .row .d{font-size:12px;color:var(--gray)}
+  .status-pill{display:inline-block;padding:5px 14px;border-radius:999px;font-size:14px;font-weight:800;background:#EBF3FB;color:var(--blue-d)}
+  .thread{margin-top:6px}
+  .msg{padding:11px 13px;border-radius:12px;margin-bottom:9px;font-size:14px;white-space:pre-wrap;word-break:break-word}
+  .msg .who{font-size:11px;font-weight:700;opacity:.75;margin-bottom:3px}
+  .msg.office{background:#EBF3FB;border:1px solid #BFDBFE}
+  .msg.me{background:#F3F4F6;border:1px solid var(--border)}
+  .err{color:var(--red);font-size:13px;margin-top:8px;font-weight:600;display:none}
+  .err.show{display:block}
+  .hidden{display:none!important}
+  .toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#333;color:#fff;padding:12px 20px;border-radius:8px;font-size:14px;opacity:0;transition:.3s;z-index:200;pointer-events:none;max-width:90%}
+  .toast.show{opacity:1}
+  footer{padding:16px;font-size:11px;color:var(--gray);text-align:center;border-top:1px solid var(--border)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="t1" id="hTitle">公益通報・コンプライアンス相談窓口</div>
+    <div class="t2" id="hSub">阪口商店</div>
+    <div class="langbar" id="langbar">
+      <button data-lang="ja" class="on" onclick="setLang('ja')">日本語</button>
+      <button data-lang="en" onclick="setLang('en')">English</button>
+      <button data-lang="vi" onclick="setLang('vi')">Tiếng Việt</button>
+      <button data-lang="ne" onclick="setLang('ne')">नेपाली</button>
+    </div>
+  </header>
+
+  <div class="content">
+
+    <!-- ========== TOP ========== -->
+    <div id="scTop">
+      <div class="lead">
+        <div class="h" id="leadH"></div>
+        <div class="b" id="leadB"></div>
+      </div>
+      <div class="protect">
+        <div class="h" id="protectH"></div>
+        <ul>
+          <li id="p1"></li><li id="p2"></li><li id="p3"></li><li id="p4"></li>
+        </ul>
+      </div>
+      <button class="btn btn-primary" id="btnNew" onclick="go('form')"></button>
+      <button class="btn btn-ghost" id="btnStatus" onclick="go('status')"></button>
+      <div style="height:16px"></div>
+      <div class="ext">
+        <div class="h" id="extH"></div>
+        <div class="b" id="extB"></div>
+        <div id="extList"></div>
+      </div>
+    </div>
+
+    <!-- ========== FORM ========== -->
+    <div id="scForm" class="hidden">
+      <div class="card">
+        <div class="label" id="fAnonH"></div>
+        <div class="hint" id="fAnonHint"></div>
+        <label class="choice on" id="chAnon">
+          <input type="radio" name="anon" value="1" checked onchange="onAnonChange()"><span id="optAnon"></span>
+          <span class="sub" id="optAnonSub"></span>
+        </label>
+        <label class="choice" id="chNamed">
+          <input type="radio" name="anon" value="0" onchange="onAnonChange()"><span id="optNamed"></span>
+          <span class="sub" id="optNamedSub"></span>
+        </label>
+        <div class="warnnote" id="anonWarn"></div>
+      </div>
+
+      <div class="card" id="namedFields">
+        <div class="fld">
+          <div class="label" id="lName"></div>
+          <input type="text" id="iName" autocomplete="off">
+        </div>
+        <div class="fld">
+          <div class="label" id="lEmp"></div>
+          <input type="text" id="iEmp" inputmode="numeric" autocomplete="off">
+        </div>
+        <div class="fld" style="margin-bottom:0">
+          <div class="label" id="lContact"></div>
+          <div class="hint" id="hContact"></div>
+          <input type="text" id="iContact" autocomplete="off">
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="fld">
+          <div class="label" id="lStore"></div>
+          <div class="hint" id="hStore"></div>
+          <select id="iStore"></select>
+        </div>
+        <div class="fld">
+          <div class="label" id="lCat"></div>
+          <div class="hint" id="hCat"></div>
+          <div class="cats" id="catList"></div>
+        </div>
+        <div class="fld">
+          <div class="label" id="lWhen"></div>
+          <input type="text" id="iWhen" autocomplete="off">
+        </div>
+        <div class="fld">
+          <div class="label" id="lWho"></div>
+          <div class="hint" id="hWho"></div>
+          <input type="text" id="iWho" autocomplete="off">
+        </div>
+        <div class="fld" style="margin-bottom:0">
+          <div class="label"><span id="lDetail"></span><span class="req">*</span></div>
+          <div class="hint" id="hDetail"></div>
+          <textarea id="iDetail"></textarea>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="label" id="lPhoto"></div>
+        <div class="hint" id="hPhoto"></div>
+        <div class="photos" id="photoList">
+          <div class="addph" onclick="document.getElementById('iPhoto').click()">＋</div>
+        </div>
+        <input type="file" id="iPhoto" accept="image/*" class="hidden" onchange="addPhoto(this)">
+      </div>
+
+      <div class="card">
+        <div class="label"><span id="lPin"></span><span class="req">*</span></div>
+        <div class="hint" id="hPin"></div>
+        <input type="tel" id="iPin" class="pinin" maxlength="8" inputmode="numeric" autocomplete="off">
+        <div style="height:10px"></div>
+        <div class="label" id="lPin2"></div>
+        <input type="tel" id="iPin2" class="pinin" maxlength="8" inputmode="numeric" autocomplete="off">
+      </div>
+
+      <div class="card">
+        <div class="chk"><input type="checkbox" id="ck1"><label for="ck1" id="lCk1"></label></div>
+        <div class="chk"><input type="checkbox" id="ck2"><label for="ck2" id="lCk2"></label></div>
+      </div>
+
+      <button class="btn btn-primary" id="btnSend" onclick="submitReport()"></button>
+      <div class="err" id="formErr"></div>
+      <div style="height:10px"></div>
+      <button class="btn btn-ghost" id="btnBack1" onclick="go('top')"></button>
+    </div>
+
+    <!-- ========== DONE ========== -->
+    <div id="scDone" class="hidden">
+      <div class="lead">
+        <div class="h" id="doneH"></div>
+        <div class="b" id="doneB"></div>
+      </div>
+      <div class="ticketbox">
+        <div class="k" id="kTicket"></div>
+        <div class="v" id="vTicket"></div>
+        <div class="k" id="kPin"></div>
+        <div class="v" id="vPin"></div>
+        <button class="btn btn-green" id="btnCopy" onclick="copyTicket()"></button>
+      </div>
+      <div class="warnnote" id="doneNote"></div>
+      <button class="btn btn-ghost" id="btnBack2" onclick="location.reload()"></button>
+    </div>
+
+    <!-- ========== STATUS ========== -->
+    <div id="scStatus" class="hidden">
+      <div class="card" id="loginCard">
+        <div class="label" id="stH"></div>
+        <div class="hint" id="stHint"></div>
+        <div class="fld">
+          <div class="label" id="lStTicket"></div>
+          <input type="text" id="iStTicket" placeholder="WB-2026-0001" autocomplete="off">
+        </div>
+        <div class="fld" style="margin-bottom:0">
+          <div class="label" id="lStPin"></div>
+          <input type="tel" id="iStPin" class="pinin" maxlength="8" inputmode="numeric" autocomplete="off">
+        </div>
+        <div style="height:12px"></div>
+        <button class="btn btn-primary" id="btnLogin" onclick="reporterLogin()"></button>
+        <div class="err" id="stErr"></div>
+      </div>
+
+      <div id="stDetail" class="hidden">
+        <div class="card">
+          <div class="hint" style="margin:0 0 4px" id="lStStatus"></div>
+          <span class="status-pill" id="vStStatus"></span>
+          <div class="hint" style="margin-top:10px" id="vStMeta"></div>
+          <div class="warnnote hidden" id="vStClose"></div>
+        </div>
+        <div class="card">
+          <div class="label" id="lThread"></div>
+          <div class="thread" id="thread"></div>
+          <div style="height:8px"></div>
+          <textarea id="iMsg" style="min-height:90px"></textarea>
+          <div style="height:8px"></div>
+          <button class="btn btn-green" id="btnMsg" onclick="sendMessage()"></button>
+          <div class="err" id="msgErr"></div>
+        </div>
+      </div>
+      <div style="height:10px"></div>
+      <button class="btn btn-ghost" id="btnBack3" onclick="go('top')"></button>
+    </div>
+
+  </div>
+  <footer id="foot"></footer>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+// ============================================================
+// 【設定1】GASのデプロイURL（公益通報窓口“専用”のプロジェクトのもの）
+//   ※他アプリのGAS URLを絶対に流用しないこと。権限とデータが混ざります。
+// ============================================================
+const GAS_URL = '';
+
+// ============================================================
+// 【設定2】社外の相談窓口。本部から案内されている連絡先に置き換えてください。
+//   会社の代表者が関わる案件は、社内窓口だけでは機能しません。必ず掲載します。
+// ============================================================
+const EXTERNAL_CONTACTS = [
+  { n:'ローソン本部 コンプライアンス相談窓口', d:'（本部から案内されている電話番号・URLをここに記入してください）' },
+  { n:'消費者庁 公益通報者保護制度相談ダイヤル', d:'（消費者庁ウェブサイトで最新の受付先をご確認ください）' },
+  { n:'最寄りの労働基準監督署 / 大阪労働局 総合労働相談コーナー', d:'（給与・労働時間・ハラスメントの相談先）' }
+];
+
+const STORES = ['吹田警察署前','吹田朝日町','池田市役所前','吹田青山台三丁目','五月ケ丘東','江坂東',
+  '吹田豊津中学校前','豊中利倉東一丁目','豊中服部元町一丁目','東淀川大道南','大道南一丁目','豊里六丁目',
+  '東淀川豊里五丁目','豊中原田南一丁目','南金田二丁目','豊中服部西町三丁目','箕面白島二丁目',
+  '吹田垂水三丁目','新御堂筋上新田','江坂駅南口'];
+
+const CATEGORIES = [
+  { id:'harassment', ic:'😣' },
+  { id:'fraud',      ic:'💰' },
+  { id:'labor',      ic:'🕒' },
+  { id:'safety',     ic:'🧼' },
+  { id:'other',      ic:'💬' }
+];
+
+// ============================================================
+// 多言語テキスト
+// ============================================================
+const T = {
+ja:{
+  title:'公益通報・コンプライアンス相談窓口', sub:'阪口商店',
+  leadH:'安心して相談してください',
+  leadB:'職場での不正・ハラスメント・困りごとを受け付ける窓口です。相談したことを理由に、あなたが不利益な扱いを受けることは法律で禁止されています。',
+  protectH:'あなたを守るしくみ',
+  p1:'名前を書かずに（匿名で）相談できます',
+  p2:'内容を見られるのは、窓口担当の3名だけです',
+  p3:'相談を理由に解雇・減給・シフト削減などをすることは法律で禁止されています',
+  p4:'「誰が相談したのか」を探すことも禁止されています',
+  btnNew:'相談・通報する', btnStatus:'受付番号で状況を確認する',
+  extH:'会社の外の相談窓口', extB:'会社の代表者に関することなど、社内の窓口に相談しにくい場合は、こちらへ相談できます。',
+  fAnonH:'お名前を出しますか？', fAnonHint:'どちらを選んでも、あなたが不利益な扱いを受けることはありません。',
+  optAnon:'匿名で相談する', optAnonSub:'名前を書きません。受付番号と合言葉で、その後のやりとりができます。',
+  optNamed:'名前を書いて相談する', optNamedSub:'直接ご連絡できるため、詳しい調査がしやすくなります。',
+  anonWarn:'匿名でも、書かれた内容から人物が推測できる場合があります。心配な場合は、日時や場所を具体的に書きすぎないでください。',
+  lName:'お名前', lEmp:'従業員番号（任意）', lContact:'連絡先（任意）', hContact:'電話番号またはメールアドレス',
+  lStore:'店舗（任意）', hStore:'書かなくても相談できます。小さな店舗では、店舗名から特定される可能性があります。',
+  storeNone:'選択しない',
+  lCat:'相談の種類', hCat:'いちばん近いものを1つ選んでください。',
+  cat_harassment:'ハラスメント<br>暴言・いじめ・セクハラ', cat_fraud:'お金・商品の不正', cat_labor:'給与・シフト<br>労働時間',
+  cat_safety:'衛生・食品の安全', cat_other:'その他',
+  lWhen:'いつ頃のことですか（任意）', lWho:'誰についてですか（任意）', hWho:'名前がわからなければ「夜勤の男性社員」などでも構いません。',
+  lDetail:'内容', hDetail:'いつ・どこで・何があったか、わかる範囲で書いてください。10文字以上。',
+  lPhoto:'写真（任意）', hPhoto:'3枚まで。証拠になる写真があれば添付できます。',
+  lPin:'合言葉（数字4〜8桁）', hPin:'後で状況を確認するときに使います。必ず覚えておいてください。',
+  lPin2:'合言葉（確認のためもう一度）',
+  ck1:'事実だと思うことを、正直に書きました',
+  ck2:'受付番号と合言葉を、送信後に必ず控えます',
+  btnSend:'送信する', sending:'送信中…', back:'戻る',
+  doneH:'受け付けました', doneB:'下の受付番号と合言葉は、あとで状況を確認するために必要です。必ずメモしてください。この画面を閉じると二度と表示されません。',
+  kTicket:'受付番号', kPin:'合言葉', btnCopy:'受付番号をコピー',
+  doneNote:'窓口担当者が内容を確認し、原則20日以内に、調査を始めるかどうかをお知らせします。「受付番号で状況を確認する」からご覧ください。',
+  btnHome:'最初の画面に戻る',
+  stH:'状況を確認する', stHint:'送信したときの受付番号と合言葉を入力してください。',
+  lStTicket:'受付番号', lStPin:'合言葉',
+  btnLogin:'確認する', lStStatus:'現在の状況',
+  lThread:'窓口とのやりとり', msgPh:'追加で伝えたいことがあれば書いてください（匿名のままです）', btnMsg:'送信する',
+  fromOffice:'窓口担当', fromYou:'あなた', noMsg:'まだやりとりはありません。',
+  received:'受付日', closeLabel:'対応結果',
+  errNet:'通信に失敗しました。電波の良い場所で、もう一度お試しください。',
+  errDetail:'内容を10文字以上で書いてください。', errCat:'相談の種類を選んでください。',
+  errPin:'合言葉は数字4〜8桁で入力してください。', errPin2:'合言葉が一致しません。',
+  errCk:'2つのチェックにチェックを入れてください。', errName:'お名前を入力してください。',
+  errNoUrl:'このアプリはまだ設定が完了していません。管理者にご連絡ください。',
+  copied:'コピーしました', sent:'送信しました',
+  st:{'受付':'受付しました','調査中':'調査中です','是正対応中':'改善対応中です','完了':'対応完了','対象外':'この窓口の対象外'},
+  foot:'このページの内容は窓口担当者以外には共有されません。'
+},
+en:{
+  title:'Compliance & Whistleblowing Hotline', sub:'Sakaguchi Shoten',
+  leadH:'Please speak up with confidence',
+  leadB:'This is the place to report misconduct, harassment or any workplace problem. By law, you must not be treated unfavourably for making a report.',
+  protectH:'How you are protected',
+  p1:'You can report anonymously (no name required)',
+  p2:'Only the 3 assigned hotline officers can see your report',
+  p3:'Dismissal, pay cuts or shift reductions because of a report are prohibited by law',
+  p4:'Trying to find out who made a report is also prohibited',
+  btnNew:'Make a report', btnStatus:'Check status with your reference number',
+  extH:'Contacts outside the company', extB:'If the matter involves company executives, or you find it hard to use the internal hotline, you can contact these instead.',
+  fAnonH:'Do you want to give your name?', fAnonHint:'Either choice is fine. You will not be treated unfavourably.',
+  optAnon:'Report anonymously', optAnonSub:'No name is stored. You can still exchange messages using your reference number and passcode.',
+  optNamed:'Report with my name', optNamedSub:'We can contact you directly, which makes a detailed investigation easier.',
+  anonWarn:'Even anonymously, the details you write may reveal who you are. If you are worried, avoid writing very specific dates or places.',
+  lName:'Your name', lEmp:'Employee number (optional)', lContact:'Contact (optional)', hContact:'Phone number or e-mail address',
+  lStore:'Store (optional)', hStore:'You may leave this blank. In a small store, naming it may identify you.',
+  storeNone:'Not selected',
+  lCat:'Type of report', hCat:'Choose the closest one.',
+  cat_harassment:'Harassment<br>abuse, bullying', cat_fraud:'Money / stock fraud', cat_labor:'Pay, shifts<br>working hours',
+  cat_safety:'Hygiene / food safety', cat_other:'Other',
+  lWhen:'When did it happen? (optional)', lWho:'Who is it about? (optional)', hWho:'If you do not know the name, "the male staff on night shift" is fine.',
+  lDetail:'Details', hDetail:'Please write when, where and what happened, as far as you know. At least 10 characters.',
+  lPhoto:'Photos (optional)', hPhoto:'Up to 3. Attach photos if you have evidence.',
+  lPin:'Passcode (4-8 digits)', hPin:'You will need this to check the status later. Please remember it.',
+  lPin2:'Passcode (again)',
+  ck1:'I have written honestly what I believe to be true',
+  ck2:'I will write down my reference number and passcode after sending',
+  btnSend:'Send', sending:'Sending…', back:'Back',
+  doneH:'Your report has been received', doneB:'You need the reference number and passcode below to check the status later. Please write them down now — they will not be shown again.',
+  kTicket:'Reference number', kPin:'Passcode', btnCopy:'Copy reference number',
+  doneNote:'An officer will review your report and, as a rule within 20 days, let you know whether an investigation will start. Check from "Check status".',
+  btnHome:'Back to start',
+  stH:'Check the status', stHint:'Enter the reference number and passcode you received.',
+  lStTicket:'Reference number', lStPin:'Passcode',
+  btnLogin:'Check', lStStatus:'Current status',
+  lThread:'Messages with the hotline', msgPh:'You can add anything else you want to tell us (you stay anonymous)', btnMsg:'Send',
+  fromOffice:'Hotline officer', fromYou:'You', noMsg:'No messages yet.',
+  received:'Received on', closeLabel:'Outcome',
+  errNet:'Connection failed. Please try again where the signal is good.',
+  errDetail:'Please write at least 10 characters.', errCat:'Please choose the type of report.',
+  errPin:'Passcode must be 4-8 digits.', errPin2:'The passcodes do not match.',
+  errCk:'Please tick both boxes.', errName:'Please enter your name.',
+  errNoUrl:'This app is not set up yet. Please contact the administrator.',
+  copied:'Copied', sent:'Sent',
+  st:{'受付':'Received','調査中':'Under investigation','是正対応中':'Corrective action','完了':'Closed','対象外':'Out of scope'},
+  foot:'Nothing on this page is shared with anyone other than the hotline officers.'
+},
+vi:{
+  title:'Đường dây tư vấn tuân thủ / tố giác', sub:'Sakaguchi Shoten',
+  leadH:'Hãy yên tâm trình bày',
+  leadB:'Đây là nơi tiếp nhận các hành vi sai trái, quấy rối và mọi khó khăn tại nơi làm việc. Pháp luật nghiêm cấm đối xử bất lợi với bạn vì bạn đã báo cáo.',
+  protectH:'Bạn được bảo vệ như thế nào',
+  p1:'Bạn có thể báo cáo ẩn danh (không cần ghi tên)',
+  p2:'Chỉ 3 người phụ trách đường dây mới xem được nội dung',
+  p3:'Sa thải, giảm lương, cắt ca vì lý do báo cáo là hành vi bị pháp luật cấm',
+  p4:'Việc truy tìm "ai đã báo cáo" cũng bị cấm',
+  btnNew:'Gửi báo cáo / tư vấn', btnStatus:'Kiểm tra tình trạng bằng mã tiếp nhận',
+  extH:'Cơ quan tư vấn bên ngoài công ty', extB:'Nếu sự việc liên quan đến người đại diện công ty, hoặc bạn khó sử dụng đường dây nội bộ, hãy liên hệ những nơi sau.',
+  fAnonH:'Bạn có muốn ghi tên không?', fAnonHint:'Chọn cách nào cũng được. Bạn sẽ không bị đối xử bất lợi.',
+  optAnon:'Báo cáo ẩn danh', optAnonSub:'Không lưu tên. Bạn vẫn trao đổi được bằng mã tiếp nhận và mật khẩu.',
+  optNamed:'Báo cáo có ghi tên', optNamedSub:'Chúng tôi có thể liên hệ trực tiếp, giúp việc điều tra chi tiết dễ hơn.',
+  anonWarn:'Dù ẩn danh, nội dung bạn viết vẫn có thể khiến người khác đoán ra bạn. Nếu lo ngại, đừng ghi quá cụ thể ngày giờ hay địa điểm.',
+  lName:'Họ và tên', lEmp:'Mã nhân viên (không bắt buộc)', lContact:'Liên hệ (không bắt buộc)', hContact:'Số điện thoại hoặc e-mail',
+  lStore:'Cửa hàng (không bắt buộc)', hStore:'Có thể để trống. Ở cửa hàng nhỏ, việc ghi tên cửa hàng có thể khiến bạn bị nhận ra.',
+  storeNone:'Không chọn',
+  lCat:'Loại nội dung', hCat:'Hãy chọn 1 mục gần nhất.',
+  cat_harassment:'Quấy rối<br>lăng mạ, bắt nạt', cat_fraud:'Gian lận tiền / hàng hóa', cat_labor:'Lương, ca làm<br>giờ làm việc',
+  cat_safety:'Vệ sinh / an toàn thực phẩm', cat_other:'Khác',
+  lWhen:'Việc xảy ra khi nào? (không bắt buộc)', lWho:'Về ai? (không bắt buộc)', hWho:'Không biết tên cũng được, ví dụ "nam nhân viên ca đêm".',
+  lDetail:'Nội dung', hDetail:'Hãy viết khi nào, ở đâu, chuyện gì đã xảy ra trong phạm vi bạn biết. Ít nhất 10 ký tự.',
+  lPhoto:'Ảnh (không bắt buộc)', hPhoto:'Tối đa 3 ảnh. Nếu có ảnh làm bằng chứng, hãy đính kèm.',
+  lPin:'Mật khẩu (4-8 chữ số)', hPin:'Dùng để kiểm tra tình trạng sau này. Hãy nhớ kỹ.',
+  lPin2:'Mật khẩu (nhập lại)',
+  ck1:'Tôi đã viết trung thực những điều tôi tin là sự thật',
+  ck2:'Sau khi gửi, tôi sẽ ghi lại mã tiếp nhận và mật khẩu',
+  btnSend:'Gửi', sending:'Đang gửi…', back:'Quay lại',
+  doneH:'Đã tiếp nhận', doneB:'Bạn cần mã tiếp nhận và mật khẩu dưới đây để kiểm tra tình trạng. Hãy ghi lại ngay — sẽ không hiển thị lại lần nữa.',
+  kTicket:'Mã tiếp nhận', kPin:'Mật khẩu', btnCopy:'Sao chép mã tiếp nhận',
+  doneNote:'Người phụ trách sẽ xem xét và về nguyên tắc trong vòng 20 ngày sẽ thông báo có tiến hành điều tra hay không. Hãy xem ở mục kiểm tra tình trạng.',
+  btnHome:'Về màn hình đầu',
+  stH:'Kiểm tra tình trạng', stHint:'Nhập mã tiếp nhận và mật khẩu khi bạn gửi.',
+  lStTicket:'Mã tiếp nhận', lStPin:'Mật khẩu',
+  btnLogin:'Kiểm tra', lStStatus:'Tình trạng hiện tại',
+  lThread:'Trao đổi với người phụ trách', msgPh:'Nếu có điều muốn bổ sung, hãy viết ở đây (vẫn ẩn danh)', btnMsg:'Gửi',
+  fromOffice:'Người phụ trách', fromYou:'Bạn', noMsg:'Chưa có trao đổi nào.',
+  received:'Ngày tiếp nhận', closeLabel:'Kết quả xử lý',
+  errNet:'Gửi không thành công. Hãy thử lại ở nơi có sóng tốt.',
+  errDetail:'Hãy viết ít nhất 10 ký tự.', errCat:'Hãy chọn loại nội dung.',
+  errPin:'Mật khẩu phải là 4-8 chữ số.', errPin2:'Mật khẩu không khớp.',
+  errCk:'Hãy đánh dấu cả 2 ô.', errName:'Hãy nhập họ tên.',
+  errNoUrl:'Ứng dụng chưa được thiết lập. Vui lòng liên hệ quản trị viên.',
+  copied:'Đã sao chép', sent:'Đã gửi',
+  st:{'受付':'Đã tiếp nhận','調査中':'Đang điều tra','是正対応中':'Đang khắc phục','完了':'Đã hoàn tất','対象外':'Ngoài phạm vi'},
+  foot:'Nội dung trang này không được chia sẻ cho ai ngoài người phụ trách.'
+},
+ne:{
+  title:'अनुपालन तथा जनहित सूचना डेस्क', sub:'Sakaguchi Shoten',
+  leadH:'निर्धक्क भएर भन्नुहोस्',
+  leadB:'कार्यस्थलमा हुने अनियमितता, दुर्व्यवहार वा कुनै पनि समस्या यहाँ जनाउन सकिन्छ। सूचना दिएकै कारण तपाईंलाई हानि पुर्‍याउने व्यवहार गर्न कानुनले निषेध गरेको छ।',
+  protectH:'तपाईंको सुरक्षा कसरी हुन्छ',
+  p1:'नाम नलेखी (गुमनाम) सूचना दिन सकिन्छ',
+  p2:'सामग्री हेर्न पाउने ३ जना जिम्मेवार व्यक्ति मात्र हुन्',
+  p3:'सूचना दिएको कारण बर्खास्ती, तलब कटौती वा ड्युटी घटाउनु कानुनविरुद्ध हो',
+  p4:'"कसले सूचना दियो" भनी खोजी गर्न पनि निषेध छ',
+  btnNew:'सूचना / परामर्श पठाउनुहोस्', btnStatus:'प्राप्ति नम्बरबाट स्थिति हेर्नुहोस्',
+  extH:'कम्पनी बाहिरका परामर्श केन्द्र', extB:'कम्पनीका प्रतिनिधिसँग सम्बन्धित विषय वा भित्री डेस्कमा भन्न गाह्रो भएमा यहाँ सम्पर्क गर्न सकिन्छ।',
+  fAnonH:'नाम लेख्ने कि नलेख्ने?', fAnonHint:'जुनसुके रोज्दा पनि तपाईंलाई हानिकारक व्यवहार हुँदैन।',
+  optAnon:'गुमनाम रूपमा पठाउने', optAnonSub:'नाम सुरक्षित गरिँदैन। प्राप्ति नम्बर र गोप्य अंकबाट पछि कुराकानी गर्न सकिन्छ।',
+  optNamed:'नाम लेखेर पठाउने', optNamedSub:'सिधै सम्पर्क गर्न सकिने हुँदा विस्तृत अनुसन्धान सजिलो हुन्छ।',
+  anonWarn:'गुमनाम भए पनि लेखिएको विवरणबाट व्यक्ति चिनिन सक्छ। चिन्ता भए मिति र स्थान अत्यन्त विस्तृत नलेख्नुहोस्।',
+  lName:'तपाईंको नाम', lEmp:'कर्मचारी नम्बर (ऐच्छिक)', lContact:'सम्पर्क (ऐच्छिक)', hContact:'फोन नम्बर वा इमेल',
+  lStore:'पसल (ऐच्छिक)', hStore:'नलेखे पनि हुन्छ। सानो पसलमा पसलको नामबाट चिनिन सक्नुहुन्छ।',
+  storeNone:'छनोट नगर्ने',
+  lCat:'विषयको प्रकार', hCat:'सबैभन्दा मिल्ने एउटा छान्नुहोस्।',
+  cat_harassment:'दुर्व्यवहार<br>गाली, हेला', cat_fraud:'पैसा / सामानको अनियमितता', cat_labor:'तलब, ड्युटी<br>काम गर्ने समय',
+  cat_safety:'सरसफाइ / खाद्य सुरक्षा', cat_other:'अन्य',
+  lWhen:'कहिले भएको हो? (ऐच्छिक)', lWho:'कसका बारेमा हो? (ऐच्छिक)', hWho:'नाम थाहा नभए "रातको ड्युटीको पुरुष कर्मचारी" भने पनि हुन्छ।',
+  lDetail:'विवरण', hDetail:'कहिले, कहाँ, के भयो — थाहा भएसम्म लेख्नुहोस्। कम्तीमा १० अक्षर।',
+  lPhoto:'फोटो (ऐच्छिक)', hPhoto:'बढीमा ३ वटा। प्रमाण हुने फोटो भए संलग्न गर्न सक्नुहुन्छ।',
+  lPin:'गोप्य अंक (४-८ अंक)', hPin:'पछि स्थिति हेर्न आवश्यक पर्छ। अवश्य सम्झनुहोस्।',
+  lPin2:'गोप्य अंक (पुनः)',
+  ck1:'मैले सत्य ठानेको कुरा इमानदारीपूर्वक लेखेको हुँ',
+  ck2:'पठाएपछि प्राप्ति नम्बर र गोप्य अंक टिपेर राख्नेछु',
+  btnSend:'पठाउनुहोस्', sending:'पठाउँदै…', back:'पछाडि',
+  doneH:'प्राप्त भयो', doneB:'तलको प्राप्ति नम्बर र गोप्य अंक पछि स्थिति हेर्न आवश्यक पर्छ। अहिले नै टिप्नुहोस् — फेरि देखिने छैन।',
+  kTicket:'प्राप्ति नम्बर', kPin:'गोप्य अंक', btnCopy:'प्राप्ति नम्बर कपी गर्नुहोस्',
+  doneNote:'जिम्मेवार व्यक्तिले विषय हेरी सामान्यतया २० दिनभित्र अनुसन्धान सुरु गर्ने वा नगर्ने जानकारी दिनेछन्। स्थिति हेर्ने मेनुबाट हेर्नुहोस्।',
+  btnHome:'सुरुको पृष्ठमा',
+  stH:'स्थिति हेर्नुहोस्', stHint:'पठाउँदा प्राप्त गरेको नम्बर र गोप्य अंक हाल्नुहोस्।',
+  lStTicket:'प्राप्ति नम्बर', lStPin:'गोप्य अंक',
+  btnLogin:'हेर्नुहोस्', lStStatus:'हालको स्थिति',
+  lThread:'डेस्कसँगको कुराकानी', msgPh:'थप भन्नुपर्ने कुरा भए यहाँ लेख्नुहोस् (गुमनाम नै रहनेछ)', btnMsg:'पठाउनुहोस्',
+  fromOffice:'जिम्मेवार व्यक्ति', fromYou:'तपाईं', noMsg:'अहिलेसम्म कुराकानी छैन।',
+  received:'प्राप्त मिति', closeLabel:'नतिजा',
+  errNet:'पठाउन सकिएन। राम्रो नेटवर्क भएको ठाउँमा पुनः प्रयास गर्नुहोस्।',
+  errDetail:'कम्तीमा १० अक्षर लेख्नुहोस्।', errCat:'विषयको प्रकार छान्नुहोस्।',
+  errPin:'गोप्य अंक ४-८ अंकको हुनुपर्छ।', errPin2:'गोप्य अंक मिलेन।',
+  errCk:'दुवै बाकसमा चिन्ह लगाउनुहोस्।', errName:'नाम हाल्नुहोस्।',
+  errNoUrl:'यो एप अझै सेटअप भएको छैन। प्रशासकलाई सम्पर्क गर्नुहोस्।',
+  copied:'कपी भयो', sent:'पठाइयो',
+  st:{'受付':'प्राप्त भयो','調査中':'अनुसन्धानमा','是正対応中':'सुधार कार्यमा','完了':'सम्पन्न','対象外':'दायरा बाहिर'},
+  foot:'यस पृष्ठको सामग्री जिम्मेवार व्यक्तिबाहेक अरूलाई साझा गरिँदैन।'
+}
+};
+
+let LANG = localStorage.getItem('wb_lang') || 'ja';
+let selectedCat = '';
+let photos = [];
+let session = null;   // {ticket, pin} 状況確認用（この端末のメモリ上のみ。保存しない）
+
+function t(){ return T[LANG]; }
+function $(id){ return document.getElementById(id); }
+
+function setLang(l){ LANG = l; localStorage.setItem('wb_lang', l); applyLang(); }
+
+function applyLang(){
+  const x = t();
+  document.documentElement.lang = LANG;
+  document.querySelectorAll('#langbar button').forEach(b=>b.classList.toggle('on', b.getAttribute('data-lang')===LANG));
+  const map = {
+    hTitle:'title', hSub:'sub', leadH:'leadH', leadB:'leadB', protectH:'protectH',
+    p1:'p1', p2:'p2', p3:'p3', p4:'p4', btnNew:'btnNew', btnStatus:'btnStatus',
+    extH:'extH', extB:'extB',
+    fAnonH:'fAnonH', fAnonHint:'fAnonHint', optAnon:'optAnon', optAnonSub:'optAnonSub',
+    optNamed:'optNamed', optNamedSub:'optNamedSub', anonWarn:'anonWarn',
+    lName:'lName', lEmp:'lEmp', lContact:'lContact', hContact:'hContact',
+    lStore:'lStore', hStore:'hStore', lCat:'lCat', hCat:'hCat',
+    lWhen:'lWhen', lWho:'lWho', hWho:'hWho', lDetail:'lDetail', hDetail:'hDetail',
+    lPhoto:'lPhoto', hPhoto:'hPhoto', lPin:'lPin', hPin:'hPin', lPin2:'lPin2',
+    lCk1:'ck1', lCk2:'ck2', btnSend:'btnSend', btnBack1:'back',
+    doneH:'doneH', doneB:'doneB', kTicket:'kTicket', kPin:'kPin', btnCopy:'btnCopy',
+    doneNote:'doneNote', btnBack2:'btnHome',
+    stH:'stH', stHint:'stHint', lStTicket:'lStTicket', lStPin:'lStPin', btnLogin:'btnLogin',
+    lStStatus:'lStStatus', lThread:'lThread', btnMsg:'btnMsg', btnBack3:'back', foot:'foot'
+  };
+  Object.keys(map).forEach(function(id){ const el=$(id); if(el) el.textContent = x[map[id]]; });
+  $('iMsg').placeholder = x.msgPh;
+  renderCats(); renderStores(); renderExt();
+  if (session) renderThreadFromCache();
+}
+
+function renderCats(){
+  const x = t();
+  $('catList').innerHTML = CATEGORIES.map(function(c){
+    return '<div class="cat'+(selectedCat===c.id?' on':'')+'" onclick="pickCat(\''+c.id+'\')">'
+      + '<span class="ic">'+c.ic+'</span>'+x['cat_'+c.id]+'</div>';
+  }).join('');
+}
+function pickCat(id){ selectedCat = id; renderCats(); }
+
+function renderStores(){
+  const sel = $('iStore'); const cur = sel.value;
+  sel.innerHTML = '<option value="">'+t().storeNone+'</option>'
+    + STORES.map(function(s){ return '<option value="'+s+'">'+s+'</option>'; }).join('');
+  if (cur) sel.value = cur;
+}
+
+function renderExt(){
+  $('extList').innerHTML = EXTERNAL_CONTACTS.map(function(c){
+    return '<div class="row"><div class="n">'+c.n+'</div><div class="d">'+c.d+'</div></div>';
+  }).join('');
+}
+
+function go(sc){
+  ['scTop','scForm','scDone','scStatus'].forEach(function(id){ $(id).classList.add('hidden'); });
+  $({top:'scTop',form:'scForm',done:'scDone',status:'scStatus'}[sc]).classList.remove('hidden');
+  window.scrollTo(0,0);
+}
+
+function onAnonChange(){
+  const anon = document.querySelector('input[name=anon]:checked').value === '1';
+  $('chAnon').classList.toggle('on', anon);
+  $('chNamed').classList.toggle('on', !anon);
+  $('namedFields').classList.toggle('hidden', anon);
+  $('anonWarn').classList.toggle('hidden', !anon);
+}
+
+function toast(msg){
+  const el = $('toast'); el.textContent = msg; el.classList.add('show');
+  setTimeout(function(){ el.classList.remove('show'); }, 2200);
+}
+function showErr(id, msg){ const el=$(id); el.textContent=msg; el.classList.add('show'); }
+function hideErr(id){ $(id).classList.remove('show'); }
+
+// ---- 写真（端末側で縮小してから送る） ----
+function addPhoto(input){
+  const file = input.files[0];
+  if (!file) return;
+  if (photos.length >= 3) { input.value=''; return; }
+  const reader = new FileReader();
+  reader.onload = function(e){
+    const img = new Image();
+    img.onload = function(){
+      const max = 1280;
+      let w = img.width, h = img.height;
+      if (w > max || h > max){ const r = Math.min(max/w, max/h); w = Math.round(w*r); h = Math.round(h*r); }
+      const cv = document.createElement('canvas'); cv.width=w; cv.height=h;
+      cv.getContext('2d').drawImage(img,0,0,w,h);
+      photos.push(cv.toDataURL('image/jpeg',0.7));
+      renderPhotos();
+    };
+    img.src = e.target.result;
+  };
+  reader.readAsDataURL(file);
+  input.value='';
+}
+function renderPhotos(){
+  const html = photos.map(function(p,i){
+    return '<div class="ph"><img src="'+p+'"><button onclick="delPhoto('+i+')">×</button></div>';
+  }).join('');
+  $('photoList').innerHTML = html + (photos.length<3
+    ? '<div class="addph" onclick="document.getElementById(\'iPhoto\').click()">＋</div>' : '');
+}
+function delPhoto(i){ photos.splice(i,1); renderPhotos(); }
+
+// ---- 通信 ----
+async function post(payload){
+  if (!GAS_URL) throw new Error('NOURL');
+  const res = await fetch(GAS_URL, {
+    method:'POST', redirect:'follow',
+    headers:{'Content-Type':'text/plain;charset=utf-8'},
+    body: JSON.stringify(payload)
+  });
+  return await res.json();
+}
+
+// ---- 送信 ----
+async function submitReport(){
+  const x = t();
+  hideErr('formErr');
+  const anon = document.querySelector('input[name=anon]:checked').value === '1';
+  const detail = $('iDetail').value.trim();
+  const pin = $('iPin').value.trim(), pin2 = $('iPin2').value.trim();
+
+  if (!selectedCat)                 return showErr('formErr', x.errCat);
+  if (detail.length < 10)           return showErr('formErr', x.errDetail);
+  if (!anon && !$('iName').value.trim()) return showErr('formErr', x.errName);
+  if (!/^[0-9]{4,8}$/.test(pin))    return showErr('formErr', x.errPin);
+  if (pin !== pin2)                 return showErr('formErr', x.errPin2);
+  if (!$('ck1').checked || !$('ck2').checked) return showErr('formErr', x.errCk);
+
+  const btn = $('btnSend');
+  btn.disabled = true; btn.textContent = x.sending;
+  try{
+    const r = await post({ action:'submitReport', report:{
+      anonymous: anon,
+      name:    anon ? '' : $('iName').value.trim(),
+      empId:   anon ? '' : $('iEmp').value.trim(),
+      contact: anon ? '' : $('iContact').value.trim(),
+      store:   $('iStore').value,
+      category: selectedCat,
+      occurredAt: $('iWhen').value.trim(),
+      involved:   $('iWho').value.trim(),
+      detail: detail,
+      pin: pin,
+      photos: photos
+    }});
+    if (!r.ok) { btn.disabled=false; btn.textContent=x.btnSend; return showErr('formErr', r.error || x.errNet); }
+    $('vTicket').textContent = r.ticket;
+    $('vPin').textContent = pin;
+    photos = [];
+    go('done');
+  }catch(err){
+    showErr('formErr', String(err.message)==='NOURL' ? x.errNoUrl : x.errNet);
+  }finally{
+    btn.disabled = false; btn.textContent = x.btnSend;
+  }
+}
+
+function copyTicket(){
+  const txt = $('vTicket').textContent + ' / ' + $('vPin').textContent;
+  if (navigator.clipboard) navigator.clipboard.writeText(txt);
+  toast(t().copied);
+}
+
+// ---- 状況確認 ----
+let cachedReport = null, cachedMessages = [];
+
+async function reporterLogin(){
+  const x = t();
+  hideErr('stErr');
+  const ticket = $('iStTicket').value.trim().toUpperCase();
+  const pin = $('iStPin').value.trim();
+  if (!ticket || !pin) return;
+  const btn = $('btnLogin'); btn.disabled = true; btn.textContent = x.sending;
+  try{
+    const r = await post({ action:'reporterLogin', ticket: ticket, pin: pin });
+    if (!r.ok) { showErr('stErr', r.error || x.errNet); return; }
+    session = { ticket: ticket, pin: pin };
+    cachedReport = r.report; cachedMessages = r.messages || [];
+    $('loginCard').classList.add('hidden');
+    $('stDetail').classList.remove('hidden');
+    renderThreadFromCache();
+  }catch(err){
+    showErr('stErr', String(err.message)==='NOURL' ? x.errNoUrl : x.errNet);
+  }finally{
+    btn.disabled = false; btn.textContent = x.btnLogin;
+  }
+}
+
+function renderThreadFromCache(){
+  if (!cachedReport) return;
+  const x = t();
+  $('vStStatus').textContent = x.st[cachedReport.status] || cachedReport.status;
+  $('vStMeta').textContent = x.received + ': ' + fmtDate(cachedReport.receivedAt) + '　/　' + cachedReport.ticket;
+  if (cachedReport.closeSummary){
+    $('vStClose').textContent = x.closeLabel + '：' + cachedReport.closeSummary;
+    $('vStClose').classList.remove('hidden');
+  } else {
+    $('vStClose').classList.add('hidden');
+  }
+  $('thread').innerHTML = cachedMessages.length
+    ? cachedMessages.map(function(m){
+        const who = m.from==='office' ? (x.fromOffice + (m.byName? '（'+m.byName+'）':'')) : x.fromYou;
+        return '<div class="msg '+(m.from==='office'?'office':'me')+'">'
+          + '<div class="who">'+who+'　'+fmtDate(m.at)+'</div>'+escapeHtml(m.body)+'</div>';
+      }).join('')
+    : '<div class="hint">'+x.noMsg+'</div>';
+}
+
+async function sendMessage(){
+  const x = t();
+  hideErr('msgErr');
+  const body = $('iMsg').value.trim();
+  if (!body || !session) return;
+  const btn = $('btnMsg'); btn.disabled = true; btn.textContent = x.sending;
+  try{
+    const r = await post({ action:'reporterMessage', ticket:session.ticket, pin:session.pin, body:body });
+    if (!r.ok) { showErr('msgErr', r.error || x.errNet); return; }
+    cachedMessages = r.messages || [];
+    $('iMsg').value = '';
+    renderThreadFromCache();
+    toast(x.sent);
+  }catch(err){
+    showErr('msgErr', x.errNet);
+  }finally{
+    btn.disabled = false; btn.textContent = x.btnMsg;
+  }
+}
+
+function fmtDate(iso){
+  if (!iso) return '';
+  const d = new Date(iso);
+  if (isNaN(d)) return iso;
+  const p = function(n){ return ('0'+n).slice(-2); };
+  return d.getFullYear()+'/'+p(d.getMonth()+1)+'/'+p(d.getDate())+' '+p(d.getHours())+':'+p(d.getMinutes());
+}
+function escapeHtml(s){
+  return String(s).replace(/[&<>"']/g, function(c){
+    return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];
+  });
+}
+
+applyLang();
+onAnonChange();
+</script>
+</body>
+</html>

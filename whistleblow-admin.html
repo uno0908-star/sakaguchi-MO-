@@ -1,0 +1,460 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>公益通報窓口 管理画面【取扱注意】</title>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  :root{--blue:#005BAC;--blue-d:#004080;--green:#00A651;--red:#E53E3E;--amber:#D97706;--gray:#6B7280;--bg:#F3F4F6;--border:#E5E7EB}
+  body{font-family:-apple-system,"Segoe UI","Hiragino Kaku Gothic ProN","Meiryo",sans-serif;background:var(--bg);color:#1F2937;line-height:1.6;-webkit-text-size-adjust:100%}
+  .wrap{max-width:760px;margin:0 auto;min-height:100vh;background:#fff}
+  header{background:var(--blue-d);color:#fff;padding:13px 16px;position:sticky;top:0;z-index:10;display:flex;align-items:center;gap:10px}
+  header .t{font-size:16px;font-weight:800;flex:1}
+  header .who{font-size:12px;opacity:.9;white-space:nowrap}
+  header button{background:transparent;border:1px solid rgba(255,255,255,.6);color:#fff;border-radius:6px;padding:5px 10px;font-size:12px;cursor:pointer}
+  .content{padding:16px}
+  .card{background:#fff;border:1px solid var(--border);border-radius:12px;padding:16px;margin-bottom:14px}
+  .secure{background:#FEF2F2;border:1px solid #FCA5A5;border-radius:10px;padding:11px 13px;font-size:12.5px;color:#991B1B;margin-bottom:14px}
+  .label{font-weight:700;font-size:14px;margin-bottom:4px}
+  .hint{font-size:12px;color:var(--gray);margin:3px 0 9px}
+  input,select,textarea{width:100%;padding:12px;font-size:16px;border:2px solid var(--border);border-radius:10px;font-family:inherit;background:#fff}
+  input:focus,select:focus,textarea:focus{outline:none;border-color:var(--blue)}
+  textarea{min-height:90px;resize:vertical}
+  .btn{display:block;width:100%;padding:13px;font-size:15px;font-weight:700;border:none;border-radius:10px;cursor:pointer;font-family:inherit}
+  .btn-primary{background:var(--blue);color:#fff}
+  .btn-green{background:var(--green);color:#fff}
+  .btn-ghost{background:#fff;color:var(--blue);border:2px solid var(--blue)}
+  .btn:disabled{background:#9CA3AF;color:#fff;cursor:not-allowed}
+  .btn+.btn{margin-top:9px}
+  .tabs{display:flex;gap:6px;margin-bottom:12px;flex-wrap:wrap}
+  .tab{flex:1;min-width:70px;padding:9px 6px;border:2px solid var(--border);background:#fff;border-radius:9px;font-size:12.5px;font-weight:700;cursor:pointer;text-align:center;color:var(--gray)}
+  .tab.on{border-color:var(--blue);background:#EBF3FB;color:var(--blue-d)}
+  .item{border:1px solid var(--border);border-left-width:5px;border-radius:10px;padding:12px;margin-bottom:10px;cursor:pointer;background:#fff}
+  .item:active{background:#F9FAFB}
+  .item .top{display:flex;align-items:center;gap:8px;margin-bottom:4px;flex-wrap:wrap}
+  .item .tk{font-weight:800;font-size:14px}
+  .item .sum{font-size:13px;color:#374151;margin-top:3px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .item .meta{font-size:11.5px;color:var(--gray);margin-top:5px}
+  .pill{display:inline-block;padding:2px 9px;border-radius:999px;font-size:11px;font-weight:800}
+  .pill.受付{background:#FEF3C7;color:#92400E}
+  .pill.調査中{background:#DBEAFE;color:#1E40AF}
+  .pill.是正対応中{background:#E0E7FF;color:#3730A3}
+  .pill.完了{background:#D1FAE5;color:#065F46}
+  .pill.対象外{background:#F3F4F6;color:#4B5563}
+  .pill.anon{background:#F3E8FF;color:#6B21A8}
+  .pill.unread{background:var(--red);color:#fff}
+  .dl{font-size:11.5px;font-weight:800}
+  .dl.warn{color:var(--red)}
+  .dl.soon{color:var(--amber)}
+  .row{display:flex;gap:10px;padding:8px 0;border-bottom:1px solid var(--border);font-size:14px}
+  .row .k{width:100px;flex-shrink:0;color:var(--gray);font-size:12.5px;padding-top:2px}
+  .row .v{flex:1;word-break:break-word;white-space:pre-wrap}
+  .detailbox{background:#F9FAFB;border:1px solid var(--border);border-radius:10px;padding:13px;font-size:14.5px;white-space:pre-wrap;word-break:break-word;line-height:1.75}
+  .msg{padding:11px 13px;border-radius:12px;margin-bottom:9px;font-size:14px;white-space:pre-wrap;word-break:break-word}
+  .msg .who{font-size:11px;font-weight:700;opacity:.75;margin-bottom:3px}
+  .msg.office{background:#EBF3FB;border:1px solid #BFDBFE}
+  .msg.reporter{background:#FFF7ED;border:1px solid #FED7AA}
+  .att{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
+  .att img{width:100px;height:100px;object-fit:cover;border-radius:8px;border:1px solid var(--border);cursor:zoom-in}
+  .err{color:var(--red);font-size:13px;margin-top:8px;font-weight:600;display:none}
+  .err.show{display:block}
+  .hidden{display:none!important}
+  .toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#333;color:#fff;padding:12px 20px;border-radius:8px;font-size:14px;opacity:0;transition:.3s;z-index:200;pointer-events:none}
+  .toast.show{opacity:1}
+  .imgmodal{position:fixed;inset:0;background:rgba(0,0,0,.92);display:none;z-index:300;overflow:auto;padding:10px}
+  .imgmodal.show{display:block}
+  .imgmodal img{width:100%;max-width:1000px;margin:0 auto;display:block}
+  .empty{text-align:center;color:var(--gray);font-size:14px;padding:30px 0}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="t">公益通報窓口 管理画面</div>
+    <div class="who" id="who"></div>
+    <button id="btnLogout" class="hidden" onclick="logout()">ログアウト</button>
+  </header>
+  <div class="content">
+
+    <!-- ===== ログイン ===== -->
+    <div id="scLogin">
+      <div class="secure">
+        この画面には通報者の情報が含まれます。共有端末では使用せず、離席時は必ずログアウトしてください。閲覧履歴はすべて記録されます。<br>
+        <b>通報者が誰かを探る行為（通報者探索）は法律で禁止されています。</b>
+      </div>
+      <div class="card">
+        <div class="label">担当者</div>
+        <select id="iStaff"></select>
+        <div style="height:12px"></div>
+        <div class="label">合言葉</div>
+        <input type="password" id="iPass" inputmode="numeric" autocomplete="off">
+        <div style="height:14px"></div>
+        <button class="btn btn-primary" onclick="login()">ログイン</button>
+        <div class="err" id="loginErr"></div>
+      </div>
+    </div>
+
+    <!-- ===== 一覧 ===== -->
+    <div id="scList" class="hidden">
+      <div class="tabs" id="tabs"></div>
+      <div id="list"></div>
+      <button class="btn btn-ghost" onclick="loadList()">再読み込み</button>
+      <div style="height:9px"></div>
+      <button class="btn btn-ghost" onclick="exportCsv()">一覧をCSVで書き出す</button>
+    </div>
+
+    <!-- ===== 詳細 ===== -->
+    <div id="scDetail" class="hidden">
+      <button class="btn btn-ghost" onclick="backToList()">← 一覧に戻る</button>
+      <div style="height:12px"></div>
+
+      <div class="card">
+        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:8px">
+          <span style="font-size:18px;font-weight:800" id="dTicket"></span>
+          <span class="pill" id="dStatus"></span>
+          <span class="pill anon hidden" id="dAnon">匿名</span>
+        </div>
+        <div id="dDeadline" class="dl"></div>
+        <div style="height:10px"></div>
+        <div id="dRows"></div>
+      </div>
+
+      <div class="card">
+        <div class="label">通報内容</div>
+        <div class="detailbox" id="dDetail"></div>
+        <div class="att" id="dAtt"></div>
+      </div>
+
+      <div class="card">
+        <div class="label">通報者とのやりとり</div>
+        <div class="hint">匿名通報でも、この欄で追加の聞き取りができます。相手が誰かを推測させる書き方は避けてください。</div>
+        <div id="dThread"></div>
+        <textarea id="iReply" placeholder="通報者への返信を書く"></textarea>
+        <div style="height:9px"></div>
+        <button class="btn btn-green" onclick="sendReply()">返信を送る</button>
+        <div class="err" id="replyErr"></div>
+      </div>
+
+      <div class="card">
+        <div class="label">対応状況の更新</div>
+        <div class="hint">受付から20日以内に「調査を開始する旨」を通報者へ通知する必要があります。ステータスを「調査中」にすると通知済みとして記録されます（通報者への連絡は上の返信欄から行ってください）。</div>
+        <div class="label" style="margin-top:10px">ステータス</div>
+        <select id="iStatus"></select>
+        <div style="height:10px"></div>
+        <div class="label">主担当</div>
+        <select id="iAssignee"></select>
+        <div style="height:10px"></div>
+        <div class="label">対応結果（通報者に表示されます）</div>
+        <textarea id="iCloseSummary" style="min-height:70px"></textarea>
+        <div style="height:10px"></div>
+        <div class="label">窓口内メモ（通報者には表示されません）</div>
+        <textarea id="iNote" style="min-height:70px"></textarea>
+        <div style="height:12px"></div>
+        <button class="btn btn-primary" onclick="saveUpdate()">保存する</button>
+        <div class="err" id="updErr"></div>
+      </div>
+    </div>
+
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+<div class="imgmodal" id="imgmodal" onclick="this.classList.remove('show')"><img id="modalimg"></div>
+
+<script>
+// ============================================================
+// 【設定】GASのデプロイURL（whistleblow.html と同じURLを貼る）
+// ============================================================
+const GAS_URL = '';
+
+const CAT_LABEL = {
+  harassment:'ハラスメント', fraud:'金銭・商品の不正', labor:'給与・シフト・労働時間',
+  safety:'衛生・食品安全', other:'その他'
+};
+
+let TOKEN = null, STAFF = null, STATUSES = [], STAFF_LIST = [];
+let LIST = [], FILTER = 'open', CUR = null;
+
+function $(id){ return document.getElementById(id); }
+function toast(m){ const e=$('toast'); e.textContent=m; e.classList.add('show'); setTimeout(function(){e.classList.remove('show')},2200); }
+function showErr(id,m){ const e=$(id); e.textContent=m; e.classList.add('show'); }
+function hideErr(id){ $(id).classList.remove('show'); }
+
+async function post(payload){
+  if (!GAS_URL) throw new Error('GAS URLが未設定です');
+  const res = await fetch(GAS_URL, {
+    method:'POST', redirect:'follow',
+    headers:{'Content-Type':'text/plain;charset=utf-8'},
+    body: JSON.stringify(payload)
+  });
+  const j = await res.json();
+  if (j && j.error === 'AUTH'){ logout(); throw new Error('セッションが切れました。ログインし直してください'); }
+  return j;
+}
+
+// ---- 起動時：担当者リストを取得 ----
+async function init(){
+  if (!GAS_URL){ showErr('loginErr','GAS URLが未設定です。whistleblow-admin.html の GAS_URL を設定してください。'); return; }
+  try{
+    const res = await fetch(GAS_URL + '?action=ping', { redirect:'follow' });
+    const j = await res.json();
+    STAFF_LIST = j.staff || [];
+    STATUSES = j.statuses || [];
+    $('iStaff').innerHTML = STAFF_LIST.map(function(s){
+      return '<option value="'+s.id+'">'+s.name+'（'+s.role+'）</option>';
+    }).join('');
+  }catch(err){
+    showErr('loginErr','接続できません。GAS URLとデプロイ設定を確認してください。');
+  }
+}
+
+async function login(){
+  hideErr('loginErr');
+  const staffId = $('iStaff').value, pass = $('iPass').value.trim();
+  if (!pass) return;
+  try{
+    const r = await post({ action:'adminLogin', staffId:staffId, pass:pass });
+    if (!r.ok) return showErr('loginErr', r.error || 'ログインできません');
+    TOKEN = r.token; STAFF = r.staff; STATUSES = r.statuses;
+    sessionStorage.setItem('wb_admin', JSON.stringify({ token:TOKEN, staff:STAFF, statuses:STATUSES }));
+    $('iPass').value = '';
+    enterApp();
+  }catch(err){ showErr('loginErr', err.message); }
+}
+
+function enterApp(){
+  $('who').textContent = STAFF.name;
+  $('btnLogout').classList.remove('hidden');
+  $('scLogin').classList.add('hidden');
+  $('scList').classList.remove('hidden');
+  renderTabs();
+  loadList();
+}
+
+function logout(){
+  TOKEN = null; STAFF = null; CUR = null;
+  sessionStorage.removeItem('wb_admin');
+  $('who').textContent = '';
+  $('btnLogout').classList.add('hidden');
+  $('scList').classList.add('hidden');
+  $('scDetail').classList.add('hidden');
+  $('scLogin').classList.remove('hidden');
+}
+
+function renderTabs(){
+  const tabs = [
+    { id:'open',  label:'対応中' },
+    { id:'受付',   label:'受付' },
+    { id:'調査中', label:'調査中' },
+    { id:'closed', label:'完了' },
+    { id:'all',   label:'すべて' }
+  ];
+  $('tabs').innerHTML = tabs.map(function(t){
+    return '<div class="tab'+(FILTER===t.id?' on':'')+'" onclick="setFilter(\''+t.id+'\')">'+t.label+'</div>';
+  }).join('');
+}
+function setFilter(f){ FILTER = f; renderTabs(); renderList(); }
+
+async function loadList(){
+  try{
+    const r = await post({ action:'listReports', token:TOKEN });
+    if (!r.ok) return toast(r.error || '読み込めません');
+    LIST = r.list || [];
+    renderList();
+  }catch(err){ toast(err.message); }
+}
+
+function daysLeft(iso){
+  if (!iso) return null;
+  return Math.floor((new Date(iso).getTime() - Date.now()) / 86400000);
+}
+
+function renderList(){
+  const arr = LIST.filter(function(r){
+    if (FILTER === 'all') return true;
+    if (FILTER === 'open') return r.status !== '完了' && r.status !== '対象外';
+    if (FILTER === 'closed') return r.status === '完了' || r.status === '対象外';
+    return r.status === FILTER;
+  });
+  if (!arr.length){ $('list').innerHTML = '<div class="empty">該当する通報はありません</div>'; return; }
+  $('list').innerHTML = arr.map(function(r){
+    const d = daysLeft(r.ackDeadline);
+    const needAck = r.status === '受付' && !r.ackNotifiedAt;
+    let dl = '';
+    if (needAck && d !== null){
+      const cls = d < 0 ? 'warn' : (d <= 7 ? 'soon' : '');
+      dl = '<div class="dl '+cls+'">調査開始通知の期限：'
+         + (d < 0 ? '超過（'+Math.abs(d)+'日）' : 'あと'+d+'日') + '</div>';
+    }
+    const border = r.status==='完了'||r.status==='対象外' ? '#D1D5DB'
+                 : (needAck && d !== null && d <= 7 ? '#E53E3E' : '#005BAC');
+    return '<div class="item" style="border-left-color:'+border+'" onclick="openDetail(\''+r.ticket+'\')">'
+      + '<div class="top"><span class="tk">'+r.ticket+'</span>'
+      + '<span class="pill '+r.status+'">'+r.status+'</span>'
+      + (r.anonymous ? '<span class="pill anon">匿名</span>' : '')
+      + (r.unread ? '<span class="pill unread">新着'+r.unread+'</span>' : '')
+      + '</div>'
+      + '<div class="sum">'+esc(r.summary)+'…</div>'
+      + '<div class="meta">'+fmtDate(r.receivedAt)+'　'+(CAT_LABEL[r.category]||r.category)
+      + (r.store ? '　'+esc(r.store) : '') + (r.assignee ? '　主担当:'+esc(r.assignee) : '') + '</div>'
+      + dl + '</div>';
+  }).join('');
+}
+
+async function openDetail(ticket){
+  try{
+    const r = await post({ action:'getReport', token:TOKEN, ticket:ticket });
+    if (!r.ok) return toast(r.error || '読み込めません');
+    CUR = r.report;
+    renderDetail(r.report, r.messages || []);
+    $('scList').classList.add('hidden');
+    $('scDetail').classList.remove('hidden');
+    window.scrollTo(0,0);
+  }catch(err){ toast(err.message); }
+}
+
+function backToList(){
+  $('scDetail').classList.add('hidden');
+  $('scList').classList.remove('hidden');
+  loadList();
+}
+
+function renderDetail(r, msgs){
+  $('dTicket').textContent = r.ticket;
+  $('dStatus').textContent = r.status;
+  $('dStatus').className = 'pill ' + r.status;
+  $('dAnon').classList.toggle('hidden', !r.anonymous);
+
+  const d = daysLeft(r.ackDeadline);
+  if (r.status === '受付' && !r.ackNotifiedAt && d !== null){
+    $('dDeadline').className = 'dl ' + (d < 0 ? 'warn' : (d <= 7 ? 'soon' : ''));
+    $('dDeadline').textContent = '調査開始通知の法定期限：' + fmtDate(r.ackDeadline).slice(0,10)
+      + '（' + (d < 0 ? '超過 '+Math.abs(d)+'日' : 'あと'+d+'日') + '）';
+  } else if (r.ackNotifiedAt){
+    $('dDeadline').className = 'dl';
+    $('dDeadline').textContent = '調査開始の通知：' + fmtDate(r.ackNotifiedAt) + ' に記録済み';
+  } else {
+    $('dDeadline').textContent = '';
+  }
+
+  const rows = [
+    ['受付日時', fmtDate(r.receivedAt)],
+    ['種類', CAT_LABEL[r.category] || r.category],
+    ['店舗', r.store || '（未記入）'],
+    ['氏名', r.anonymous ? '（匿名）' : (r.name || '（未記入）')],
+    ['従業員番号', r.anonymous ? '—' : (r.empId || '（未記入）')],
+    ['連絡先', r.anonymous ? '—' : (r.contact || '（未記入）')],
+    ['発生時期', r.occurredAt || '（未記入）'],
+    ['対象者', r.involved || '（未記入）']
+  ];
+  $('dRows').innerHTML = rows.map(function(x){
+    return '<div class="row"><div class="k">'+x[0]+'</div><div class="v">'+esc(x[1])+'</div></div>';
+  }).join('');
+
+  $('dDetail').textContent = r.detail;
+
+  $('dAtt').innerHTML = '';
+  (r.attachments || []).forEach(function(fileId){
+    post({ action:'getAttachment', token:TOKEN, fileId:fileId, ticket:r.ticket }).then(function(a){
+      if (!a.ok) return;
+      const img = document.createElement('img');
+      img.src = a.dataUrl;
+      img.onclick = function(){ $('modalimg').src = a.dataUrl; $('imgmodal').classList.add('show'); };
+      $('dAtt').appendChild(img);
+    }).catch(function(){});
+  });
+
+  renderThread(msgs);
+
+  $('iStatus').innerHTML = STATUSES.map(function(s){
+    return '<option value="'+s+'"'+(s===r.status?' selected':'')+'>'+s+'</option>';
+  }).join('');
+  $('iAssignee').innerHTML = '<option value="">（未定）</option>' + STAFF_LIST.map(function(s){
+    return '<option value="'+s.name+'"'+(s.name===r.assignee?' selected':'')+'>'+s.name+'</option>';
+  }).join('');
+  $('iCloseSummary').value = r.closeSummary || '';
+  $('iNote').value = r.internalNote || '';
+}
+
+function renderThread(msgs){
+  $('dThread').innerHTML = msgs.length ? msgs.map(function(m){
+    const who = m.from === 'office' ? ('窓口' + (m.byName ? '（'+m.byName+'）' : '')) : '通報者';
+    return '<div class="msg '+m.from+'"><div class="who">'+who+'　'+fmtDate(m.at)+'</div>'+esc(m.body)+'</div>';
+  }).join('') : '<div class="hint">やりとりはまだありません。</div>';
+}
+
+async function sendReply(){
+  hideErr('replyErr');
+  const body = $('iReply').value.trim();
+  if (!body || !CUR) return;
+  try{
+    const r = await post({ action:'adminMessage', token:TOKEN, ticket:CUR.ticket, body:body });
+    if (!r.ok) return showErr('replyErr', r.error || '送信できません');
+    $('iReply').value = '';
+    renderThread(r.messages || []);
+    toast('返信しました');
+  }catch(err){ showErr('replyErr', err.message); }
+}
+
+async function saveUpdate(){
+  hideErr('updErr');
+  if (!CUR) return;
+  try{
+    const r = await post({ action:'updateReport', token:TOKEN, ticket:CUR.ticket,
+      status: $('iStatus').value,
+      assignee: $('iAssignee').value,
+      closeSummary: $('iCloseSummary').value.trim(),
+      internalNote: $('iNote').value.trim() });
+    if (!r.ok) return showErr('updErr', r.error || '保存できません');
+    toast('保存しました');
+    openDetail(CUR.ticket);
+  }catch(err){ showErr('updErr', err.message); }
+}
+
+function exportCsv(){
+  const head = ['受付番号','受付日時','種類','匿名','店舗','ステータス','主担当','通知期限','通知日','最終更新','未読'];
+  const rows = LIST.map(function(r){
+    return [r.ticket, fmtDate(r.receivedAt), CAT_LABEL[r.category]||r.category, r.anonymous?'匿名':'記名',
+            r.store, r.status, r.assignee, fmtDate(r.ackDeadline), fmtDate(r.ackNotifiedAt),
+            fmtDate(r.lastUpdate), r.unread];
+  });
+  // 通報本文はCSVに出さない（持ち出しによる漏えいを防ぐため）
+  const csv = [head].concat(rows).map(function(r){
+    return r.map(function(c){ return '"'+String(c==null?'':c).replace(/"/g,'""')+'"'; }).join(',');
+  }).join('\r\n');
+  const blob = new Blob(['﻿'+csv], { type:'text/csv;charset=utf-8' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = '公益通報_案件一覧_' + new Date().toISOString().slice(0,10) + '.csv';
+  a.click();
+  toast('通報本文を除いた一覧を書き出しました');
+}
+
+function fmtDate(iso){
+  if (!iso) return '';
+  const d = new Date(iso);
+  if (isNaN(d)) return iso;
+  const p = function(n){ return ('0'+n).slice(-2); };
+  return d.getFullYear()+'/'+p(d.getMonth()+1)+'/'+p(d.getDate())+' '+p(d.getHours())+':'+p(d.getMinutes());
+}
+function esc(s){
+  return String(s==null?'':s).replace(/[&<>"']/g, function(c){
+    return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];
+  });
+}
+
+// セッション復帰（タブを閉じると消える sessionStorage を使用）
+(async function(){
+  await init();   // 担当者リストを先に取得してから復帰させる
+  const saved = sessionStorage.getItem('wb_admin');
+  if (saved){
+    try{
+      const s = JSON.parse(saved);
+      TOKEN = s.token; STAFF = s.staff; STATUSES = s.statuses;
+      enterApp();
+    }catch(err){ sessionStorage.removeItem('wb_admin'); }
+  }
+})();
+</script>
+</body>
+</html>
