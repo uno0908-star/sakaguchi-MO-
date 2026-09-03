@@ -191,7 +191,7 @@ const GAS_URL = 'https://script.google.com/macros/s/AKfycbw02tJT8h4fJnS9Bgmaq9Ms
 const CAT_LABEL = {
   harassment:'ハラスメント', fraud:'金銭・商品の不正', labor:'給与・シフト・労働時間',
   safety:'衛生・食品安全', executive:'経営陣に関すること',
-  external:'社外の相談先を知りたい', other:'その他'
+  manager:'統括マネジャーに関すること', external:'社外の相談先を知りたい', other:'その他'
 };
 
 // 第一段階の担当者ID。gas-whistleblow.gs の FIRST_VIEWER と揃えること。
@@ -254,7 +254,9 @@ function enterApp(){
   $('scopeNote').innerHTML = IS_FIRST_VIEWER
     ? 'この一覧を見られるのは<b>あなただけ</b>です。代表取締役2名には、件数も含めて何も表示されていません。'
       + '<br>あなたの判断で解決できない案件だけ、詳細画面から共有してください。'
-    : 'ここには、統括マネジャーから<b>共有された案件だけ</b>が表示されます。'
+      + '<br>なお「統括マネジャーに関すること」の相談は、<b>あなたには表示されません</b>（代表取締役2名が対応します）。'
+    : 'ここには、統括マネジャーから<b>共有された案件</b>と、'
+      + '<b>「統括マネジャーに関すること」の相談</b>が表示されます。'
       + '<br>クルーが安心して小さな相談を出せるよう、通報はまず統括マネジャーが一次対応する運用です。';
   $('who').textContent = STAFF.name;
   $('btnLogout').classList.remove('hidden');
@@ -424,9 +426,8 @@ function renderShare(r){
     $('shareState').textContent = '共有済み：' + fmtDate(r.sharedAt)
       + '（' + (r.sharedBy || '') + '）　理由：' + (r.shareReason || '');
   } else if (r.noShare){
-    $('shareState').textContent = 'この種類の相談は代表取締役に共有できません。'
-      + '相手が経営陣本人であること、社外に相談したいという意思そのものを守るためです。'
-      + 'あなたの判断で完結させてください。';
+    $('shareState').textContent = 'この種類の相談は宛先が固定されており、他の窓口担当者へ共有できません。'
+      + '通報される側がその通報を読める状態を作らないためです。あなたの判断で完結させてください。';
   } else {
     $('shareState').textContent = '現在この通報を見られるのは、あなただけです。'
       + '代表取締役2名の一覧には表示されていません。';
