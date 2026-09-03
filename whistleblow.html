@@ -29,6 +29,9 @@
   .req{color:var(--red);font-size:12px;margin-left:4px}
   .hint{font-size:12px;color:var(--gray);margin:4px 0 10px}
   .warnnote{background:#FFFBEB;border:1px solid #FDE68A;border-radius:8px;padding:9px 11px;font-size:12.5px;color:#92400E;margin:8px 0}
+  .firstonly{background:#005BAC;color:#fff;border-radius:12px;padding:14px;margin-bottom:14px}
+  .firstonly .h{font-size:16px;font-weight:800;margin-bottom:7px;line-height:1.4}
+  .firstonly .b{font-size:13px;line-height:1.75;color:#E0EBF5}
   input[type=text],input[type=tel],input[type=password],input[type=date],select,textarea{width:100%;padding:13px;font-size:16px;border:2px solid var(--border);border-radius:10px;font-family:inherit;background:#fff}
   textarea{min-height:150px;resize:vertical;line-height:1.6}
   input:focus,select:focus,textarea:focus{outline:none;border-color:var(--blue)}
@@ -100,6 +103,11 @@
         <div class="h" id="leadH"></div>
         <div class="b" id="leadB"></div>
       </div>
+      <!-- 「まず神田までしか行かない」の明示。GASの二段階実装と必ず一致させること -->
+      <div class="firstonly">
+        <div class="h" id="firstOnlyH"></div>
+        <div class="b" id="firstOnlyB"></div>
+      </div>
       <div class="protect">
         <div class="h" id="protectH"></div>
         <ul>
@@ -159,6 +167,7 @@
           <div class="hint" id="hCat"></div>
           <div class="cats" id="catList"></div>
           <div class="warnnote hidden" id="execNote"></div>
+          <div class="warnnote hidden" id="extNote"></div>
         </div>
         <div class="fld">
           <div class="label" id="lWhen"></div>
@@ -245,6 +254,7 @@
           <div class="hint" style="margin:0 0 4px" id="lStStatus"></div>
           <span class="status-pill" id="vStStatus"></span>
           <div class="hint" style="margin-top:10px" id="vStMeta"></div>
+          <div class="warnnote hidden" id="vStShared"></div>
           <div class="warnnote hidden" id="vStClose"></div>
         </div>
         <div class="card">
@@ -302,6 +312,7 @@ const CATEGORIES = [
   { id:'labor',      ic:'🕒' },
   { id:'safety',     ic:'🧼' },
   { id:'executive',  ic:'🏢' },
+  { id:'external',   ic:'🔎' },
   { id:'other',      ic:'💬' }
 ];
 
@@ -313,9 +324,11 @@ ja:{
   title:'公益通報・コンプライアンス相談窓口', sub:'阪口商店',
   leadH:'安心して相談してください',
   leadB:'職場での不正・ハラスメント・困りごとを受け付ける窓口です。相談したことを理由に、あなたが不利益な扱いを受けることは法律で禁止されています。',
+  firstOnlyH:'送った内容は、まず神田 渉だけが見ます',
+  firstOnlyB:'この窓口に届いた相談は、統括マネジャーの神田 渉ただ1人が確認します。代表取締役の2名には、内容も、件数も、相談が届いたことすら表示されません。神田だけでは解決できない場合に限り、神田があなたに伝えたうえで代表取締役に共有します。「経営陣に関すること」と「社外の相談先を知りたい」は、共有されることはありません。',
   protectH:'あなたを守るしくみ',
   p1:'名前を書かずに（匿名で）相談できます',
-  p2:'内容を見られるのは、窓口担当の3名だけです',
+  p2:'内容を最初に見るのは、神田 渉ただ1人です',
   p3:'相談を理由に解雇・減給・シフト削減などをすることは法律で禁止されています',
   p4:'「誰が相談したのか」を探すことも禁止されています',
   btnNew:'相談・通報する', btnStatus:'受付番号で状況を確認する',
@@ -329,7 +342,11 @@ ja:{
   storeNone:'選択しない',
   lCat:'相談の種類', hCat:'いちばん近いものを1つ選んでください。',
   cat_harassment:'ハラスメント<br>暴言・いじめ・セクハラ', cat_fraud:'お金・商品の不正', cat_labor:'給与・シフト<br>労働時間',
-  cat_safety:'衛生・食品の安全', cat_executive:'経営陣に<br>関すること', cat_other:'その他',
+  cat_safety:'衛生・食品の安全', cat_executive:'経営陣に<br>関すること',
+  cat_external:'社外の相談先を<br>知りたい', cat_other:'その他',
+  sharedNote:'この件は、解決のために代表取締役にも共有されました。共有しても、相談したことを理由に不利益な扱いを受けることはありません。',
+  extDefault:'社外の相談先を教えてほしい（本人の記入なし）',
+  extNote:'会社の外の相談先（ローソンのクルーほっとラインなど）をお知らせします。「相談したい内容」の欄は空欄でも、ひとことでも構いません。神田 渉から、受付番号と合言葉で読める返信でお伝えします。誰が知りたがったのかは、代表取締役には伝わりません。',
   execNote:'この相談は、神田 渉（統括マネジャー）だけが見ます。代表取締役の2名には、届いたことも内容も表示されません。合言葉を使えば、名前を出さないまま神田とやりとりを続けられます。',
   lWhen:'いつ頃のことですか（任意）', lWho:'誰についてですか（任意）', hWho:'名前がわからなければ「夜勤の男性社員」などでも構いません。',
   lDetail:'内容', hDetail:'いつ・どこで・何があったか、わかる範囲で書いてください。10文字以上。',
@@ -362,9 +379,11 @@ en:{
   title:'Compliance & Whistleblowing Hotline', sub:'Sakaguchi Shoten',
   leadH:'Please speak up with confidence',
   leadB:'This is the place to report misconduct, harassment or any workplace problem. By law, you must not be treated unfavourably for making a report.',
+  firstOnlyH:'Only Wataru Kanda sees what you send — first and, in most cases, only',
+  firstOnlyB:'Reports sent here are read by one person: Wataru Kanda, General Manager. The two Representative Directors see nothing — not the contents, not the number of reports, not even that one arrived. Only if Kanda cannot resolve it alone will he tell you first, and then share it with them. Reports under "About the company executives" and "I want outside contacts" are never shared.',
   protectH:'How you are protected',
   p1:'You can report anonymously (no name required)',
-  p2:'Only the 3 assigned hotline officers can see your report',
+  p2:'Wataru Kanda is the only person who sees your report first',
   p3:'Dismissal, pay cuts or shift reductions because of a report are prohibited by law',
   p4:'Trying to find out who made a report is also prohibited',
   btnNew:'Make a report', btnStatus:'Check status with your reference number',
@@ -378,7 +397,11 @@ en:{
   storeNone:'Not selected',
   lCat:'Type of report', hCat:'Choose the closest one.',
   cat_harassment:'Harassment<br>abuse, bullying', cat_fraud:'Money / stock fraud', cat_labor:'Pay, shifts<br>working hours',
-  cat_safety:'Hygiene / food safety', cat_executive:'About the<br>company executives', cat_other:'Other',
+  cat_safety:'Hygiene / food safety', cat_executive:'About the<br>company executives',
+  cat_external:'I want outside<br>contacts', cat_other:'Other',
+  sharedNote:'This case has been shared with the Representative Directors so that it can be resolved. You still cannot be treated unfavourably for having reported.',
+  extDefault:'Request for contacts outside the company (no details written).',
+  extNote:'We will give you contacts outside the company (such as the Lawson crew hotline). You may leave the details box almost empty — a single line is fine. Wataru Kanda will reply, and you can read it with your reference number and passcode. The Representative Directors are not told that anyone asked.',
   execNote:'Only Wataru Kanda (General Manager) can see this report. The two Representative Directors will not see its contents, nor even that it was submitted. Using your passcode, you can keep talking with Kanda without giving your name.',
   lWhen:'When did it happen? (optional)', lWho:'Who is it about? (optional)', hWho:'If you do not know the name, "the male staff on night shift" is fine.',
   lDetail:'Details', hDetail:'Please write when, where and what happened, as far as you know. At least 10 characters.',
@@ -411,9 +434,11 @@ vi:{
   title:'Đường dây tư vấn tuân thủ / tố giác', sub:'Sakaguchi Shoten',
   leadH:'Hãy yên tâm trình bày',
   leadB:'Đây là nơi tiếp nhận các hành vi sai trái, quấy rối và mọi khó khăn tại nơi làm việc. Pháp luật nghiêm cấm đối xử bất lợi với bạn vì bạn đã báo cáo.',
+  firstOnlyH:'Nội dung bạn gửi, trước hết chỉ ông Kanda Wataru xem',
+  firstOnlyB:'Báo cáo gửi tới đây chỉ do một người xem: ông Kanda Wataru, Quản lý tổng. Hai Giám đốc đại diện không thấy gì cả — không nội dung, không số lượng, cũng không biết có báo cáo nào được gửi. Chỉ khi ông Kanda không thể tự giải quyết, ông sẽ báo cho bạn trước rồi mới chia sẻ với họ. Mục "Về ban lãnh đạo công ty" và "Muốn biết nơi tư vấn bên ngoài" thì không bao giờ được chia sẻ.',
   protectH:'Bạn được bảo vệ như thế nào',
   p1:'Bạn có thể báo cáo ẩn danh (không cần ghi tên)',
-  p2:'Chỉ 3 người phụ trách đường dây mới xem được nội dung',
+  p2:'Người đầu tiên và duy nhất xem nội dung là ông Kanda Wataru',
   p3:'Sa thải, giảm lương, cắt ca vì lý do báo cáo là hành vi bị pháp luật cấm',
   p4:'Việc truy tìm "ai đã báo cáo" cũng bị cấm',
   btnNew:'Gửi báo cáo / tư vấn', btnStatus:'Kiểm tra tình trạng bằng mã tiếp nhận',
@@ -427,7 +452,11 @@ vi:{
   storeNone:'Không chọn',
   lCat:'Loại nội dung', hCat:'Hãy chọn 1 mục gần nhất.',
   cat_harassment:'Quấy rối<br>lăng mạ, bắt nạt', cat_fraud:'Gian lận tiền / hàng hóa', cat_labor:'Lương, ca làm<br>giờ làm việc',
-  cat_safety:'Vệ sinh / an toàn thực phẩm', cat_executive:'Về ban lãnh đạo<br>công ty', cat_other:'Khác',
+  cat_safety:'Vệ sinh / an toàn thực phẩm', cat_executive:'Về ban lãnh đạo<br>công ty',
+  cat_external:'Muốn biết nơi<br>tư vấn bên ngoài', cat_other:'Khác',
+  sharedNote:'Vụ việc này đã được chia sẻ với các Giám đốc đại diện để giải quyết. Bạn vẫn không thể bị đối xử bất lợi vì đã báo cáo.',
+  extDefault:'Yêu cầu biết nơi tư vấn bên ngoài công ty (không ghi chi tiết).',
+  extNote:'Chúng tôi sẽ cho bạn biết các nơi tư vấn bên ngoài công ty (như đường dây nóng dành cho nhân viên của Lawson). Ô nội dung có thể để trống hoặc chỉ viết một dòng. Ông Kanda Wataru sẽ trả lời, bạn đọc được bằng mã tiếp nhận và mật khẩu. Các Giám đốc đại diện không được biết là có người hỏi.',
   execNote:'Chỉ ông Kanda Wataru (Quản lý tổng) mới xem được báo cáo này. Hai Giám đốc đại diện sẽ không thấy nội dung, cũng không biết có báo cáo được gửi. Dùng mật khẩu của bạn, bạn có thể tiếp tục trao đổi với ông Kanda mà không cần nêu tên.',
   lWhen:'Việc xảy ra khi nào? (không bắt buộc)', lWho:'Về ai? (không bắt buộc)', hWho:'Không biết tên cũng được, ví dụ "nam nhân viên ca đêm".',
   lDetail:'Nội dung', hDetail:'Hãy viết khi nào, ở đâu, chuyện gì đã xảy ra trong phạm vi bạn biết. Ít nhất 10 ký tự.',
@@ -460,9 +489,11 @@ ne:{
   title:'अनुपालन तथा जनहित सूचना डेस्क', sub:'Sakaguchi Shoten',
   leadH:'निर्धक्क भएर भन्नुहोस्',
   leadB:'कार्यस्थलमा हुने अनियमितता, दुर्व्यवहार वा कुनै पनि समस्या यहाँ जनाउन सकिन्छ। सूचना दिएकै कारण तपाईंलाई हानि पुर्‍याउने व्यवहार गर्न कानुनले निषेध गरेको छ।',
+  firstOnlyH:'पठाएको कुरा पहिले कान्दा वातारुले मात्र हेर्नुहुन्छ',
+  firstOnlyB:'यहाँ आएको कुरा हेर्ने एकजना मात्र हुनुहुन्छ — महाप्रबन्धक कान्दा वातारु। दुई प्रतिनिधि निर्देशकले सामग्री, संख्या, र सूचना आएको कुरा समेत केही देख्नुहुन्न। कान्दाले मात्र समाधान गर्न नसकेको अवस्थामा मात्र, उहाँले तपाईंलाई बताएर मात्र निर्देशकहरूलाई जानकारी दिनुहुन्छ। "व्यवस्थापन सम्बन्धी" र "बाहिरी परामर्श केन्द्र जान्न चाहन्छु" कहिल्यै साझा गरिँदैन।',
   protectH:'तपाईंको सुरक्षा कसरी हुन्छ',
   p1:'नाम नलेखी (गुमनाम) सूचना दिन सकिन्छ',
-  p2:'सामग्री हेर्न पाउने ३ जना जिम्मेवार व्यक्ति मात्र हुन्',
+  p2:'सामग्री पहिले हेर्ने कान्दा वातारु एकजना मात्र हुनुहुन्छ',
   p3:'सूचना दिएको कारण बर्खास्ती, तलब कटौती वा ड्युटी घटाउनु कानुनविरुद्ध हो',
   p4:'"कसले सूचना दियो" भनी खोजी गर्न पनि निषेध छ',
   btnNew:'सूचना / परामर्श पठाउनुहोस्', btnStatus:'प्राप्ति नम्बरबाट स्थिति हेर्नुहोस्',
@@ -476,7 +507,11 @@ ne:{
   storeNone:'छनोट नगर्ने',
   lCat:'विषयको प्रकार', hCat:'सबैभन्दा मिल्ने एउटा छान्नुहोस्।',
   cat_harassment:'दुर्व्यवहार<br>गाली, हेला', cat_fraud:'पैसा / सामानको अनियमितता', cat_labor:'तलब, ड्युटी<br>काम गर्ने समय',
-  cat_safety:'सरसफाइ / खाद्य सुरक्षा', cat_executive:'व्यवस्थापन<br>(नेतृत्व) सम्बन्धी', cat_other:'अन्य',
+  cat_safety:'सरसफाइ / खाद्य सुरक्षा', cat_executive:'व्यवस्थापन<br>(नेतृत्व) सम्बन्धी',
+  cat_external:'बाहिरी परामर्श<br>केन्द्र जान्न चाहन्छु', cat_other:'अन्य',
+  sharedNote:'समाधानका लागि यो विषय प्रतिनिधि निर्देशकहरूलाई पनि जानकारी गराइएको छ। सूचना दिएकै कारण तपाईंलाई हानिकारक व्यवहार गरिने छैन।',
+  extDefault:'कम्पनी बाहिरको परामर्श केन्द्र जान्न चाहेको अनुरोध (विवरण नलेखिएको)।',
+  extNote:'कम्पनी बाहिरका परामर्श केन्द्र (लसनको क्रु हटलाइन आदि) जानकारी दिनेछौं। विवरणको ठाउँ खाली वा एक हरफ मात्र भए पनि हुन्छ। कान्दा वातारुले जवाफ दिनुहुनेछ, प्राप्ति नम्बर र पासवर्डले पढ्न सकिन्छ। कसले सोध्यो भन्ने कुरा प्रतिनिधि निर्देशकहरूलाई थाहा हुँदैन।',
   execNote:'यो सूचना कान्दा वातारु (महाप्रबन्धक) ले मात्र हेर्न पाउनुहुन्छ। दुई प्रतिनिधि निर्देशकले सामग्री त के, सूचना आएको कुरा समेत देख्नुहुन्न। आफ्नो पासवर्ड प्रयोग गरेर नाम नबताई कान्दासँग कुराकानी जारी राख्न सकिन्छ।',
   lWhen:'कहिले भएको हो? (ऐच्छिक)', lWho:'कसका बारेमा हो? (ऐच्छिक)', hWho:'नाम थाहा नभए "रातको ड्युटीको पुरुष कर्मचारी" भने पनि हुन्छ।',
   lDetail:'विवरण', hDetail:'कहिले, कहाँ, के भयो — थाहा भएसम्म लेख्नुहोस्। कम्तीमा १० अक्षर।',
@@ -522,13 +557,15 @@ function applyLang(){
   document.documentElement.lang = LANG;
   document.querySelectorAll('#langbar button').forEach(b=>b.classList.toggle('on', b.getAttribute('data-lang')===LANG));
   const map = {
-    hTitle:'title', hSub:'sub', leadH:'leadH', leadB:'leadB', protectH:'protectH',
+    hTitle:'title', hSub:'sub', leadH:'leadH', leadB:'leadB',
+    firstOnlyH:'firstOnlyH', firstOnlyB:'firstOnlyB', protectH:'protectH',
     p1:'p1', p2:'p2', p3:'p3', p4:'p4', btnNew:'btnNew', btnStatus:'btnStatus',
     extH:'extH', extB:'extB',
     fAnonH:'fAnonH', fAnonHint:'fAnonHint', optAnon:'optAnon', optAnonSub:'optAnonSub',
     optNamed:'optNamed', optNamedSub:'optNamedSub', anonWarn:'anonWarn',
     lName:'lName', lEmp:'lEmp', lContact:'lContact', hContact:'hContact',
-    lStore:'lStore', hStore:'hStore', lCat:'lCat', hCat:'hCat', execNote:'execNote',
+    lStore:'lStore', hStore:'hStore', lCat:'lCat', hCat:'hCat',
+    execNote:'execNote', extNote:'extNote',
     lWhen:'lWhen', lWho:'lWho', hWho:'hWho', lDetail:'lDetail', hDetail:'hDetail',
     lPhoto:'lPhoto', hPhoto:'hPhoto', lPin:'lPin', hPin:'hPin', lPin2:'lPin2',
     lCk1:'ck1', lCk2:'ck2', btnSend:'btnSend', btnBack1:'back',
@@ -552,6 +589,7 @@ function renderCats(){
   // 「経営陣に関すること」を選んだときだけ、誰が見るのかを明示する。
   // ここが伝わらないと、代表取締役に読まれると思われて通報が上がってこない。
   $('execNote').classList.toggle('hidden', selectedCat !== 'executive');
+  $('extNote').classList.toggle('hidden', selectedCat !== 'external');
 }
 function pickCat(id){ selectedCat = id; renderCats(); }
 
@@ -638,10 +676,13 @@ async function submitReport(){
   const x = t();
   hideErr('formErr');
   const anon = document.querySelector('input[name=anon]:checked').value === '1';
-  const detail = $('iDetail').value.trim();
+  let detail = $('iDetail').value.trim();
   const pin = $('iPin').value.trim(), pin2 = $('iPin2').value.trim();
 
   if (!selectedCat)                 return showErr('formErr', x.errCat);
+  // 「社外の相談先を知りたい」は用件を書かせない。書くこと自体が心理的な壁になるため、
+  // 未記入なら定型文で補って送れるようにする（本文10文字以上の制約はサーバー側にもある）
+  if (selectedCat === 'external' && detail.length < 10) detail = x.extDefault;
   if (detail.length < 10)           return showErr('formErr', x.errDetail);
   if (!anon && !$('iName').value.trim()) return showErr('formErr', x.errName);
   if (!/^[0-9]{4,8}$/.test(pin))    return showErr('formErr', x.errPin);
@@ -712,6 +753,13 @@ function renderThreadFromCache(){
   const x = t();
   $('vStStatus').textContent = x.st[cachedReport.status] || cachedReport.status;
   $('vStMeta').textContent = x.received + ': ' + fmtDate(cachedReport.receivedAt) + '　/　' + cachedReport.ticket;
+  // 「まず神田だけが見る」と約束している以上、共有された事実は本人に隠さない
+  if (cachedReport.sharedAt){
+    $('vStShared').textContent = x.sharedNote + '（' + fmtDate(cachedReport.sharedAt) + '）';
+    $('vStShared').classList.remove('hidden');
+  } else {
+    $('vStShared').classList.add('hidden');
+  }
   if (cachedReport.closeSummary){
     $('vStClose').textContent = x.closeLabel + '：' + cachedReport.closeSummary;
     $('vStClose').classList.remove('hidden');

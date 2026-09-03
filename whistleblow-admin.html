@@ -58,6 +58,12 @@
   .att{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
   .att img{width:100px;height:100px;object-fit:cover;border-radius:8px;border:1px solid var(--border);cursor:zoom-in}
   .err{color:var(--red);font-size:13px;margin-top:8px;font-weight:600;display:none}
+  .btn-red{background:var(--red);color:#fff}
+  .scope{background:#EFF6FF;border:1px solid #BFDBFE;border-radius:10px;padding:10px 12px;
+         font-size:12.5px;color:#1E3A5F;line-height:1.6;margin-bottom:10px}
+  .sharebox{background:#FFFBEB;border:1px solid #FDE68A;border-radius:10px;padding:10px 12px;
+            font-size:12.5px;color:#92400E;line-height:1.6}
+  .pill.shared{background:#FEE2E2;color:#991B1B}
   .err.show{display:block}
   .hidden{display:none!important}
   .toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#333;color:#fff;padding:12px 20px;border-radius:8px;font-size:14px;opacity:0;transition:.3s;z-index:200;pointer-events:none}
@@ -97,6 +103,7 @@
 
     <!-- ===== 一覧 ===== -->
     <div id="scList" class="hidden">
+      <div class="scope" id="scopeNote"></div>
       <div class="tabs" id="tabs"></div>
       <div id="list"></div>
       <button class="btn btn-ghost" onclick="loadList()">再読み込み</button>
@@ -124,6 +131,20 @@
         <div class="label">通報内容</div>
         <div class="detailbox" id="dDetail"></div>
         <div class="att" id="dAtt"></div>
+      </div>
+
+      <!-- 第二段階：代表取締役への共有。統括マネジャーにだけ表示される -->
+      <div class="card hidden" id="shareCard">
+        <div class="label">代表取締役への共有</div>
+        <div class="sharebox" id="shareState"></div>
+        <div id="shareForm" class="hidden">
+          <div class="hint">共有すると、この1件だけが代表取締役2名の一覧にも表示されます。<b>取り消しはできません。</b>
+            共有する前に、通報者へその旨を伝えてください（やりとり欄が使えます）。</div>
+          <textarea id="iShareReason" placeholder="共有が必要な理由（例：懲戒処分の判断が必要なため）"></textarea>
+          <div style="height:9px"></div>
+          <button class="btn btn-red" onclick="shareToExec()">この通報を代表取締役2名に共有する</button>
+          <div class="err" id="shareErr"></div>
+        </div>
       </div>
 
       <div class="card">
@@ -169,8 +190,14 @@ const GAS_URL = 'https://script.google.com/macros/s/AKfycbw02tJT8h4fJnS9Bgmaq9Ms
 
 const CAT_LABEL = {
   harassment:'ハラスメント', fraud:'金銭・商品の不正', labor:'給与・シフト・労働時間',
-  safety:'衛生・食品安全', executive:'経営陣に関すること', other:'その他'
+  safety:'衛生・食品安全', executive:'経営陣に関すること',
+  external:'社外の相談先を知りたい', other:'その他'
 };
+
+// 第一段階の担当者ID。gas-whistleblow.gs の FIRST_VIEWER と揃えること。
+// ここは表示の出し分けだけに使う。実際の可否はサーバー側で必ず判定している。
+const FIRST_VIEWER_ID = 'kanda';
+let IS_FIRST_VIEWER = false;
 
 let TOKEN = null, STAFF = null, STATUSES = [], STAFF_LIST = [];
 let LIST = [], FILTER = 'open', CUR = null;
@@ -223,6 +250,12 @@ async function login(){
 }
 
 function enterApp(){
+  IS_FIRST_VIEWER = STAFF.id === FIRST_VIEWER_ID;
+  $('scopeNote').innerHTML = IS_FIRST_VIEWER
+    ? 'この一覧を見られるのは<b>あなただけ</b>です。代表取締役2名には、件数も含めて何も表示されていません。'
+      + '<br>あなたの判断で解決できない案件だけ、詳細画面から共有してください。'
+    : 'ここには、統括マネジャーから<b>共有された案件だけ</b>が表示されます。'
+      + '<br>クルーが安心して小さな相談を出せるよう、通報はまず統括マネジャーが一次対応する運用です。';
   $('who').textContent = STAFF.name;
   $('btnLogout').classList.remove('hidden');
   $('scLogin').classList.add('hidden');
@@ -293,6 +326,7 @@ function renderList(){
       + '<span class="pill '+r.status+'">'+r.status+'</span>'
       + (r.anonymous ? '<span class="pill anon">匿名</span>' : '')
       + (r.unread ? '<span class="pill unread">新着'+r.unread+'</span>' : '')
+      + (r.sharedAt ? '<span class="pill shared">代表へ共有済</span>' : '')
       + '</div>'
       + '<div class="sum">'+esc(r.summary)+'…</div>'
       + '<div class="meta">'+fmtDate(r.receivedAt)+'　'+(CAT_LABEL[r.category]||r.category)
@@ -374,6 +408,40 @@ function renderDetail(r, msgs){
   }).join('');
   $('iCloseSummary').value = r.closeSummary || '';
   $('iNote').value = r.internalNote || '';
+
+  renderShare(r);
+}
+
+// 第二段階（代表取締役への共有）の表示。統括マネジャー以外には共有カード自体を出さない
+function renderShare(r){
+  $('shareCard').classList.toggle('hidden', !IS_FIRST_VIEWER);
+  if (!IS_FIRST_VIEWER) return;
+  const canShare = !!r.canShare;
+  $('shareForm').classList.toggle('hidden', !canShare);
+  $('iShareReason').value = '';
+  hideErr('shareErr');
+  if (r.sharedAt){
+    $('shareState').textContent = '共有済み：' + fmtDate(r.sharedAt)
+      + '（' + (r.sharedBy || '') + '）　理由：' + (r.shareReason || '');
+  } else if (r.noShare){
+    $('shareState').textContent = 'この種類の相談は代表取締役に共有できません。'
+      + '相手が経営陣本人であること、社外に相談したいという意思そのものを守るためです。'
+      + 'あなたの判断で完結させてください。';
+  } else {
+    $('shareState').textContent = '現在この通報を見られるのは、あなただけです。'
+      + '代表取締役2名の一覧には表示されていません。';
+  }
+}
+
+function shareToExec(){
+  const reason = $('iShareReason').value.trim();
+  hideErr('shareErr');
+  if (reason.length < 5) return showErr('shareErr','共有が必要な理由を記入してください');
+  if (!confirm('この通報を代表取締役2名に共有します。\n\n共有すると内容がそのまま2名に表示され、取り消しはできません。\n通報者への説明は済んでいますか？')) return;
+  post({ action:'shareReport', token:TOKEN, ticket:CUR.ticket, reason:reason }).then(function(r){
+    if (!r.ok) return showErr('shareErr', r.error || '共有できませんでした');
+    openDetail(CUR.ticket);
+  }).catch(function(){ showErr('shareErr','通信に失敗しました'); });
 }
 
 function renderThread(msgs){
