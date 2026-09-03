@@ -109,7 +109,7 @@
       <button class="btn btn-primary" id="btnNew" onclick="go('form')"></button>
       <button class="btn btn-ghost" id="btnStatus" onclick="go('status')"></button>
       <div style="height:16px"></div>
-      <div class="ext">
+      <div class="ext" id="extBox">
         <div class="h" id="extH"></div>
         <div class="b" id="extB"></div>
         <div id="extList"></div>
@@ -277,6 +277,11 @@ const GAS_URL = 'https://script.google.com/macros/s/AKfycbw02tJT8h4fJnS9Bgmaq9Ms
 // 【設定2】社外の相談窓口。本部から案内されている連絡先に置き換えてください。
 //   会社の代表者が関わる案件は、社内窓口だけでは機能しません。必ず掲載します。
 // ============================================================
+// 【運用方針】社外窓口の掲載可否
+//   2026-09-03、経営陣の判断により「まずは社内で解決するための窓口」とする方針となり非表示。
+//   連絡先と文言はそのまま残してあるので、再掲載する場合は true に戻すだけでよい。
+const SHOW_EXTERNAL_CONTACTS = false;
+
 const EXTERNAL_CONTACTS = [
   { n:'ローソン本部 コンプライアンス相談窓口', d:'（本部から案内されている電話番号・URLをここに記入してください）' },
   { n:'消費者庁 公益通報者保護制度相談ダイヤル', d:'（消費者庁ウェブサイトで最新の受付先をご確認ください）' },
@@ -325,7 +330,7 @@ ja:{
   lCat:'相談の種類', hCat:'いちばん近いものを1つ選んでください。',
   cat_harassment:'ハラスメント<br>暴言・いじめ・セクハラ', cat_fraud:'お金・商品の不正', cat_labor:'給与・シフト<br>労働時間',
   cat_safety:'衛生・食品の安全', cat_executive:'経営陣に<br>関すること', cat_other:'その他',
-  execNote:'この相談は、神田 渉（統括マネジャー）だけが見ます。代表取締役の2名には、届いたことも内容も表示されません。会社の外の窓口を使いたい場合は、前の画面の「会社の外の相談窓口」からご連絡ください。',
+  execNote:'この相談は、神田 渉（統括マネジャー）だけが見ます。代表取締役の2名には、届いたことも内容も表示されません。合言葉を使えば、名前を出さないまま神田とやりとりを続けられます。',
   lWhen:'いつ頃のことですか（任意）', lWho:'誰についてですか（任意）', hWho:'名前がわからなければ「夜勤の男性社員」などでも構いません。',
   lDetail:'内容', hDetail:'いつ・どこで・何があったか、わかる範囲で書いてください。10文字以上。',
   lPhoto:'写真（任意）', hPhoto:'3枚まで。証拠になる写真があれば添付できます。',
@@ -374,7 +379,7 @@ en:{
   lCat:'Type of report', hCat:'Choose the closest one.',
   cat_harassment:'Harassment<br>abuse, bullying', cat_fraud:'Money / stock fraud', cat_labor:'Pay, shifts<br>working hours',
   cat_safety:'Hygiene / food safety', cat_executive:'About the<br>company executives', cat_other:'Other',
-  execNote:'Only Wataru Kanda (General Manager) can see this report. The two Representative Directors will not see its contents, nor even that it was submitted. If you would rather go outside the company, use the external contacts on the previous screen.',
+  execNote:'Only Wataru Kanda (General Manager) can see this report. The two Representative Directors will not see its contents, nor even that it was submitted. Using your passcode, you can keep talking with Kanda without giving your name.',
   lWhen:'When did it happen? (optional)', lWho:'Who is it about? (optional)', hWho:'If you do not know the name, "the male staff on night shift" is fine.',
   lDetail:'Details', hDetail:'Please write when, where and what happened, as far as you know. At least 10 characters.',
   lPhoto:'Photos (optional)', hPhoto:'Up to 3. Attach photos if you have evidence.',
@@ -423,7 +428,7 @@ vi:{
   lCat:'Loại nội dung', hCat:'Hãy chọn 1 mục gần nhất.',
   cat_harassment:'Quấy rối<br>lăng mạ, bắt nạt', cat_fraud:'Gian lận tiền / hàng hóa', cat_labor:'Lương, ca làm<br>giờ làm việc',
   cat_safety:'Vệ sinh / an toàn thực phẩm', cat_executive:'Về ban lãnh đạo<br>công ty', cat_other:'Khác',
-  execNote:'Chỉ ông Kanda Wataru (Quản lý tổng) mới xem được báo cáo này. Hai Giám đốc đại diện sẽ không thấy nội dung, cũng không biết có báo cáo được gửi. Nếu bạn muốn liên hệ bên ngoài công ty, hãy dùng các đầu mối ở màn hình trước.',
+  execNote:'Chỉ ông Kanda Wataru (Quản lý tổng) mới xem được báo cáo này. Hai Giám đốc đại diện sẽ không thấy nội dung, cũng không biết có báo cáo được gửi. Dùng mật khẩu của bạn, bạn có thể tiếp tục trao đổi với ông Kanda mà không cần nêu tên.',
   lWhen:'Việc xảy ra khi nào? (không bắt buộc)', lWho:'Về ai? (không bắt buộc)', hWho:'Không biết tên cũng được, ví dụ "nam nhân viên ca đêm".',
   lDetail:'Nội dung', hDetail:'Hãy viết khi nào, ở đâu, chuyện gì đã xảy ra trong phạm vi bạn biết. Ít nhất 10 ký tự.',
   lPhoto:'Ảnh (không bắt buộc)', hPhoto:'Tối đa 3 ảnh. Nếu có ảnh làm bằng chứng, hãy đính kèm.',
@@ -472,7 +477,7 @@ ne:{
   lCat:'विषयको प्रकार', hCat:'सबैभन्दा मिल्ने एउटा छान्नुहोस्।',
   cat_harassment:'दुर्व्यवहार<br>गाली, हेला', cat_fraud:'पैसा / सामानको अनियमितता', cat_labor:'तलब, ड्युटी<br>काम गर्ने समय',
   cat_safety:'सरसफाइ / खाद्य सुरक्षा', cat_executive:'व्यवस्थापन<br>(नेतृत्व) सम्बन्धी', cat_other:'अन्य',
-  execNote:'यो सूचना कान्दा वातारु (महाप्रबन्धक) ले मात्र हेर्न पाउनुहुन्छ। दुई प्रतिनिधि निर्देशकले सामग्री त के, सूचना आएको कुरा समेत देख्नुहुन्न। कम्पनी बाहिर सम्पर्क गर्न चाहनुहुन्छ भने अघिल्लो स्क्रिनको बाहिरी परामर्श केन्द्र प्रयोग गर्नुहोस्।',
+  execNote:'यो सूचना कान्दा वातारु (महाप्रबन्धक) ले मात्र हेर्न पाउनुहुन्छ। दुई प्रतिनिधि निर्देशकले सामग्री त के, सूचना आएको कुरा समेत देख्नुहुन्न। आफ्नो पासवर्ड प्रयोग गरेर नाम नबताई कान्दासँग कुराकानी जारी राख्न सकिन्छ।',
   lWhen:'कहिले भएको हो? (ऐच्छिक)', lWho:'कसका बारेमा हो? (ऐच्छिक)', hWho:'नाम थाहा नभए "रातको ड्युटीको पुरुष कर्मचारी" भने पनि हुन्छ।',
   lDetail:'विवरण', hDetail:'कहिले, कहाँ, के भयो — थाहा भएसम्म लेख्नुहोस्। कम्तीमा १० अक्षर।',
   lPhoto:'फोटो (ऐच्छिक)', hPhoto:'बढीमा ३ वटा। प्रमाण हुने फोटो भए संलग्न गर्न सक्नुहुन्छ।',
@@ -558,6 +563,8 @@ function renderStores(){
 }
 
 function renderExt(){
+  $('extBox').classList.toggle('hidden', !SHOW_EXTERNAL_CONTACTS);
+  if (!SHOW_EXTERNAL_CONTACTS) return;
   $('extList').innerHTML = EXTERNAL_CONTACTS.map(function(c){
     return '<div class="row"><div class="n">'+c.n+'</div><div class="d">'+c.d+'</div></div>';
   }).join('');
