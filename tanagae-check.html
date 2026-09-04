@@ -245,6 +245,24 @@ table.mtx tbody th{
 #loading .txt{font-size:13px;font-weight:800;color:var(--blue-d)}
 
 .copybox{width:100%;min-height:150px;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:12px}
+
+/* ---------- 店長確認チェック ---------- */
+.confirm{margin-top:12px;background:#fff8e6;border:1.5px solid #f0c66b;border-radius:10px;padding:11px 12px}
+.confirm .ck{display:flex;gap:9px;align-items:flex-start;font-size:12.5px;color:var(--ink);font-weight:500;margin:0}
+.confirm .ck input{width:21px;height:21px;flex:0 0 auto;margin:1px 0 0;accent-color:var(--blue)}
+.confirm .ck b{font-size:13.5px}
+
+/* ---------- AI判定 ---------- */
+.aibox{border-radius:10px;padding:10px 11px;margin-bottom:8px;font-size:12.5px;border-left:4px solid}
+.aibox.ai-ok{background:var(--green-l);border-color:var(--green)}
+.aibox.ai-ng{background:var(--red-l);border-color:var(--red)}
+.aibox.ai-un{background:var(--amber-l);border-color:var(--amber)}
+.aihd{font-weight:800;margin-bottom:5px;display:flex;align-items:baseline;gap:7px}
+.aiconf{margin-left:auto;font-size:10.5px;font-weight:600;color:var(--ink2)}
+.airow{margin:2px 0}
+.aicm{margin-top:6px;padding-top:6px;border-top:1px dashed rgba(0,0,0,.13);font-weight:600}
+.aiwrap{margin-top:9px}
+.aitoggle{background:none;border:none;color:var(--blue);font-weight:800;font-size:12.5px;cursor:pointer;padding:4px 0}
 @media(min-width:640px){ .kpis{grid-template-columns:repeat(4,1fr)} }
 </style>
 </head>
@@ -313,10 +331,10 @@ table.mtx tbody th{
 // ★GASをデプロイして発行された /exec のURLをここに貼る
 const GAS_URL = 'https://script.google.com/macros/s/AKfycbzPu7CGplXVP1UoZlZmj-_cknOVWnFgygvY9ND-pIE5INCuBVUU3YnJnnTKl7fMjD_0fg/exec';
 // gas-tanagae-check.gs の CODE_VERSION と揃える（貼り忘れ・デプロイ忘れの検知用）
-const EXPECTED_GAS_VERSION = '2026-09-04a';
+const EXPECTED_GAS_VERSION = '2026-09-04b';
 
-const SC_PASS  = 'sc2026';        // SC用の合言葉（変えたい時はここ）
-const MGR_PASS = 'Lawson3963';    // 神田（管理者）用
+const SC_PASS  = 'Lawson3963';    // SC用のパスワード（変えたい時はここ）
+const MGR_PASS = '3272885';       // 神田（管理者）用のパスワード
 
 const IMG_DIR   = 'images/tanagae/';
 const DEADLINE  = '2026-10-30';   // 秋冬売場づくり完了期限（金）
@@ -336,46 +354,47 @@ const STORES = [
 ];
 
 /* 棚替え項目マスタ
-   kind  photo_must=写真UP・棚替必須 / photo_light=写真UP・棚替軽微 / no_photo=写真不要・棚替必須
+   hq    本部の区分（参考）: must=写真UP・棚替必須 / light=写真UP・棚替軽微 / none=写真不要・棚替必須
+         ★当社は hq に関係なく【全項目 写真アップ必須】です
    pages 資料PDFのページ番号（images/tanagae/pNN.jpg）
    ※ gas-tanagae-check.gs の ITEMS と対。片方だけ直さないこと */
 const ITEMS = [
   { id:'A1', no:'①', week:'9/8週', start:'2026-09-08', cat:'日用品', place:'サイドネット',
-    kind:'photo_must', point:'常時2〜3企画提示。店舗属性に合わせ商品選択',
+    hq:'must', point:'常時2〜3企画提示。店舗属性に合わせ商品選択',
     detail:'ポイントサイドネットを新設。レジ待ち・買い回り中の衝動買いや、シーズン・立地に合わせた商品を展開します。',
     aim:'新しい売場で今の棚割にない商品を展開し、プラスワン購入を誘引して売上拡大を図る',
     plano:'H1500 P331 ／ H1650 P301', pages:[9,8] },
 
   { id:'A2', no:'②', week:'9/8週', start:'2026-09-08', cat:'日用品', place:'健康食品・衛生・紙',
-    kind:'photo_light', point:'嗜好性の強いカテゴリのためSKU増',
+    hq:'light', point:'嗜好性の強いカテゴリのためSKU増',
     detail:'①風邪関連商品の売場を拡大　②衛生用品を集合陳列。のど飴はSKU拡大、絆創膏は市場No.1のケアリーヴを採用。',
     aim:'①買上点数アップを図る　②商品特性で集合陳列し買い回りの良さを向上させる',
     plano:'H1500 P275 ／ H1650 P293（什器変更・セット納品なし）', pages:[11,10] },
 
   { id:'A3', no:'', week:'9/8週', start:'2026-09-08', cat:'ポケット菓子', place:'ポケット菓子1本',
-    kind:'no_photo', point:'輸入チョコレート菓子1段展開',
-    detail:'写真アップは不要ですが、棚替えは必須です。実施したらチェックしてください。',
+    hq:'none', point:'輸入チョコレート菓子1段展開',
+    detail:'本部は写真不要の区分ですが、当社は写真アップ必須です。棚替え後の売場を撮ってください。',
     aim:'', plano:'', pages:[] },
 
   { id:'B1', no:'③', week:'9/15週', start:'2026-09-15', cat:'無印 菓子・加工食品',
     place:'常和・嗜好品1-1 ／ 生活関連(加工食品)3-2',
-    kind:'photo_must', point:'各1段 ⇒ 2段に変更',
+    hq:'must', point:'各1段 ⇒ 2段に変更',
     detail:'【菓子】1段目に焼菓子・ビスケット・チョコレート、2段目に売れ筋の不揃いバウムを中心に展開。'+
            '【加工食品】無印良品を2段に拡大し、売れ筋商品を上段で展開。',
     aim:'売れ筋商品を中心に展開することで、売上および利益の最大化を図る',
     plano:'菓子 H1500 P193／H1650 P181　加工食品 H1500 P247・P249／H1650 P221・P223', pages:[13,12,15,14] },
 
   { id:'B2', no:'', week:'9/15週', start:'2026-09-15', cat:'酒類', place:'酒リーチイン3-3',
-    kind:'no_photo', point:'酒税1本化に伴い、ビールの酒税区分ではなく価格別にゾーニングを変更',
-    detail:'10/1の酒税税率改正に合わせた変更です。写真アップは不要ですが棚替えは必須。',
+    hq:'none', point:'酒税1本化に伴い、ビールの酒税区分ではなく価格別にゾーニングを変更',
+    detail:'10/1の酒税税率改正に合わせた変更です。本部は写真不要の区分ですが、当社は写真アップ必須です。',
     aim:'', plano:'', pages:[] },
 
   { id:'B3', no:'', week:'9/15週', start:'2026-09-15', cat:'OR菓子', place:'オリジナル菓子',
-    kind:'no_photo', point:'3つ星プレミアム最上段1段展開',
-    detail:'写真アップは不要ですが、棚替えは必須です。', aim:'', plano:'', pages:[] },
+    hq:'none', point:'3つ星プレミアム最上段1段展開',
+    detail:'本部は写真不要の区分ですが、当社は写真アップ必須です。棚替え後の売場を撮ってください。', aim:'', plano:'', pages:[] },
 
   { id:'C1', no:'④', week:'9/22週', start:'2026-09-22', cat:'男女化粧', place:'男女化粧1-1',
-    kind:'photo_light', point:'ローソン先行品（※CVSのみ）を展開　トリデン、ピュレア',
+    hq:'light', point:'ローソン先行品（※CVSのみ）を展開　トリデン、ピュレア',
     detail:'①フェイスマスクは1枚入りに加え7枚入りも展開　②ヘアスタイリング剤のリニューアルに伴いSKU拡大。',
     aim:'①コスパを意識するデイリーユーザーにも対応　②ヘアスタイルの多様化に対応',
     plano:'H1500 P287 ／ H1650 P287',
@@ -384,13 +403,13 @@ const ITEMS = [
 
   { id:'C2', no:'⑤', week:'9/22週', start:'2026-09-22', cat:'酒類常温・SD',
     place:'酒類常温・ソフトドリンク（自店本数）',
-    kind:'photo_light', point:'自店本数に合わせて実施',
+    hq:'light', point:'自店本数に合わせて実施',
     detail:'3-1 小容量ワイン（カーサ・スベルカソー250ml）発売。3-2 ウイスキー・ジン・テキーラを集合展開しおすすめPOP掲出。3-3 市場で人気のワインを採用。',
     aim:'視認性の高い売場展開で新規顧客・買上点数・客単価を最大化する',
     plano:'H1500 P131・P133・P135 ／ H1650 P129・P131・P133', pages:[19,20,21,18] },
 
   { id:'D1', no:'⑥', week:'9/29週', start:'2026-09-29', cat:'日用品シーズン', place:'シーズン・タオル1-1',
-    kind:'photo_must', point:'BRUNOコラボ、LOGOS、カイロ、リップ展開',
+    hq:'must', point:'BRUNOコラボ、LOGOS、カイロ、リップ展開',
     detail:'①BRUNOコラボのローソン限定商品とLOGOS商品を継続展開　②リップ・ハンドクリームを複数品揃え。',
     aim:'①競合と差別化できる商品で集客　②悩み別（治療・保湿・美容等）の多様なニーズに対応',
     plano:'H1500 P297 ／ H1650 P291',
@@ -398,7 +417,7 @@ const ITEMS = [
     pages:[23,22] },
 
   { id:'D2', no:'⑦', week:'9/29週', start:'2026-09-29', cat:'無印化粧品', place:'無印化粧1-1',
-    kind:'photo_must', point:'共同開発商品を最上段1段展開',
+    hq:'must', point:'共同開発商品を最上段1段展開',
     detail:'①無印との共同開発品を集合陳列　②SNSや口コミで注目を集めている商品を品揃え。棚段7段は変わらず、SKUは75→85（+10）。',
     aim:'ローソンでしか買えない商品で購買意欲を喚起し、目的買いに繋げる',
     plano:'H1500 P349 ／ H1650 P319',
@@ -406,20 +425,20 @@ const ITEMS = [
     pages:[25,24] },
 
   { id:'E1', no:'⑧', week:'10/6週', start:'2026-10-06', cat:'ホット飲料', place:'冷温切替ケース',
-    kind:'photo_must', point:'HOT売場を2段 ⇒ 6段に拡大',
+    hq:'must', point:'HOT売場を2段 ⇒ 6段に拡大',
     detail:'気温20℃を下回るとHOT飲料の売上が本格化。朝HOT30円引＋アプリクーポン等の施策を強化します。',
     aim:'リピートが見込める施策を継続することで購入率の改善を図る',
     plano:'H1500 P51 ／ H1650 P49（什器変更・セット納品なし）',
     set:'初回納品：発注 9/7・9/14(月)／発売 9/16・9/23(水)', pages:[27,26] },
 
   { id:'F1', no:'⑨', week:'10/13週', start:'2026-10-13', cat:'即席麺', place:'即席麺3-3',
-    kind:'photo_must', point:'3つ星BIGシリーズ1段展開',
+    hq:'must', point:'3つ星BIGシリーズ1段展開',
     detail:'10/13発売の3つ星縦型BIG（背脂醤油・札幌味噌・博多豚骨）を1段で展開します。',
     aim:'NB麺の値上げ環境の中、価格の低いPB麺・縦型BIGで売上改善を図る',
     plano:'H1500 P233・P239 ／ H1650 P207・P213（セット納品なし）', pages:[29,28] },
 
   { id:'G1', no:'⑩', week:'10/20週', start:'2026-10-20', cat:'洗面浴用', place:'洗面浴用1-1',
-    kind:'photo_light', point:'5daysトライアルシリーズの拡充',
+    hq:'light', point:'5daysトライアルシリーズの拡充',
     detail:'①シャンプー・トリートメントのパウチ型商品を専用什器で展開　②入浴剤専用什器を入替。棚段8段、SKUは109→114（+5）。',
     aim:'①伸長しているトラベル用品で差別化　②見やすい売場で買上点数アップ',
     plano:'H1500 P291 ／ H1650 P293',
@@ -427,8 +446,8 @@ const ITEMS = [
     pages:[31,30] },
 
   { id:'H1', no:'', week:'10/27週', start:'2026-10-27', cat:'冷凍食品', place:'冷凍リーチイン',
-    kind:'no_photo', point:'ナガラホルモン関連商品1段展開（11月）',
-    detail:'写真アップは不要ですが、棚替えは必須です。', aim:'', plano:'', pages:[] }
+    hq:'none', point:'ナガラホルモン関連商品1段展開（11月）',
+    detail:'本部は写真不要の区分ですが、当社は写真アップ必須です。棚替え後の売場を撮ってください。', aim:'', plano:'', pages:[] }
 ];
 
 /* 出来栄え基準（資料 p6「写真UP｜基本ルール」） */
@@ -572,20 +591,20 @@ function openRole() {
     <button class="btn" style="margin-bottom:9px" onclick="setRole('tencho')">🧑‍💼 店長（写真をアップする）</button>
     <button class="btn sec" style="margin-bottom:9px" onclick="askPass('sc')">🧭 SC（1次確認）</button>
     <button class="btn sec" style="margin-bottom:9px" onclick="askPass('mgr')">🏢 神田（最終確認・管理）</button>
-    <div class="hint">SC・管理者は合言葉が必要です。店長はそのまま使えます。</div>
+    <div class="hint">SC・管理者はパスワードが必要です。店長はそのまま使えます。</div>
   `);
 }
 function askPass(role) {
-  openModal(role === 'sc' ? 'SC ログイン' : '管理者 ログイン', '合言葉を入れてください', `
-    <div class="field"><input type="text" id="pass" placeholder="合言葉"></div>
+  openModal(role === 'sc' ? 'SC ログイン' : '管理者 ログイン', 'パスワードを入れてください', `
+    <div class="field"><input type="text" id="pass" placeholder="パスワード"></div>
     <button class="btn" onclick="doPass('${role}')">ログイン</button>
   `);
   setTimeout(() => $('pass') && $('pass').focus(), 120);
 }
 function doPass(role) {
   const v = ($('pass').value || '').trim();
-  if (role === 'sc' && v !== SC_PASS)  { toast('合言葉がちがいます'); return; }
-  if (role === 'mgr' && v !== MGR_PASS) { toast('合言葉がちがいます'); return; }
+  if (role === 'sc' && v !== SC_PASS)  { toast('パスワードがちがいます'); return; }
+  if (role === 'mgr' && v !== MGR_PASS) { toast('パスワードがちがいます'); return; }
   setRole(role);
 }
 function setRole(role) {
@@ -684,6 +703,11 @@ function renderReport() {
     </div>
   </div>`;
 
+  html += `<div class="alert info" style="border-left-color:var(--amber);background:#fff8e6;color:#7a5300">
+    📌 <b>報告は店長が出してください。</b>クルーさんからの直接申請はできません。<br>
+    クルーさんが棚替えをするのはOKですが、<b>店長が売場を確認して問題ない場合だけ</b>報告してください。<br>
+    📷 <b>全14項目とも写真アップが必要です。</b>（1ゴンドラ1枚）</div>`;
+
   if (open.length) {
     html += `<div class="card"><h2>📷 棚替えの報告<span class="n">開始した棚替え</span></h2>${itemList(open, true)}</div>`;
   }
@@ -698,10 +722,10 @@ function itemList(items, clickable) {
   if (!items.length) return `<div class="empty">対象がありません</div>`;
   return items.map(it => {
     const s = statusOf(S.storeId, it.id);
-    const kindCls = it.kind === 'photo_must' ? '' : it.kind === 'photo_light' ? 'light' : 'nophoto';
-    const kindTag = it.kind === 'photo_must' ? '<span class="tag must">写真UP・必須</span>'
-                  : it.kind === 'photo_light' ? '<span class="tag light">写真UP・軽微</span>'
-                  : '<span class="tag nophoto">写真不要</span>';
+    const kindCls = it.hq === 'must' ? '' : it.hq === 'light' ? 'light' : 'nophoto';
+    // 写真は全項目必須なので、ここでは本部の重み（重点／軽微）だけ出す
+    const kindTag = it.hq === 'must' ? '<span class="tag must">重点</span>'
+                  : it.hq === 'light' ? '<span class="tag light">軽微</span>' : '';
     const now = isThisWeek(it) ? '<span class="tag week" style="background:#fff4d6;color:#8a6100">今週</span>' : '';
     const redoStyle = ['sc_redo','mgr_redo'].includes(s) ? 'background:var(--red-l);border-radius:9px;padding-left:8px;padding-right:8px' : '';
     return `<div class="item ${kindCls}" style="${redoStyle}" ${clickable ? `onclick="openItem('${it.id}')"` : ''}>
@@ -749,7 +773,7 @@ function openItem(itemId) {
       <div class="hint">画像をタップ → 指2本でひろげて拡大できます</div>
     </div>` : '';
 
-  const needPhoto = it.kind !== 'no_photo';
+  const needPhoto = true;   // 阪口商店は全項目 写真アップ必須
 
   openModal(it.cat, it.week + '／' + it.place, `
     ${head}
@@ -766,19 +790,34 @@ function openItem(itemId) {
     <div class="card">
       <div class="std"><h3>📏 出来栄え基準（この4つを満たすこと）</h3>
         <ul>${STANDARD.map(x => `<li>${x}</li>`).join('')}</ul></div>
-      ${needPhoto ? `
-        <label>写真（1ゴンドラ1枚・最大${MAX_PHOTO}枚）</label>
-        <div class="photos" id="ph-list"></div>
-        <input type="file" id="ph-input" accept="image/*" capture="environment" multiple style="display:none" onchange="onPickPhoto(event)">
-      ` : `<div class="alert info">この項目は<b>写真アップ不要</b>です。棚替えが終わったら「実施した」を押してください。</div>`}
+      <label>写真（1ゴンドラ1枚・最大${MAX_PHOTO}枚）</label>
+      <div class="photos" id="ph-list"></div>
+      <input type="file" id="ph-input" accept="image/*" capture="environment" multiple style="display:none" onchange="onPickPhoto(event)">
+
       <div class="field" style="margin-top:11px">
         <label>ひとこと（任意）</label>
         <textarea id="cmt" placeholder="例）什器が届いていないので一部だけ変更しました">${esc(S.editing.comment)}</textarea>
       </div>
-      <button class="btn" onclick="submitItem()">${needPhoto ? '📤 この売場を報告する' : '✅ 実施したので報告する'}</button>
+
+      <div class="confirm">
+        <label class="ck">
+          <input type="checkbox" id="ck-confirm">
+          <span><b>店長として売場を確認しました</b><br>
+          クルーさんが棚替えした場合も、店長の私が売場を見て問題ないことを確認しています。</span>
+        </label>
+        <div class="field" style="margin-top:9px;margin-bottom:0">
+          <label>申請者の立場</label>
+          <select id="sel-role">
+            <option value="店長">店長</option>
+            <option value="店長代行">店長代行（店長不在時）</option>
+          </select>
+        </div>
+      </div>
+
+      <button class="btn" style="margin-top:11px" onclick="submitItem()">📤 この売場を報告する</button>
     </div>
   `);
-  if (needPhoto) renderPhotos();
+  renderPhotos();
 }
 
 function renderPhotos() {
@@ -849,27 +888,76 @@ async function submitItem() {
   const e  = S.editing;
   const it = itemOf(e.itemId);
   const cm = $('cmt') ? $('cmt').value.trim() : '';
-  if (it.kind !== 'no_photo' && !e.keep.length && !e.photos.length) {
+  if (!e.keep.length && !e.photos.length) {
     toast('写真を1枚以上つけてください'); return;
+  }
+  if (!$('ck-confirm').checked) {
+    toast('「店長として売場を確認しました」にチェックを入れてください', 3800); return;
   }
   if (!GAS_URL) { toast('GAS_URLが未設定です'); return; }
   const st = storeOf(S.storeId);
-  loading(true, '送信中…（写真は少し時間がかかります）');
+  loading(true, '送信中…（AIが写真を確認しています）');
   try {
     const res = await gasPost({
       action: 'submitReport', storeId: S.storeId, storeName: st ? st.name : '',
       itemId: e.itemId, reporterName: S.name, comment: cm,
+      reporterRole: $('sel-role').value, confirmed: true,
       keepPhotos: e.keep, images: e.photos
     });
     loading(false);
     if (!res.success) { toast('送信できませんでした: ' + (res.error || ''), 4000); return; }
     closeModal();
-    toast('報告しました。SCの確認をお待ちください');
     await loadReports(true);
+    // AIが気づいた点があれば、その場で店長に見せて直してもらう
+    if (res.aiStatus === 'judged' && (res.ai || []).length) showAiResult(res.ai, it);
+    else toast('報告しました。SCの確認をお待ちください');
   } catch (err) {
     loading(false);
     toast('通信エラー。電波の良い場所でもう一度お試しください', 4000);
   }
+}
+
+/* 送信直後にAIの下読みを見せる（直せるうちに気づいてもらう） */
+function showAiResult(ai, it) {
+  const bad = ai.filter(a => a.flag !== 'ok');
+  if (!bad.length) {
+    openModal('AIチェック：問題なし', it.cat, `
+      <div class="alert" style="background:var(--green-l);color:#12613a;border-left:4px solid var(--green)">
+        ✅ AIが写真を見た限り、プライスカード・欠品ともに問題は見つかりませんでした。</div>
+      ${aiCards(ai)}
+      <div class="hint">このあとSC → 神田の確認に進みます。</div>
+      <button class="btn" style="margin-top:9px" onclick="closeModal()">とじる</button>`);
+    return;
+  }
+  openModal('AIが気になった点', it.cat, `
+    <div class="alert redo">🔎 AIが ${bad.length}枚の写真で気になる点を見つけました。<br>
+      直せる場合は売場を直して、もう一度写真を撮り直してください。</div>
+    ${aiCards(ai)}
+    <div class="hint">これはAIの下読みです。最終判断はSCと神田が行います。<br>
+      直さずこのまま出してもかまいませんが、その場合は差し戻しになることがあります。</div>
+    <button class="btn sec" style="margin-top:9px" onclick="closeModal();openItem('${it.id}')">📷 撮り直す</button>
+    <button class="btn ghost" style="margin-top:8px" onclick="closeModal()">このまま提出する</button>`);
+}
+
+/* AI判定の中身を1枚ずつカードにする（確認画面でも使う） */
+function aiCards(ai) {
+  const mark = { ok:'✅', ng:'❌', unclear:'❓' };
+  return (ai || []).map((a, i) => {
+    const cls = a.flag === 'ok' ? 'ai-ok' : a.flag === 'check' ? 'ai-ng' : 'ai-un';
+    return `<div class="aibox ${cls}">
+      <div class="aihd">写真${(a.idx ?? i) + 1}　${a.flag === 'ok' ? '問題なし' : a.flag === 'check' ? '要確認' : '判定できず'}
+        <span class="aiconf">確信度 ${a.confidence || 0}%</span></div>
+      ${a.unclear ? `<div class="airow">📷 ${esc(a.photoIssue || '写真から判定できませんでした')}</div>` : ''}
+      <div class="airow">${mark[a.pcStatus] || '❓'} プライスカード${
+        a.pcIssues && a.pcIssues.length ? '：' + esc(a.pcIssues.join('、')) : ''}</div>
+      <div class="airow">${a.holes === 0 ? '✅' : a.holes > 0 ? '❌' : '❓'} 欠品・棚空き${
+        a.holes != null ? '：' + a.holes + '箇所' : '：判定できず'}${
+        a.holeIssues && a.holeIssues.length ? '（' + esc(a.holeIssues.join('、')) + '）' : ''}</div>
+      <div class="airow">${mark[a.pointStatus] || '❓'} 棚割ポイント${
+        a.pointComment ? '：' + esc(a.pointComment) : ''}</div>
+      ${a.comment ? `<div class="aicm">💡 ${esc(a.comment)}</div>` : ''}
+    </div>`;
+  }).join('');
 }
 
 /* ================================================================
@@ -921,10 +1009,11 @@ function checkCard(r, isSc) {
       <span class="st ${STATUS_CLASS[r.status||'']}">${STATUS_LABEL[r.status||'']}</span>
       <span style="font-size:11px;color:var(--ink2)">${esc((r.reporterName||'') + ' / ' + fmtDt(r.reportedAt))}</span>
     </div>
-    ${r.comment ? `<div class="hint">💬 店長：${esc(r.comment)}</div>` : ''}
+    ${r.comment ? `<div class="hint">💬 ${esc(r.reporterRole || '店長')}：${esc(r.comment)}</div>` : ''}
     ${ph.length ? `<div class="photos">${ph.map((u,i) =>
         `<div class="ph"><img src="${u}" loading="lazy" alt="" onclick="openViewer(${arr},${i},'${esc(st?st.short:'')} ${esc(it?it.cat:'')}')"></div>`).join('')}</div>`
-      : `<div class="hint">写真なし（写真不要の項目）</div>`}
+      : `<div class="hint">写真なし</div>`}
+    ${aiSummary(r)}
     ${r.scComment ? `<div class="hint">🧭 SC ${esc(r.scName||'')}：${esc(r.scComment)}</div>` : ''}
     ${r.mgrComment ? `<div class="hint">🏢 神田 ${esc(r.mgrName||'')}：${esc(r.mgrComment)}</div>` : ''}
     <div style="display:flex;gap:8px;margin-top:11px">
@@ -933,6 +1022,28 @@ function checkCard(r, isSc) {
     </div>
     ${isSc ? '' : `<button class="btn ghost sm" style="width:100%;margin-top:8px" onclick="openExclude('${r.storeId}','${r.itemId}')">⚙️ 進捗除外にする／解除</button>`}
   </div>`;
+}
+
+/* 確認カードに出すAIの下読み。まずは1行サマリー、押すと詳細 */
+function aiSummary(r) {
+  const ai = r.ai || [];
+  if (r.aiStatus === 'error') return `<div class="hint">🤖 AI判定はエラーで実行できませんでした</div>`;
+  if (!ai.length) return `<div class="hint">🤖 AI判定なし（未実行）</div>`;
+  const ng = ai.filter(a => a.flag === 'check').length;
+  const un = ai.filter(a => a.flag === 'unclear').length;
+  const line = ng ? `❌ ${ng}枚で要確認` : un ? `❓ ${un}枚は判定できず` : '✅ 問題なし';
+  const holes = ai.reduce((s, a) => s + (a.holes || 0), 0);
+  const pcNg  = ai.filter(a => a.pcStatus === 'ng').length;
+  return `<div class="aiwrap">
+    <button class="aitoggle" onclick="toggleAi('${r.reportId}')">
+      🤖 AIの下読み：${line}${holes ? `　欠品${holes}箇所` : ''}${pcNg ? `　PC無し${pcNg}枚` : ''} ▾</button>
+    <div id="ai-${r.reportId}" style="display:none">${aiCards(ai)}
+      <div class="hint">AIの下読みです。最終判断は人が行ってください。</div></div>
+  </div>`;
+}
+function toggleAi(id) {
+  const el = $('ai-' + id); if (!el) return;
+  el.style.display = el.style.display === 'none' ? 'block' : 'none';
 }
 
 function fmtDt(s) {
@@ -1271,6 +1382,10 @@ function renderPoint() {
   const weeks = [...new Set(ITEMS.map(i => i.week))];
   let html = `<div class="card">
     <h2>📏 写真UPの基本ルール（出来栄え基準）</h2>
+    <div class="alert info" style="border-left-color:var(--amber);background:#fff8e6;color:#7a5300">
+      📌 <b>阪口商店のルール</b><br>
+      ・報告を出すのは<b>店長</b>（クルーさんからの直接申請はNG。店長が売場を確認してから出す）<br>
+      ・本部は一部「写真不要」の区分ですが、<b>当社は全14項目とも写真アップ必須</b>です</div>
     <div class="std"><h3>この4つを満たしていれば「完了」</h3>
       <ul>${STANDARD.map(x => `<li>${x}</li>`).join('')}</ul></div>
     <div class="hint"><b>進捗除外（管理者が判断）</b>：${EXCLUDE_REASONS.join(' ／ ')}<br>
@@ -1287,12 +1402,13 @@ function renderPoint() {
     html += `<div class="card">
       <h2>🗓️ ${esc(w)}<span class="n">${esc(list[0].start.replace(/^\d{4}-/,'').replace('-','/'))}(火)〜</span></h2>
       ${list.map(it => {
-        const kindTag = it.kind === 'photo_must' ? '<span class="tag must">写真UP・棚替必須</span>'
-                      : it.kind === 'photo_light' ? '<span class="tag light">写真UP・棚替軽微</span>'
-                      : '<span class="tag nophoto">写真不要・棚替必須</span>';
+        const kindTag = '<span class="tag must" style="background:#e6f6ed;color:#1f9d55">写真UP必須</span>'
+                      + (it.hq === 'must' ? '<span class="tag must" style="margin-left:4px">本部:写真UP・棚替必須</span>'
+                       : it.hq === 'light' ? '<span class="tag light" style="margin-left:4px">本部:写真UP・棚替軽微</span>'
+                       : '<span class="tag nophoto" style="margin-left:4px">本部:写真不要・棚替必須</span>');
         return `<div style="padding:11px 0;border-top:1px solid var(--line)">
           <div style="display:flex;gap:9px;align-items:flex-start">
-            <div class="no" style="flex:0 0 32px;height:32px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-weight:800;background:${it.kind==='photo_must'?'var(--blue-l)':it.kind==='photo_light'?'var(--pink-l)':'var(--gray-l)'};color:${it.kind==='photo_must'?'var(--blue-d)':it.kind==='photo_light'?'var(--pink)':'var(--ink2)'}">${esc(it.no||'·')}</div>
+            <div class="no" style="flex:0 0 32px;height:32px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-weight:800;background:${it.hq==='must'?'var(--blue-l)':it.hq==='light'?'var(--pink-l)':'var(--gray-l)'};color:${it.hq==='must'?'var(--blue-d)':it.hq==='light'?'var(--pink)':'var(--ink2)'}">${esc(it.no||'·')}</div>
             <div style="flex:1;min-width:0">
               <div style="font-weight:800">${esc(it.cat)}</div>
               <div style="font-size:12px;color:var(--ink2)">${esc(it.place)}</div>
