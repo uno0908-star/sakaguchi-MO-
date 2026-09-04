@@ -331,7 +331,7 @@ table.mtx tbody th{
 // ★GASをデプロイして発行された /exec のURLをここに貼る
 const GAS_URL = 'https://script.google.com/macros/s/AKfycbzPu7CGplXVP1UoZlZmj-_cknOVWnFgygvY9ND-pIE5INCuBVUU3YnJnnTKl7fMjD_0fg/exec';
 // gas-tanagae-check.gs の CODE_VERSION と揃える（貼り忘れ・デプロイ忘れの検知用）
-const EXPECTED_GAS_VERSION = '2026-09-04b';
+const EXPECTED_GAS_VERSION = '2026-09-04c';
 
 const SC_PASS  = 'Lawson3963';    // SC用のパスワード（変えたい時はここ）
 const MGR_PASS = '3272885';       // 神田（管理者）用のパスワード
@@ -371,10 +371,12 @@ const ITEMS = [
     aim:'①買上点数アップを図る　②商品特性で集合陳列し買い回りの良さを向上させる',
     plano:'H1500 P275 ／ H1650 P293（什器変更・セット納品なし）', pages:[11,10] },
 
-  { id:'A3', no:'', week:'9/8週', start:'2026-09-08', cat:'ポケット菓子', place:'ポケット菓子1本',
-    hq:'none', point:'輸入チョコレート菓子1段展開',
-    detail:'本部は写真不要の区分ですが、当社は写真アップ必須です。棚替え後の売場を撮ってください。',
-    aim:'', plano:'', pages:[] },
+  { id:'A3', no:'', week:'9/8週', start:'2026-09-08', cat:'ポケット菓子',
+    place:'ポケット菓子・クッキー・ビス・機能簡易食品・玩具・玩菓 6-3',
+    hq:'none', point:'輸入チョコレート菓子を1段増やす',
+    detail:'❶6段目に輸入チョコレートを1段展開　❷5段目に低単価のスティックチョコレートを1段展開。ゾーニングは大きく変えません。',
+    aim:'❶認知度が高く買いやすい価格の輸入菓子で買上点数の向上を図る　❷消費の二極化への対応として低単価商品の施策を継続する',
+    plano:'10/6有効棚割　棚割SKU数84／基本商品SKU数26　食品モジュール39〜35本', pages:['tana_A3.jpg'] },
 
   { id:'B1', no:'③', week:'9/15週', start:'2026-09-15', cat:'無印 菓子・加工食品',
     place:'常和・嗜好品1-1 ／ 生活関連(加工食品)3-2',
@@ -384,14 +386,19 @@ const ITEMS = [
     aim:'売れ筋商品を中心に展開することで、売上および利益の最大化を図る',
     plano:'菓子 H1500 P193／H1650 P181　加工食品 H1500 P247・P249／H1650 P221・P223', pages:[13,12,15,14] },
 
-  { id:'B2', no:'', week:'9/15週', start:'2026-09-15', cat:'酒類', place:'酒リーチイン3-3',
-    hq:'none', point:'酒税1本化に伴い、ビールの酒税区分ではなく価格別にゾーニングを変更',
-    detail:'10/1の酒税税率改正に合わせた変更です。本部は写真不要の区分ですが、当社は写真アップ必須です。',
-    aim:'', plano:'', pages:[] },
+  { id:'B2', no:'', week:'9/15週', start:'2026-09-15', cat:'酒類', place:'酒類リーチイン 3-3',
+    hq:'none', point:'ビールをプレミアム／スタンダード／エコノミーに区分変更する',
+    detail:'5〜6段目が変更箇所です。従来の「プレミアム・機能系・第3のビール」といった酒税区分ではなく、'+
+           'プレミアムビール → スタンダードビール → エコノミービール の価格帯順に並べ替えます。',
+    aim:'10/1の酒税改正で酒税が1本化されるため、酒税区分ではなく価格帯での分類に変更する',
+    plano:'10/6有効棚割　棚割SKU数57／基本商品SKU数29', pages:['tana_B2.jpg'] },
 
-  { id:'B3', no:'', week:'9/15週', start:'2026-09-15', cat:'OR菓子', place:'オリジナル菓子',
-    hq:'none', point:'3つ星プレミアム最上段1段展開',
-    detail:'本部は写真不要の区分ですが、当社は写真アップ必須です。棚替え後の売場を撮ってください。', aim:'', plano:'', pages:[] },
+  { id:'B3', no:'', week:'9/15週', start:'2026-09-15', cat:'OR菓子', place:'オリジナル菓子 2-1',
+    hq:'none', point:'ゾーニングは変更せず、一部商品の入替を行う',
+    detail:'❶1段目（最上段）にLWオリジナル菓子「3つ星プレミアムシリーズ」を展開　'+
+           '❷3段目に店頭価格108円の商品を1段展開。棚の区割り自体は変えません。',
+    aim:'消費の二極化が続くなか、❶高付加価値のプレミアムシリーズ ❷節約志向向けの108円商品 の両方で売上拡大を図る',
+    plano:'10/6有効棚割　棚割SKU数41／基本商品SKU数9　食品モジュール39本', pages:['tana_B3.jpg'] },
 
   { id:'C1', no:'④', week:'9/22週', start:'2026-09-22', cat:'男女化粧', place:'男女化粧1-1',
     hq:'light', point:'ローソン先行品（※CVSのみ）を展開　トリデン、ピュレア',
@@ -445,9 +452,13 @@ const ITEMS = [
     set:'9/11(金) 入浴剤什器 ／ 9/26(土) ヘアケア什器 ／ 10/3(土) 洗口液什器 ／ 10/23(金) めぐりズム3段什器 ／ 9/29(火) ローソン先行品納品',
     pages:[31,30] },
 
-  { id:'H1', no:'', week:'10/27週', start:'2026-10-27', cat:'冷凍食品', place:'冷凍リーチイン',
-    hq:'none', point:'ナガラホルモン関連商品1段展開（11月）',
-    detail:'本部は写真不要の区分ですが、当社は写真アップ必須です。棚替え後の売場を撮ってください。', aim:'', plano:'', pages:[] }
+  { id:'H1', no:'', week:'10/27週', start:'2026-10-27', cat:'冷凍食品',
+    place:'冷凍リーチイン 3-3（リーチイン3本・冷凍平台2台）',
+    hq:'none', point:'LW麺類(パスタ)を平台へ移動し、LWアルミ鍋を1段→3段に拡大する',
+    detail:'❶LW麺類（パスタ）を【3-3】から冷凍平台へ移します　❷LWアルミ鍋を1段から3段に拡大し、'+
+           '6段目にナガラ食品に関連する商品を1段設けます。',
+    aim:'冷凍食品でお客様の認知度が高い商品を展開し、目的買いを促進するため',
+    plano:'10/6有効棚割　棚割SKU数29／基本商品SKU数8', pages:['tana_H1.jpg'] }
 ];
 
 /* 出来栄え基準（資料 p6「写真UP｜基本ルール」） */
@@ -764,11 +775,11 @@ function openItem(itemId) {
   }
 
   const docs = it.pages.length ? `
-    <div class="field"><label>📘 棚替えのお手本（資料）</label>
+    <div class="field"><label>📘 棚替えのお手本</label>
       <div class="docgrid">${it.pages.map((p, i) =>
         `<div class="doc" onclick="viewDocs('${it.id}',${i})">
-           <img src="${IMG_DIR}p${String(p).padStart(2,'0')}.jpg" loading="lazy" alt="">
-           <div class="cap">資料 P${p}</div></div>`).join('')}
+           <img src="${docSrc(p)}" loading="lazy" alt="">
+           <div class="cap">${docCap(p)}</div></div>`).join('')}
       </div>
       <div class="hint">画像をタップ → 指2本でひろげて拡大できます</div>
     </div>` : '';
@@ -842,10 +853,16 @@ function viewEditPhoto(i) {
   const e = S.editing; if (!e) return;
   openViewer(e.keep.concat(e.photos), i, '報告する写真');
 }
+/* pages の要素は 数値=本部資料のページ番号 / 文字列=棚割表の画像ファイル名 */
+function docSrc(p) {
+  return IMG_DIR + (typeof p === 'number' ? 'p' + String(p).padStart(2, '0') + '.jpg' : p);
+}
+function docCap(p) { return typeof p === 'number' ? '資料 P' + p : '棚割表'; }
+
 /* 資料画像を開く（項目IDから引く。onclickにパスを並べない） */
 function viewDocs(itemId, i) {
   const it = itemOf(itemId); if (!it || !it.pages.length) return;
-  openViewer(it.pages.map(p => IMG_DIR + 'p' + String(p).padStart(2, '0') + '.jpg'), i, it.cat);
+  openViewer(it.pages.map(docSrc), i, it.cat);
 }
 
 async function onPickPhoto(ev) {
@@ -1422,8 +1439,8 @@ function renderPoint() {
           ${it.set   ? `<div class="hint"><b>納品予定</b>：${esc(it.set)}</div>` : ''}
           ${it.pages.length ? `<div class="docgrid">${it.pages.map((p, i) =>
             `<div class="doc" onclick="viewDocs('${it.id}',${i})">
-               <img src="${IMG_DIR}p${String(p).padStart(2,'0')}.jpg" loading="lazy" alt="">
-               <div class="cap">資料 P${p}</div></div>`).join('')}</div>` : ''}
+               <img src="${docSrc(p)}" loading="lazy" alt="">
+               <div class="cap">${docCap(p)}</div></div>`).join('')}</div>` : ''}
         </div>`;
       }).join('')}
     </div>`;
@@ -1436,7 +1453,7 @@ function renderPoint() {
   $('point-body').innerHTML = html;
 }
 function docTile(p, cap) {
-  const src = IMG_DIR + 'p' + String(p).padStart(2, '0') + '.jpg';
+  const src = docSrc(p);
   return `<div class="doc" onclick="openViewer(['${src}'],0,'${esc(cap)}')">
     <img src="${src}" loading="lazy" alt=""><div class="cap">${esc(cap)}</div></div>`;
 }
