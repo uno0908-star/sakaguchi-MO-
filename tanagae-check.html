@@ -649,6 +649,46 @@ function closeModal() {
 }
 
 /* ================================================================
+   Drive写真のURL正規化（uc?export=view は img で表示できないため）
+   ================================================================ */
+function driveId(u) {
+  const m = String(u || '').match(/[-\w]{25,}/);
+  return m ? m[0] : '';
+}
+function photoSrc(u, w) {
+  const s = String(u || '');
+  if (!s || s.startsWith('data:') || s.startsWith('blob:')) return s;   // 撮影直後のプレビュー
+  const id = driveId(s);
+  return id ? `https://drive.google.com/thumbnail?id=${id}&sz=w${w || 800}` : s;
+}
+/* 表示できなかった時の保険：lh3 → GASのbase64 の順で試す */
+function photoFallback(img) {
+  const id = driveId(img.dataset.u || img.src);
+  if (!id) { img.onerror = null; return; }
+  const w = img.dataset.w || 800;
+  const step = (+img.dataset.step || 0) + 1;
+  img.dataset.step = step;
+  if (step === 1) { img.src = `https://lh3.googleusercontent.com/d/${id}=w${w}`; return; }
+  if (step === 2) {
+    img.onerror = null;
+    fetch(`${GAS_URL}?action=getPhotoData&id=${id}`)
+      .then(r => r.json())
+      .then(j => { if (j && j.success && j.dataUrl) img.src = j.dataUrl; })
+      .catch(() => {});
+    return;
+  }
+  img.onerror = null;
+}
+/* 写真1枚分の img タグ（Drive/データURLどちらでも） */
+function photoImg(u, w, extra) {
+  const id = driveId(u);
+  // データURL（撮影直後）は差し替え不要。属性に巨大文字列を積まない
+  return id
+    ? `<img src="${photoSrc(u, w)}" data-u="${id}" data-w="${w || 800}" onerror="photoFallback(this)" alt="" ${extra || ''}>`
+    : `<img src="${u}" alt="" ${extra || ''}>`;
+}
+
+/* ================================================================
    画像ビューア
    ================================================================ */
 function openViewer(imgs, i, title) {
@@ -660,7 +700,7 @@ function openViewer(imgs, i, title) {
 function renderViewer() {
   const v = S.viewer;
   $('v-title').textContent = v.title + (v.imgs.length > 1 ? `（${v.i + 1}/${v.imgs.length}）` : '');
-  $('v-body').innerHTML = `<img src="${v.imgs[v.i]}" alt="">`;
+  $('v-body').innerHTML = photoImg(v.imgs[v.i], 1600);
   $('v-nav').innerHTML = v.imgs.length > 1
     ? `<button onclick="vStep(-1)">← 前</button><button onclick="vStep(1)">次 →</button>` : '';
 }
@@ -837,10 +877,10 @@ function renderPhotos() {
   // 写真はデータURLが巨大なので、HTMLに埋めずに番号でひく
   const cells = [];
   e.keep.forEach((u, i) => cells.push(
-    `<div class="ph"><img src="${u}" alt="" onclick="viewEditPhoto(${i})">
+    `<div class="ph">${photoImg(u, 400, `onclick="viewEditPhoto(${i})"`)}
      <button class="del" onclick="event.stopPropagation();delKeep(${i})">✕</button></div>`));
   e.photos.forEach((u, i) => cells.push(
-    `<div class="ph"><img src="${u}" alt="" onclick="viewEditPhoto(${e.keep.length + i})">
+    `<div class="ph">${photoImg(u, 400, `onclick="viewEditPhoto(${e.keep.length + i})"`)}
      <button class="del" onclick="event.stopPropagation();delNew(${i})">✕</button></div>`));
   if (cells.length < MAX_PHOTO) {
     cells.push(`<button class="addph" onclick="$('ph-input').click()"><span class="ic">📷</span>写真を追加</button>`);
@@ -1028,7 +1068,7 @@ function checkCard(r, isSc) {
     </div>
     ${r.comment ? `<div class="hint">💬 ${esc(r.reporterRole || '店長')}：${esc(r.comment)}</div>` : ''}
     ${ph.length ? `<div class="photos">${ph.map((u,i) =>
-        `<div class="ph"><img src="${u}" loading="lazy" alt="" onclick="openViewer(${arr},${i},'${esc(st?st.short:'')} ${esc(it?it.cat:'')}')"></div>`).join('')}</div>`
+        `<div class="ph">${photoImg(u, 600, `loading="lazy" onclick="openViewer(${arr},${i},&#39;${esc(st?st.short:'')} ${esc(it?it.cat:'')}&#39;)"`)}</div>`).join('')}</div>`
       : `<div class="hint">写真なし</div>`}
     ${aiSummary(r)}
     ${r.scComment ? `<div class="hint">🧭 SC ${esc(r.scName||'')}：${esc(r.scComment)}</div>` : ''}
