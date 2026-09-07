@@ -844,6 +844,7 @@ function openItem(itemId) {
       <label>写真（1ゴンドラ1枚・最大${MAX_PHOTO}枚）</label>
       <div class="photos" id="ph-list"></div>
       <input type="file" id="ph-input" accept="image/*" capture="environment" multiple style="display:none" onchange="onPickPhoto(event)">
+      <input type="file" id="ph-input-lib" accept="image/*" multiple style="display:none" onchange="onPickPhoto(event)">
 
       <div class="field" style="margin-top:11px">
         <label>ひとこと（任意）</label>
@@ -883,7 +884,8 @@ function renderPhotos() {
     `<div class="ph">${photoImg(u, 400, `onclick="viewEditPhoto(${e.keep.length + i})"`)}
      <button class="del" onclick="event.stopPropagation();delNew(${i})">✕</button></div>`));
   if (cells.length < MAX_PHOTO) {
-    cells.push(`<button class="addph" onclick="$('ph-input').click()"><span class="ic">📷</span>写真を追加</button>`);
+    cells.push(`<button class="addph" onclick="$('ph-input').click()"><span class="ic">📷</span>撮影する</button>`);
+    cells.push(`<button class="addph" onclick="$('ph-input-lib').click()"><span class="ic">🖼️</span>ライブラリ</button>`);
   }
   box.innerHTML = cells.join('');
 }
