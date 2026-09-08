@@ -1,0 +1,457 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>コンプライアンス理解度テスト / Compliance Test</title>
+<style>
+:root{
+  --navy:#16304F; --blue:#005BAC; --blue2:#2E75B6; --line:#D8DDE3;
+  --ink:#1F2124; --ink2:#5A5F66; --bg:#F4F6F9; --white:#fff;
+  --ok:#1E6F45; --okbg:#ECF6F0; --ng:#B3332B; --ngbg:#FBEEEC; --amber:#8A5A00;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{margin:0;background:var(--bg);color:var(--ink);
+  font-family:-apple-system,BlinkMacSystemFont,"Hiragino Kaku Gothic ProN","Noto Sans JP","Segoe UI",sans-serif;
+  font-size:15px;line-height:1.7;padding-bottom:40px}
+.wrap{max-width:640px;margin:0 auto;padding:0 14px}
+
+/* 言語切替 */
+.langbar{background:var(--navy);padding:8px 10px;display:flex;gap:6px;justify-content:center;flex-wrap:wrap;
+  position:sticky;top:0;z-index:20}
+.langbar button{border:1px solid rgba(255,255,255,.35);background:transparent;color:#fff;
+  border-radius:999px;padding:5px 13px;font-size:13px;font-weight:700;cursor:pointer}
+.langbar button.on{background:#fff;color:var(--navy);border-color:#fff}
+
+header{background:var(--blue);color:#fff;padding:16px 14px 18px}
+header h1{margin:0;font-size:19px;font-weight:800;line-height:1.45}
+header p{margin:6px 0 0;font-size:12.5px;opacity:.92}
+
+.card{background:var(--white);border:1px solid var(--line);border-radius:12px;
+  padding:16px;margin-top:14px}
+.card h2{margin:0 0 10px;font-size:16px;color:var(--navy);font-weight:800}
+label{display:block;font-size:13px;font-weight:700;margin-bottom:6px}
+.hint{font-size:12.5px;color:var(--ink2);margin:6px 0 0}
+input[type=text]{width:100%;padding:13px;border:1.5px solid var(--line);border-radius:9px;
+  font-size:17px;text-align:center;letter-spacing:.12em}
+input[type=text]:focus{outline:none;border-color:var(--blue)}
+.btn{display:block;width:100%;padding:15px;border:none;border-radius:10px;background:var(--blue);
+  color:#fff;font-size:16px;font-weight:800;cursor:pointer;margin-top:12px}
+.btn:disabled{background:#9BB4CC}
+.btn.sub{background:var(--white);color:var(--blue);border:1.5px solid var(--blue)}
+.err{background:var(--ngbg);border:1px solid #E7C2BD;color:var(--ng);border-radius:9px;
+  padding:11px;font-size:13.5px;margin-top:10px;display:none}
+
+/* 進捗 */
+.prog{display:flex;align-items:center;gap:9px;margin:14px 0 0}
+.prog .bar{flex:1;height:7px;background:#E3E8EE;border-radius:99px;overflow:hidden}
+.prog .bar i{display:block;height:100%;background:var(--blue);width:0;transition:width .25s}
+.prog .n{font-size:12.5px;color:var(--ink2);font-weight:700;white-space:nowrap}
+
+/* 設問 */
+.q{background:var(--white);border:1px solid var(--line);border-radius:12px;padding:15px;margin-top:12px}
+.q .num{display:inline-block;background:var(--navy);color:#fff;font-size:12px;font-weight:800;
+  border-radius:6px;padding:2px 9px;margin-bottom:9px}
+.q .txt{font-size:15.5px;line-height:1.65;margin-bottom:13px}
+.ans{display:flex;gap:10px}
+.ans button{flex:1;padding:15px 6px;border:2px solid var(--line);background:var(--white);
+  border-radius:10px;font-size:17px;font-weight:800;color:var(--ink2);cursor:pointer}
+.ans button .sub{display:block;font-size:11.5px;font-weight:700;margin-top:2px}
+.ans button.sel[data-v="1"]{border-color:var(--ok);background:var(--okbg);color:var(--ok)}
+.ans button.sel[data-v="0"]{border-color:var(--ng);background:var(--ngbg);color:var(--ng)}
+
+/* 結果 */
+.score{text-align:center;padding:20px 14px}
+.score .big{font-size:52px;font-weight:800;line-height:1.1}
+.score .lab{font-size:13px;color:var(--ink2);margin-top:2px}
+.score .judge{display:inline-block;margin-top:12px;padding:7px 20px;border-radius:999px;
+  font-size:16px;font-weight:800}
+.score.pass .big{color:var(--ok)} .score.pass .judge{background:var(--okbg);color:var(--ok)}
+.score.fail .big{color:var(--ng)} .score.fail .judge{background:var(--ngbg);color:var(--ng)}
+.review{margin-top:6px}
+.review .r{display:flex;gap:9px;padding:10px 0;border-top:1px solid var(--line);font-size:13.5px;align-items:flex-start}
+.review .mk{flex:none;width:22px;font-weight:800;text-align:center}
+.review .mk.o{color:var(--ok)} .review .mk.x{color:var(--ng)}
+.review .cor{display:block;color:var(--ng);font-size:12.5px;margin-top:3px;font-weight:700}
+.note{background:#FDF6E7;border-left:4px solid var(--amber);padding:11px 13px;border-radius:0 8px 8px 0;
+  font-size:13px;margin-top:14px;color:#5c4200}
+.foot{text-align:center;font-size:11.5px;color:var(--ink2);margin-top:18px}
+.hide{display:none!important}
+.loading{position:fixed;inset:0;background:rgba(255,255,255,.86);display:none;
+  align-items:center;justify-content:center;z-index:50;font-weight:800;color:var(--navy)}
+.loading.on{display:flex}
+</style>
+</head>
+<body>
+
+<div class="langbar">
+  <button data-lang="ja" class="on" onclick="setLang('ja')">日本語</button>
+  <button data-lang="en" onclick="setLang('en')">English</button>
+  <button data-lang="ne" onclick="setLang('ne')">नेपाली</button>
+  <button data-lang="vi" onclick="setLang('vi')">Tiếng Việt</button>
+</div>
+
+<header>
+  <div class="wrap">
+    <h1 id="h-title">コンプライアンス理解度テスト</h1>
+    <p id="h-sub">クーポンの取り扱いルールと報告のきまり（全10問・80点以上で合格）</p>
+  </div>
+</header>
+
+<div class="wrap">
+
+  <!-- ① 本人確認 -->
+  <section id="sec-id" class="card">
+    <h2 id="t-id">受験者の確認</h2>
+    <label id="l-emp">従業員番号（7桁）</label>
+    <input type="text" id="emp" inputmode="numeric" maxlength="7" placeholder="0000000">
+    <p class="hint" id="h-emp">ご自身の従業員番号を入力してください。分からない場合は店舗責任者に確認してください。</p>
+    <button class="btn" id="b-start" onclick="startTest()">はじめる</button>
+    <div class="err" id="e-id"></div>
+  </section>
+
+  <!-- ② テスト -->
+  <section id="sec-q" class="hide">
+    <div class="card" style="padding:13px 15px">
+      <div style="font-size:13.5px;font-weight:800;color:var(--navy)" id="who"></div>
+      <div class="prog"><div class="bar"><i id="pbar"></i></div><div class="n" id="pnum"></div></div>
+    </div>
+    <div id="qlist"></div>
+    <button class="btn" id="b-submit" onclick="submitTest()" disabled>採点する</button>
+    <div class="err" id="e-q"></div>
+  </section>
+
+  <!-- ③ 結果 -->
+  <section id="sec-r" class="hide">
+    <div class="card">
+      <div class="score" id="score">
+        <div class="big"><span id="s-score">0</span><span style="font-size:24px">点</span></div>
+        <div class="lab" id="s-lab">10問中 <span id="s-ok">0</span>問 正解</div>
+        <div class="judge" id="s-judge">合格</div>
+      </div>
+      <div class="note" id="s-note"></div>
+      <div class="review" id="review"></div>
+      <button class="btn sub hide" id="b-retry" onclick="retry()">もう一度受ける</button>
+    </div>
+    <p class="foot" id="f-note"></p>
+  </section>
+
+</div>
+
+<div class="loading" id="loading"><span id="load-msg">送信中...</span></div>
+
+<script>
+/* ============================================================
+   コンプライアンス理解度テスト（4言語）
+   ・接客評価システムと同じGASを使用（従業員マスタで本人確認）
+   ・結果は ComplianceTest シートへ記録（再受験は上書き・受験回数を加算）
+   ============================================================ */
+const GAS_URL = 'https://script.google.com/macros/s/AKfycbyHEBH5Q8VBcZFBzfH5tYQm46RCa_fYw3PDlKp1qA5E9EWmR44OQ8UA1JTXFa-stnbG8g/exec';
+const TEST_ID   = 'COMPLIANCE2026-10';   // テスト回。改訂したら変える
+const PASS_LINE = 80;                     // 合格点
+
+/* 設問（正解 1=○ / 0=✕）。日本語が正本、他言語は同じ順番 */
+const ANSWER = [0, 1, 0, 1, 1, 1, 1, 1, 0, 0];
+
+const I18N = {
+ja:{
+  title:'コンプライアンス理解度テスト',
+  sub:'クーポンの取り扱いルールと報告のきまり（全10問・80点以上で合格）',
+  t_id:'受験者の確認', l_emp:'従業員番号（7桁）',
+  h_emp:'ご自身の従業員番号を入力してください。分からない場合は店舗責任者に確認してください。',
+  start:'はじめる', submit:'採点する', retry:'もう一度受ける',
+  yes:'○', no:'✕', yes_s:'正しい', no_s:'まちがい',
+  pnum:'{a} / {b} 問 回答済み',
+  err_fmt:'従業員番号は7桁の数字です。',
+  err_nf:'入力された従業員番号は登録されていません。店舗責任者へ確認してください。',
+  err_net:'接続できませんでした。電波の良い場所で再度お試しください。',
+  err_unans:'すべての設問に回答してください。',
+  checking:'確認中...', sending:'送信中...',
+  pt:'点', lab:'10問中 {n}問 正解',
+  pass:'合格', fail:'不合格',
+  note_pass:'合格です。ご協力ありがとうございました。結果は自動で記録されました。',
+  note_fail:'80点に達していません。まちがえた問題を確認して、もう一度受けてください。',
+  correct:'正解',
+  ans_o:'○（正しい）', ans_x:'✕（まちがい）',
+  foot:'株式会社ローソン 阪口商店｜結果は店舗責任者およびSIが確認します',
+  q:[
+   'お客様が捨てたレシートに付いているクーポンを、従業員が自分の買い物で使ってもよい。',
+   '同じクーポンを複数のレジで同時に登録する「二重登録」は不正行為である。',
+   'お客様が使わなかった無料クーポンは、従業員が代わりに使ってよい。',
+   'クーポンの不正利用をした場合、懲戒解雇となることがある。',
+   '不正によって会社に損害が出た場合、その金額を請求されることがある。',
+   '同僚の不正を見つけたら、店長または上長に報告しなければならない。',
+   '不正を報告したことを理由に、不利益な取扱いを受けることはない。',
+   '社内アプリに、匿名で相談・通報できる窓口がある。',
+   'クーポンの扱いが分からないときは、自分で判断して処理してよい。',
+   'レジの操作ルールは、店舗ごとに変えてもよい。'
+  ]
+},
+en:{
+  title:'Compliance Comprehension Test',
+  sub:'Coupon handling rules and reporting duties (10 questions, 80+ to pass)',
+  t_id:'Identify yourself', l_emp:'Employee number (7 digits)',
+  h_emp:'Enter your own employee number. If you do not know it, ask your store manager.',
+  start:'Start', submit:'Submit answers', retry:'Take the test again',
+  yes:'○', no:'✕', yes_s:'True', no_s:'False',
+  pnum:'{a} / {b} answered',
+  err_fmt:'The employee number must be 7 digits.',
+  err_nf:'This employee number is not registered. Please check with your store manager.',
+  err_net:'Could not connect. Please try again where the signal is stronger.',
+  err_unans:'Please answer every question.',
+  checking:'Checking...', sending:'Sending...',
+  pt:' pts', lab:'{n} of 10 correct',
+  pass:'PASSED', fail:'NOT PASSED',
+  note_pass:'You passed. Thank you. Your result has been recorded automatically.',
+  note_fail:'You did not reach 80 points. Please review the questions you missed and take the test again.',
+  correct:'Correct answer',
+  ans_o:'○ (True)', ans_x:'✕ (False)',
+  foot:'Lawson Sakaguchi Shoten｜Results are reviewed by your store manager and SI',
+  q:[
+   'An employee may use a coupon from a receipt discarded by a customer for their own shopping.',
+   'Registering the same coupon on several registers at the same time ("double registration") is fraud.',
+   'If a customer does not use a free coupon, an employee may use it instead.',
+   'Fraudulent use of coupons may result in disciplinary dismissal.',
+   'If the company suffers a loss because of fraud, you may be asked to pay that amount.',
+   'If you find a colleague committing fraud, you must report it to the store manager or a supervisor.',
+   'You will not be treated unfavourably because you reported fraud.',
+   'The company app has a contact point where you can consult or report anonymously.',
+   'If you are not sure how to handle a coupon, you may decide and process it by yourself.',
+   'Register operation rules may be changed by each store.'
+  ]
+},
+ne:{
+  title:'अनुपालन (Compliance) बुझाइ परीक्षा',
+  sub:'कुपन प्रयोगका नियम र रिपोर्टिङको कर्तव्य (जम्मा १० प्रश्न · ८० अंक वा बढी उत्तीर्ण)',
+  t_id:'परीक्षार्थीको पुष्टि', l_emp:'कर्मचारी नम्बर (७ अंक)',
+  h_emp:'आफ्नो कर्मचारी नम्बर हाल्नुहोस्। थाहा नभएमा स्टोर जिम्मेवार व्यक्तिलाई सोध्नुहोस्।',
+  start:'सुरु गर्नुहोस्', submit:'उत्तर बुझाउनुहोस्', retry:'फेरि परीक्षा दिनुहोस्',
+  yes:'○', no:'✕', yes_s:'सही', no_s:'गलत',
+  pnum:'{a} / {b} उत्तर दिइयो',
+  err_fmt:'कर्मचारी नम्बर ७ अंकको हुनुपर्छ।',
+  err_nf:'यो कर्मचारी नम्बर दर्ता छैन। स्टोर जिम्मेवार व्यक्तिलाई सोध्नुहोस्।',
+  err_net:'जडान हुन सकेन। राम्रो नेटवर्क भएको ठाउँबाट पुनः प्रयास गर्नुहोस्।',
+  err_unans:'कृपया सबै प्रश्नको उत्तर दिनुहोस्।',
+  checking:'जाँच हुँदैछ...', sending:'पठाउँदै...',
+  pt:' अंक', lab:'१० मध्ये {n} सही',
+  pass:'उत्तीर्ण', fail:'अनुत्तीर्ण',
+  note_pass:'उत्तीर्ण हुनुभयो। धन्यवाद। नतिजा स्वतः रेकर्ड भयो।',
+  note_fail:'८० अंक पुगेन। गलत भएका प्रश्न हेरेर फेरि परीक्षा दिनुहोस्।',
+  correct:'सही उत्तर',
+  ans_o:'○ (सही)', ans_x:'✕ (गलत)',
+  foot:'Lawson Sakaguchi Shoten｜नतिजा स्टोर जिम्मेवार व्यक्ति र SI ले हेर्नुहुन्छ',
+  q:[
+   'ग्राहकले फालेको रसिदमा भएको कुपन कर्मचारीले आफ्नो किनमेलमा प्रयोग गर्न मिल्छ।',
+   'एउटै कुपन धेरै क्यास रजिस्टरमा एकैपटक दर्ता गर्नु ("दोहोरो दर्ता") अनियमितता हो।',
+   'ग्राहकले प्रयोग नगरेको नि:शुल्क कुपन कर्मचारीले प्रयोग गर्न मिल्छ।',
+   'कुपनको दुरुपयोग गरेमा अनुशासनात्मक बर्खास्ती हुन सक्छ।',
+   'अनियमितताका कारण कम्पनीलाई क्षति भएमा सो रकम तिर्न लगाइन सक्छ।',
+   'सहकर्मीको अनियमितता थाहा पाएमा स्टोर म्यानेजर वा माथिल्लो अधिकारीलाई रिपोर्ट गर्नुपर्छ।',
+   'अनियमितता रिपोर्ट गरेकै कारणले हानिकारक व्यवहार गरिने छैन।',
+   'कम्पनीको एपमा गुमनाम रूपमा परामर्श वा उजुरी गर्न सकिने डेस्क छ।',
+   'कुपन कसरी मिलाउने थाहा नभएमा आफैं निर्णय गरेर प्रोसेस गर्न मिल्छ।',
+   'क्यास रजिस्टर चलाउने नियम प्रत्येक स्टोरअनुसार फरक पार्न मिल्छ।'
+  ]
+},
+vi:{
+  title:'Bài kiểm tra hiểu biết về tuân thủ',
+  sub:'Quy tắc xử lý phiếu giảm giá và nghĩa vụ báo cáo (10 câu · đạt từ 80 điểm)',
+  t_id:'Xác nhận người dự thi', l_emp:'Mã số nhân viên (7 chữ số)',
+  h_emp:'Vui lòng nhập mã số nhân viên của bạn. Nếu không biết, hãy hỏi người phụ trách cửa hàng.',
+  start:'Bắt đầu', submit:'Nộp bài', retry:'Làm lại bài kiểm tra',
+  yes:'○', no:'✕', yes_s:'Đúng', no_s:'Sai',
+  pnum:'Đã trả lời {a} / {b}',
+  err_fmt:'Mã số nhân viên gồm 7 chữ số.',
+  err_nf:'Mã số nhân viên này chưa được đăng ký. Vui lòng hỏi người phụ trách cửa hàng.',
+  err_net:'Không kết nối được. Vui lòng thử lại ở nơi có sóng tốt.',
+  err_unans:'Vui lòng trả lời tất cả các câu hỏi.',
+  checking:'Đang kiểm tra...', sending:'Đang gửi...',
+  pt:' điểm', lab:'Đúng {n} / 10 câu',
+  pass:'ĐẠT', fail:'CHƯA ĐẠT',
+  note_pass:'Bạn đã đạt. Cảm ơn bạn. Kết quả đã được ghi nhận tự động.',
+  note_fail:'Bạn chưa đạt 80 điểm. Hãy xem lại các câu sai và làm lại bài kiểm tra.',
+  correct:'Đáp án đúng',
+  ans_o:'○ (Đúng)', ans_x:'✕ (Sai)',
+  foot:'Lawson Sakaguchi Shoten｜Kết quả được cửa hàng trưởng và SI xem',
+  q:[
+   'Nhân viên được phép dùng phiếu giảm giá trên hóa đơn khách đã vứt bỏ cho việc mua sắm của mình.',
+   'Đăng ký cùng một phiếu giảm giá trên nhiều máy tính tiền cùng lúc ("đăng ký trùng") là hành vi gian lận.',
+   'Nếu khách không dùng phiếu miễn phí, nhân viên có thể dùng thay.',
+   'Sử dụng gian lận phiếu giảm giá có thể bị sa thải kỷ luật.',
+   'Nếu công ty bị thiệt hại do gian lận, bạn có thể bị yêu cầu bồi thường số tiền đó.',
+   'Khi phát hiện đồng nghiệp gian lận, phải báo cáo cho cửa hàng trưởng hoặc cấp trên.',
+   'Bạn sẽ không bị đối xử bất lợi vì đã báo cáo hành vi gian lận.',
+   'Trong ứng dụng nội bộ có kênh để tư vấn hoặc tố giác ẩn danh.',
+   'Khi không rõ cách xử lý phiếu giảm giá, bạn có thể tự quyết định và xử lý.',
+   'Quy tắc thao tác máy tính tiền có thể thay đổi tùy theo từng cửa hàng.'
+  ]
+}
+};
+
+let LANG = localStorage.getItem('ct_lang') || 'ja';
+let EMP  = null;            // {id,name,store,type}
+let PICK = new Array(10).fill(null);
+let TRY  = 0;
+
+const $ = id => document.getElementById(id);
+const T = () => I18N[LANG];
+
+function setLang(l){
+  LANG = l; localStorage.setItem('ct_lang', l);
+  document.documentElement.lang = l;
+  document.querySelectorAll('.langbar button').forEach(b =>
+    b.classList.toggle('on', b.dataset.lang === l));
+  applyLang();
+}
+
+function applyLang(){
+  const t = T();
+  $('h-title').textContent = t.title;
+  $('h-sub').textContent   = t.sub;
+  $('t-id').textContent    = t.t_id;
+  $('l-emp').textContent   = t.l_emp;
+  $('h-emp').textContent   = t.h_emp;
+  $('b-start').textContent = t.start;
+  $('b-submit').textContent= t.submit;
+  $('b-retry').textContent = t.retry;
+  $('f-note').textContent  = t.foot;
+  if (!$('sec-q').classList.contains('hide')) renderQ();
+  if (!$('sec-r').classList.contains('hide')) renderResult(true);
+}
+
+function loading(on, msg){
+  $('loading').classList.toggle('on', !!on);
+  if (msg) $('load-msg').textContent = msg;
+}
+function showErr(id, msg){
+  const e = $(id); e.textContent = msg; e.style.display = msg ? 'block' : 'none';
+}
+
+/* ── ① 本人確認 ───────────────────────────── */
+async function startTest(){
+  const id = $('emp').value.trim();
+  showErr('e-id','');
+  if (!/^\d{7}$/.test(id)) { showErr('e-id', T().err_fmt); return; }
+  loading(true, T().checking);
+  try{
+    const res = await fetch(`${GAS_URL}?action=verifyCrew&id=${encodeURIComponent(id)}`, {redirect:'follow'});
+    const j = await res.json();
+    const d = j.data || j;
+    if (!d.found) { loading(false); showErr('e-id', T().err_nf); return; }
+    EMP = d.employee;
+    loading(false);
+    $('sec-id').classList.add('hide');
+    $('sec-q').classList.remove('hide');
+    $('who').textContent = `${EMP.name}（${EMP.store}）`;
+    renderQ();
+    window.scrollTo(0,0);
+  }catch(e){
+    loading(false); showErr('e-id', T().err_net);
+  }
+}
+
+/* ── ② 設問 ───────────────────────────────── */
+function renderQ(){
+  const t = T();
+  $('qlist').innerHTML = t.q.map((text,i) => `
+    <div class="q">
+      <span class="num">Q${i+1}</span>
+      <div class="txt">${text}</div>
+      <div class="ans">
+        <button data-v="1" class="${PICK[i]===1?'sel':''}" onclick="pick(${i},1)">
+          ${t.yes}<span class="sub">${t.yes_s}</span></button>
+        <button data-v="0" class="${PICK[i]===0?'sel':''}" onclick="pick(${i},0)">
+          ${t.no}<span class="sub">${t.no_s}</span></button>
+      </div>
+    </div>`).join('');
+  updateProg();
+}
+function pick(i, v){
+  PICK[i] = v;
+  const box = $('qlist').children[i];
+  box.querySelectorAll('.ans button').forEach(b =>
+    b.classList.toggle('sel', +b.dataset.v === v));
+  updateProg();
+}
+function updateProg(){
+  const n = PICK.filter(x => x !== null).length;
+  $('pbar').style.width = (n/10*100) + '%';
+  $('pnum').textContent = T().pnum.replace('{a}', n).replace('{b}', 10);
+  $('b-submit').disabled = n < 10;
+}
+
+/* ── ③ 採点・送信 ─────────────────────────── */
+async function submitTest(){
+  showErr('e-q','');
+  if (PICK.some(x => x === null)) { showErr('e-q', T().err_unans); return; }
+  TRY += 1;
+  const okArr = PICK.map((v,i) => v === ANSWER[i]);
+  const ok    = okArr.filter(Boolean).length;
+  const score = ok * 10;
+  const pass  = score >= PASS_LINE;
+
+  loading(true, T().sending);
+  const rec = {
+    'テストID': TEST_ID,
+    '従業員番号': EMP.id,
+    '得点': score,
+    '正答数': ok,
+    '判定': pass ? '合格' : '不合格',
+    '受験回数': TRY,
+    '解答': PICK.join(''),
+    '正誤': okArr.map(b => b ? 'O' : 'X').join(''),
+    '言語': LANG,
+    '受験日時': new Date().toISOString()
+  };
+  try{
+    await fetch(GAS_URL, {method:'POST', redirect:'follow',
+      headers:{'Content-Type':'text/plain;charset=utf-8'},
+      body: JSON.stringify({action:'recordComplianceTest', record: rec})});
+  }catch(e){ /* 記録に失敗しても受験者には結果を見せる */ }
+  loading(false);
+
+  window.__result = {score, ok, pass, okArr};
+  $('sec-q').classList.add('hide');
+  $('sec-r').classList.remove('hide');
+  renderResult();
+  window.scrollTo(0,0);
+}
+
+function renderResult(keepScroll){
+  const t = T(), r = window.__result;
+  if (!r) return;
+  $('s-score').textContent = r.score;
+  $('s-score').nextElementSibling.textContent = t.pt;
+  $('s-lab').textContent   = t.lab.replace('{n}', r.ok);
+  $('s-judge').textContent = r.pass ? t.pass : t.fail;
+  $('score').className     = 'score ' + (r.pass ? 'pass' : 'fail');
+  $('s-note').textContent  = r.pass ? t.note_pass : t.note_fail;
+  $('b-retry').classList.toggle('hide', r.pass);
+  $('review').innerHTML = t.q.map((text,i) => {
+    const good = r.okArr[i];
+    return `<div class="r">
+      <div class="mk ${good?'o':'x'}">${good?'○':'✕'}</div>
+      <div><b>Q${i+1}.</b> ${text}
+        ${good ? '' : `<span class="cor">${t.correct}：${ANSWER[i]===1?t.ans_o:t.ans_x}</span>`}</div>
+    </div>`;
+  }).join('');
+  if (!keepScroll) window.scrollTo(0,0);
+}
+
+function retry(){
+  PICK = new Array(10).fill(null);
+  $('sec-r').classList.add('hide');
+  $('sec-q').classList.remove('hide');
+  renderQ();
+  window.scrollTo(0,0);
+}
+
+/* 7桁だけ入力できるように */
+$('emp').addEventListener('input', e => {
+  e.target.value = e.target.value.replace(/\D/g,'').slice(0,7);
+});
+
+setLang(LANG);
+</script>
+</body>
+</html>
