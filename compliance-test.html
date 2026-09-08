@@ -104,7 +104,7 @@ input[type=text]:focus{outline:none;border-color:var(--blue)}
   <section id="sec-id" class="card">
     <h2 id="t-id">受験者の確認</h2>
     <label id="l-emp">従業員番号（7桁）</label>
-    <input type="text" id="emp" inputmode="numeric" maxlength="7" placeholder="0000000">
+    <input type="text" id="emp" inputmode="text" maxlength="16" placeholder="0000000">
     <p class="hint" id="h-emp">ご自身の従業員番号を入力してください。分からない場合は店舗責任者に確認してください。</p>
     <button class="btn" id="b-start" onclick="startTest()">はじめる</button>
     <div class="err" id="e-id"></div>
@@ -149,6 +149,9 @@ input[type=text]:focus{outline:none;border-color:var(--blue)}
 const GAS_URL = 'https://script.google.com/macros/s/AKfycbyHEBH5Q8VBcZFBzfH5tYQm46RCa_fYw3PDlKp1qA5E9EWmR44OQ8UA1JTXFa-stnbG8g/exec';
 const TEST_ID   = 'COMPLIANCE2026-10';   // テスト回。改訂したら変える
 const PASS_LINE = 80;                     // 合格点
+/* 管理者の動作確認用コード。ソースに見えるため、このコードで受験した分は
+   GASへ送信せず記録も残しません（本番データを汚さないための割り切り） */
+const ADMIN_CODE = 'LAWSON3963';
 
 /* 設問（正解 1=○ / 0=✕）。日本語が正本、他言語は同じ順番 */
 const ANSWER = [0, 1, 0, 1, 1, 1, 1, 1, 0, 0];
@@ -167,6 +170,7 @@ ja:{
   err_net:'接続できませんでした。電波の良い場所で再度お試しください。',
   err_unans:'すべての設問に回答してください。',
   checking:'確認中...', sending:'送信中...',
+  admin:'管理者モード（動作確認）｜この結果は記録されません',
   pt:'点', lab:'10問中 {n}問 正解',
   pass:'合格', fail:'不合格',
   note_pass:'合格です。ご協力ありがとうございました。結果は自動で記録されました。',
@@ -200,6 +204,7 @@ en:{
   err_net:'Could not connect. Please try again where the signal is stronger.',
   err_unans:'Please answer every question.',
   checking:'Checking...', sending:'Sending...',
+  admin:'Administrator mode (test run) | This result is not recorded',
   pt:' pts', lab:'{n} of 10 correct',
   pass:'PASSED', fail:'NOT PASSED',
   note_pass:'You passed. Thank you. Your result has been recorded automatically.',
@@ -233,6 +238,7 @@ ne:{
   err_net:'जडान हुन सकेन। राम्रो नेटवर्क भएको ठाउँबाट पुनः प्रयास गर्नुहोस्।',
   err_unans:'कृपया सबै प्रश्नको उत्तर दिनुहोस्।',
   checking:'जाँच हुँदैछ...', sending:'पठाउँदै...',
+  admin:'प्रशासक मोड (परीक्षण) | यो नतिजा रेकर्ड हुँदैन',
   pt:' अंक', lab:'१० मध्ये {n} सही',
   pass:'उत्तीर्ण', fail:'अनुत्तीर्ण',
   note_pass:'उत्तीर्ण हुनुभयो। धन्यवाद। नतिजा स्वतः रेकर्ड भयो।',
@@ -266,6 +272,7 @@ vi:{
   err_net:'Không kết nối được. Vui lòng thử lại ở nơi có sóng tốt.',
   err_unans:'Vui lòng trả lời tất cả các câu hỏi.',
   checking:'Đang kiểm tra...', sending:'Đang gửi...',
+  admin:'Chế độ quản trị (chạy thử) | Kết quả này không được ghi lại',
   pt:' điểm', lab:'Đúng {n} / 10 câu',
   pass:'ĐẠT', fail:'CHƯA ĐẠT',
   note_pass:'Bạn đã đạt. Cảm ơn bạn. Kết quả đã được ghi nhận tự động.',
@@ -290,6 +297,7 @@ vi:{
 
 let LANG = localStorage.getItem('ct_lang') || 'ja';
 let EMP  = null;            // {id,name,store,type}
+let ADMIN = false;          // 管理者モード（記録しない）
 let PICK = new Array(10).fill(null);
 let TRY  = 0;
 
@@ -331,6 +339,19 @@ function showErr(id, msg){
 async function startTest(){
   const id = $('emp').value.trim();
   showErr('e-id','');
+
+  // 管理者コード（大文字小文字は問わない）→ マスタ照合をせずに受験できる
+  if (id.toUpperCase() === ADMIN_CODE) {
+    ADMIN = true;
+    EMP = { id: 'ADMIN', name: '管理者', store: '動作確認', type: 'Admin' };
+    $('sec-id').classList.add('hide');
+    $('sec-q').classList.remove('hide');
+    $('who').innerHTML = `<span style="color:var(--amber)">${T().admin}</span>`;
+    renderQ();
+    window.scrollTo(0,0);
+    return;
+  }
+
   if (!/^\d{7}$/.test(id)) { showErr('e-id', T().err_fmt); return; }
   loading(true, T().checking);
   try{
@@ -390,6 +411,16 @@ async function submitTest(){
   const score = ok * 10;
   const pass  = score >= PASS_LINE;
 
+  // 管理者モードは動作確認なので、記録を残さずに結果だけ表示する
+  if (ADMIN) {
+    window.__result = {score, ok, pass, okArr};
+    $('sec-q').classList.add('hide');
+    $('sec-r').classList.remove('hide');
+    renderResult();
+    window.scrollTo(0,0);
+    return;
+  }
+
   loading(true, T().sending);
   const rec = {
     'テストID': TEST_ID,
@@ -426,6 +457,7 @@ function renderResult(keepScroll){
   $('s-judge').textContent = r.pass ? t.pass : t.fail;
   $('score').className     = 'score ' + (r.pass ? 'pass' : 'fail');
   $('s-note').textContent  = r.pass ? t.note_pass : t.note_fail;
+  if (ADMIN) $('s-note').textContent = t.admin;
   $('b-retry').classList.toggle('hide', r.pass);
   $('review').innerHTML = t.q.map((text,i) => {
     const good = r.okArr[i];
@@ -448,7 +480,8 @@ function retry(){
 
 /* 7桁だけ入力できるように */
 $('emp').addEventListener('input', e => {
-  e.target.value = e.target.value.replace(/\D/g,'').slice(0,7);
+  // 通常は7桁の数字。管理者コードだけ英字を含むため英数字を許可する
+  e.target.value = e.target.value.replace(/[^0-9A-Za-z]/g,'').slice(0,16);
 });
 
 setLang(LANG);
