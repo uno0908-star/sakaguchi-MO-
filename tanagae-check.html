@@ -1125,22 +1125,50 @@ function doReview(reportId, result) {
   `);
 }
 
+/* 確認はGASの応答を待たずに画面を先に更新する（待ち時間をなくすため）。
+   送信は裏で行い、失敗したときだけ元に戻してお知らせする。 */
 async function sendReview(reportId, result) {
   const name = ($('rv-name').value || '').trim();
   const cmt  = ($('rv-cmt').value || '').trim();
   if (!name) { toast('氏名を入れてください'); return; }
   if (result === 'redo' && !cmt) { toast('修正箇所のコメントは必須です'); return; }
   localStorage.setItem('tng_check_name', name);
-  loading(true, '送信中…');
+
+  const isSc = S.role === 'sc';
+  const ok   = result === 'ok';
+  const idx  = S.reports.findIndex(r => String(r.reportId) === String(reportId));
+  const back = idx >= 0 ? JSON.parse(JSON.stringify(S.reports[idx])) : null;
+
+  closeModal();
+  if (idx >= 0) {
+    const r = S.reports[idx], now = new Date().toISOString();
+    r.status = isSc ? (ok ? 'sc_ok' : 'sc_redo') : (ok ? 'done' : 'mgr_redo');
+    if (isSc) { r.scName  = name; r.scAt  = now; r.scComment  = cmt; }
+    else      { r.mgrName = name; r.mgrAt = now; r.mgrComment = cmt; }
+    localStorage.setItem('tng_cache', JSON.stringify(S.reports));
+    renderAll();
+  }
+  toast(ok ? '完了にしました' : '店長に差し戻しました');
+
   try {
-    const res = await gasPost({ action:'reviewReport', reportId, role: S.role === 'sc' ? 'sc' : 'mgr',
+    const res = await gasPost({ action:'reviewReport', reportId, role: isSc ? 'sc' : 'mgr',
                                 name, result, comment: cmt });
-    loading(false);
-    if (!res.success) { toast('できませんでした: ' + (res.error || ''), 4000); return; }
-    closeModal();
-    toast(result === 'ok' ? '完了にしました' : '店長に差し戻しました');
+    if (!res.success) {
+      if (idx >= 0 && back) {
+        S.reports[idx] = back;
+        localStorage.setItem('tng_cache', JSON.stringify(S.reports));
+        renderAll();
+      }
+      toast('できませんでした: ' + (res.error || ''), 4500);
+      return;
+    }
+    loadReports(true);          // 裏で最新化（待たない）
+  } catch (e) {
+    // 送信できたか分からないので、実際の状態を取り直して画面を合わせる
+    toast('通信が不安定です。最新の状態を確認しています…', 3000);
     await loadReports(true);
-  } catch (e) { loading(false); toast('通信エラー', 3500); }
+    renderAll();
+  }
 }
 
 function openExclude(storeId, itemId) {
