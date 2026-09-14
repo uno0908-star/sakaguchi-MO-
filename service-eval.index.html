@@ -326,6 +326,18 @@ input,select,textarea,button{font-family:inherit;font-size:14px}
   <div class="view-content" id="coaching-week-content"></div>
 </div>
 
+<div id="view-role-monthly" class="view">
+  <div class="search-bar">
+    <select id="rm-month" onchange="App.renderRoleMonthly()" style="flex:1;min-width:150px"></select>
+    <select id="rm-group" onchange="App.renderRoleMonthly()" style="flex:1;min-width:130px">
+      <option value="role">クルー役割で見る</option>
+      <option value="cert">資格・認定で見る</option>
+      <option value="both">両方まとめて</option>
+    </select>
+  </div>
+  <div class="view-content" id="role-monthly-content"></div>
+</div>
+
 <div id="view-employee-form" class="view">
   <div class="view-content" id="employee-form-content"></div>
 </div>
@@ -418,6 +430,11 @@ input,select,textarea,button{font-family:inherit;font-size:14px}
       <div class="menu-item" onclick="App.showView('coaching-week')">
         <span class="menu-icon">🗓️</span>
         <div><strong>週間指導レポート</strong><p>週ごとに誰が誰を指導したか（月曜起点）</p></div>
+        <span>›</span>
+      </div>
+      <div class="menu-item" onclick="App.showView('role-monthly')">
+        <span class="menu-icon">🎖️</span>
+        <div><strong>月間 役割・資格リスト</strong><p>サブリーダー・リーダー・ファンタジスタが誰か（月別）</p></div>
         <span>›</span>
       </div>
     </div>
@@ -887,7 +904,7 @@ const Storage=(()=>{
     return{ok:true};
   }
 
-  return{init,syncNow,syncEmployeesOnly,testConnection,seedGas,AUTH,showToast,addNewEmployees,normName,relinkEmployee,
+  return{init,syncNow,syncEmployeesOnly,testConnection,seedGas,AUTH,showToast,addNewEmployees,normName,relinkEmployee,postGas:_postGas,
     getEmployees,saveEmployees,getEmployee,upsertEmployee,deleteEmployee,addRetirement,transferEmployee,reinstateEmployee,
     getEvaluations,addEvaluation,getEvalsByEmployee,
     getObservations,addObservation,getCoachings,addCoaching,getCoachingsByEmployee,
@@ -1270,7 +1287,7 @@ const App={
   goBack(){const p=this._history.pop();if(p)this.showView(p,false)},
 
   _updateHeader(viewId){
-    const titles={login:'接客評価システム',dashboard:'阪口商店 接客評価',employees:'クルー一覧','employee-detail':'クルー詳細',evaluation:'評価入力',observation:'気づきメモ',improvement:'改善必要者','store-analysis':'店舗別分析','analysis-menu':'分析','employee-form':'クルー登録・編集',settings:'管理設定',discussion:'目線合わせ','item-ranking':'項目別弱点ランキング',compliance:'コンプラ回答状況','coaching-week':'週間指導レポート','staff-composition':'店舗別 人員構成'};
+    const titles={login:'接客評価システム',dashboard:'阪口商店 接客評価',employees:'クルー一覧','employee-detail':'クルー詳細',evaluation:'評価入力',observation:'気づきメモ',improvement:'改善必要者','store-analysis':'店舗別分析','analysis-menu':'分析','employee-form':'クルー登録・編集',settings:'管理設定',discussion:'目線合わせ','item-ranking':'項目別弱点ランキング',compliance:'コンプラ回答状況','coaching-week':'週間指導レポート','staff-composition':'店舗別 人員構成','role-monthly':'月間 役割・資格リスト'};
     let title=titles[viewId]||'';
     if(viewId==='dashboard'){const u=DB.user();if(u&&u.role==='一般クルー'&&u.employeeId)title='マイカルテ';else if(u&&u.role==='店舗責任者'&&u.store)title=u.store}
     document.getElementById('header-title').textContent=title;
@@ -1283,7 +1300,7 @@ const App={
   },
 
   _renderView(viewId){
-    const map={dashboard:'renderDashboard',employees:'renderEmployeeList','employee-detail':'renderEmployeeDetail',evaluation:'renderEvaluation',observation:'renderObservations',improvement:'renderImprovement','store-analysis':'renderStoreAnalysis','employee-form':'renderEmployeeForm',settings:'renderSettings',discussion:'renderDiscussion','item-ranking':'renderItemRanking',compliance:'renderCompliance','coaching-week':'renderCoachingWeek','staff-composition':'renderStaffComposition'};
+    const map={dashboard:'renderDashboard',employees:'renderEmployeeList','employee-detail':'renderEmployeeDetail',evaluation:'renderEvaluation',observation:'renderObservations',improvement:'renderImprovement','store-analysis':'renderStoreAnalysis','employee-form':'renderEmployeeForm',settings:'renderSettings',discussion:'renderDiscussion','item-ranking':'renderItemRanking',compliance:'renderCompliance','coaching-week':'renderCoachingWeek','staff-composition':'renderStaffComposition','role-monthly':'renderRoleMonthly'};
     if(map[viewId])this[map[viewId]]();
   },
 
@@ -1767,6 +1784,183 @@ const App={
   toggleStfStore(store){this._stfOpen[store]=!this._stfOpen[store];this.renderStaffComposition()},
 
   /* TSVでコピー（Excel・スプレッドシートにそのまま貼付け可能） */
+  /* ===== 月間 役割・資格リスト =====
+     crewRoles / certifications には取得日が無いので、GAS側の RoleMonthly シートに
+     毎月1日に前月分を焼き付けて残している。当月は「いまの登録内容」をそのまま出す。 */
+  _rmCache:{},          // 確定月データのキャッシュ { '2026-08': [rows] }
+  _rmMonths:null,       // 確定済みの月リスト
+
+  get RM_ROLES(){return ['リーダー','サブリーダー','レギュラー','ルーキー（新人）']},
+  get RM_CERTS(){return ['グランドファンタジスタ（接客）','グランドファンタジスタ（FF）','グランドファンタジスタ（厨房）','グランドファンタジスタ（マチカフェ）','ファンタジスタ（接客）','ファンタジスタ（FF）','ファンタジスタ（厨房）','ファンタジスタ（マチカフェ）','認定店長','SC','SI']},
+
+  _rmThisMonth(){const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')},
+  _rmLabel(m){const[y,mm]=m.split('-');return`${y}年${Number(mm)}月`},
+  _rmPrev(m){const[y,mm]=m.split('-').map(Number);const d=new Date(y,mm-2,1);return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')},
+
+  /* 月セレクタを作る。確定済みの月はGASから取ってくる */
+  async _rmBuildMonths(){
+    const sel=document.getElementById('rm-month');if(!sel)return;
+    const cur=this._rmThisMonth();
+    if(this._rmMonths===null){
+      this._rmMonths=[];
+      try{
+        const res=await fetch(`${GAS_URL}?action=getRoleMonthly&monthsOnly=1`,{redirect:'follow'});
+        const d=await res.json();
+        if(d.ok&&Array.isArray(d.months))this._rmMonths=d.months.filter(m=>m!==cur);
+      }catch(e){/* オフラインなら当月ライブだけで動かす */}
+    }
+    const keep=sel.value;
+    sel.innerHTML=[`<option value="${cur}">${this._rmLabel(cur)}（今月・現在の登録内容）</option>`]
+      .concat(this._rmMonths.slice().sort().reverse().map(m=>`<option value="${m}">${this._rmLabel(m)}（確定）</option>`)).join('');
+    if(keep&&[...sel.options].some(o=>o.value===keep))sel.value=keep;
+  },
+
+  /* 指定月の該当者を [{id,name,store,type,roles:[],certs:[]}] で返す */
+  async _rmRows(month){
+    const user=DB.user();
+    const mine=(user&&user.role==='店舗責任者')?user.store:null;
+    let list;
+    if(month===this._rmThisMonth()){
+      list=DB.employees().filter(e=>e.status!=='退職').map(e=>({
+        id:String(e.id),name:e.name,store:e.store,type:e.type,
+        roles:this._rmList(e.crewRoles),certs:this._rmList(e.certifications)
+      }));
+    }else{
+      if(!this._rmCache[month]){
+        const res=await fetch(`${GAS_URL}?action=getRoleMonthly&month=${encodeURIComponent(month)}`,{redirect:'follow'});
+        const d=await res.json();
+        if(!d.ok)throw new Error(d.error||'取得できませんでした');
+        this._rmCache[month]=d.rows||[];
+      }
+      list=this._rmCache[month].map(r=>({
+        id:String(r['従業員番号']),name:r['氏名'],store:r['店舗'],type:r['雇用区分'],
+        roles:this._rmList(r['クルー役割']),certs:this._rmList(r['資格・認定'])
+      }));
+    }
+    list=list.filter(e=>e.roles.length||e.certs.length);
+    if(mine)list=list.filter(e=>e.store===mine);
+    return list;
+  },
+
+  /* JSON文字列・配列・「、」区切りのどれでも配列にする */
+  _rmList(v){
+    if(v==null||v==='')return[];
+    if(Array.isArray(v))return v.filter(Boolean);
+    const str=String(v).trim();
+    if(str[0]==='['){try{const a=JSON.parse(str);if(Array.isArray(a))return a.filter(Boolean)}catch(e){}}
+    return str.split(/[、,]/).map(x=>x.trim()).filter(Boolean);
+  },
+
+  async renderRoleMonthly(){
+    const box=document.getElementById('role-monthly-content');
+    if(!box)return;
+    await this._rmBuildMonths();
+    const month=document.getElementById('rm-month').value||this._rmThisMonth();
+    const group=document.getElementById('rm-group')?.value||'role';
+    const isCur=month===this._rmThisMonth();
+    box.innerHTML='<div class="empty-state"><p>読み込み中…</p></div>';
+
+    let rows,prev=null;
+    try{
+      rows=await this._rmRows(month);
+      // 前月の確定値があれば差分（新しく就いた人／外れた人）を出す
+      const pm=this._rmPrev(month);
+      if(this._rmMonths&&this._rmMonths.indexOf(pm)>=0){
+        try{prev=await this._rmRows(pm)}catch(e){prev=null}
+      }
+    }catch(e){
+      box.innerHTML=`<div class="empty-state"><p>${month} のデータを取得できませんでした。<br>${e.message}</p></div>`;return;
+    }
+
+    const cats=group==='role'?this.RM_ROLES:group==='cert'?this.RM_CERTS:this.RM_ROLES.concat(this.RM_CERTS);
+    const isRole=c=>this.RM_ROLES.indexOf(c)>=0;
+    const hit=(e,c)=>(isRole(c)?e.roles:e.certs).some(x=>x===c||x.indexOf(c)===0);
+    const prevHit=prev?(id,c)=>{const p=prev.find(x=>x.id===id);return p?hit(p,c):false}:null;
+    const prevHas=prev?(c)=>prev.filter(e=>hit(e,c)):null;
+
+    // サマリ（ファンタジスタはグランドを含めない実数も出す）
+    const cnt=c=>rows.filter(e=>hit(e,c)).length;
+    const fanta=rows.filter(e=>e.certs.some(c=>c.indexOf('ファンタジスタ')===0)).length;
+    const grand=rows.filter(e=>e.certs.some(c=>c.indexOf('グランドファンタジスタ')===0)).length;
+    const summary=`<div class="card">
+      <div style="font-weight:700;margin-bottom:2px">${this._rmLabel(month)} の役割・資格</div>
+      <div class="text-sub" style="font-size:11px;margin-bottom:8px">${isCur
+        ?'今月＝いまの登録内容をそのまま表示しています（確定前）'
+        :'月末時点で確定したリストです'}／対象 ${rows.length}名（役割または資格を持つ在籍者）</div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <div class="stat-card" style="flex:1;min-width:76px"><div class="stat-num" style="font-size:20px;color:#065F46">${cnt('リーダー')}</div><div class="stat-label">リーダー</div></div>
+        <div class="stat-card" style="flex:1;min-width:76px"><div class="stat-num" style="font-size:20px;color:#0369A1">${cnt('サブリーダー')}</div><div class="stat-label">サブリーダー</div></div>
+        <div class="stat-card" style="flex:1;min-width:76px"><div class="stat-num" style="font-size:20px;color:#5B21B6">${fanta}</div><div class="stat-label">ファンタジスタ</div></div>
+        <div class="stat-card" style="flex:1;min-width:76px"><div class="stat-num" style="font-size:20px;color:#713F12">${grand}</div><div class="stat-label">Gファンタジスタ</div></div>
+      </div>
+    </div>`;
+
+    // 差分
+    let diff='';
+    if(prev){
+      const ups=[],outs=[];
+      cats.forEach(c=>{
+        rows.filter(e=>hit(e,c)).forEach(e=>{if(!prevHit(e.id,c))ups.push(`${e.name}（${e.store}）… ${c}`)});
+        prevHas(c).forEach(p=>{if(!rows.some(e=>e.id===p.id&&hit(e,c)))outs.push(`${p.name}（${p.store}）… ${c}`)});
+      });
+      if(ups.length||outs.length)diff=`<div class="card" style="border-left:4px solid var(--green)">
+        <div style="font-weight:700;margin-bottom:6px">${this._rmLabel(this._rmPrev(month))} からの変化</div>
+        ${ups.length?`<div style="font-size:13px;margin-bottom:6px"><b style="color:var(--green)">🆕 新しく就いた／取得した（${ups.length}）</b><br>${ups.join('<br>')}</div>`:''}
+        ${outs.length?`<div style="font-size:13px"><b style="color:var(--text-sub)">— 外れた（退職・変更）（${outs.length}）</b><br>${outs.join('<br>')}</div>`:''}
+      </div>`;
+    }
+
+    // カテゴリ別の名簿（店舗順）
+    const secs=cats.map(c=>{
+      const ms=rows.filter(e=>hit(e,c)).sort((a,b)=>String(a.store||'').localeCompare(String(b.store||''),'ja')||String(a.name).localeCompare(String(b.name),'ja'));
+      if(!ms.length)return`<div class="card"><div style="font-weight:700">${c}</div><div class="text-sub" style="font-size:12px;margin-top:4px">該当者なし</div></div>`;
+      const byStore={};
+      ms.forEach(e=>{const k=(e.store||'').trim()||'(店舗未設定)';(byStore[k]=byStore[k]||[]).push(e)});
+      const lines=Object.keys(byStore).sort((a,b)=>a.localeCompare(b,'ja')).map(st=>
+        `<div style="display:flex;gap:8px;padding:5px 0;border-bottom:1px dashed var(--border);font-size:13px">
+          <span style="min-width:120px;color:var(--text-sub);font-size:12px">${st}</span>
+          <span style="flex:1">${byStore[st].map(e=>`${e.name}${prev&&!prevHit(e.id,c)?'<span style="color:var(--green);font-size:10px;font-weight:700"> 🆕</span>':''}`).join('、')}</span>
+        </div>`).join('');
+      return`<div class="card"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
+        <span style="font-weight:700">${c}</span><span style="font-size:12px;color:var(--text-sub)">${ms.length}名</span></div>${lines}</div>`;
+    }).join('');
+
+    const canFix=Storage.AUTH.can(DB.user(),'sysAdmin');
+    const fixBtn=(isCur&&canFix)?`<button class="btn btn-secondary btn-full" onclick="App.fixRoleMonthly()" style="margin-top:8px">📌 今月分をこの内容で確定保存する</button>
+      <div class="text-sub" style="font-size:11px;margin:6px 2px">確定しておくと、翌月以降に「今月新しくサブリーダーになった人」を自動で出せます。毎月1日3:00に前月分が自動確定されます。</div>`:'';
+
+    box.innerHTML=summary+diff+secs+
+      `<button class="btn btn-secondary btn-full" onclick="App.copyRoleMonthly()" style="margin-top:8px">📋 一覧をコピー（Excel貼付け用）</button>`+fixBtn;
+    this._rmLast={month,group,rows,cats,isRole:c=>this.RM_ROLES.indexOf(c)>=0};
+  },
+
+  /* Excel貼付け用に 氏名＋店舗＋役割＋資格 のタブ区切りで出す */
+  copyRoleMonthly(){
+    const d=this._rmLast;if(!d)return;
+    const head=['対象年月','店舗','氏名','クルー役割','資格・認定'].join('\t');
+    const body=d.rows.slice().sort((a,b)=>String(a.store||'').localeCompare(String(b.store||''),'ja')||String(a.name).localeCompare(String(b.name),'ja'))
+      .map(e=>[this._rmLabel(d.month),e.store||'',e.name,e.roles.join('、'),e.certs.join('、')].join('\t')).join('\n');
+    const text=head+'\n'+body;
+    const done=()=>this.showToast('コピーしました。Excelに貼り付けできます','success');
+    if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(text).then(done).catch(()=>this._copyFallback(text,done))}
+    else this._copyFallback(text,done);
+  },
+
+  /* 当月分を確定保存（管理者のみ） */
+  async fixRoleMonthly(){
+    const month=this._rmThisMonth();
+    if(!confirm(`${this._rmLabel(month)} の役割・資格リストを、いまの登録内容で確定保存します。\n（同じ月を保存し直すと上書きされます）`))return;
+    try{
+      const res=await fetch(GAS_URL,{method:'POST',redirect:'follow',headers:{'Content-Type':'text/plain;charset=utf-8'},
+        body:JSON.stringify({action:'setRoleMonthly',month,user:(DB.user()||{}).name||''})});
+      const d=await res.json();
+      if(!d.ok)throw new Error(d.error||'保存エラー');
+      this.showToast(`${this._rmLabel(month)} を確定しました（${d.saved}名）`,'success');
+      this._rmMonths=null;this._rmCache={};
+      this.renderRoleMonthly();
+    }catch(e){this.showToast('確定できませんでした: '+e.message,'error')}
+  },
+
   copyStaffComposition(){
     const tbl=document.querySelector('#staff-composition-content .stf-table');if(!tbl)return;
     const lines=[...tbl.querySelectorAll('tr')].filter(tr=>!tr.classList.contains('stf-detail')).map(tr=>
