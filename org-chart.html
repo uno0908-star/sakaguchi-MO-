@@ -193,9 +193,9 @@ function esc(s){
 function buildInitial(){
   idSeq = 0;
   const gm = node('統括マネージャー','神田 渉','gm');
-  const scNames = ['髙橋','五島','プラカス','ダハル','ビスワス','フィ'];
+  const scNames = ['髙橋','五島','ダハル','ビスワス','フィ','スラズ'];
   scNames.forEach(n => gm.children.push(node('SC', n, 'sc')));
-  ['サントス','スラズ'].forEach(n => gm.children.push(node('ASC', n, 'asc')));
+  ['レサム','トゥアン'].forEach(n => gm.children.push(node('ASC', n, 'asc')));
   return [gm];
 }
 
