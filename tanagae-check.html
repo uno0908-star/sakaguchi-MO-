@@ -496,7 +496,8 @@ const S = {
   editing: null,        // { itemId, photos:[dataUrl], keep:[url], comment }
   viewer: { imgs:[], i:0, title:'' },
   filterWeek: 'all',
-  checkFilter: 'todo'
+  checkFilter: 'todo',
+  retry: null           // 送信に失敗したときの再送用（AI判定スキップに使う）
 };
 
 /* ================================================================
@@ -543,19 +544,55 @@ function statusOf(storeId, itemId) {
 /* ================================================================
    GAS 通信
    ================================================================ */
-async function gasGet(params) {
+async function gasGet(params, timeoutMs) {
   const url = new URL(GAS_URL);
   Object.entries(params).forEach(([k, v]) => url.searchParams.set(k, v));
-  const r = await fetch(url.toString());
-  return r.json();
+  const ctrl = new AbortController();
+  const tm = setTimeout(() => ctrl.abort(), timeoutMs || 45000);
+  try {
+    const r = await fetch(url.toString(), { signal: ctrl.signal });
+    return await r.json();
+  } finally {
+    clearTimeout(tm);
+  }
 }
-async function gasPost(data) {
-  const r = await fetch(GAS_URL, {
-    method: 'POST',
-    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-    body: JSON.stringify(data)
-  });
-  return r.json();
+async function gasPost(data, timeoutMs) {
+  // タイムアウトを付けないと、応答が返らないときに読み込み中のまま止まる
+  const ctrl = new AbortController();
+  const tm = setTimeout(() => ctrl.abort(), timeoutMs || 60000);
+  try {
+    const r = await fetch(GAS_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify(data),
+      signal: ctrl.signal
+    });
+    return await r.json();
+  } finally {
+    clearTimeout(tm);
+  }
+}
+
+/* 送信中の文言を進める。止まっているように見えないようにするため */
+let progressTimer = null;
+function startProgress() {
+  const steps = [
+    [0,    '送信中…　写真をアップしています'],
+    [8000, '送信中…　AIが写真を確認しています'],
+    [30000,'もう少しかかります…　そのままお待ちください'],
+    [70000,'写真が多いと時間がかかります…']
+  ];
+  stopProgress();
+  const t0 = Date.now();
+  progressTimer = setInterval(() => {
+    const el = Date.now() - t0;
+    let txt = steps[0][1];
+    for (const [ms, s] of steps) if (el >= ms) txt = s;
+    loading(true, txt);
+  }, 1000);
+}
+function stopProgress() {
+  if (progressTimer) { clearInterval(progressTimer); progressTimer = null; }
 }
 
 async function loadReports(silent) {
@@ -955,26 +992,45 @@ async function submitItem() {
   }
   if (!GAS_URL) { toast('GAS_URLが未設定です'); return; }
   const st = storeOf(S.storeId);
-  loading(true, '送信中…（AIが写真を確認しています）');
+  await sendReport(e, it, st, cm, false);
+}
+
+/* 実際の送信。skipAI=true ならAI判定を飛ばして早く終わらせる */
+async function sendReport(e, it, st, cm, skipAI) {
+  startProgress();
+  loading(true, '送信中…　写真をアップしています');
   try {
     const res = await gasPost({
       action: 'submitReport', storeId: S.storeId, storeName: st ? st.name : '',
       itemId: e.itemId, reporterName: S.name, comment: cm,
       reporterRole: $('sel-role').value, confirmed: true,
-      keepPhotos: e.keep, images: e.photos
-    });
-    loading(false);
+      keepPhotos: e.keep, images: e.photos,
+      skipAI: !!skipAI
+    }, 240000);                       // 4分。これを超えたら中断してやり直せるようにする
+    stopProgress(); loading(false);
     if (!res.success) { toast('送信できませんでした: ' + (res.error || ''), 4000); return; }
     closeModal();
     await loadReports(true);
-    // AIが気づいた点があれば、その場で店長に見せて直してもらう
     if (res.aiStatus === 'judged' && (res.ai || []).length) showAiResult(res.ai, it);
+    else if (res.aiStatus === 'error') toast('報告しました（AI判定はできませんでした）', 4000);
     else toast('報告しました。SCの確認をお待ちください');
   } catch (err) {
-    loading(false);
-    toast('通信エラー。電波の良い場所でもう一度お試しください', 4000);
+    stopProgress(); loading(false);
+    const aborted = err && err.name === 'AbortError';
+    openModal(aborted ? '時間がかかりすぎました' : '通信エラー', it.cat, `
+      <div class="alert redo">${aborted
+        ? 'AIの確認に時間がかかりすぎたため、いったん中断しました。'
+        : '送信できませんでした。電波の良い場所でもう一度お試しください。'}<br>
+        <b>AI判定を飛ばせば、すぐに報告できます。</b>（AIは下読みなので、無くても報告は成立します）</div>
+      <button class="btn" style="margin-top:9px" onclick="retrySkipAI()">⏩ AI判定なしで送る</button>
+      <button class="btn sec" style="margin-top:8px" onclick="retryWithAI()">🔁 もう一度ためす</button>
+      <button class="btn ghost" style="margin-top:8px" onclick="closeModal()">とじる</button>`);
+    S.retry = { e: e, it: it, st: st, cm: cm };
   }
 }
+
+function retrySkipAI() { const r = S.retry; if (r) { closeModal(); sendReport(r.e, r.it, r.st, r.cm, true); } }
+function retryWithAI() { const r = S.retry; if (r) { closeModal(); sendReport(r.e, r.it, r.st, r.cm, false); } }
 
 /* 送信直後にAIの下読みを見せる（直せるうちに気づいてもらう） */
 function showAiResult(ai, it) {
