@@ -540,12 +540,12 @@ main{padding:20px;max-width:960px;margin:0 auto;}
     <!-- 共通：閲覧のみ・スタッフ/管理者 -->
     <div class="pwbtns-row" id="common-btns">
       <button class="pwgh" onclick="doGuest()">👀 閲覧のみ</button>
-      <button class="pwgh" style="font-size:11px;color:var(--text3)" onclick="showMgrSection()">🔑 スタッフ・管理者</button>
+      <button class="pwgh" style="font-size:11px;color:var(--text3)" onclick="showMgrSection()">🔑 管理者</button>
     </div>
 
-    <!-- スタッフ・管理者ログイン -->
+    <!-- 管理者ログイン -->
     <div id="section-mgr" style="display:none">
-      <div class="pwsub">パスコードを入力してください<br><small style="color:var(--text3)">タスク作成者または管理者</small></div>
+      <div class="pwsub">管理者パスコードを入力してください<br><small style="color:var(--text3)">SC・ASCの方は前の画面の「👔 SC・ASC」から名前を選んでください</small></div>
       <input class="pwni" id="pwname" placeholder="お名前（例：髙橋）" maxlength="20">
       <input class="pwpi" type="password" id="pwpass" placeholder="••••••" maxlength="12">
       <button class="pwbtn" onclick="doPwLogin()">🔑 ログイン</button>
@@ -844,8 +844,8 @@ main{padding:20px;max-width:960px;margin:0 auto;}
   </div>
   <div class="lockmsg" id="lockmsg">
     <div class="lockico">🔐</div>
-    <div class="locktitle">SC・ASC／タスク作成者／管理者のログインが必要です</div>
-    <div style="font-size:13px">右上の 🔑 ボタンからログインしてください<br><small style="color:var(--text3)">SC・ASCの方は「👔 SC・ASC」タブで名前を選ぶだけで登録できます</small></div>
+    <div class="locktitle">SC・ASC または 管理者のログインが必要です</div>
+    <div style="font-size:13px">右上の 🔑 ボタン →「👔 SC・ASC」から自分の名前を選んでください</div>
   </div>
 </div>
 
@@ -1373,7 +1373,7 @@ function openSCStoreSelect() {
   showSCStoreSelect(currentSC);
 }
 
-// パスコードでログイン（タスク作成者 or 管理者）
+// パスコードでログイン（管理者のみ。SC・ASCは名前選択の一本道）
 function doPwLogin() {
   const pw = document.getElementById('pwpass').value;
   const nm = document.getElementById('pwname').value.trim();
@@ -1384,11 +1384,10 @@ function doPwLogin() {
     localStorage.removeItem('storeSession');
     finLogin();
   } else if (pw === CREATOR_PW) {
-    isMgr = false; isCreator = true; curPw = pw; uName = nm || 'タスク作成者';
-    currentStore = null; currentSC = null;
-    localStorage.setItem('mgrSession', JSON.stringify({uName, role:'creator'}));
-    localStorage.removeItem('storeSession');
-    finLogin();
+    // 旧「タスク作成者」パスコード → SC・ASCの名前選択へ案内（入口は一本化）
+    document.getElementById('pwpass').value = '';
+    showScSection();
+    showErr('👔 SC・ASCの方は、下から自分の名前を選んでログインしてください');
   } else {
     showErr('❌ パスコードが違います');
   }
@@ -1538,7 +1537,9 @@ function restoreSession() {
       if (m.role === 'admin') {
         isMgr = true; isCreator = false; curPw = ADMIN_PW;
       } else if (m.role === 'creator') {
-        isMgr = false; isCreator = true; curPw = CREATOR_PW;
+        // 旧ロールは廃止。ログイン画面に戻してSC・ASC名で入り直してもらう
+        localStorage.removeItem('mgrSession');
+        return false;
       } else {
         // 旧形式互換
         isMgr = true; isCreator = false; curPw = ADMIN_PW;
