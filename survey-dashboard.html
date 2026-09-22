@@ -31,6 +31,17 @@
     border: none; border-radius: 8px; font-size: 15px; font-weight: 700; cursor: pointer;
   }
   .login-err { color: #e53e3e; font-size: 13px; margin-top: 8px; display: none; }
+  .role-lbl { font-size: 11px; font-weight: 800; letter-spacing: .08em; color: #805ad5;
+    text-align: left; margin: 4px 0 6px; }
+  .name-grid { display: grid; grid-template-columns: repeat(2,1fr); gap: 7px; margin-bottom: 12px; }
+  .name-btn { padding: 13px 8px; border: 1.5px solid #e2e8f0; border-radius: 10px; background: #f7fafc;
+    font-family: inherit; font-size: 15px; font-weight: 600; color: #2d3748; cursor: pointer; }
+  .name-btn:active { background: #faf5ff; border-color: #805ad5; color: #805ad5; }
+  .login-ghost { width: 100%; padding: 10px; border: 1px solid #e2e8f0; border-radius: 9px;
+    background: #fff; color: #718096; font-family: inherit; font-size: 12px; font-weight: 600;
+    cursor: pointer; margin-top: 4px; }
+  .me-badge { font-size: 12px; font-weight: 700; padding: 5px 11px; border-radius: 20px;
+    background: rgba(255,255,255,.18); color: #fff; white-space: nowrap; }
 
   /* ヘッダー */
   .header {
@@ -229,11 +240,23 @@
   <div class="login-box">
     <div class="login-logo">📊</div>
     <div class="login-title">アンケート集計ダッシュボード</div>
-    <div class="login-sub">ローソン阪口商店グループ | 統括管理者専用</div>
-    <input type="password" class="login-input" id="pwInput" placeholder="パスワード"
-      onkeydown="if(event.key==='Enter')checkPw()">
-    <button class="login-btn" onclick="checkPw()">ログイン</button>
-    <div class="login-err" id="loginErr">パスワードが違います</div>
+    <div class="login-sub" id="loginSub">名前をえらんでください</div>
+    <!-- SC・ASCは名前を押すだけ（パスワードなし） -->
+    <div id="secName">
+      <div class="role-lbl">SC</div>
+      <div class="name-grid" id="gSc"></div>
+      <div class="role-lbl">ASC</div>
+      <div class="name-grid" id="gAsc"></div>
+      <button class="login-ghost" onclick="showMgrLogin()">🔑 管理者はこちら</button>
+    </div>
+    <!-- 管理者だけパスワード -->
+    <div id="secMgr" style="display:none">
+      <input type="password" class="login-input" id="pwInput" placeholder="管理者パスワード"
+        onkeydown="if(event.key==='Enter')checkPw()">
+      <button class="login-btn" onclick="checkPw()">ログイン</button>
+      <div class="login-err" id="loginErr">パスワードが違います</div>
+      <button class="login-ghost" onclick="showNameLogin()">← 名前選択にもどる</button>
+    </div>
   </div>
 </div>
 
@@ -247,13 +270,34 @@
     <div class="modal-sub" id="crewModalSub"></div>
     <div class="crew-grid" id="crewGrid"></div>
     <div class="modal-foot">
-      <div class="modal-btn-row" style="margin-bottom:8px">
-        <button class="modal-cancel" onclick="closeCrewModal()">閉じる</button>
-        <button class="modal-save" id="crewSaveBtn" onclick="saveCrewCounts()">💾 この月の人数を確定</button>
+      <!-- 管理者だけが使える操作 -->
+      <div id="crewAdminBtns" style="display:none">
+        <div class="modal-btn-row" style="margin-bottom:8px">
+          <button class="modal-save" id="crewSaveBtn" style="flex:1" onclick="saveCrewCounts()">💾 この月の人数を確定</button>
+        </div>
+        <div class="modal-btn-row" style="margin-bottom:8px">
+          <button class="modal-cancel" style="flex:1" id="crewReloadBtn" onclick="refreshCrewCounts()">🔄 最新を取得</button>
+          <button class="modal-cancel" style="flex:1" id="crewResetBtn" onclick="resetCrewMonth()">↩️ 自動に戻す</button>
+        </div>
+      </div>
+      <!-- 管理者でないときは、ここから解除する -->
+      <div id="crewAdminLock" style="display:none;margin-bottom:8px">
+        <div style="font-size:12px;color:#805ad5;font-weight:700;margin-bottom:6px;line-height:1.6">
+          🔒 クルー人数を直せるのは管理者だけです（いまは見るだけ）
+        </div>
+        <div class="modal-btn-row">
+          <input type="password" id="crewPw" placeholder="管理者パスワード"
+            style="flex:1;min-width:0;padding:9px;border:1.5px solid #d6bcfa;border-radius:8px;
+                   font-family:inherit;font-size:14px;text-align:center"
+            onkeydown="if(event.key==='Enter')unlockAdmin()">
+          <button class="modal-save" style="flex:0 0 auto" onclick="unlockAdmin()">🔑 解除</button>
+        </div>
+        <div id="crewPwErr" style="display:none;color:#e53e3e;font-size:12px;font-weight:700;margin-top:6px">
+          パスワードが違います
+        </div>
       </div>
       <div class="modal-btn-row">
-        <button class="modal-cancel" style="flex:1" id="crewReloadBtn" onclick="refreshCrewCounts()">🔄 最新を取得</button>
-        <button class="modal-cancel" style="flex:1" id="crewResetBtn" onclick="resetCrewMonth()">↩️ 自動に戻す</button>
+        <button class="modal-cancel" style="flex:1" onclick="closeCrewModal()">閉じる</button>
       </div>
     </div>
   </div>
@@ -268,8 +312,10 @@
     </div>
     <div class="header-right">
       <select class="month-select" id="monthSelect" onchange="renderDashboard()"></select>
-      <button class="icon-btn" onclick="openCrewModal()">👥 クルー人数</button>
+      <span class="me-badge" id="meBadge"></span>
+      <button class="icon-btn" id="crewBtn" onclick="openCrewModal()">👥 クルー人数</button>
       <button class="icon-btn" onclick="loadData()">🔄 更新</button>
+      <button class="icon-btn" onclick="logoutDash()">↩ 変更</button>
     </div>
   </div>
 
@@ -414,7 +460,12 @@
 // ============================================================
 // 設定
 // ============================================================
-const PASSWORD  = 'Lawson3963';
+// SC・ASC体制（2026-09-15改定）※タスク管理・コンプラ提出状況アプリと同じ名簿
+const SC_LIST   = ['髙橋','五島','ダハル','ビスワス','フィ','スラズ'];
+const ASC_LIST  = ['レサム','トゥアン'];
+const ADMIN_PW  = '3272885';      // 管理者用。クルー人数を直せるのはこちらだけ
+let   isAdmin   = false;
+let   meName    = '';
 const GAS_URL   = 'https://script.google.com/macros/s/AKfycbxiEpYmlJ1JMdCgVa3e9uQZ0WUR8CAPEhXmgGATmZI8GNYEDpbOaHe8yslw5HoXT4X2/exec';
 // 接客評価システムのGAS（クルー在籍マスタ）。ここから当月のクルー人数を自動取得する。
 const EVAL_GAS_URL = 'https://script.google.com/macros/s/AKfycbyHEBH5Q8VBcZFBzfH5tYQm46RCa_fYw3PDlKp1qA5E9EWmR44OQ8UA1JTXFa-stnbG8g/exec';
@@ -683,14 +734,94 @@ async function fetchCrewFromMasterOnce() {
 // ============================================================
 // ログイン
 // ============================================================
+/* 名前ボタンを並べる */
+function buildNameButtons() {
+  const btn = list => list.map(n =>
+    `<button class="name-btn" onclick="pickName('${n}')">${n}</button>`).join('');
+  document.getElementById('gSc').innerHTML  = btn(SC_LIST);
+  document.getElementById('gAsc').innerHTML = btn(ASC_LIST);
+}
+
+/* SC・ASCは名前を押すだけ（パスワードなし） */
+function pickName(name) {
+  meName = name; isAdmin = false;
+  try { localStorage.setItem('dashUser', JSON.stringify({name, admin:false})); } catch(e) {}
+  enterDashboard();
+}
+
+/* 管理者パスワードで入ると、クルー人数も直せる */
 function checkPw() {
-  if (document.getElementById('pwInput').value === PASSWORD) {
-    document.getElementById('loginScreen').style.display = 'none';
-    document.getElementById('mainScreen').style.display = 'block';
-    buildMonthSelect();
-    loadData();
+  if (document.getElementById('pwInput').value === ADMIN_PW) {
+    meName = '管理者'; isAdmin = true;
+    try { localStorage.setItem('dashUser', JSON.stringify({name:'管理者', admin:true})); } catch(e) {}
+    enterDashboard();
   } else {
     document.getElementById('loginErr').style.display = 'block';
+    document.getElementById('pwInput').value = '';
+  }
+}
+
+function enterDashboard() {
+  document.getElementById('loginScreen').style.display = 'none';
+  document.getElementById('mainScreen').style.display = 'block';
+  const b = document.getElementById('meBadge');
+  if (b) b.textContent = (isAdmin ? '👑 ' : '👔 ') + meName;
+  markAdmin();
+  buildMonthSelect();
+  loadData();
+}
+
+function showMgrLogin() {
+  document.getElementById('secName').style.display = 'none';
+  document.getElementById('secMgr').style.display = 'block';
+  document.getElementById('loginSub').textContent = '管理者パスワードを入力してください';
+  document.getElementById('loginErr').style.display = 'none';
+}
+function showNameLogin() {
+  document.getElementById('secName').style.display = 'block';
+  document.getElementById('secMgr').style.display = 'none';
+  document.getElementById('loginSub').textContent = '名前をえらんでください';
+  document.getElementById('loginErr').style.display = 'none';
+}
+
+/* 別の人に変わるとき */
+function logoutDash() {
+  try { localStorage.removeItem('dashUser'); } catch(e) {}
+  meName = ''; isAdmin = false;
+  document.getElementById('mainScreen').style.display = 'none';
+  showNameLogin();
+  document.getElementById('loginScreen').style.display = 'flex';
+}
+
+/* 前回えらんだ人で自動的に入る（管理者はパスワードを毎回入れてもらう） */
+function restoreUser() {
+  try {
+    const u = JSON.parse(localStorage.getItem('dashUser') || 'null');
+    if (u && u.name && !u.admin && SC_LIST.concat(ASC_LIST).includes(u.name)) {
+      meName = u.name; isAdmin = false; enterDashboard(); return true;
+    }
+  } catch(e) {}
+  return false;
+}
+
+/* 管理者で入っているとき、ヘッダーのボタンに目印を付ける */
+function markAdmin() {
+  const b = document.getElementById('crewBtn');
+  if (b) b.textContent = isAdmin ? '👑 クルー人数' : '👥 クルー人数';
+}
+
+/* クルー人数モーダルの中で管理者パスワードを入れて解除する */
+function unlockAdmin() {
+  const el = document.getElementById('crewPw');
+  if (el && el.value === ADMIN_PW) {
+    isAdmin = true;
+    el.value = '';
+    document.getElementById('crewPwErr').style.display = 'none';
+    markAdmin();
+    openCrewModal();          // 編集できる状態で開き直す
+  } else {
+    document.getElementById('crewPwErr').style.display = 'block';
+    if (el) el.value = '';
   }
 }
 
@@ -713,9 +844,10 @@ function openCrewModal() {
   const month = document.getElementById('monthSelect').value || currentMonthLabel();
   const total = STORE_LIST.reduce((s,st) => s + crewNum(st), 0);
   document.getElementById('crewModalTitle').textContent = `👥 クルー在籍人数（${month}）`;
+  const ro = isAdmin ? '' : ' disabled style="background:#f7fafc;color:#4a5568"';
   document.getElementById('crewGrid').innerHTML = STORE_LIST.map(store =>
     `<div class="crew-row"><div class="crew-label">${store}</div>` +
-    `<input type="number" class="crew-input" id="crew_${store.replace(/\s/g,'_')}" value="${getCrew(store) === null ? '' : getCrew(store)}" min="0" max="99">` +
+    `<input type="number" class="crew-input" id="crew_${store.replace(/\s/g,'_')}" value="${getCrew(store) === null ? '' : getCrew(store)}" min="0" max="99"${ro}>` +
     `<div style="font-size:10px;color:#805ad5;width:42px;text-align:right">${getAll(store) === null ? '' : '全' + getAll(store)}</div></div>`
   ).join('');
 
@@ -732,6 +864,10 @@ function openCrewModal() {
     note + '<br>※入力欄はクルー数（正社員・契約社員を含まない）。右の「全○」は正社員・契約社員を含む在籍者数です。'
     + '<br>※回答数がクルー数を超えた店舗は、分母を自動で「全○」に切り替えて回答率を計算します。';
   document.getElementById('crewResetBtn').style.display = (crewSource.mode === '手動修正') ? '' : 'none';
+  // 人数を直せるのは管理者だけ。管理者でなければ操作ボタンを隠し、解除欄を出す
+  document.getElementById('crewAdminBtns').style.display = isAdmin ? '' : 'none';
+  document.getElementById('crewAdminLock').style.display = isAdmin ? 'none' : '';
+  document.getElementById('crewPwErr').style.display = 'none';
   document.getElementById('crewModal').classList.add('open');
 }
 
@@ -741,6 +877,7 @@ function closeCrewModal() {
 
 /* 手動修正した人数を、その月の確定値として保存（以後は自動更新されない） */
 async function saveCrewCounts() {
+  if (!isAdmin) { alert('クルー人数を直せるのは管理者だけです。'); return; }   // 人数の確定は管理者のみ
   const month = document.getElementById('monthSelect').value || currentMonthLabel();
   const counts = {};
   STORE_LIST.forEach(store => {
@@ -765,6 +902,7 @@ async function saveCrewCounts() {
 
 /* 手動修正を取り消して自動反映に戻す */
 async function resetCrewMonth() {
+  if (!isAdmin) { alert('クルー人数を直せるのは管理者だけです。'); return; }   // 自動に戻す操作は管理者のみ
   const month = document.getElementById('monthSelect').value || currentMonthLabel();
   if (!confirm(`${month} の手動修正を取り消して、自動反映に戻しますか？`)) return;
   try {
@@ -792,6 +930,7 @@ async function saveMonthlyCrew(month, counts, mode, allCounts) {
 
 /* 在籍マスタから取り直して当月に反映 */
 async function refreshCrewCounts() {
+  if (!isAdmin) { alert('クルー人数を直せるのは管理者だけです。'); return; }   // 最新の取得は管理者のみ
   const btn = document.getElementById('crewReloadBtn');
   if (btn) { btn.disabled = true; btn.textContent = '取得中...'; }
   try {
@@ -1455,6 +1594,12 @@ function generateSampleData() {
   }
   return data;
 }
+
+// ============================================================
+// 起動
+// ============================================================
+buildNameButtons();
+restoreUser();   // 前回えらんだ名前があれば、そのまま中に入る
 </script>
 </body>
 </html>
