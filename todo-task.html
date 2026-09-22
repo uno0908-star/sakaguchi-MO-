@@ -206,7 +206,8 @@ main{padding:20px;max-width:960px;margin:0 auto;}
 /* コピーはタスク作成者・管理者に表示 */
 .bcopy{background:none;border:1px solid var(--green-bd);color:var(--green);display:none;}
 .bcopy:hover{background:var(--green-bg);}
-.is-creator .bcopy,.is-mgr .bcopy{display:inline;}
+.is-creator .bcopy,.is-mgr .bcopy,.is-sc .bcopy{display:inline;}
+.is-sc .mine-task .bedit,.is-sc .mine-task .bdel{display:inline;}
 /* カレンダー */
 .bcal{background:none;border:1px solid var(--accent-bd);color:var(--accent);}
 .bcal:hover{background:var(--accent-bg);}
@@ -375,7 +376,10 @@ main{padding:20px;max-width:960px;margin:0 auto;}
 .ltab{flex:1;padding:9px;border:1.5px solid var(--border2);border-radius:var(--rs);font-family:inherit;font-size:13px;font-weight:500;cursor:pointer;background:var(--bg);color:var(--text2);transition:all .18s;}
 .ltab.active{background:var(--accent);border-color:var(--accent);color:#fff;font-weight:700;}
 .ltab.sc-tab.active{background:var(--purple);border-color:var(--purple);}
-.sc-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:7px;margin-bottom:13px;}
+.sc-grid{margin-bottom:13px;}
+.sc-role-lbl{font-size:11px;font-weight:800;letter-spacing:.08em;color:var(--purple);text-align:left;margin:2px 0 6px;}
+.sc-role-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:7px;margin-bottom:11px;}
+.ci-role{font-size:9px;font-weight:800;padding:1px 5px;border-radius:5px;background:var(--purple-bg);color:var(--purple);border:1px solid var(--purple-bd);margin-left:auto;}
 .sc-mbtn{padding:11px 8px;border:1.5px solid var(--border2);border-radius:var(--rs);font-family:inherit;font-size:13px;cursor:pointer;background:var(--bg);color:var(--text2);transition:all .18s;text-align:center;font-weight:500;}
 .sc-mbtn:hover,.sc-mbtn:active{background:var(--purple-bg);border-color:var(--purple);color:var(--purple);font-weight:700;}
 .sc-badge{background:var(--purple-bg);color:var(--purple);border:1.5px solid var(--purple-bd);border-radius:20px;font-size:11px;font-weight:700;padding:5px 12px;display:none;white-space:nowrap;}
@@ -738,7 +742,7 @@ main{padding:20px;max-width:960px;margin:0 auto;}
 <!-- ADD -->
 <div class="view" id="view-add">
   <div class="acard" id="addcard" style="display:none">
-    <div class="fhead">➕ 新しいタスクを登録</div>
+    <div class="fhead" id="fhead">➕ 新しいタスクを登録</div>
     <div class="fgrid">
       <div class="full">
         <div class="fl">📝 タスク内容（必須）</div>
@@ -840,8 +844,8 @@ main{padding:20px;max-width:960px;margin:0 auto;}
   </div>
   <div class="lockmsg" id="lockmsg">
     <div class="lockico">🔐</div>
-    <div class="locktitle">タスク作成者または管理者ログインが必要です</div>
-    <div style="font-size:13px">右上の 🔑 ボタンからログインしてください</div>
+    <div class="locktitle">SC・ASC／タスク作成者／管理者のログインが必要です</div>
+    <div style="font-size:13px">右上の 🔑 ボタンからログインしてください<br><small style="color:var(--text3)">SC・ASCの方は「👔 SC・ASC」タブで名前を選ぶだけで登録できます</small></div>
   </div>
 </div>
 
@@ -899,6 +903,7 @@ main{padding:20px;max-width:960px;margin:0 auto;}
 const GAS_URL    = 'https://script.google.com/macros/s/AKfycbz76sbHekFY6QzYQrNpkWGKquW2keSSboS5Zm1JB4pLmbYvEi2SMPzvR7awNT8dStXg/exec';
 const CREATOR_PW = 'Lawson3963';  // タスク作成者パスワード
 const ADMIN_PW   = '3272885';     // 管理者パスワード
+const SC_PW      = 'Sc2026tsk';   // SC/ASC用（名前ログイン時に自動送信・入力不要）
 
 // 店舗コード → 店舗名マップ
 const STORE_CODES = {
@@ -925,7 +930,13 @@ const STORE_CODES = {
 };
 
 const STORES = Object.values(STORE_CODES);
-const SCS    = ['髙橋','五島','プラカス','ダハル','ビスワス','フィ','サントス','スラズ'];
+
+// ── SC / ASC 体制（2026-09-15改定）──
+const SC_LIST     = ['髙橋','五島','ダハル','ビスワス','フィ','スラズ'];   // SC
+const ASC_LIST    = ['レサム','トゥアン'];                                  // ASC
+const SC_RETIRED  = ['プラカス','サントス'];                                // 2026-09-15 退職（過去タスク表示用）
+const SCS         = SC_LIST.concat(ASC_LIST);     // 現役メンバー（ログイン・割り当て・集計）
+const scRole = n => ASC_LIST.includes(n) ? 'ASC' : SC_RETIRED.includes(n) ? '退職' : 'SC';
 
 // ── 状態変数 ──
 let currentStore = null;  // ログイン中の店舗名
@@ -1008,6 +1019,13 @@ const dL = d => {
   if (days === 0 && end < new Date()) return -1;
   return days;
 };
+
+// ── 編集・削除の権限判定（管理者は全件／SC・ASCは自分が登録したタスクのみ）──
+function canEditTask(t) {
+  if (isMgr) return true;
+  if (currentSC && t && t.registeredBy === currentSC) return true;
+  return false;
+}
 
 // ── 完了状態の判定 ──
 function isTaskDone(t) {
@@ -1248,9 +1266,12 @@ function showScSection() {
   document.getElementById('pwerr').style.display = 'none';
   const grid = document.getElementById('sc-grid');
   if (!grid.innerHTML) {
-    grid.innerHTML = SCS.map(m =>
+    const btns = list => list.map(m =>
       `<button class="sc-mbtn" onclick="doScLogin('${m}')">${m}</button>`
     ).join('');
+    grid.innerHTML =
+      `<div class="sc-role-lbl">SC</div>`  + `<div class="sc-role-grid">${btns(SC_LIST)}</div>` +
+      `<div class="sc-role-lbl">ASC</div>` + `<div class="sc-role-grid">${btns(ASC_LIST)}</div>`;
   }
 }
 
@@ -1269,6 +1290,7 @@ function doStoreLogin() {
   const storeName = STORE_CODES[rawCode] || STORE_CODES[code];
   if (!storeName) { showErr('❌ 店舗コードが違います'); return; }
   currentStore = storeName; currentSC = null; isMgr = false; isCreator = false;
+  curPw = ''; uName = '';
   localStorage.setItem('storeSession', JSON.stringify({type:'store', name:storeName}));
   finLogin();
 }
@@ -1337,6 +1359,7 @@ function confirmSCLogin() {
   scStoreAssignments[name] = selected;
   saveSCStoreAssignments();
   currentSC = name; currentStore = null; isMgr = false; isCreator = false;
+  curPw = SC_PW; uName = name;
   localStorage.setItem('storeSession', JSON.stringify({type:'sc', name}));
   pendingSCName = null;
   document.getElementById('section-sc-stores').style.display = 'none';
@@ -1372,7 +1395,7 @@ function doPwLogin() {
 }
 
 function doGuest() {
-  isMgr = false; isCreator = false; currentStore = null; currentSC = null; uName = '';
+  isMgr = false; isCreator = false; currentStore = null; currentSC = null; uName = ''; curPw = '';
   localStorage.removeItem('storeSession');
   localStorage.removeItem('mgrSession');
   finLogin();
@@ -1387,6 +1410,7 @@ function finLogin() {
   document.getElementById('pwov').style.display = 'none';
   document.body.classList.toggle('is-mgr',     isMgr);
   document.body.classList.toggle('is-creator', isCreator);
+  document.body.classList.toggle('is-sc',      !!currentSC);
 
   const sb  = document.getElementById('store-badge');
   const scb = document.getElementById('sc-badge');
@@ -1472,18 +1496,24 @@ function doQuickLogin() {
       currentStore = s.name; currentSC = null; isMgr = false; isCreator = false;
     } else if (s.type === 'sc' && SCS.includes(s.name)) {
       currentSC = s.name; currentStore = null; isMgr = false; isCreator = false;
+      curPw = SC_PW; uName = s.name;
     } else return;
     finLogin();
   } catch(e) { toast('⚠️ ログインに失敗しました'); }
 }
 
 function toggleForm() {
-  const canCreate = isMgr || isCreator;
+  const canCreate = isMgr || isCreator || !!currentSC;
   document.getElementById('addcard').style.display = canCreate ? 'block' : 'none';
   document.getElementById('lockmsg').style.display = canCreate ? 'none'  : 'block';
   // 繰り返しセクションは管理者のみ表示
   const recSect = document.getElementById('recurrence-section');
   if (recSect) recSect.style.display = isMgr ? 'block' : 'none';
+  // 登録者名の案内（SC・ASCは名前がそのまま登録者になる）
+  const fh = document.getElementById('fhead');
+  if (fh) fh.innerHTML = currentSC
+    ? `➕ 新しいタスクを登録 <span style="font-size:11px;font-weight:600;color:var(--purple)">登録者：👔 ${currentSC}</span>`
+    : '➕ 新しいタスクを登録';
 }
 
 // ── セッション復元 ──
@@ -1498,6 +1528,7 @@ function restoreSession() {
         return true;
       } else if (s.type === 'sc' && SCS.includes(s.name)) {
         currentSC = s.name; isMgr = false; isCreator = false;
+        curPw = SC_PW; uName = s.name;
         return true;
       }
     }
@@ -1742,7 +1773,7 @@ function cardH(t) {
   const chkOnClick = chkClickable
     ? (t.type === 'sc' && isOwnSC ? `openSCModal('${t.id}')` : `doToggle('${t.id}')`)
     : '';
-  return `<div class="tc s-${st}${isOwn ? ' own-store' : ''}">
+  return `<div class="tc s-${st}${isOwn ? ' own-store' : ''}${canEditTask(t) ? ' mine-task' : ''}">
     <div class="chk${chkDone ? ' chk-done' : ''}${chkClickable ? ' clickable' : ''}" ${chkClickable ? `onclick="${chkOnClick}"` : ''}>${chkDone ? '✓' : ''}</div>
     <div>
       <div class="ttitle">${t.title} ${tTag} ${kTag} ${stTag} ${pTag} ${uTag} ${ownTag} ${recTag}</div>
@@ -1904,10 +1935,11 @@ async function doToggle(id) {
 }
 
 async function doDel(id) {
-  if (!isMgr) { toast('⚠️ 管理者権限が必要です'); return; }
+  const tDel = tasks.find(x => x.id === id);
+  if (!canEditTask(tDel)) { toast('⚠️ 自分が登録したタスクのみ削除できます'); return; }
   if (!confirm('このタスクを削除しますか？')) return;
   loading(true);
-  const r = await gPost({action:'deleteTask', id, pw:curPw});
+  const r = await gPost({action:'deleteTask', id, pw:curPw, actor:uName});
   if (r.ok) { tasks = tasks.filter(t => t.id !== id); render(); toast('🗑 削除しました'); }
   else toast('⚠️ ' + (r.error || '削除失敗'));
   loading(false);
@@ -1915,9 +1947,9 @@ async function doDel(id) {
 
 // ── タスク編集（管理者のみ） ──
 function openEdit(id) {
-  if (!isMgr) { toast('⚠️ 管理者権限が必要です'); return; }
   const t = tasks.find(x => x.id === id);
   if (!t) return;
+  if (!canEditTask(t)) { toast('⚠️ 自分が登録したタスクのみ編集できます'); return; }
 
   document.getElementById('e-id').value    = t.id;
   document.getElementById('e-title').value = t.title      || '';
@@ -1930,6 +1962,7 @@ function openEdit(id) {
   document.getElementById('e-pri').value   = t.priority   || '中';
   document.getElementById('e-urg').value   = t.urgency    || '通常';
   document.getElementById('e-type').value  = t.type       || 'store';
+  eRetiredSC = (t.assignees || []).filter(a => SC_RETIRED.includes(a));
   upEditChk();
 
   // チェックボックス生成後にアサイン状態を反映
@@ -1953,17 +1986,19 @@ function editOvClick(ev) {
   if (ev.target === document.getElementById('editov')) closeEdit();
 }
 
+let eRetiredSC = [];  // 編集中タスクに残っている退職メンバー
 function upEditChk() {
-  const members = document.getElementById('e-type').value === 'store' ? STORES : SCS;
+  const isStore = document.getElementById('e-type').value === 'store';
+  const members = isStore ? STORES : SCS.concat(eRetiredSC);
   document.getElementById('e-chkwrap').innerHTML =
     `<label class="ci all"><input type="checkbox" id="e-chkAll" onchange="eAll(this)"> 全選択</label>` +
-    members.map(m => `<label class="ci"><input type="checkbox" class="chk-e" value="${m}"> ${m}</label>`).join('');
+    members.map(m => `<label class="ci"><input type="checkbox" class="chk-e" value="${m}"> ${m}${isStore ? '' : `<span class="ci-role">${scRole(m)}</span>`}</label>`).join('');
 }
 function eAll(cb) { document.querySelectorAll('.chk-e').forEach(c => c.checked = cb.checked); }
 
 async function doEdit() {
-  if (!isMgr) { toast('⚠️ 管理者権限が必要です'); return; }
   const id    = document.getElementById('e-id').value;
+  if (!canEditTask(tasks.find(x => x.id === id))) { toast('⚠️ 自分が登録したタスクのみ編集できます'); return; }
   const title = document.getElementById('e-title').value.trim();
   const start = document.getElementById('e-start').value;  // 空欄ならユーザーが意図的に削除
   const end   = document.getElementById('e-end').value;
@@ -1987,7 +2022,7 @@ async function doEdit() {
   toast('✅ タスクを更新しました');
   closeEdit();
 
-  const payload = {action:'updateTask', pw:curPw, id, title, taskKind:kind,
+  const payload = {action:'updateTask', pw:curPw, actor:uName, id, title, taskKind:kind,
     startDate:start, endDate:end, type, priority:pri, urgency:urg, note, assignees:asgn,
     images:imgs};
   try {
@@ -2007,7 +2042,7 @@ async function doEdit() {
 
 // ── タスクコピー（管理者・タスク作成者） ──
 function doCopy(id) {
-  if (!isMgr && !isCreator) { toast('⚠️ コピーするにはログインが必要です'); return; }
+  if (!isMgr && !isCreator && !currentSC) { toast('⚠️ コピーするにはログインが必要です'); return; }
   const t = tasks.find(x => x.id === id);
   if (!t) return;
 
@@ -2111,10 +2146,11 @@ async function doAdd() {
 
 // ── チェックボックス ──
 function upChk() {
-  const members = document.getElementById('f-type').value === 'store' ? STORES : SCS;
+  const isStore = document.getElementById('f-type').value === 'store';
+  const members = isStore ? STORES : SCS;
   document.getElementById('chkwrap').innerHTML =
     `<label class="ci all"><input type="checkbox" id="chkAll" onchange="taAll(this)"> 全選択</label>` +
-    members.map(m => `<label class="ci"><input type="checkbox" class="chk-m" value="${m}"> ${m}</label>`).join('');
+    members.map(m => `<label class="ci"><input type="checkbox" class="chk-m" value="${m}"> ${m}${isStore ? '' : `<span class="ci-role">${scRole(m)}</span>`}</label>`).join('');
 }
 function taAll(cb) { document.querySelectorAll('.chk-m').forEach(c => c.checked = cb.checked); }
 
