@@ -1,0 +1,446 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>コンプラ提出状況 | 阪口商店</title>
+<style>
+:root{
+  --blue:#005BAC;--blue2:#0072C6;--green:#00A651;--orange:#FF6B35;--red:#E53E3E;
+  --purple:#7B3FA0;--purple-bg:#F5EEFA;--purple-bd:#D9C2E8;
+  --gray:#6B7280;--bg:#F3F4F6;--card:#FFFFFF;--border:#E5E7EB;
+  --text:#1F2937;--text-sub:#6B7280;--text3:#9CA3AF;--radius:12px;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+body{font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Noto Sans JP",sans-serif;
+  background:var(--bg);color:var(--text);font-size:15px;line-height:1.6;padding-bottom:40px}
+
+/* ── ヘッダー ── */
+.hdr{position:sticky;top:0;z-index:50;background:#fff;border-bottom:1px solid var(--border);
+  padding:10px 14px;display:flex;align-items:center;gap:10px;box-shadow:0 1px 3px rgba(0,0,0,.05)}
+.hdr-ttl{font-size:16px;font-weight:800;letter-spacing:.02em;flex:1}
+.hdr-ttl small{display:block;font-size:10px;font-weight:600;color:var(--text3);letter-spacing:.06em}
+.who{font-size:11px;font-weight:700;padding:5px 10px;border-radius:20px;white-space:nowrap;
+  background:var(--purple-bg);color:var(--purple);border:1px solid var(--purple-bd)}
+.hbtn{font-family:inherit;font-size:11px;font-weight:700;padding:6px 10px;border-radius:8px;cursor:pointer;
+  background:#fff;border:1px solid var(--border);color:var(--text-sub);white-space:nowrap}
+
+/* ── 操作バー ── */
+.bar{background:#fff;border-bottom:1px solid var(--border);padding:10px 14px;display:flex;gap:8px;flex-wrap:wrap}
+.bar label{font-size:11px;font-weight:700;color:var(--text-sub);display:block;margin-bottom:3px}
+.bar>div{flex:1;min-width:130px}
+select{font-family:inherit;font-size:14px;padding:8px 10px;width:100%;border:1.5px solid var(--border);
+  border-radius:9px;background:#fff;color:var(--text);font-weight:600}
+
+.wrap{padding:14px;max-width:760px;margin:0 auto}
+.card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);
+  padding:14px;margin-bottom:12px}
+
+/* ── 時点バナー ── */
+.banner{border-radius:var(--radius);padding:12px 14px;margin-bottom:12px;font-size:12px;line-height:1.7}
+.banner b{font-size:13px;display:block;margin-bottom:3px}
+.banner.b15{background:#EFF6FF;border:1.5px solid #1E40AF;color:#1E3A8A}
+.banner.beom{background:#FFF7ED;border:1.5px solid var(--orange);color:#9A3412}
+
+/* ── 全体サマリ ── */
+.sum{text-align:center}
+.sum-lbl{font-size:12px;color:var(--text-sub)}
+.sum-rate{font-size:46px;font-weight:800;line-height:1.1;margin:2px 0 8px}
+.stats{display:flex;gap:8px}
+.stat{flex:1;background:var(--bg);border-radius:10px;padding:10px 4px;cursor:pointer;border:1.5px solid transparent}
+.stat:active{border-color:var(--blue)}
+.stat-n{font-size:24px;font-weight:800;line-height:1.2}
+.stat-l{font-size:10px;font-weight:700;color:var(--text-sub);margin-top:2px}
+.sum-note{font-size:11px;color:var(--text3);margin-top:8px}
+
+/* ── 店舗カード ── */
+.st-hd{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.st-name{font-weight:800;font-size:15px}
+.st-rate{font-weight:800;font-size:17px;white-space:nowrap}
+.st-rate span{font-size:11px;color:var(--text-sub);font-weight:600}
+.judge{margin-top:8px;padding:8px 10px;border-radius:9px;font-weight:700;font-size:12.5px}
+.judge.ng{background:#FEE2E2;color:#991B1B}
+.judge.ok{background:#DCFCE7;color:#065F46}
+.chip{display:inline-block;font-size:11px;font-weight:700;padding:3px 9px;border-radius:20px}
+.chip.no{background:#FEE2E2;color:#991B1B}
+.chip.rv{background:#FEF3C7;color:#92400E}
+.names{font-size:13.5px;margin-top:4px;line-height:1.9}
+.alldone{margin-top:6px;color:var(--green);font-weight:700;font-size:13px}
+
+.copy{font-family:inherit;font-size:11px;font-weight:700;padding:6px 10px;border-radius:8px;cursor:pointer;
+  background:#fff;border:1.5px solid var(--blue);color:var(--blue);margin-top:8px}
+
+/* ── ログイン ── */
+.ov{position:fixed;inset:0;background:rgba(31,41,55,.55);backdrop-filter:blur(4px);z-index:100;
+  display:flex;align-items:center;justify-content:center;padding:18px}
+.ovbox{background:#fff;border-radius:18px;padding:26px 20px;max-width:380px;width:100%;
+  text-align:center;max-height:92vh;overflow-y:auto}
+.ov-ico{font-size:40px}
+.ov-ttl{font-size:19px;font-weight:800;margin:6px 0 4px}
+.ov-sub{font-size:12.5px;color:var(--text-sub);margin-bottom:14px}
+.role-lbl{font-size:11px;font-weight:800;letter-spacing:.08em;color:var(--purple);text-align:left;margin:4px 0 6px}
+.grid2{display:grid;grid-template-columns:repeat(2,1fr);gap:7px;margin-bottom:12px}
+.nbtn{padding:12px 8px;border:1.5px solid var(--border);border-radius:10px;font-family:inherit;font-size:14px;
+  font-weight:600;cursor:pointer;background:var(--bg);color:var(--text)}
+.nbtn:active{background:var(--purple-bg);border-color:var(--purple);color:var(--purple)}
+.pw{font-family:inherit;font-size:16px;padding:11px;width:100%;border:1.5px solid var(--border);
+  border-radius:10px;text-align:center;margin-bottom:8px;letter-spacing:.2em}
+.gbtn{font-family:inherit;font-size:12px;padding:9px;width:100%;border:1px solid var(--border);
+  border-radius:9px;background:#fff;color:var(--text-sub);cursor:pointer;font-weight:600}
+.err{color:var(--red);font-size:12.5px;font-weight:700;margin-top:8px;display:none}
+
+/* ── 氏名一覧モーダル ── */
+.mov{position:fixed;inset:0;background:rgba(31,41,55,.55);z-index:90;display:none;
+  align-items:flex-end;justify-content:center}
+.mov.show{display:flex}
+.mbox{background:#fff;border-radius:18px 18px 0 0;width:100%;max-width:560px;max-height:82vh;
+  overflow-y:auto;padding:18px 16px 28px}
+.mhd{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
+.mttl{font-size:16px;font-weight:800}
+.mcl{font-size:22px;background:none;border:none;color:var(--text3);cursor:pointer;line-height:1}
+.mst{font-weight:700;color:var(--blue);font-size:13px;border-bottom:1px solid var(--border);
+  padding-bottom:3px;margin:12px 0 5px}
+
+.empty{text-align:center;padding:40px 16px;color:var(--text3)}
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:26px;background:#1F2937;color:#fff;
+  font-size:13px;font-weight:600;padding:11px 18px;border-radius:24px;z-index:200;opacity:0;
+  transition:opacity .25s;pointer-events:none}
+.toast.show{opacity:1}
+@media(max-width:400px){.sum-rate{font-size:40px}.stat-n{font-size:21px}}
+</style>
+</head>
+<body>
+
+<div class="hdr">
+  <div class="hdr-ttl">📝 コンプラ提出状況<small>SAKAGUCHI COMPLIANCE</small></div>
+  <span class="who" id="who" style="display:none"></span>
+  <button class="hbtn" onclick="reload()">🔄</button>
+  <button class="hbtn" onclick="logout()">↩</button>
+</div>
+
+<div class="bar">
+  <div>
+    <label>対象月</label>
+    <select id="month" onchange="render()"></select>
+  </div>
+  <div>
+    <label>いつの時点で見るか</label>
+    <select id="asof" onchange="render()">
+      <option value="now">いま現在</option>
+      <option value="15">15日時点（店長評価用）</option>
+      <option value="eom">月末時点（SC評価用）</option>
+    </select>
+  </div>
+</div>
+
+<div class="wrap" id="main">
+  <div class="empty"><p>読み込み中…</p></div>
+</div>
+
+<!-- ログイン -->
+<div class="ov" id="ov">
+  <div class="ovbox">
+    <div class="ov-ico">📝</div>
+    <div class="ov-ttl">コンプラ提出状況</div>
+    <div class="ov-sub">名前をえらんでください</div>
+    <div id="sec-name">
+      <div class="role-lbl">SC</div>
+      <div class="grid2" id="g-sc"></div>
+      <div class="role-lbl">ASC</div>
+      <div class="grid2" id="g-asc"></div>
+      <button class="gbtn" onclick="showMgr()">🔑 管理者はこちら</button>
+    </div>
+    <div id="sec-mgr" style="display:none">
+      <div class="ov-sub">管理者パスコードを入力してください</div>
+      <input class="pw" type="password" id="pin" placeholder="••••••" maxlength="12">
+      <button class="nbtn" style="width:100%;background:var(--blue);color:#fff;border-color:var(--blue)"
+        onclick="mgrLogin()">ログイン</button>
+      <button class="gbtn" style="margin-top:8px" onclick="showName()">← 名前選択にもどる</button>
+    </div>
+    <div class="err" id="err"></div>
+  </div>
+</div>
+
+<!-- 氏名一覧 -->
+<div class="mov" id="mov" onclick="closeList(event)">
+  <div class="mbox" onclick="event.stopPropagation()">
+    <div class="mhd">
+      <div class="mttl" id="m-ttl"></div>
+      <button class="mcl" onclick="closeList()">✕</button>
+    </div>
+    <div id="m-body"></div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const GAS_URL = 'https://script.google.com/macros/s/AKfycbyHEBH5Q8VBcZFBzfH5tYQm46RCa_fYw3PDlKp1qA5E9EWmR44OQ8UA1JTXFa-stnbG8g/exec';
+const ADMIN_PW = '3272885';
+
+// SC・ASC体制（2026-09-15改定）※タスク管理アプリと同じ名簿
+const SC_LIST  = ['髙橋','五島','ダハル','ビスワス','フィ','スラズ'];
+const ASC_LIST = ['レサム','トゥアン'];
+
+let me = '', isMgr = false;
+let employees = [], compliance = [], lists = {};
+
+/* ══ 日付ヘルパー（接客評価アプリと同じ扱い） ══ */
+// スプレッドシートが日付を自動変換するので "YYYY-MM" に正規化する
+function normMonth(v){
+  if(v==null||v==='')return '';
+  const s=String(v);
+  if(/^\d{4}-\d{2}$/.test(s))return s;
+  const d=new Date(s); if(isNaN(d))return s;
+  const j=new Date(d.getTime()+9*3600000);
+  return j.getUTCFullYear()+'-'+String(j.getUTCMonth()+1).padStart(2,'0');
+}
+function jstDate(v){
+  const d=new Date(v); if(isNaN(d))return '';
+  const j=new Date(d.getTime()+9*3600000);
+  return j.getUTCFullYear()+'-'+String(j.getUTCMonth()+1).padStart(2,'0')+'-'+String(j.getUTCDate()).padStart(2,'0');
+}
+
+/* ══ ログイン ══ */
+function initLogin(){
+  document.getElementById('g-sc').innerHTML  = SC_LIST.map(n=>`<button class="nbtn" onclick="pick('${n}')">${n}</button>`).join('');
+  document.getElementById('g-asc').innerHTML = ASC_LIST.map(n=>`<button class="nbtn" onclick="pick('${n}')">${n}</button>`).join('');
+}
+function pick(n){
+  me=n; isMgr=false;
+  localStorage.setItem('compSession', JSON.stringify({name:n, mgr:false}));
+  finLogin();
+}
+function showMgr(){
+  document.getElementById('sec-name').style.display='none';
+  document.getElementById('sec-mgr').style.display='block';
+  document.getElementById('err').style.display='none';
+}
+function showName(){
+  document.getElementById('sec-name').style.display='block';
+  document.getElementById('sec-mgr').style.display='none';
+  document.getElementById('err').style.display='none';
+}
+function mgrLogin(){
+  if(document.getElementById('pin').value===ADMIN_PW){
+    me='管理者'; isMgr=true;
+    localStorage.setItem('compSession', JSON.stringify({name:'管理者', mgr:true}));
+    finLogin();
+  }else{
+    const e=document.getElementById('err');
+    e.textContent='❌ パスコードが違います'; e.style.display='block';
+    document.getElementById('pin').value='';
+  }
+}
+function logout(){
+  localStorage.removeItem('compSession');
+  me=''; isMgr=false;
+  document.getElementById('who').style.display='none';
+  showName();
+  document.getElementById('ov').style.display='flex';
+}
+function finLogin(){
+  document.getElementById('ov').style.display='none';
+  const w=document.getElementById('who');
+  w.textContent=(isMgr?'👑 ':'👔 ')+me; w.style.display='inline-block';
+  load();
+}
+
+/* ══ データ取得（まずキャッシュを出して、裏で最新を取りにいく） ══ */
+function initMonths(){
+  const sel=document.getElementById('month');
+  if(sel.options.length)return;
+  const now=new Date(); let html='';
+  for(let i=0;i<6;i++){
+    const d=new Date(now.getFullYear(), now.getMonth()-i, 1);
+    const m=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0');
+    html+=`<option value="${m}">${d.getFullYear()}年${d.getMonth()+1}月</option>`;
+  }
+  sel.innerHTML=html;
+}
+
+function load(){
+  initMonths();
+  try{
+    const c=JSON.parse(localStorage.getItem('compCache')||'null');
+    if(c&&c.employees&&c.compliance){ employees=c.employees; compliance=c.compliance; render(true); }
+  }catch(e){}
+  fetchLatest();
+}
+
+async function fetchLatest(){
+  try{
+    const [e,c] = await Promise.all([
+      fetch(GAS_URL+'?action=getEmployees',{redirect:'follow'}).then(r=>r.json()),
+      fetch(GAS_URL+'?action=getCompliance',{redirect:'follow'}).then(r=>r.json())
+    ]);
+    if(!e.ok||!c.ok) throw new Error(e.error||c.error||'取得エラー');
+    employees=e.employees||[]; compliance=c.compliance||[];
+    try{ localStorage.setItem('compCache', JSON.stringify({employees, compliance, at:Date.now()})); }catch(_){}
+    render();
+  }catch(err){
+    if(!employees.length){
+      document.getElementById('main').innerHTML =
+        '<div class="empty"><p>読み込めませんでした。<br>電波の良い場所でもう一度お試しください。</p>'+
+        '<p style="font-size:11px;margin-top:8px">'+err.message+'</p></div>';
+    }else{
+      toast('⚠️ 最新の取得に失敗（表示は前回のもの）');
+    }
+  }
+}
+function reload(){ toast('🔄 最新を取得しています'); fetchLatest(); }
+
+/* ══ 画面 ══ */
+function render(fromCache){
+  if(!employees.length) return;
+  const month = document.getElementById('month').value;
+  const mode  = document.getElementById('asof').value;
+
+  let cutoff=null;
+  if(mode==='15') cutoff=month+'-15';
+  else if(mode==='eom'){
+    const p=month.split('-');
+    const last=new Date(Number(p[0]), Number(p[1]), 0).getDate();
+    cutoff=month+'-'+String(last).padStart(2,'0');
+  }
+
+  const map={};
+  compliance.filter(r=>normMonth(r['対象年月'])===month)
+            .forEach(r=>{ map[String(r['従業員番号'])]=r; });
+
+  const active = employees.filter(e=>e.status==='在籍中');
+  const stores={}; const gSub=[],gNot=[],gNeed=[];
+  active.forEach(e=>{
+    const s=e.store||'(店舗未設定)';
+    if(!stores[s]) stores[s]={total:0,sub:0,need:0,not:[],needList:[]};
+    stores[s].total++;
+    const rec=map[String(e.id)];
+    const ok = rec && String(rec['提出状況'])==='Submitted'
+               && (!cutoff || !rec['提出日時'] || jstDate(rec['提出日時'])<=cutoff);
+    if(ok){
+      if(String(rec['要確認フラグ'])==='NeedReview'){
+        stores[s].need++; stores[s].needList.push(e.name); gNeed.push({name:e.name,store:s});
+      }else{
+        stores[s].sub++; gSub.push({name:e.name,store:s});
+      }
+    }else{
+      stores[s].not.push(e.name); gNot.push({name:e.name,store:s});
+    }
+  });
+  lists={sub:gSub,not:gNot,need:gNeed,month:month};
+
+  const total=active.length;
+  const sub=Object.values(stores).reduce((a,s)=>a+s.sub,0);
+  const need=Object.values(stores).reduce((a,s)=>a+s.need,0);
+  const resp=sub+need, not=total-resp;
+  const rate=total?Math.round(resp/total*100):0;
+
+  const names=Object.keys(stores).sort((a,b)=>{
+    const ra=stores[a].total?(stores[a].sub+stores[a].need)/stores[a].total:0;
+    const rb=stores[b].total?(stores[b].sub+stores[b].need)/stores[b].total:0;
+    return ra-rb;   // 提出率の低い店を上に
+  });
+
+  let html='';
+  if(mode==='15') html+=`<div class="banner b15"><b>🗓 15日時点の実績（店長評価用）</b>
+    15日時点で未提出の人がいる店は、<b>店長の定性評価「就業規則」が ×</b> の対象です。</div>`;
+  if(mode==='eom') html+=`<div class="banner beom"><b>🗓 月末時点の実績（SC評価用）</b>
+    月末時点で未提出の人が残る店は、<b>担当SCの定性表が ×</b> の対象です。</div>`;
+
+  const col = rate>=100?'var(--green)':rate>=80?'var(--blue)':'var(--red)';
+  html+=`<div class="card sum">
+    <div class="sum-lbl">${cutoff?cutoff+' 時点の':''}全体の提出率</div>
+    <div class="sum-rate" style="color:${col}">${rate}%</div>
+    <div class="stats">
+      <div class="stat" onclick="showList('sub')"><div class="stat-n" style="color:var(--green)">${resp}</div><div class="stat-l">提出ずみ ▸</div></div>
+      <div class="stat" onclick="showList('not')"><div class="stat-n" style="color:var(--red)">${not}</div><div class="stat-l">まだの人 ▸</div></div>
+      <div class="stat" onclick="showList('need')"><div class="stat-n" style="color:var(--orange)">${need}</div><div class="stat-l">要確認 ▸</div></div>
+    </div>
+    <div class="sum-note">数字をタップすると名前が出ます ／ 在籍中クルー ${total}名（${month}）</div>
+  </div>`;
+
+  html+=names.map(s=>{
+    const o=stores[s];
+    const r=o.total?Math.round((o.sub+o.need)/o.total*100):0;
+    const c=r>=100?'var(--green)':r>=80?'var(--blue)':'var(--red)';
+    let judge='';
+    if(mode==='15') judge=o.not.length
+      ? `<div class="judge ng">⛔ 店長評価 就業規則：×（15日時点でまだ ${o.not.length}名）</div>`
+      : `<div class="judge ok">✅ 店長評価 就業規則：〇（15日時点で全員ずみ）</div>`;
+    if(mode==='eom') judge=o.not.length
+      ? `<div class="judge ng">⛔ 担当SC評価：×（月末時点でまだ ${o.not.length}名）</div>`
+      : `<div class="judge ok">✅ 担当SC評価：〇（月末時点で全員ずみ）</div>`;
+    const notH=o.not.length
+      ? `<div style="margin-top:8px"><span class="chip no">まだの人 ${o.not.length}名</span>
+         <div class="names">${o.not.join('、')}</div>
+         <button class="copy" onclick="copyStore('${esc(s)}')">📋 声かけ用にコピー</button></div>` : '';
+    const needH=o.needList.length
+      ? `<div style="margin-top:8px"><span class="chip rv">要確認 ${o.needList.length}名</span>
+         <div class="names">${o.needList.join('、')}</div></div>` : '';
+    const done=!o.not.length&&!o.needList.length&&mode==='now'
+      ? '<div class="alldone">✅ 全員ずみ</div>' : '';
+    return `<div class="card">
+      <div class="st-hd"><div class="st-name">${s}</div>
+        <div class="st-rate" style="color:${c}">${r}%　<span>${o.sub+o.need}/${o.total}</span></div></div>
+      ${judge}${done}${notH}${needH}</div>`;
+  }).join('');
+
+  document.getElementById('main').innerHTML=html;
+  window._stores=stores;
+}
+
+function esc(s){ return String(s).replace(/'/g,"\\'"); }
+
+/* 未提出者を店長へ送る用にコピー */
+function copyStore(store){
+  const o=(window._stores||{})[store];
+  if(!o||!o.not.length){ toast('未提出の人はいません'); return; }
+  const month=document.getElementById('month').value;
+  const txt=`【コンプラ確認 未提出のご連絡】\n${store}\n対象月：${month}\n\n`
+    + o.not.map(n=>'・'+n).join('\n')
+    + `\n\n上記の方の回答をお願いします。`;
+  navigator.clipboard.writeText(txt)
+    .then(()=>toast('📋 コピーしました。LINEに貼れます'))
+    .catch(()=>toast('⚠️ コピーできませんでした'));
+}
+
+/* 数字タップ → 氏名一覧 */
+function showList(cat){
+  const meta={sub:['提出ずみ','var(--green)'],not:['まだの人','var(--red)'],need:['要確認','var(--orange)']}[cat];
+  const list=lists[cat]||[];
+  const by={}; list.forEach(x=>{ (by[x.store]=by[x.store]||[]).push(x.name); });
+  const ss=Object.keys(by).sort((a,b)=>a.localeCompare(b,'ja'));
+  document.getElementById('m-ttl').textContent=`${meta[0]}（${list.length}名）`;
+  document.getElementById('m-body').innerHTML =
+    `<div style="border-left:4px solid ${meta[1]};padding-left:10px;margin-bottom:10px;
+      color:${meta[1]};font-weight:800">${lists.month||''} の${meta[0]}</div>`
+    + (list.length
+       ? ss.map(s=>`<div class="mst">${s}（${by[s].length}名）</div>
+           <div style="font-size:14px;line-height:1.9">${by[s].join('、')}</div>`).join('')
+       : '<div class="empty"><p>該当する人はいません</p></div>');
+  document.getElementById('mov').classList.add('show');
+}
+function closeList(ev){
+  if(ev&&ev.target!==document.getElementById('mov'))return;
+  document.getElementById('mov').classList.remove('show');
+}
+
+let tmr;
+function toast(msg){
+  const t=document.getElementById('toast');
+  t.textContent=msg; t.classList.add('show');
+  clearTimeout(tmr); tmr=setTimeout(()=>t.classList.remove('show'),2400);
+}
+
+/* ══ 起動 ══ */
+initLogin();
+initMonths();
+try{
+  const s=JSON.parse(localStorage.getItem('compSession')||'null');
+  if(s&&s.name&&(s.mgr||SC_LIST.concat(ASC_LIST).includes(s.name))){
+    me=s.name; isMgr=!!s.mgr; finLogin();
+  }
+}catch(e){}
+</script>
+</body>
+</html>
