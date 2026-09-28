@@ -264,6 +264,87 @@ table.mtx tbody th{
 .aiwrap{margin-top:9px}
 .aitoggle{background:none;border:none;color:var(--blue);font-weight:800;font-size:12.5px;cursor:pointer;padding:4px 0}
 @media(min-width:640px){ .kpis{grid-template-columns:repeat(4,1fr)} }
+
+/* ================================================================
+   PC表示（幅1000px以上）
+   ・下部固定タブ → 上部の横タブへ
+   ・ボトムシート → 中央ダイアログへ
+   ・横幅を広げて2カラム化
+   ================================================================ */
+@media(min-width:1000px){
+  body{
+    display:flex; flex-direction:column; min-height:100vh;
+    padding-bottom:0; font-size:15px;
+  }
+  /* 並び替え：ヘッダー → タブ → 本文 */
+  header{order:0; position:static; padding:16px 0 13px}
+  nav   {order:1}
+  main  {order:2}
+
+  .h-row,.deadline{max-width:1180px;margin-left:auto;margin-right:auto;padding-left:22px;padding-right:22px}
+  .h-title{font-size:20px}
+  .h-title small{font-size:12px}
+  .deadline{background:none;padding:0;margin-top:8px;font-size:13px}
+  .role-btn{font-size:13px;padding:8px 16px}
+
+  /* タブを上部に固定 */
+  nav{
+    position:sticky; top:0; bottom:auto; left:auto; right:auto;
+    display:flex; justify-content:center; gap:2px;
+    border-top:none; border-bottom:1px solid var(--line);
+    box-shadow:0 2px 10px rgba(20,40,70,.06); padding-bottom:0;
+  }
+  nav button{
+    display:flex; align-items:center; justify-content:center; gap:8px;
+    padding:13px 26px 11px; font-size:14px;
+    border-bottom:3px solid transparent;
+  }
+  nav button .ic{display:inline;font-size:17px;margin:0;line-height:1}
+  nav button.on{border-bottom-color:var(--blue);background:var(--blue-l)}
+  nav button:hover{background:var(--gray-l)}
+  nav button.on:hover{background:var(--blue-l)}
+
+  main{width:100%;max-width:1180px;padding:18px 22px 48px}
+
+  /* カードを2カラムに（進捗タブは表があるので1カラムのまま） */
+  #report-body,#point-body,#check-body{
+    column-count:2; column-gap:16px;
+  }
+  #report-body > *,#point-body > *,#check-body > *{
+    break-inside:avoid; -webkit-column-break-inside:avoid; margin-bottom:16px;
+  }
+  .card{padding:16px 18px}
+  .card h2{font-size:16px}
+
+  /* 横に伸びすぎる部品を抑える */
+  .btn{max-width:420px}
+  .btn.sm{max-width:none}
+  .photos{grid-template-columns:repeat(auto-fill,minmax(112px,1fr))}
+  .docgrid{grid-template-columns:repeat(auto-fill,minmax(150px,1fr))}
+  .kpis{max-width:660px}
+  table.mtx{font-size:12px;width:100%;min-width:760px}
+  table.mtx th,table.mtx td{padding:6px 5px}
+  .cell{width:22px;height:22px;line-height:22px}
+
+  /* モーダルを中央ダイアログに */
+  #modal.on{display:flex;align-items:center;justify-content:center;padding:28px}
+  #modal .sheet{
+    position:relative;left:auto;right:auto;bottom:auto;
+    width:100%;max-width:640px;max-height:86vh;
+    border-radius:14px;padding:18px 20px 22px;
+    box-shadow:0 18px 50px rgba(10,20,40,.35);
+  }
+  #modal .grip{display:none}
+
+  #toast{bottom:28px}
+  #viewer img{max-width:min(100%,1100px)}
+}
+
+/* さらに広い画面 */
+@media(min-width:1400px){
+  main{max-width:1320px}
+  .h-row,.deadline{max-width:1320px}
+}
 </style>
 </head>
 <body>
