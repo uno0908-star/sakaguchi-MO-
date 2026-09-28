@@ -188,6 +188,10 @@ table.mtx tbody th{
 .c-redo{background:var(--red);color:#fff}
 .c-excluded{background:#e3e7ec;color:#9aa4ae}
 
+table.mtx td.td-ph{cursor:pointer}
+table.mtx td.td-ph:hover{background:var(--blue-l)}
+table.mtx td.td-ph:active{background:#d8e9f9}
+
 .legend{display:flex;gap:11px;flex-wrap:wrap;font-size:11px;color:var(--ink2);margin-top:9px}
 .legend span{display:flex;align-items:center;gap:4px}
 
@@ -1289,6 +1293,39 @@ function stats() {
   return { target, done, wait, redo, excl, pct: target ? Math.round(done / target * 100) : 0 };
 }
 
+/* 進捗マトリクスのマスから、提出ずみの売場写真を見る（SC・神田のみ） */
+function canViewPhotos() { return S.role === 'sc' || S.role === 'mgr'; }
+
+function openCell(storeId, itemId) {
+  if (!canViewPhotos()) { toast('提出写真はSC・神田のみ見られます'); return; }
+  const st = storeOf(storeId), it = itemOf(itemId);
+  const r  = reportOf(storeId, itemId);
+  if (!r) { openModal(st ? st.name : '', it ? it.cat : '', '<div class="card"><div class="empty">まだ提出されていません</div></div>'); return; }
+
+  const ph  = r.photoUrls || [];
+  const arr = JSON.stringify(ph).replace(/"/g, '&quot;');
+  const ttl = (st ? st.short : '') + ' ' + (it ? it.cat : '');
+
+  openModal(st ? st.name : String(storeId), (it ? it.week + '／' + it.place : ''), `
+    <div class="card">
+      <div class="meta" style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:9px">
+        <span class="st ${STATUS_CLASS[r.status||'']}">${STATUS_LABEL[r.status||'']}</span>
+        <span style="font-size:11.5px;color:var(--ink2)">${esc((r.reporterName||'') + ' / ' + fmtDt(r.reportedAt))}</span>
+      </div>
+      ${r.status === 'excluded' && r.excludeReason ? `<div class="alert info">進捗除外：${esc(r.excludeReason)}</div>` : ''}
+      ${ph.length
+        ? `<div class="photos">${ph.map((u,i) =>
+            `<div class="ph">${photoImg(u, 600, `loading="lazy" onclick="openViewer(${arr},${i},&#39;${esc(ttl)}&#39;)"`)}</div>`).join('')}</div>
+           <div class="hint">写真をタップ → 指2本でひろげて拡大できます</div>`
+        : '<div class="hint">写真なし</div>'}
+      ${r.comment    ? `<div class="hint">💬 ${esc(r.reporterRole || '店長')}：${esc(r.comment)}</div>` : ''}
+      ${r.scComment  ? `<div class="hint">🧭 SC ${esc(r.scName||'')}：${esc(r.scComment)}</div>` : ''}
+      ${r.mgrComment ? `<div class="hint">🏢 ${esc(r.mgrName||'神田')}：${esc(r.mgrComment)}</div>` : ''}
+      ${aiSummary(r)}
+    </div>
+  `);
+}
+
 function renderProgress() {
   const items = openItems();
   const k = stats();
@@ -1327,7 +1364,13 @@ function renderProgress() {
                     : (st === 'sc_redo' || st === 'mgr_redo') ? 'c-redo' : 'c-none';
           const ch = st === 'done' ? '✓' : st === 'excluded' ? '—' : st === 'submitted' ? '待'
                    : st === 'sc_ok' ? '神' : (st === 'sc_redo' || st === 'mgr_redo') ? '!' : '';
-          return `<td><span class="cell ${cls}" title="${esc(it.cat)}：${STATUS_LABEL[st]}">${ch}</span></td>`;
+          // SC・神田はマスを押すと提出写真を見られる（提出があるマスだけ）
+          const rp = reportOf(s.id, it.id);
+          const can = canViewPhotos() && rp && (rp.photoUrls || []).length;
+          const tip = `${esc(s.short)} ${esc(it.cat)}：${STATUS_LABEL[st]}` + (can ? '（押すと写真）' : '');
+          return can
+            ? `<td class="td-ph" onclick="openCell('${s.id}','${it.id}')" title="${tip}"><span class="cell ${cls}">${ch}</span></td>`
+            : `<td><span class="cell ${cls}" title="${tip}">${ch}</span></td>`;
         }).join('');
         const tg = items.filter(it => statusOf(s.id, it.id) !== 'excluded').length;
         const dn = items.filter(it => statusOf(s.id, it.id) === 'done').length;
@@ -1345,6 +1388,9 @@ function renderProgress() {
     <div style="margin-top:9px;font-size:11px;color:var(--ink2)">
       ${items.map(it => `${it.no || '·'}=${esc(it.cat)}`).join('　')}
     </div>
+    ${canViewPhotos()
+      ? '<div class="hint">📷 色のついたマスをタップすると、その店舗の提出写真が見られます（完了ずみも見られます）。</div>'
+      : '<div class="hint">提出写真の閲覧はSC・神田のみです。<button class="btn sm sec" style="margin-left:6px" onclick="openRole()">役割をえらぶ</button></div>'}
   </div>`;
 
   // 項目別の進み
