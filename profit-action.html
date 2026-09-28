@@ -587,11 +587,11 @@ function salesTodos(x) {
   const t = [];
   const s = x.s;
   if (x.fjD < 0 && s.fjIncome && s.sales) {
-    const rate = s.fjIncome / s.sales;                 // 売上1千円あたりのFJ収入
+    const rate = s.fjIncome / s.sales;                 // 売上1千円あたりのFC収入
     const needSales = (-x.fjD) / rate;                 // 月に必要な売上（千円）
     const perDay    = needSales / 30;
     const pct = s.nisshu ? perDay / s.nisshu * 100 : 0;
-    t.push(`FJ収入が予算に <b>${yen(-x.fjD)}千円</b> 足りない。`
+    t.push(`FC収入が予算に <b>${yen(-x.fjD)}千円</b> 足りない。`
          + `<br>→ 取り戻すには <b>日販を +${yen(perDay)}千円/日</b>（月 +${yen(needSales)}千円・日販の${pct.toFixed(0)}%）必要。`
          + (pct > 10 ? `<br><span style="color:#c62828">※ 日販の${pct.toFixed(0)}%増は今月中には戻せない水準。廃棄の抑制で守りつつ、予算そのものの見直しも議題に。</span>` : ''));
   }
@@ -619,7 +619,7 @@ function todosOf(x) {
   if (x.s.type === 'TS' && x.sup < 50)
     t.push(`TS契約のため支援金がほぼ無い。<b>荒利と廃棄がそのまま店利益に出る</b>ので、上の2点の効果が他店より大きい。`);
   if (x.s.fjIncome != null && x.s.fjIncome < 1900)
-    t.push(`FJ収入が最低保証ライン（1,900千円）付近。<b>売上を戻さないと保証頼みが続く</b>。`);
+    t.push(`FC収入が最低保証ライン（1,900千円）付近。<b>売上を戻さないと保証頼みが続く</b>。`);
   return t.slice(0, 4);
 }
 
@@ -628,7 +628,7 @@ function whyText(x) {
   if (d >= 0) return `予算を <b>${yen(d)}千円</b> 上回っています。この形を崩さないこと。`;
   const parts = [];
   if (x.lossWaste > 0) parts.push(`見切・廃棄の超過が <b>${yen(x.lossWaste)}千円</b>`);
-  if (x.lossSales > 0) parts.push(`FJ収入（売上・荒利）の不足が <b>${yen(x.lossSales)}千円</b>`);
+  if (x.lossSales > 0) parts.push(`FC収入（売上・荒利）の不足が <b>${yen(x.lossSales)}千円</b>`);
   const head = parts.length ? parts.join('、') : '経費・その他の差';
   const supTxt = x.sup > 0 ? `支援金 +${yen(x.sup)}千円で埋めてなお` : '';
   return `${head}。${supTxt} <b>${yen(-d)}千円</b> の未達です。`;
@@ -677,7 +677,7 @@ function renderSplit(v) {
       <i class="p" style="width:${sup/tot*100}%"></i></div>
     <div class="slegend">
       <span><i class="dot" style="background:#e53935"></i>見切・廃棄の超過 <b>−${yen(wLoss)}</b>千円</span>
-      <span><i class="dot" style="background:#8e24aa"></i>FJ収入の不足 <b>−${yen(sLoss)}</b>千円</span>
+      <span><i class="dot" style="background:#8e24aa"></i>FC収入の不足 <b>−${yen(sLoss)}</b>千円</span>
       <span><i class="dot" style="background:#2e7d32"></i>支援金 <b>+${yen(sup)}</b>千円</span>
     </div>`;
 }
@@ -733,7 +733,7 @@ function storeCard(x) {
     <div class="sbody">
       <div class="why">${whyText(x)}</div>
       <div class="brk">
-        <div><div class="bl">FJ収入 差</div><div class="bv ${x.fjD<0?'neg':'pos'}">${sg(x.fjD)}</div></div>
+        <div><div class="bl">FC収入 差</div><div class="bv ${x.fjD<0?'neg':'pos'}">${sg(x.fjD)}</div></div>
         <div><div class="bl">支援金</div><div class="bv pos">+${yen(x.sup)}</div></div>
         <div><div class="bl">見切 超過</div><div class="bv ${x.mdO>0?'neg':'pos'}">${x.mdO>0?'−'+yen(x.mdO):'+'+yen(-x.mdO)}</div></div>
       </div>
@@ -767,7 +767,7 @@ function renderTable(v) {
   const rows = [...v].sort((a,b) => a.s.diff - b.s.diff);
   document.getElementById('tbl').innerHTML =
     `<thead><tr><th>店名</th><th>SC</th><th>着地</th><th>予算</th><th>予算差</th>
-      <th>前週比</th><th>FJ収入差</th><th>支援金</th><th>見切超過</th><th>主因</th></tr></thead><tbody>` +
+      <th>前週比</th><th>FC収入差</th><th>支援金</th><th>見切超過</th><th>主因</th></tr></thead><tbody>` +
     rows.map(x => `<tr class="${x.s.diff<0?'miss':''}">
       <td>${x.s.name}</td><td>${x.sc}</td>
       <td>${yen(x.s.landing)}</td><td>${yen(x.s.budget)}</td>
@@ -783,12 +783,12 @@ function renderTable(v) {
 function render() {
   const v = view();
   document.getElementById('subLabel').textContent =
-    `${CUR_LABEL.month} ${CUR_LABEL.date}　${PREV ? '前週＝' + PREV.date : ''}　（自動生成 2026-09-28 12:24）`;
+    `${CUR_LABEL.month} ${CUR_LABEL.date}　${PREV ? '前週＝' + PREV.date : ''}　（自動生成 2026-09-28 12:32）`;
   renderSC(); renderKpis(v); renderSplit(v); renderTop3(v); renderGroups(v); renderTable(v);
   document.getElementById('howto').innerHTML =
     `<b>この画面の読み方</b><br>
-     予算差は <code>FJ収入差 ＋ 支援金 − 見切超過</code> でほぼ説明できます（実データで誤差1千円以内）。<br>
-     ・<b>FJ収入差</b>＝売上と荒利の結果。戻すのに時間がかかる。<br>
+     予算差は <code>FC収入差 ＋ 支援金 − 見切超過</code> でほぼ説明できます（実データで誤差1千円以内）。<br>
+     ・<b>FC収入差</b>＝売上と荒利の結果。戻すのに時間がかかる。<br>
      ・<b>見切超過</b>＝見切処分の予算オーバー。発注と値引きの運用で<b>今週から</b>戻せる。<br>
      ・<b>支援金</b>＝本部支援・厨房支援・雑益追加分。予算に入っていない上乗せ。<br>
      廃棄のカテゴリ別の基準（ベンチ）は AICO 売上の10%、OP 5%、FF 8%、厨房 15%、ドライ 0.3%。<br>

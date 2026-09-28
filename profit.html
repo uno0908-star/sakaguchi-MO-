@@ -642,7 +642,7 @@ const HISTORY = [
 ];
 
 // 店利益データ
-// fjIncome=FJ収入実績, miscBudget=雑益予算, laborBudget=人件費予算, otherExp=その他経費予算
+// fjIncome=FC収入実績, miscBudget=雑益予算, laborBudget=人件費予算, otherExp=その他経費予算
 // markdownActual=見切処分実績, markdownBudget=見切処分予算
 // hqSupport=本部支援着地(原価)/月, kitchenSalesDay=厨房売上高/日
 // kitchenSupportMonth=厨房支援金/月, kitchenSupportRate=厨房支援金率
@@ -1196,7 +1196,7 @@ function showStoreDetail(name) {
   html += `<div class="popup-section"><h3>店利益 構成（千円/月）</h3>
     <table style="width:100%;font-size:11px;border-collapse:collapse">
       <tr style="background:#e3f2fd">
-        <td style="padding:5px 8px">📥 FJ収入（実績）</td>
+        <td style="padding:5px 8px">📥 FC収入（実績）</td>
         <td style="padding:5px 8px;text-align:right;font-weight:700;color:#1565c0">+${p.fjIncome.toLocaleString()}</td>
         <td style="padding:5px 8px;font-size:10px;color:#888">荒利×FC率</td>
       </tr>
@@ -1355,7 +1355,7 @@ function showStoreDetail(name) {
       priority: 'high',
       icon: '📈',
       title: '売上の前年比回復',
-      detail: `前年比 ${p.yoy.toFixed(2)}%。FJ収入は売上連動のため、売上回復が直接利益改善に直結。`,
+      detail: `前年比 ${p.yoy.toFixed(2)}%。FC収入は売上連動のため、売上回復が直接利益改善に直結。`,
       effect: `1%改善ごとに約 ${Math.round(p.fjIncome * 0.01).toLocaleString()}千円/月 増収`
     });
   }
