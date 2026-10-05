@@ -501,7 +501,9 @@ const S = {
   viewer: { imgs:[], i:0, title:'' },
   filterWeek: 'all',
   checkFilter: 'todo',
-  retry: null           // 送信に失敗したときの再送用（AI判定スキップに使う）
+  retry: null,          // 送信に失敗したときの再送用（AI判定スキップに使う）
+  pending: {}           // 送信ずみでサーバーの取得がまだ追いつかない確認結果
+                        // { reportId: { status, patch, at } } … 詳しくは applyPending()
 };
 
 /* ================================================================
@@ -599,13 +601,38 @@ function stopProgress() {
   if (progressTimer) { clearInterval(progressTimer); progressTimer = null; }
 }
 
+/* 確認を連続で押すと、先に出した読み込みの応答が後から返ってきて
+   「完了にしたばかりの項目が確認待ちに戻る」ことがあった。それを防ぐ仕組み。
+     ・loadSeq … いちばん新しい読み込みの応答だけを採用する
+     ・S.pending … 送信ずみの確認結果。サーバーの取得が追いつくまで画面に残し、
+                   サーバー側が同じ状態になったら外す（最長 PENDING_TTL） */
+let loadSeq = 0;
+const PENDING_TTL = 180000;   // 3分すぎた保留は捨てる（通信失敗などで取り残さないため）
+
+function applyPending(list) {
+  const ids = Object.keys(S.pending);
+  if (!ids.length) return list;
+  const now = Date.now();
+  ids.forEach(id => { if (now - S.pending[id].at > PENDING_TTL) delete S.pending[id]; });
+  return list.map(r => {
+    const p = S.pending[r.reportId];
+    if (!p) return r;
+    // サーバーが追いついた／その後さらに誰かが動かした → サーバーの方を信じて保留を外す
+    if (r.status === p.status || r.status !== p.from) { delete S.pending[r.reportId]; return r; }
+    return Object.assign({}, r, p.patch);   // まだ送信前の状態のまま → 送信ずみの状態を見せる
+  });
+}
+
 async function loadReports(silent) {
   if (!GAS_URL) { S.loaded = true; renderAll(); return; }
   if (!silent) loading(true, '読み込み中…');
+  const seq = ++loadSeq;
   try {
     const res = await gasGet({ action: 'getReports' });
+    // もっと新しい読み込みが走っているので、この応答は捨てる（画面は新しい方が更新する）
+    if (seq !== loadSeq) { if (!silent) loading(false); return; }
     if (res.success) {
-      S.reports = res.data || [];
+      S.reports = applyPending(res.data || []);
       S.loaded = true;
       localStorage.setItem('tng_cache', JSON.stringify(S.reports));
       if (res.version && res.version !== EXPECTED_GAS_VERSION) {
@@ -615,9 +642,10 @@ async function loadReports(silent) {
       toast('読み込みエラー: ' + (res.error || ''), 4000);
     }
   } catch (e) {
+    if (seq !== loadSeq) { if (!silent) loading(false); return; }
     toast('通信できませんでした。GitHub PagesのURLで開いていますか？', 4500);
     const c = localStorage.getItem('tng_cache');
-    if (c) { try { S.reports = JSON.parse(c); S.loaded = true; } catch (_) {} }
+    if (c) { try { S.reports = applyPending(JSON.parse(c)); S.loaded = true; } catch (_) {} }
   }
   if (!silent) loading(false);
   renderAll();
@@ -1200,11 +1228,14 @@ async function sendReview(reportId, result) {
   const back = idx >= 0 ? JSON.parse(JSON.stringify(S.reports[idx])) : null;
 
   closeModal();
+  const status = isSc ? (ok ? 'sc_ok' : 'sc_redo') : (ok ? 'done' : 'mgr_redo');
   if (idx >= 0) {
     const r = S.reports[idx], now = new Date().toISOString();
-    r.status = isSc ? (ok ? 'sc_ok' : 'sc_redo') : (ok ? 'done' : 'mgr_redo');
-    if (isSc) { r.scName  = name; r.scAt  = now; r.scComment  = cmt; }
-    else      { r.mgrName = name; r.mgrAt = now; r.mgrComment = cmt; }
+    const patch = isSc ? { status, scName: name,  scAt: now,  scComment: cmt }
+                       : { status, mgrName: name, mgrAt: now, mgrComment: cmt };
+    Object.assign(r, patch);
+    // サーバーの getReports が追いつくまで、この結果を画面に残す（確認待ちに戻らないように）
+    S.pending[String(reportId)] = { status, from: (back ? back.status : ''), patch, at: Date.now() };
     localStorage.setItem('tng_cache', JSON.stringify(S.reports));
     renderAll();
   }
@@ -1214,6 +1245,7 @@ async function sendReview(reportId, result) {
     const res = await gasPost({ action:'reviewReport', reportId, role: isSc ? 'sc' : 'mgr',
                                 name, result, comment: cmt });
     if (!res.success) {
+      delete S.pending[String(reportId)];
       if (idx >= 0 && back) {
         S.reports[idx] = back;
         localStorage.setItem('tng_cache', JSON.stringify(S.reports));
@@ -1224,10 +1256,10 @@ async function sendReview(reportId, result) {
     }
     loadReports(true);          // 裏で最新化（待たない）
   } catch (e) {
-    // 送信できたか分からないので、実際の状態を取り直して画面を合わせる
+    // 送信できたか分からないので、実際の状態を取り直して画面を合わせる。
+    // 保留は残したままにして、サーバーが追いついたら applyPending が外す
     toast('通信が不安定です。最新の状態を確認しています…', 3000);
     await loadReports(true);
-    renderAll();
   }
 }
 
