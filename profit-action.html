@@ -85,6 +85,12 @@ body{background:#f0f2f7;color:#1a1a2e;font-family:'Hiragino Sans','Meiryo',sans-
 .todo li:first-child{border-top:none}
 .todo .num{flex:0 0 20px;height:20px;border-radius:50%;background:#003087;color:#fff;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;margin-top:1px}
 .todo b{color:#c62828}
+.cut{margin-top:10px;background:#fff3e0;border:1.5px solid #fb8c00;border-radius:8px;padding:9px 11px;font-size:12.5px}
+.cut .h{font-weight:800;color:#e65100;margin-bottom:5px}
+.cut table{width:100%;border-collapse:collapse;font-size:12.5px}
+.cut td{padding:3px 2px;border-top:1px dashed #ffcc80}
+.cut td.r{text-align:right;font-weight:800;color:#c62828;white-space:nowrap}
+.cut .sub{color:#666;font-size:11.5px}
 .gain{margin-top:10px;background:#e8f5e9;border-radius:7px;padding:8px 10px;font-size:12.5px;color:#1b5e20;font-weight:700}
 
 /* 一覧表 */
@@ -117,6 +123,9 @@ tr.miss td:first-child{border-left:3px solid #e53935}
 
   <div class="sec-title">② 今週の最優先アクション<span class="sec-note">回収できる金額が大きい順</span></div>
   <div class="top3" id="top3"></div>
+
+  <div class="sec-title">②-2 売上が戻らない分は経費で取り返す<span class="sec-note">未達額を廃棄・人件費・その他経費に割り当てた目安</span></div>
+  <div id="cutPlan"></div>
 
   <div class="sec-title">③ 個店別 原因と打ち手<span class="sec-note">主因ごとにまとめています</span></div>
   <div id="groups"></div>
@@ -563,6 +572,40 @@ const GP_RATE_AVG = (() => {
   return v.length ? v.reduce((a,b)=>a+b,0) / v.length : 0;
 })();
 
+/* 残り日数（いまの時点から月末まで）。経費は残りの日数でしか削れない */
+const DAYS_IN_MONTH = (() => {
+  const y = 2000 + parseInt(CUR_LABEL.month.match(/(\d\d)年/)[1], 10);
+  const m = parseInt(CUR_LABEL.month.match(/年(\d+)月度/)[1], 10);
+  return new Date(y, m, 0).getDate();
+})();
+const DAY_NOW = parseInt(CUR_LABEL.date.match(/\/(\d+)/)[1], 10);
+const REMAIN  = Math.max(1, DAYS_IN_MONTH - DAY_NOW);
+const HOURLY  = 1.3;   // 人件費 1時間あたり（千円）＝時給＋社会保険等の目安。変える時はここ
+
+/* 未達額を経費で取り返す目安
+   ① 廃棄：基準（または見切予算）を超えている分を、残り日数で基準まで戻す
+   ② 残りを 人件費 と その他経費（消耗品・水道光熱など）に予算の比率で割り振る */
+function costPlan(x) {
+  const s = x.s;
+  if (s.diff >= 0) return null;
+  const gap = -s.diff;
+  const benchOver = x.w ? ['aico','op','ff','kitch','dry']
+    .reduce((a,k) => a + Math.max(0, x.w[k] ? x.w[k].diff : 0), 0) : 0;   // 千円/日
+  const mdOverDay = Math.max(0, x.mdO) / DAYS_IN_MONTH;                     // 千円/日
+  const wasteDay  = Math.max(benchOver, mdOverDay);
+  const waste     = Math.min(gap, wasteDay * REMAIN);
+  const rest      = gap - waste;
+  const L = s.laborBudget || 0, O = s.otherExp || 0;
+  const labor = (L + O) ? rest * L / (L + O) : 0;
+  const other = rest - labor;
+  const lRemain = L * REMAIN / DAYS_IN_MONTH, oRemain = O * REMAIN / DAYS_IN_MONTH;
+  return {
+    gap, salesLoss: Math.max(0, -x.fjD), waste, wasteDay: waste / REMAIN,
+    labor, laborHours: labor / REMAIN / HOURLY, laborPct: lRemain ? labor / lRemain * 100 : 0,
+    other, otherDay: other / REMAIN, otherPct: oRemain ? other / oRemain * 100 : 0,
+  };
+}
+
 let curSC = 'all';
 function view() { return curSC === 'all' ? ALL : ALL.filter(x => x.sc === curSC); }
 const yen = n => Math.round(n).toLocaleString();
@@ -593,7 +636,7 @@ function salesTodos(x) {
     const pct = s.nisshu ? perDay / s.nisshu * 100 : 0;
     t.push(`FC収入が予算に <b>${yen(-x.fjD)}千円</b> 足りない。`
          + `<br>→ 取り戻すには <b>日販を +${yen(perDay)}千円/日</b>（月 +${yen(needSales)}千円・日販の${pct.toFixed(0)}%）必要。`
-         + (pct > 10 ? `<br><span style="color:#c62828">※ 日販の${pct.toFixed(0)}%増は今月中には戻せない水準。廃棄の抑制で守りつつ、予算そのものの見直しも議題に。</span>` : ''));
+         + (pct > 10 ? `<br><span style="color:#c62828">※ 日販の${pct.toFixed(0)}%増は今月中には戻せない水準。<b>戻らない分は廃棄・人件費・経費で取り返す</b>（下のオレンジ枠の目安）。</span>` : ''));
   }
   const yoyGap = s.yoy - s.yoyBudget;
   if (yoyGap < 0) {
@@ -634,8 +677,8 @@ function whyText(x) {
   return `${head}。${supTxt} <b>${yen(-d)}千円</b> の未達です。`;
 }
 
-/* 回収見込み：見切超過をベンチまで戻した額（＝すぐ効く額） */
-function recover(x) { return Math.max(0, x.lossWaste); }
+/* 回収見込み：見切超過を残りの日数で予算ペースまで戻した額（過ぎた日の分は戻らない） */
+function recover(x) { return Math.max(0, x.lossWaste) * REMAIN / DAYS_IN_MONTH; }
 
 /* ================================================================
    描画
@@ -652,13 +695,13 @@ function setSC(sc) { curSC = sc; render(); }
 function renderKpis(v) {
   const miss  = v.filter(x => x.s.diff < 0);
   const dSum  = v.reduce((a,x)=>a+x.s.diff, 0);
-  const wSum  = v.reduce((a,x)=>a+Math.max(0,x.mdO), 0);
+  const wSum  = v.reduce((a,x)=>a+recover(x), 0);
   const worse = v.filter(x => x.dLanding != null && x.dLanding < 0).length;
   document.getElementById('kpis').innerHTML = `
     <div class="kpi red"><div class="l">予算未達の店</div><div class="v">${miss.length}<span style="font-size:13px">/${v.length}店</span></div>
       <div class="n">前週より着地が落ちた店 ${worse}店</div></div>
     <div class="kpi red"><div class="l">予算差 合計</div><div class="v">${sg(dSum)}</div><div class="n">千円／月</div></div>
-    <div class="kpi amber"><div class="l">すぐ回収できる額<br><span style="font-size:10px">（見切超過を基準まで戻す）</span></div>
+    <div class="kpi amber"><div class="l">残り${REMAIN}日で回収できる額<br><span style="font-size:10px">（見切超過を予算ペースまで戻す）</span></div>
       <div class="v">${yen(wSum)}</div><div class="n">千円／月</div></div>
     <div class="kpi green"><div class="l">支援金（予算外の上乗せ）</div>
       <div class="v">${yen(v.reduce((a,x)=>a+x.sup,0))}</div><div class="n">千円／月</div></div>`;
@@ -697,7 +740,7 @@ function renderTop3(v) {
       later.push({store:x.s.name, sc:x.sc, amt:x.lossSales,
         txt:'売上・荒利の不足を詰める',
         how:`日販を +${yen(perDay)}千円/日 戻す（日販の${pct.toFixed(0)}%・前年比 ${x.s.yoy.toFixed(1)}% → 予算 ${x.s.yoyBudget.toFixed(1)}%）。`
-           + (pct > 10 ? '<b style="color:#c62828">今月中の全額回収は非現実的</b>。欠品ゼロ・棚替え徹底で下げ止め、予算見直しも議題に'
+           + (pct > 10 ? '<b style="color:#c62828">今月中に売上だけで戻すのは無理</b>。欠品ゼロ・棚替え徹底で下げ止めつつ、<b>届かない分は廃棄と人件費で取り返す</b>（②-2）'
                        : '欠品ゼロと棚替えの実施徹底から')});
     }
   });
@@ -739,12 +782,53 @@ function storeCard(x) {
       </div>
       ${todos.length ? `<ul class="todo">${todos.map((t,i)=>
         `<li><span class="num">${i+1}</span><span>${t}</span></li>`).join('')}</ul>` : ''}
-      ${rec > 0 ? `<div class="gain">💰 見切・廃棄を基準まで戻すと 月 約${yen(rec)}千円 の回収。
+      ${cutBox(x)}
+      ${rec > 0 ? `<div class="gain">💰 見切・廃棄を残り${REMAIN}日で予算ペースまで戻すと 約${yen(rec)}千円 の回収。
         ${s.diff<0 ? (rec >= -s.diff ? 'これだけで未達 ' + yen(-s.diff) + '千円 を<u>全部カバーできます</u>'
                                      : '未達 ' + yen(-s.diff) + '千円 の ' + Math.round(rec/(-s.diff)*100) + '% が埋まります')
                    : '予算達成をさらに上積みできます'}</div>` : ''}
     </div>
   </div>`;
+}
+
+function cutBox(x) {
+  const c = costPlan(x);
+  if (!c) return '';
+  const head = c.salesLoss > 0
+    ? `売上不足で店利益が <b>−${yen(c.salesLoss)}千円</b>。売上が戻らない前提で、未達 <b>${yen(c.gap)}千円</b> を残り${REMAIN}日の経費で取り返す目安：`
+    : `未達 <b>${yen(c.gap)}千円</b> を残り${REMAIN}日の経費で取り返す目安：`;
+  const row = (label, amt, sub) => amt < 0.5 ? '' :
+    `<tr><td>${label}<div class="sub">${sub}</div></td><td class="r">−${yen(amt)}千円</td></tr>`;
+  const warn = c.laborPct > 15
+    ? `<div style="color:#c62828;font-weight:700;margin-top:4px">人件費を残り期間の${c.laborPct.toFixed(0)}%削る水準。経費だけでは厳しいので、売上の下げ止めと両方で詰める。</div>` : '';
+  return `<div class="cut"><div class="h">✂️ 経費で取り返す目安</div>${head}
+    <table>
+      ${row('🍱 廃棄（最優先・今日から）', c.waste, `1日 −${c.wasteDay.toFixed(1)}千円。基準を超えているカテゴリの発注を落とす`)}
+      ${row('👥 人件費（最優先・今週のシフトから）', c.labor, `1日 約${c.laborHours.toFixed(1)}時間減（残り期間の人件費予算の${c.laborPct.toFixed(1)}%）`)}
+      ${row('🧾 消耗品・その他経費', c.other, `1日 −${(c.otherDay*1000).toFixed(0)}円（残り期間のその他経費予算の${c.otherPct.toFixed(1)}%）`)}
+    </table>${warn}</div>`;
+}
+
+function renderCutPlan(v) {
+  const list = v.map(x => ({x, c: costPlan(x)})).filter(o => o.c).sort((a,b) => b.c.gap - a.c.gap);
+  if (!list.length) { document.getElementById('cutPlan').innerHTML = '<div style="font-size:13px">未達の店はありません。</div>'; return; }
+  const sum = k => list.reduce((a,o) => a + o.c[k], 0);
+  document.getElementById('cutPlan').innerHTML = `
+    <div class="cut" style="margin-top:0">
+      <div style="margin-bottom:6px">売上で戻せない分は、そのまま店利益が減ります。<b>廃棄と人件費は額が大きいので、今週中に手を入れてください。</b>
+        残り<b>${REMAIN}日</b>で、未達の合計 <b>${yen(sum('gap'))}千円</b> を取り返す目安です。<br>
+        内訳：廃棄 −${yen(sum('waste'))}千円／人件費 −${yen(sum('labor'))}千円（全店で1日 約${sum('laborHours').toFixed(0)}時間）／その他経費 −${yen(sum('other'))}千円</div>
+      <div class="tbl-wrap"><table id="cutTbl">
+        <thead><tr><th>店名</th><th>SC</th><th>未達</th><th>売上不足の影響</th><th>廃棄<br>1日あたり</th><th>人件費<br>1日あたり</th><th>その他経費<br>月</th></tr></thead>
+        <tbody>${list.map(({x,c}) => `<tr class="miss">
+          <td>${x.s.name}</td><td>${x.sc}</td>
+          <td style="font-weight:700;color:#c62828">−${yen(c.gap)}</td>
+          <td>${c.salesLoss ? '−' + yen(c.salesLoss) : '—'}</td>
+          <td>${c.waste >= 0.5 ? '−' + c.wasteDay.toFixed(1) + '千円' : '—'}</td>
+          <td>${c.labor >= 0.5 ? '約' + c.laborHours.toFixed(1) + '時間' : '—'}</td>
+          <td>${c.other >= 0.5 ? '−' + yen(c.other) + '千円' : '—'}</td></tr>`).join('')}</tbody>
+      </table></div>
+    </div>`;
 }
 
 function renderGroups(v) {
@@ -783,14 +867,15 @@ function renderTable(v) {
 function render() {
   const v = view();
   document.getElementById('subLabel').textContent =
-    `${CUR_LABEL.month} ${CUR_LABEL.date}　${PREV ? '前週＝' + PREV.date : ''}　（自動生成 2026-10-12 11:55）`;
-  renderSC(); renderKpis(v); renderSplit(v); renderTop3(v); renderGroups(v); renderTable(v);
+    `${CUR_LABEL.month} ${CUR_LABEL.date}　${PREV ? '前週＝' + PREV.date : ''}　（自動生成 2026-10-12 12:04）`;
+  renderSC(); renderKpis(v); renderSplit(v); renderTop3(v); renderCutPlan(v); renderGroups(v); renderTable(v);
   document.getElementById('howto').innerHTML =
     `<b>この画面の読み方</b><br>
      予算差は <code>FC収入差 ＋ 支援金 − 見切超過</code> でほぼ説明できます（実データで誤差1千円以内）。<br>
      ・<b>FC収入差</b>＝売上と荒利の結果。戻すのに時間がかかる。<br>
      ・<b>見切超過</b>＝見切処分の予算オーバー。発注と値引きの運用で<b>今週から</b>戻せる。<br>
      ・<b>支援金</b>＝本部支援・厨房支援・雑益追加分。予算に入っていない上乗せ。<br>
+     <b>経費で取り返す目安</b>＝未達額を、①廃棄（基準または見切予算を超えている分を残り日数で戻す）→②残りを人件費とその他経費に予算の比率で割り振ったもの。人件費の時間は1時間${HOURLY*1000}円（時給＋社会保険等）で換算。<br>
      廃棄のカテゴリ別の基準（ベンチ）は AICO 売上の10%、OP 5%、FF 8%、厨房 15%、ドライ 0.3%。<br>
      データは「店利益着地シュミレーション.xlsx」から毎週自動で作り直しています。`;
 }
