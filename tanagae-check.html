@@ -271,6 +271,9 @@ table.mtx td.td-ph:active{background:#d8e9f9}
 .copybox{width:100%;min-height:150px;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:12px}
 
 /* ---------- 店長確認チェック ---------- */
+.storehead{display:flex;align-items:center;gap:8px;margin:16px 4px 8px;font-size:15px}
+.storehead span{font-size:12px;color:var(--ink2)}
+.storehead .btn{margin-left:auto;min-height:44px}
 .confirm{margin-top:12px;background:#fff8e6;border:1.5px solid #f0c66b;border-radius:10px;padding:11px 12px}
 .confirm .ck{display:flex;gap:9px;align-items:flex-start;font-size:12.5px;color:var(--ink);font-weight:500;margin:0}
 .confirm .ck input{width:21px;height:21px;flex:0 0 auto;margin:1px 0 0;accent-color:var(--blue)}
@@ -1163,10 +1166,34 @@ function renderCheck() {
 
   if (!list.length) {
     html += `<div class="card"><div class="empty">${S.checkFilter==='todo'?'確認待ちはありません 🎉':'該当なし'}</div></div>`;
+  } else if (!isSc && S.checkFilter === 'todo') {
+    // 神田の確認待ち：上に「まとめて完了」、下は店ごとにまとめて表示
+    const clean = list.filter(aiClean);
+    html += `<div class="card bulkbar">
+      <div class="hint" style="margin:0 0 8px">写真を見て問題なければ、まとめて完了にできます。</div>
+      ${clean.length ? `<button class="btn ok" style="width:100%;margin-bottom:8px" onclick="bulkDone('clean')">
+        ✅ AIが「問題なし」の ${clean.length}件 をまとめて完了</button>` : ''}
+      <button class="btn ok ghost" style="width:100%" onclick="bulkDone('all')">✅ 確認待ち ${list.length}件 をすべて完了</button>
+    </div>`;
+    const groups = {};
+    list.forEach(r => (groups[r.storeId] = groups[r.storeId] || []).push(r));
+    Object.keys(groups).forEach(sid => {
+      const g = groups[sid], st = storeOf(sid);
+      html += `<div class="storehead">
+        <b>🏪 ${esc(st ? st.short : (g[0].storeName || sid))}</b><span>${g.length}件</span>
+        <button class="btn ok sm" onclick="bulkDone('store','${sid}')">この店を全部完了</button>
+      </div>` + g.map(r => checkCard(r, isSc)).join('');
+    });
   } else {
     html += list.map(r => checkCard(r, isSc)).join('');
   }
   el.innerHTML = html;
+}
+/* AIの下読みで要確認・判定不能・欠品・PC無しが1つもない報告 */
+function aiClean(r) {
+  const ai = r.ai || [];
+  return r.aiStatus !== 'error' && ai.length > 0 &&
+         !ai.some(a => a.flag === 'check' || a.flag === 'unclear' || (a.holes || 0) > 0 || a.pcStatus === 'ng');
 }
 function setCF(v) { S.checkFilter = v; renderCheck(); }
 
@@ -1190,7 +1217,7 @@ function checkCard(r, isSc) {
     ${r.scComment ? `<div class="hint">🧭 SC ${esc(r.scName||'')}：${esc(r.scComment)}</div>` : ''}
     ${r.mgrComment ? `<div class="hint">🏢 神田 ${esc(r.mgrName||'')}：${esc(r.mgrComment)}</div>` : ''}
     <div style="display:flex;gap:8px;margin-top:11px">
-      <button class="btn ok"   style="flex:1" onclick="doReview('${r.reportId}','ok')">✅ 完了</button>
+      <button class="btn ok"   style="flex:1" onclick="${isSc ? `doReview('${r.reportId}','ok')` : `quickDone('${r.reportId}')`}">✅ 完了</button>
       <button class="btn warn" style="flex:1" onclick="doReview('${r.reportId}','redo')">🔁 再確認</button>
     </div>
     ${isSc ? '' : `<button class="btn ghost sm" style="width:100%;margin-top:8px" onclick="openExclude('${r.storeId}','${r.itemId}')">⚙️ 進捗除外にする／解除</button>`}
@@ -1247,13 +1274,42 @@ async function sendReview(reportId, result) {
   if (!name) { toast('氏名を入れてください'); return; }
   if (result === 'redo' && !cmt) { toast('修正箇所のコメントは必須です'); return; }
   localStorage.setItem('tng_check_name', name);
+  closeModal();
+  submitReview(reportId, result, name, cmt);
+}
 
+/* 神田：入力画面なしで即完了 */
+function mgrName() { return localStorage.getItem('tng_check_name') || '神田'; }
+function quickDone(reportId) { submitReview(reportId, 'ok', mgrName(), ''); }
+
+/* 神田：まとめて完了（clean=AI問題なし／all=確認待ち全部／store=その店だけ） */
+async function bulkDone(mode, storeId) {
+  const targets = S.reports.filter(r => r.status === 'sc_ok' &&
+    (mode === 'all' || (mode === 'clean' && aiClean(r)) || (mode === 'store' && String(r.storeId) === String(storeId))));
+  if (!targets.length) { toast('対象がありません'); return; }
+  if (!confirm(targets.length + '件を完了にします。よろしいですか？')) return;
+  const name = mgrName();
+  const backs = targets.map(r => markReview(r.reportId, 'ok', name, ''));
+  renderAll();
+  toast(targets.length + '件を完了にしました（送信中…）', 2500);
+  let ng = 0;
+  for (let i = 0; i < targets.length; i++) {     // GAS側はロックで1件ずつ処理するので順番に送る
+    const id = targets[i].reportId;
+    try {
+      const res = await gasPost({ action:'reviewReport', reportId:id, role:'mgr', name, result:'ok', comment:'' });
+      if (!res.success) { ng++; undoReview(id, backs[i]); }
+    } catch (e) { ng++; }
+  }
+  if (ng) toast(ng + '件は送信できませんでした。最新の状態を確認しています…', 4500);
+  await loadReports(true);
+}
+
+/* 画面を先に更新する。元に戻す用に変更前を返す */
+function markReview(reportId, result, name, cmt) {
   const isSc = S.role === 'sc';
   const ok   = result === 'ok';
   const idx  = S.reports.findIndex(r => String(r.reportId) === String(reportId));
   const back = idx >= 0 ? JSON.parse(JSON.stringify(S.reports[idx])) : null;
-
-  closeModal();
   const status = isSc ? (ok ? 'sc_ok' : 'sc_redo') : (ok ? 'done' : 'mgr_redo');
   if (idx >= 0) {
     const r = S.reports[idx], now = new Date().toISOString();
@@ -1263,20 +1319,31 @@ async function sendReview(reportId, result) {
     // サーバーの getReports が追いつくまで、この結果を画面に残す（確認待ちに戻らないように）
     S.pending[String(reportId)] = { status, from: (back ? back.status : ''), patch, at: Date.now() };
     localStorage.setItem('tng_cache', JSON.stringify(S.reports));
+  }
+  return back;
+}
+function undoReview(reportId, back) {
+  delete S.pending[String(reportId)];
+  const idx = S.reports.findIndex(r => String(r.reportId) === String(reportId));
+  if (idx >= 0 && back) {
+    S.reports[idx] = back;
+    localStorage.setItem('tng_cache', JSON.stringify(S.reports));
     renderAll();
   }
+}
+
+async function submitReview(reportId, result, name, cmt) {
+  const isSc = S.role === 'sc';
+  const ok   = result === 'ok';
+  const back = markReview(reportId, result, name, cmt);
+  renderAll();
   toast(ok ? '完了にしました' : '店長に差し戻しました');
 
   try {
     const res = await gasPost({ action:'reviewReport', reportId, role: isSc ? 'sc' : 'mgr',
                                 name, result, comment: cmt });
     if (!res.success) {
-      delete S.pending[String(reportId)];
-      if (idx >= 0 && back) {
-        S.reports[idx] = back;
-        localStorage.setItem('tng_cache', JSON.stringify(S.reports));
-        renderAll();
-      }
+      undoReview(reportId, back);
       toast('できませんでした: ' + (res.error || ''), 4500);
       return;
     }
