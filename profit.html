@@ -157,6 +157,16 @@ tbody td:nth-child(2){text-align:center}
 .trend-note{font-size:11px;color:#777;line-height:1.6;margin-top:10px}
 .trend-warn{background:#fff3e0;color:#e65100;border-radius:8px;padding:10px 12px;font-size:12px;font-weight:600;margin-bottom:14px}
 /* ===== 値引・AICO対策 ===== */
+.nb-c-row{display:flex;gap:10px;align-items:flex-start;font-size:15px;line-height:1.6;padding:4px 0}
+.nb-c-n{flex:0 0 24px;height:24px;border-radius:50%;background:#e53935;color:#fff;font-size:13px;font-weight:800;display:flex;align-items:center;justify-content:center;margin-top:2px}
+.nb-goal{font-size:13px;color:#555;margin-bottom:6px}.nb-goal b{font-size:17px;color:#2e7d32}
+.nb-more{margin-top:4px;font-size:13px}
+.nb-more summary,.nb-detail>summary{cursor:pointer;min-height:44px;display:flex;align-items:center;font-weight:700;color:#003087}
+.nb-more ul{padding-left:18px;margin:2px 0 4px}.nb-more li{margin-bottom:4px;line-height:1.6}
+.nb-detail{margin-top:6px}.nb-detail>summary{background:#fff;border-radius:10px;padding:0 14px;margin-bottom:12px;box-shadow:0 1px 4px rgba(0,0,0,.08);font-size:14px}
+.nb-say{font-size:14px;margin:0 0 10px;line-height:1.7}
+table.nb-simple{min-width:0;font-size:13px}
+table.nb-simple td,table.nb-simple th{padding:8px 6px}
 .nb-concl{background:#fff;border-left:5px solid #e53935;border-radius:10px;padding:14px 16px;margin-bottom:14px;font-size:13.5px;line-height:1.8;box-shadow:0 1px 4px rgba(0,0,0,.08)}
 .nb-concl-h{font-size:12px;font-weight:800;color:#e53935;margin-bottom:4px}
 .nb-concl-sub{margin-top:6px;font-size:12.5px;color:#5d4037;background:#fff8e1;border-radius:6px;padding:6px 10px}
@@ -181,8 +191,8 @@ table.nb-cmp td,table.nb-cmp th{text-align:center !important}
 .nb-plan.hi{border-top-color:#e53935}.nb-plan.mid{border-top-color:#f57c00}.nb-plan.lo{border-top-color:#2e7d32}
 .nb-plan-name{font-size:15px;font-weight:800;margin-bottom:6px}
 .nb-plan-head{display:flex;flex-wrap:wrap;gap:4px 12px;font-size:12px;color:#555;margin-bottom:8px}
-.nb-scen-sub{font-size:11px;font-weight:600;opacity:.85}
-.nb-scen-btn{line-height:1.35;padding:6px 4px}
+.nb-scen-sub{display:block;font-size:11px;font-weight:600;opacity:.85}
+.nb-scen-btn{line-height:1.35;padding:6px 4px;font-size:15px}
 .lv-sum{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:12px}
 .lv-box{border-radius:10px;padding:10px;text-align:center;border:2px solid}
 .lv-box.go{border-color:#2e7d32;background:#e8f5e9}.lv-box.ok{border-color:#f57c00;background:#fff3e0}.lv-box.stay{border-color:#1565c0;background:#e3f2fd}
@@ -194,9 +204,9 @@ table.nb-cmp td,table.nb-cmp th{text-align:center !important}
 .nb-tag-kc{background:#fff3e0;color:#e65100;border-radius:8px;padding:0 7px;font-size:11px;font-weight:700}
 .nb-tag-nosup{background:#eceff1;color:#546e7a;border-radius:8px;padding:0 7px;font-size:11px;font-weight:700}
 .nb-steps{padding-left:20px;margin:0}
-.nb-steps>li{margin-bottom:9px;font-size:13px}
+.nb-steps>li{margin-bottom:10px;font-size:14px}
 .nb-st-title{font-weight:700;line-height:1.5}
-.nb-st-sub{font-size:12px;color:#666;line-height:1.6}
+.nb-st-sub{font-size:13px;color:#555;line-height:1.6}
 .nb-steps ul{padding-left:16px;margin-top:3px}
 .nb-steps ul li{font-size:12.5px;line-height:1.6;margin-bottom:3px}
 .nb-copy{display:block;width:100%;min-height:44px;margin-top:8px;border-radius:9px;border:1.5px solid #06c755;background:#fff;color:#06c755;font-size:13px;font-weight:700;cursor:pointer}
@@ -221,7 +231,7 @@ table.nb-cmp td,table.nb-cmp th{text-align:center !important}
   <div class="tab-row">
     <button class="tab-btn active" onclick="switchTab('profit')">📊 店利益着地</button>
     <button class="tab-btn" onclick="switchTab('waste')">♻️ 廃棄検証</button>
-    <button class="tab-btn" onclick="switchTab('nebiki')">🏷️ 値引・AICO対策</button>
+    <button class="tab-btn" onclick="switchTab('nebiki')">🏷️ 値引・廃棄 対策</button>
     <button class="tab-btn" onclick="switchTab('trend')">📈 前週対比</button>
   </div>
   <div class="sc-row">
@@ -322,54 +332,29 @@ table.nb-cmp td,table.nb-cmp th{text-align:center !important}
   <div class="nb-scen" id="nbScen"></div>
   <div class="card-grid" id="nbCards"></div>
   <div class="section">
-    <div class="section-title">見切（売変高Ⅲ）の中身（千円/月・売価）</div>
-    <div id="nbSplit"></div>
-  </div>
-  <div class="section">
-    <div class="section-title">AICO本部支援 あり店 vs なし店</div>
-    <div id="nbCompare"></div>
-  </div>
-  <div class="section">
-    <div class="section-title">🏢 AICO本部支援 離脱判定（店ごと）</div>
-    <div id="nbLeave"></div>
-  </div>
-  <div class="section">
-    <div class="section-title">AICO本部支援の推移（週別・千円/月換算）</div>
-    <div id="nbSupTrend"></div>
-  </div>
-  <div class="section">
-    <div class="section-title">🍳 厨房限界突破チャレンジ（導入スケジュールと本部支援）</div>
-    <div id="nbKitchen"></div>
-  </div>
-  <div class="section">
-    <div class="section-title">店舗別 目標と改善額　<span style="font-size:11px;font-weight:400;color:#888">タップで店舗詳細</span></div>
-    <div class="table-wrap"><table><thead>
-      <tr>
-        <th>店名</th><th>担当SC</th>
-        <th>AICO支援<br>/月(千円)</th>
-        <th>AICO<br>廃棄率</th>
-        <th>AICO削減<br>(千円/日)</th>
-        <th>値引<br>(千円/日)<br><span style="font-size:9px;font-weight:400;opacity:.8">日販比</span></th>
-        <th>値引削減<br>(千円/日)</th>
-        <th style="background:#1b5e20">改善額<br>(千円/月)</th>
-        <th id="nbLastHead">見切<br>予算差</th>
-      </tr>
-    </thead><tbody id="nbBody"></tbody></table></div>
-  </div>
-  <div class="section">
-    <div class="section-title">店舗別 行動計画　<span style="font-size:11px;font-weight:400;color:#888">改善額の大きい順・LINEにそのまま貼れます</span></div>
+    <div class="section-title">✅ お店ごとの やること　<span style="font-size:11px;font-weight:400;color:#888">へらせる額が大きい順</span></div>
     <div class="nb-plans" id="nbPlans"></div>
   </div>
-  <div class="note">
-    <strong>値引</strong>＝営業速報 売変高ⅢPSA/D − DEPT速報 累計売変高PSA/D（売価・千円/日）。DEPT別には分けられない。<br>
-    <strong>AICO廃棄率</strong>＝AICO（米飯・調理パン・調理麺・デリカ・デザート・ベーカリー・生鮮品）の売変÷売上。通常運転の目安は10%だが、<strong>段階で下げる</strong>：フェーズ1（10月）支援あり7%・なし5% → フェーズ2（11月・AICO支援離脱）全店5% → フェーズ3（12月〜）全店4%。目標以内の店は先のフェーズへ進めてよい。<br>
-    <strong>値引の目標</strong>＝日販比2.6%（10月度 支援なし7店の平均）。<br>
-    <strong>売価で判断</strong>：この画面の金額はすべて売価（店舗で使い慣れた指標）。精算書（PL）では売価還元法・総平均法で原価に直して計上される。<br>
-    <strong>見切率</strong>＝売変高Ⅲ（売価）×31日÷商品売上。予算は年度予算の見切・処分（原価・売上の3.0%）を、店ごとの原価率（実績の原価÷売価）で売価に戻したもの。<br>
-    <strong>AICO本部支援</strong>＝本部SVレポート（世界一成長する店舗づくり大作戦）の (B)本部支援額（原価）を、(A)の売価÷原価で売価に直して月換算。PDFを LAWSON フォルダに置けば毎週の更新で自動で取り込む。<br>
-    <strong>改善額</strong>＝（いま − 目標）×31日（売価）。<br>
-    <strong>個数</strong>は1個あたりの売価の目安（米飯450円・調理パン250円・調理麺480円・デリカ350円・デザート280円・ベーカリー160円・生鮮品250円）で割った参考値。
+  <div class="section">
+    <div class="section-title">🏢 AICO支援 やめる？ 続ける？</div>
+    <div id="nbLeave"></div>
   </div>
+  <details class="nb-detail"><summary>📊 くわしく見る（数字・グラフ）</summary>
+    <div class="section"><div class="section-title">値引と廃棄の中身</div><div id="nbSplit"></div></div>
+    <div class="section"><div class="section-title">支援あり・なし くらべる</div><div id="nbCompare"></div></div>
+    <div class="section"><div class="section-title">AICO支援の金額（週ごと）</div><div id="nbSupTrend"></div></div>
+    <div class="section"><div class="section-title">🍳 厨房チャレンジ</div><div id="nbKitchen"></div></div>
+    <div class="section"><div class="section-title">お店ごとの数字</div>
+      <div class="table-wrap"><table class="nb-simple"><thead><tr><th>店</th><th>AICO<br>廃棄率</th><th>値引<br>1日</th><th>へらせる<br>/月</th></tr></thead><tbody id="nbBody"></tbody></table></div>
+    </div>
+    <div class="note">
+      <strong>値引</strong>＝お客様に安く売った分。<strong>廃棄</strong>＝売れずにすてた分。<br>
+      <strong>AICO</strong>＝米飯・調理パン・麺・デリカ・デザート・パン・生鮮品。<br>
+      <strong>AICOの目標</strong>：10月 7%（支援あり）・5%（支援なし）→ 11月 5% → 12月から 4%。<br>
+      <strong>値引の目標</strong>：売上の2.6%（支援なしの店の平均）。<br>
+      金額はすべて売価（お店で使う数字）。1日は円、1か月は万円。精算書では原価になる。
+    </div>
+  </details>
 </div>
 
 <!-- =========== TAB 4: 前週対比 =========== -->
@@ -1902,112 +1887,97 @@ function nbPlan(s, scen = nbScen) {
   };
 }
 
-// 行動計画（店長がやること）。html=true で画面用、false で LINE 貼り付け用テキスト
+// ===== 表示のことば・単位（中学生・外国人スタッフにも分かるように。2026-10-16） =====
+const yenD = v => (Math.round(v * 10) * 100).toLocaleString() + '円';      // 千円/日 → 「38,800円」
+const man  = v => {                                                        // 千円/月 → 「62万円」
+  const m = v / 10;
+  return (Math.abs(m) < 10 ? (Math.round(m * 10) / 10) : Math.round(m)).toLocaleString() + '万円';
+};
+const manS = v => (v >= 0 ? '+' : '−') + man(Math.abs(v));
+const pctS = v => (v * 100).toFixed(1) + '%';
+const LV_LABEL = {'離脱推奨':'やめた方が得', '離脱可（要達成）':'やめてもOK', '継続':'続ける', '支援なし':'—'};
+const LV_CLS   = {'離脱推奨':'go', '離脱可（要達成）':'ok', '継続':'stay', '支援なし':''};
+
+// 行動計画（店長がやること）。1行目＝タイトル（大事な数字）、2行目＝補足、くわしく＝細かい手順
 function nbSteps(x, html = true) {
   const b = t => html ? `<b>${t}</b>` : t;
   const steps = [];
+  const s = x.s;
   // ① AICO
   if (x.aCut >= 0.05) {
-    const top = x.depts.filter(d => d.cut >= 0.05).slice(0, 3);
-    const lines = top.map(d =>
-      `${b(d.d)}：1日 約${Math.max(1, Math.round(d.pcs))}個（売価${k1(d.cut)}千円分）減らす（廃棄率 ${pct1(d.rate)}）— ${AICO_DEPT_ACT[d.d] || ''}`);
-    steps.push({icon:'🍙', title:`AICOの発注を減らす：廃棄を1日 ${k1(x.aAct)}千円 → ${k1(x.aGoal)}千円`,
-      sub:`廃棄率 ${pct1(x.aRate)} → 目標 ${pct1(x.aTgt)}（${x.ph.label}${x.ph.hqOn ? (x.hasSup ? '・支援あり店' : '・支援なし店') : ''}の基準）`,
-      lines});
+    const top = x.depts.filter(d => d.cut >= 0.05 && d.pcs >= 0.5).slice(0, 2);
+    steps.push({icon:'🍙',
+      title: top.length ? top.map(d => `${d.d}を1日${Math.max(1, Math.round(d.pcs))}個`).join('、') + ' へらす' : 'AICOの発注をへらす',
+      sub: `AICO廃棄 1日 ${yenD(x.aAct)} → ${yenD(x.aGoal)}（廃棄率 ${pctS(x.aRate)} → ${pctS(x.aTgt)}）`,
+      more: top.map(d => `${d.d}：${AICO_DEPT_ACT[d.d] || ''}`)});
   } else {
-    const nx = x.ph.key < 3 ? PH(x.ph.key + 1) : null;
-    steps.push({icon:'✅', title:`AICOの廃棄は目標（${pct1(x.aTgt)}）以内`,
-      sub:`いまの廃棄率 ${pct1(x.aRate)}。${nx ? `次は${nx.label}の ${pct1(nx.nosup)}（1日 ${k1(x.aSales * nx.nosup)}千円まで）。達成できていれば先に進めてよい` : 'この水準を続ける'}`, lines:[]});
+    steps.push({icon:'✅', title:'AICO廃棄はOK', sub:`廃棄率 ${pctS(x.aRate)}（目標 ${pctS(x.aTgt)}）。発注は今のまま`, more:[]});
   }
   // ② 値引
   if (x.nbCut >= 0.05) {
-    const half = x.nb - x.nbCut / 2;
-    steps.push({icon:'🏷️', title:`値引を減らす：1日 ${k1(x.nb)}千円 → ${k1(x.nbGoal)}千円`,
-      sub:`日販比 ${pct1(x.nbRate)} → 目標 ${pct1(NEBIKI_TGT_RATE)}（支援なし店の平均）`,
-      lines:[
-        `${b('第1段階（最初の2週間）')}：まず1日 ${k1(half)}千円 まで（差の半分）`,
-        `${b('第2段階（3週目から）')}：1日 ${k1(x.nbGoal)}千円 まで`,
-        `値引の開始時刻と値引率を店で1つに決め、全員同じ運用にする（決めた内容をSCに報告）`,
-        `毎日値引が出る品目は「値引で売る」のをやめて${b('発注を減らす')}。値引を減らしても発注がそのままだと廃棄に変わるだけ`,
-      ]});
+    steps.push({icon:'🏷️', title:`値引を1日 ${yenD(x.nbCut)} へらす`,
+      sub:`1日 ${yenD(x.nb)} → ${yenD(x.nbGoal)}（まず2週間で ${yenD(x.nb - x.nbCut / 2)}）`,
+      more:['値引の時間と％を、お店で1つに決める（SCに報告）',
+            '毎日値引が出る商品は、値引ではなく発注をへらす']});
   } else {
-    steps.push({icon:'✅', title:`値引は目標（日販比${pct1(NEBIKI_TGT_RATE)}）以内`,
-      sub:`いまの値引 1日 ${k1(x.nb)}千円（日販比 ${pct1(x.nbRate)}）。この水準を続ける`, lines:[]});
+    steps.push({icon:'✅', title:'値引はOK', sub:`1日 ${yenD(x.nb)}（売上の ${pctS(x.nbRate)}）`, more:[]});
   }
-  // ③ 本部支援
-  const s = x.s;
-  if (x.hasSup) {
-    const lv = leaveCheck(s);
-    steps.push({icon:'🏢', title:`AICO本部支援の離脱判定：${lv.verdict}`,
-      sub: lv.gain > 0
-        ? `支援 約${k0(lv.S)}千円/月 ÷ 離脱後の改善見込み ${k0(lv.gain)}千円/月 ＝ 損益分岐の達成率 ${(lv.be * 100).toFixed(0)}%（${lv.be <= 1 ? `目標の${(lv.be * 100).toFixed(0)}%を達成できれば、支援を外しても損しない` : '目標を全部達成しても支援額に届かない'}）。${HQ_BIND ? '支援中は在庫の担保量が指定され、発注を下方修正できない' : `AICO廃棄だけで見る厳しめ判定は「${lv.verdictA}」`}`
-        : `廃棄・値引はすでに目標以内で、外すと支援 約${k0(lv.S)}千円/月 がそのまま減る`,
-      lines: lv.be > LEAVE_OK ? [`${b('支援は続けた方が得')}。支援を受けながら、条件の範囲で廃棄・値引を下げる`]
-           : [`離脱した後は ${b(`AICO廃棄 ${pct1(PH(2).nosup)}・値引 日販比${pct1(NEBIKI_TGT_RATE)}`)} を目標に、発注を自由に絞る`]});
-  } else {
-    steps.push({icon:'🏢', title:'本部支援なし：廃棄・値引はそのまま店の利益から引かれる',
-      sub: x.gain > 0 ? `①②を達成すると +${k0(x.gain)}千円/月 が店利益に戻る` : '目標以内をキープ', lines:[]});
-  }
-  // ③-2 厨房限界突破チャレンジ（導入店のみ）
+  // ③ 厨房チャレンジ
   const kst = KITCHEN_START[s.name];
   if (kst) {
     const per = kcPeriod(kst), st = kcStatus(kst), k = x.kc;
-    const lines = [];
-    if (k) {
-      const over = k.make - k.makeTgt;
-      lines.push(`いま：販売率 ${pct1(k.rate)}（目標${pct1(KC_RULE.target)}）・厨房販売は前年の${(k.sales / (k.salesPy || 1) * 100).toFixed(0)}%（目標150%）・売変 1日${k1(k.baihen)}千円（うち値引${k1(k.nebiki)}）`);
-      if (over > 0.5) lines.push(`作成高が目標より ${b('1日 ' + k1(over) + '千円 多い')}（実績${k1(k.make)}／目標${k1(k.makeTgt)}）。${b('目標の作成高に合わせる')}`);
-      lines.push(`条件達成なら支援は 1日 約${k1(kcSupportDay(k))}千円（Cn負担増加分の相殺前）。${b(`支援は${per ? per.end : ''}で終わる`)}ので、それまでに販売率${pct1(KC_RULE.target)}へ`);
-    }
-    lines.push(`本部の重点：①推奨SKU以上を作る ②${b('作った後すぐ値引しない')} ③夕方の3回目作成（13〜18時） ④ALiOTに作成登録`);
-    lines.push(`支援の条件：13:00〜17:59にALiOT登録したSKUが、週平均で推奨SKUの80%以上（週ごとに判定・救済なし）`);
-    steps.push({icon:'🍳', title:`厨房限界突破チャレンジ（${kst}開始・${st}）`,
-      sub: per ? `支援の計算は${kst}〜${per.end}、${per.month}の精算書で雑益に計上` : '支援期間は本部資料で確認', lines});
+    const over = k ? k.make - k.makeTgt : 0;
+    steps.push({icon:'🍳',
+      title: k && over > 0.5 ? `厨房：作る量を1日 ${yenD(k.makeTgt)} にもどす` : '厨房：作ったらすぐ値引しない',
+      sub: k ? `作る量 1日 ${yenD(k.make)}／売れた率 ${pctS(k.rate)} → 目標 ${pctS(KC_RULE.target)}`
+             : `${kst}スタート（${st}）。13〜18時に3回目を作る`,
+      more:[`本部の支援は ${per ? per.end : ''} まで。そのあとは全部お店の負担`,
+            '13〜18時に作った商品をALiOTに登録（おすすめ数の80%以上）',
+            '作ったあと、すぐ値引しない']});
   }
-  // ④ 確認
-  steps.push({icon:'📅', title:'毎週月曜に確認する',
-    sub:'この画面の「AICO廃棄率」と「値引/日」を見る。SCは週1回、店長と発注数の変更を確認する', lines:[]});
+  // ④ AICO本部支援
+  if (x.hasSup) {
+    const lv = leaveCheck(s);
+    steps.push({icon:'🏢', title:`AICO支援：${LV_LABEL[lv.verdict]}`,
+      sub:`支援 月${man(lv.S)} ／ やめて へらせる額 月${man(lv.gain)}`,
+      more:[HQ_BIND ? '支援中は在庫の量が決められていて、発注をへらせない' : '',
+            lv.verdict === '継続' ? '支援の方が大きいので、続ける' : 'やめたら、発注を自由にへらして値引・廃棄を目標まで下げる'].filter(Boolean)});
+  }
   return steps;
 }
 
-// AICO本部支援を外すかどうか：外した後（フェーズ2の基準）に目標まで下げた改善額と、失う支援額を比べる
+// AICO本部支援を外すかどうか：外した後（フェーズ2の基準）に目標まで下げた額と、失う支援額を比べる
 function leaveCheck(s) {
   const S = hqMonth(s), xn = nbPlan(s, 2), gain = xn.gain;
   const be = S <= 0 ? 0 : gain > 0 ? S / gain : Infinity;
   const verdict = S <= 0 ? '支援なし' : be <= LEAVE_GO ? '離脱推奨' : be <= LEAVE_OK ? '離脱可（要達成）' : '継続';
   const h = HQ_AICO.stores[s.name];
   const lastWk = h && h.weeks.length ? h.weeks[h.weeks.length - 1][1] * 30 : null;
-  const beA = S <= 0 ? 0 : xn.gainA > 0 ? S / xn.gainA : Infinity;   // 厳しめ：AICO廃棄の削減だけで支援を埋められるか
+  const beA = S <= 0 ? 0 : xn.gainA > 0 ? S / xn.gainA : Infinity;
   const verdictA = S <= 0 ? '支援なし' : beA <= LEAVE_GO ? '離脱推奨' : beA <= LEAVE_OK ? '離脱可（要達成）' : '継続';
   return {S, gain, be, verdict, net: gain - S, gainA: xn.gainA, beA, verdictA, lastWk, cats: h ? h.on : null};
 }
 
 function nbPlanHtml(x) {
   const steps = nbSteps(x, true);
-  return `<div class="nb-plan-head">
-      <span>見切超過 <b class="${x.mdOver > 0 ? 'neg' : 'pos'}">${x.mdOver > 0 ? '+' : ''}${k0(x.mdOver)}</b>千円/月</span>
-      <span>目標達成で <b class="pos">+${k0(x.gain)}</b>千円/月</span>
-      <span>見切率 <b class="${x.mdRate > x.mdBgtRate ? 'neg' : 'pos'}">${pct1(x.mdRate)}</b>（予算${pct1(x.mdBgtRate)}）</span>
-      ${x.hasSup ? `<span>AICO支援 約<b>${k0(x.hq)}</b>千円/月</span>` : '<span class="nb-tag-nosup">AICO支援なし</span>'}
-      ${KITCHEN_START[x.s.name] ? `<span class="nb-tag-kc">厨房CH ${KITCHEN_START[x.s.name]}〜</span>` : ''}
-    </div>
+  const more = steps.flatMap(st => st.more.map(m => `${st.icon} ${m}`));
+  return `<div class="nb-goal">目標までへらすと <b>月 ${manS(x.gain)}</b></div>
     <ol class="nb-steps">${steps.map(st => `<li>
       <div class="nb-st-title">${st.icon} ${st.title}</div>
       <div class="nb-st-sub">${st.sub}</div>
-      ${st.lines.length ? `<ul>${st.lines.map(l => `<li>${l}</li>`).join('')}</ul>` : ''}
     </li>`).join('')}</ol>
-    <button class="nb-copy" onclick="nbCopy('${x.s.name}', this)">📋 LINE用にコピー</button>`;
+    ${more.length ? `<details class="nb-more"><summary>やり方を見る</summary><ul>${more.map(m => `<li>${m}</li>`).join('')}</ul></details>` : ''}
+    <button class="nb-copy" onclick="nbCopy('${x.s.name}', this)">📋 LINEにコピー</button>`;
 }
 
 function nbPlanText(name) {
   const x = nbPlan(PROFIT.find(s => s.name === name));
   const steps = nbSteps(x, false);
-  const out = [`【${name}】値引・AICO 行動計画（${CUR_LABEL.month} ${CUR_LABEL.date}）`,
-    `見切超過 ${x.mdOver > 0 ? '+' : ''}${k0(x.mdOver)}千円/月／目標達成で +${k0(x.gain)}千円/月`, ''];
+  const out = [`【${name}】やること（${CUR_LABEL.date}）`, `目標までへらすと 月 ${manS(x.gain)}`, ''];
   steps.forEach((st, i) => {
-    out.push(`${i + 1}. ${st.title}`);
+    out.push(`${i + 1}. ${st.icon} ${st.title}`);
     out.push(`　${st.sub}`);
-    st.lines.forEach(l => out.push(`　・${l}`));
+    st.more.forEach(l => out.push(`　・${l}`));
   });
   out.push('', 'https://uno0908-star.github.io/sakaguchi-MO-/profit.html#nebiki');
   return out.join('\n');
@@ -2030,145 +2000,106 @@ function nbCopy(name, btn) {
 
 function setNbScen(sc) { nbScen = sc; renderNebiki(); }
 
-// 本部支援の推移（月度ごとの最後の週＋今週）
-function nbSupportTrend(names) {
-  const byMonth = {};
-  HISTORY.forEach(h => {
-    let t = 0, n = 0;
-    names.forEach(nm => { const q = h.stores[nm]; if (q && q.hqs != null) { t += q.hqs; n++; } });
-    if (n) byMonth[h.month] = {month: h.month, date: h.date, tot: t};
-  });
-  const cur = PROFIT.filter(s => names.has(s.name)).reduce((a, s) => a + (s.hqSupport || 0), 0);
-  byMonth[CUR_LABEL.month] = {month: CUR_LABEL.month, date: CUR_LABEL.date, tot: cur};
-  return Object.values(byMonth);
-}
-
 function renderNebiki() {
   const fp = filteredProfit();
   const xs = fp.map(s => nbPlan(s));
   const sum = f => xs.reduce((a, x) => a + f(x), 0);
+  const ph = PH(nbScen);
   const mdAct = sum(x => x.mdAct), mdBgt = sum(x => x.mdBgt), mdOver = mdAct - mdBgt;   // 売価
-  const nbCost = sum(x => x.nb) * MONTH_DAYS;
-  const aCost  = sum(x => x.aAct) * MONTH_DAYS;
-  const other  = Math.max(0, mdAct - nbCost - aCost);
-  const supTot = sum(x => x.hq);
-  const salesTot = sum(x => x.s.sales || 0);
-  const mdRate = salesTot ? mdAct / salesTot : 0, mdBgtRate = salesTot ? mdBgt / salesTot : 0;
-  const supCnt = xs.filter(x => x.hasSup).length;
-  const gain = sum(x => x.gain), gainA = sum(x => x.gainA), gainN = sum(x => x.gainN);
-  const supLoss = sum(x => x.supLoss);
+  const nbCost = sum(x => x.nb) * MONTH_DAYS, aCost = sum(x => x.aAct) * MONTH_DAYS;
+  const other = Math.max(0, mdAct - nbCost - aCost);
+  const gain = sum(x => x.gain), supLoss = sum(x => x.supLoss);
   const nbDay = sum(x => x.nb), nisshu = sum(x => x.s.nisshu);
   const aAct = sum(x => x.aAct), aSales = sum(x => x.aSales);
+  const salesTot = sum(x => x.s.sales || 0);
+  const tot = nbCost + aCost + other || 1;
 
-  // 結論
-  const nbShare = mdAct ? nbCost / mdAct * 100 : 0, aShare = mdAct ? aCost / mdAct * 100 : 0;
+  // ── 結論（3行） ──
   document.getElementById('nbConclusion').innerHTML = `<div class="nb-concl">
-    <div class="nb-concl-h">結論</div>
-    見切処分は予算に対して <b class="neg">${mdOver >= 0 ? '+' : '−'}${k0(Math.abs(mdOver))}千円/月</b> の${mdOver >= 0 ? '超過' : '下回り'}。
-    中身は <b>値引が${nbShare.toFixed(0)}%</b>、<b>AICO廃棄が${aShare.toFixed(0)}%</b>。
-    売上に対して <b class="neg">${pct1(mdRate)}</b>（年度予算を売価に直すと ${pct1(mdBgtRate)}）。<br>
-    ${!PH(nbScen).hqOn
-      ? `${PH(nbScen).label}：AICOの本部支援を外すと <b class="neg">−${k0(supLoss)}千円/月</b>。全店が目標（AICO廃棄${pct1(PH(nbScen).nosup)}・値引 日販比${pct1(NEBIKI_TGT_RATE)}）まで下げると <b class="pos">+${k0(gain)}千円/月</b>、差し引き <b class="${gain - supLoss >= 0 ? 'pos' : 'neg'}">${gain - supLoss >= 0 ? '+' : '−'}${k0(Math.abs(gain - supLoss))}千円/月</b>。`
-      : `${PH(nbScen).label}：全店が目標（AICO廃棄 支援あり${pct1(PH(nbScen).sup)}／なし${pct1(PH(nbScen).nosup)}・値引 日販比${pct1(NEBIKI_TGT_RATE)}）まで下げると <b class="pos">+${k0(gain)}千円/月</b>（AICO +${k0(gainA)}／値引 +${k0(gainN)}）。`}
-    <div class="nb-concl-sub">AICOだけでは足りない。<b>値引を減らす（＝値引前提の発注をやめる）</b>のが一番大きい。
-      目標を全部達成しても見切は売上の <b>${pct1(salesTot ? (mdAct - gain) / salesTot : 0)}</b>。予算の${pct1(mdBgtRate)}まで、あと <b>${k0(Math.max(0, mdAct - gain - mdBgt))}千円/月</b> はFF・厨房・OP・ドライも含めて削る必要がある。</div>
+    <div class="nb-c-row"><span class="nb-c-n">1</span><span>値引と廃棄が、予算より <b class="neg">月 ${manS(mdOver)}</b> 多い</span></div>
+    <div class="nb-c-row"><span class="nb-c-n">2</span><span>いちばん多いのは <b class="neg">値引（${(nbCost / tot * 100).toFixed(0)}%）</b>。AICO廃棄は${(aCost / tot * 100).toFixed(0)}%</span></div>
+    <div class="nb-c-row"><span class="nb-c-n">3</span><span>${ph.hqOn
+      ? `全店が目標までへらすと <b class="pos">月 ${manS(gain)}</b>`
+      : `AICO支援をやめても、目標までへらせば <b class="${gain - supLoss >= 0 ? 'pos' : 'neg'}">月 ${manS(gain - supLoss)}</b>`}</span></div>
   </div>`;
 
-  // シナリオ切替
-  document.getElementById('nbScen').innerHTML = `
-    ${AICO_PHASES.map(p => `<button class="nb-scen-btn ${nbScen === p.key ? 'active' : ''}" onclick="setNbScen(${p.key})">
-      ${p.label.replace('（', '<br><span class="nb-scen-sub">（')}</span><br><span class="nb-scen-sub">AICO ${p.hqOn ? pct1(p.sup) + '／' + pct1(p.nosup) : pct1(p.nosup)}${p.key === curPhaseKey() ? '・今月' : ''}</span></button>`).join('')}`;
+  // ── 月の切り替え ──
+  document.getElementById('nbScen').innerHTML = AICO_PHASES.map(p => `
+    <button class="nb-scen-btn ${nbScen === p.key ? 'active' : ''}" onclick="setNbScen(${p.key})">
+      ${p.from}${p.key === 3 ? '〜' : ''}${p.key === curPhaseKey() ? '（今）' : ''}
+      <span class="nb-scen-sub">AICO ${p.hqOn ? (p.sup * 100).toFixed(0) + '%/' + (p.nosup * 100).toFixed(0) + '%' : (p.nosup * 100).toFixed(0) + '%'}${p.hqOn ? '' : '・支援なし'}</span></button>`).join('');
 
-  // カード
+  // ── 数字4つ ──
   document.getElementById('nbCards').innerHTML = `
-    <div class="card ${mdOver > 0 ? 'red' : 'green'}"><div class="card-label">見切 予算差（売価）</div>
-      <div class="card-value" style="color:${mdOver > 0 ? '#e53935' : '#2e7d32'}">${mdOver > 0 ? '+' : ''}${k0(mdOver)}<span class="card-unit">千円/月</span></div>
-      <div class="card-sub">実績 ${k0(mdAct)} ／ 予算 ${k0(mdBgt)}</div></div>
-    <div class="card ${mdRate > mdBgtRate ? 'red' : 'green'}"><div class="card-label">見切率（売変÷売上）</div>
-      <div class="card-value" style="color:${mdRate > mdBgtRate ? '#e53935' : '#2e7d32'}">${pct1(mdRate)}</div>
-      <div class="card-sub">予算 ${pct1(mdBgtRate)}（年度予算を売価に換算）</div></div>
-    <div class="card amber"><div class="card-label">値引（売価）</div>
-      <div class="card-value" style="color:#e65100">${k1(nbDay)}<span class="card-unit">千円/日</span></div>
-      <div class="card-sub">日販比 ${pct1(nisshu ? nbDay / nisshu : 0)}（目標 ${pct1(NEBIKI_TGT_RATE)}）</div></div>
-    <div class="card amber"><div class="card-label">AICO廃棄（売価）</div>
-      <div class="card-value" style="color:#e65100">${k1(aAct)}<span class="card-unit">千円/日</span></div>
-      <div class="card-sub">廃棄率 ${pct1(aSales ? aAct / aSales : 0)}（通常の目安10%）</div></div>
-    <div class="card blue"><div class="card-label">AICO本部支援</div>
-      <div class="card-value" style="color:#1565c0">${!PH(nbScen).hqOn ? '0' : k0(supTot)}<span class="card-unit">千円/月</span></div>
-      <div class="card-sub">${!PH(nbScen).hqOn ? `いま約${k0(supTot)}千円・${supCnt}店が対象外に` : `${supCnt}/${xs.length}店が対象・本部SVレポート`}</div></div>
-    <div class="card green"><div class="card-label">目標まで下げた時の改善</div>
-      <div class="card-value" style="color:#2e7d32">+${k0(gain)}<span class="card-unit">千円/月</span></div>
-      <div class="card-sub">${!PH(nbScen).hqOn ? `支援減 −${k0(supLoss)} を引くと ${gain - supLoss >= 0 ? '+' : '−'}${k0(Math.abs(gain - supLoss))}` : `AICO +${k0(gainA)}／値引 +${k0(gainN)}`}</div></div>`;
+    <div class="card red"><div class="card-label">値引＋廃棄 予算より</div>
+      <div class="card-value" style="color:#e53935">${manS(mdOver)}<span class="card-unit">/月</span></div></div>
+    <div class="card amber"><div class="card-label">値引 1日</div>
+      <div class="card-value" style="color:#e65100">${yenD(nbDay / (xs.length || 1))}</div>
+      <div class="card-sub">1店平均・目標 売上の${pctS(NEBIKI_TGT_RATE)}</div></div>
+    <div class="card amber"><div class="card-label">AICO廃棄率</div>
+      <div class="card-value" style="color:#e65100">${pctS(aSales ? aAct / aSales : 0)}</div>
+      <div class="card-sub">目標 ${ph.hqOn ? (ph.sup * 100).toFixed(0) + '%/' + (ph.nosup * 100).toFixed(0) + '%' : (ph.nosup * 100).toFixed(0) + '%'}</div></div>
+    <div class="card green"><div class="card-label">目標までへらすと</div>
+      <div class="card-value" style="color:#2e7d32">${manS(gain)}<span class="card-unit">/月</span></div></div>`;
 
-  // 見切の中身
-  const tot = nbCost + aCost + other || 1;
+  // ── お店ごとのやること ──
+  const rows = [...xs].sort((a, b) => b.gain - a.gain);
+  document.getElementById('nbPlans').innerHTML = rows.map(x => `
+    <div class="nb-plan ${x.gain >= 300 ? 'hi' : x.gain >= 100 ? 'mid' : 'lo'}">
+      <div class="nb-plan-name">${x.s.name}<span class="sc-chip" style="margin-left:6px">${x.sc}</span></div>
+      ${nbPlanHtml(x)}
+    </div>`).join('');
+
+  // ── AICO支援 やめる？続ける？ ──
+  const lvRows = xs.filter(x => x.hasSup).map(x => ({x, lv: leaveCheck(x.s)})).sort((p, q) => p.lv.be - q.lv.be);
+  const cnt = v => lvRows.filter(r => r.lv.verdict === v).length;
+  const lvAll = lvRows.reduce((a, r) => a + r.lv.net, 0);
+  document.getElementById('nbLeave').innerHTML = lvRows.length ? `
+    <div class="lv-sum">
+      <div class="lv-box go"><div class="lv-h">やめた方が得</div><div class="lv-n">${cnt('離脱推奨')}<span>店</span></div></div>
+      <div class="lv-box ok"><div class="lv-h">やめてもOK</div><div class="lv-n">${cnt('離脱可（要達成）')}<span>店</span></div></div>
+      <div class="lv-box stay"><div class="lv-h">続ける</div><div class="lv-n">${cnt('継続')}<span>店</span></div></div>
+    </div>
+    <div class="nb-say">${lvRows.length}店ぜんぶやめて目標までへらすと <b class="${lvAll >= 0 ? 'pos' : 'neg'}">月 ${manS(lvAll)}</b>${HQ_AICO.meta.periodTo ? `（今の支援は${HQ_AICO.meta.periodTo}まで → 11月からやめるのがいい）` : ''}</div>
+    <div class="table-wrap"><table class="nb-simple"><thead><tr><th>店</th><th>判定</th><th>支援<br>/月</th><th>やめて<br>へらせる/月</th><th>差</th></tr></thead><tbody>
+      ${lvRows.map(({x, lv}) => `<tr onclick="showStoreDetail('${x.s.name}')">
+        <td>${x.s.name}</td>
+        <td><span class="lv-tag ${LV_CLS[lv.verdict]}">${LV_LABEL[lv.verdict]}</span></td>
+        <td>${man(lv.S)}</td><td class="pos">${man(lv.gain)}</td>
+        <td class="${lv.net >= 0 ? 'pos' : 'neg'}"><b>${manS(lv.net)}</b></td></tr>`).join('')}
+    </tbody></table></div>
+    <div class="nb-mini">へらせる額が支援の2倍以上＝やめた方が得／1.25倍以上＝やめてもOK（がんばれば得）／それより少ない＝続ける。${HQ_BIND ? '支援中は在庫の量が決められていて発注をへらせないため。' : ''}</div>`
+    : '<div class="nb-mini">AICO支援を受けている店はありません。</div>';
+
+  // ── くわしく：見切の中身 ──
   document.getElementById('nbSplit').innerHTML = `
     <div class="nb-bar">
       <i style="width:${nbCost / tot * 100}%;background:#e65100"></i>
       <i style="width:${aCost / tot * 100}%;background:#e53935"></i>
       <i style="width:${other / tot * 100}%;background:#9e9e9e"></i></div>
     <div class="nb-legend">
-      <span><i style="background:#e65100"></i>値引 <b>${k0(nbCost)}</b>千円（${(nbCost / tot * 100).toFixed(0)}%）</span>
-      <span><i style="background:#e53935"></i>AICO廃棄 <b>${k0(aCost)}</b>千円（${(aCost / tot * 100).toFixed(0)}%）</span>
-      <span><i style="background:#9e9e9e"></i>FF・厨房・OP・ドライ <b>${k0(other)}</b>千円</span>
+      <span><i style="background:#e65100"></i>値引 ${man(nbCost)}</span>
+      <span><i style="background:#e53935"></i>AICO廃棄 ${man(aCost)}</span>
+      <span><i style="background:#9e9e9e"></i>そのほか ${man(other)}</span>
     </div>
-    <div class="nb-mini">※ 売変高Ⅲ（売価）${k0(mdAct)}千円/月 の内訳。値引はDEPT別の内訳が出ないため合計のみ。精算書（PL）ではこれが売価還元法・総平均法で原価になる（約${k0(sum(x => x.s.markdownActual))}千円）。</div>`;
+    <div class="nb-mini">1か月の合計（売価）。売上の ${pctS(salesTot ? mdAct / salesTot : 0)}（予算 ${pctS(salesTot ? mdBgt / salesTot : 0)}）。</div>`;
 
-  // 支援あり vs なし
+  // ── くわしく：支援あり vs なし ──
   const grp = f => {
     const g = xs.filter(f);
     const nb = g.reduce((a, x) => a + x.nb, 0), ni = g.reduce((a, x) => a + x.s.nisshu, 0);
     const aa = g.reduce((a, x) => a + x.aAct, 0), as = g.reduce((a, x) => a + x.aSales, 0);
-    return {n: g.length, nbr: ni ? nb / ni : 0, nbAvg: g.length ? nb / g.length : 0,
-            ar: as ? aa / as : 0, sup: g.reduce((a, x) => a + x.hq, 0)};
+    return {n: g.length, nbr: ni ? nb / ni : 0, ar: as ? aa / as : 0};
   };
   const gs = grp(x => x.hasSup), gn = grp(x => !x.hasSup);
-  const nbExtra = gs.n ? (gs.nbr - gn.nbr) * xs.filter(x => x.hasSup).reduce((a, x) => a + x.s.nisshu, 0) * MONTH_DAYS : 0;
   document.getElementById('nbCompare').innerHTML = gs.n && gn.n ? `
-    <div class="table-wrap"><table class="nb-cmp"><thead><tr><th></th><th>店数</th><th>値引<br>日販比</th><th>値引<br>1店平均/日</th><th>AICO<br>廃棄率</th><th>本部支援<br>/月</th></tr></thead><tbody>
-      <tr><td>支援あり</td><td>${gs.n}店</td><td class="neg">${pct1(gs.nbr)}</td><td>${k1(gs.nbAvg)}千円</td><td>${pct1(gs.ar)}</td><td>${k0(gs.sup)}千円</td></tr>
-      <tr><td>支援なし</td><td>${gn.n}店</td><td>${pct1(gn.nbr)}</td><td>${k1(gn.nbAvg)}千円</td><td>${pct1(gn.ar)}</td><td>0</td></tr>
+    <div class="table-wrap"><table class="nb-simple"><thead><tr><th></th><th>店</th><th>値引<br>（売上の）</th><th>AICO<br>廃棄率</th></tr></thead><tbody>
+      <tr><td>支援あり</td><td>${gs.n}</td><td class="neg">${pctS(gs.nbr)}</td><td>${pctS(gs.ar)}</td></tr>
+      <tr><td>支援なし</td><td>${gn.n}</td><td>${pctS(gn.nbr)}</td><td>${pctS(gn.ar)}</td></tr>
     </tbody></table></div>
-    <div class="nb-mini">支援あり店は値引が日販比で <b>${(gs.nbr / (gn.nbr || 1)).toFixed(1)}倍</b>。支援なし店と同じ値引率なら、値引は <b>月 約${k0(nbExtra)}千円</b> 少ない計算で、本部支援 ${k0(gs.sup)}千円/月 ${nbExtra > gs.sup ? 'を上回る' : 'に届かない'}。</div>`
-    : '<div class="nb-mini">この絞り込みでは比較できる店がありません。</div>';
+    <div class="nb-mini">支援ありの店は、値引が <b>${(gs.nbr / (gn.nbr || 1)).toFixed(1)}倍</b>。</div>` : '';
 
-  // AICO本部支援 離脱判定
-  const lvRows = xs.filter(x => x.hasSup).map(x => ({x, lv: leaveCheck(x.s)})).sort((p, q) => p.lv.be - q.lv.be);
-  const lvCnt = v => lvRows.filter(r => r.lv.verdict === v);
-  const lvGo = lvCnt('離脱推奨'), lvOk = lvCnt('離脱可（要達成）'), lvStay = lvCnt('継続');
-  const sumS = rs => rs.reduce((a, r) => a + r.lv.S, 0), sumG = rs => rs.reduce((a, r) => a + r.lv.gain, 0);
-  const lvAll = lvRows.reduce((a, r) => a + r.lv.net, 0);
-  document.getElementById('nbLeave').innerHTML = lvRows.length ? `
-    <div class="nb-concl-sub" style="margin:0 0 10px">${HQ_BIND ? '支援中は在庫の担保量が指定され発注を下げられない。' : ''}支援を受けている${lvRows.length}店のうち <b>${lvGo.length + lvOk.length}店は離脱した方が得</b>。
-      ${lvRows.length}店すべて外して目標まで下げると、差し引き <b class="${lvAll >= 0 ? 'pos' : 'neg'}">${lvAll >= 0 ? '+' : '−'}${k0(Math.abs(lvAll))}千円/月</b>。
-      ${HQ_AICO.meta.periodTo ? `今の支援の計算は <b>${HQ_AICO.meta.periodTo}まで</b>なので、11月から外すのが区切りがよい。` : ''}</div>
-    <div class="lv-sum">
-      <div class="lv-box go"><div class="lv-h">離脱推奨</div><div class="lv-n">${lvGo.length}<span>店</span></div><div class="lv-s">支援 −${k0(sumS(lvGo))} ／ 改善 +${k0(sumG(lvGo))}</div></div>
-      <div class="lv-box ok"><div class="lv-h">離脱可（要達成）</div><div class="lv-n">${lvOk.length}<span>店</span></div><div class="lv-s">支援 −${k0(sumS(lvOk))} ／ 改善 +${k0(sumG(lvOk))}</div></div>
-      <div class="lv-box stay"><div class="lv-h">継続</div><div class="lv-n">${lvStay.length}<span>店</span></div><div class="lv-s">支援 −${k0(sumS(lvStay))} ／ 改善 +${k0(sumG(lvStay))}</div></div>
-    </div>
-    <div class="table-wrap"><table><thead><tr><th>店名</th><th>判定</th><th>損益分岐<br>達成率</th><th>AICO支援<br>/月</th><th>直近週<br>/月換算</th><th>離脱後の<br>改善見込/月</th><th>差し引き<br>/月</th><th>${HQ_BIND ? '参考：AICO<br>廃棄だけ' : '厳しめ判定<br>(AICO廃棄だけ)'}</th></tr></thead><tbody>
-      ${lvRows.map(({x, lv}) => `<tr onclick="showStoreDetail('${x.s.name}')">
-        <td>${x.s.name}</td>
-        <td><span class="lv-tag ${lv.verdict === '離脱推奨' ? 'go' : lv.verdict === '継続' ? 'stay' : 'ok'}">${lv.verdict}</span></td>
-        <td><strong>${isFinite(lv.be) ? (lv.be * 100).toFixed(0) + '%' : '—'}</strong></td>
-        <td>${k0(lv.S)}</td>
-        <td class="${lv.lastWk != null && lv.lastWk < lv.S ? 'neg' : ''}">${lv.lastWk == null ? '—' : k0(lv.lastWk)}</td>
-        <td class="pos">+${k0(lv.gain)}</td>
-        <td class="${lv.net >= 0 ? 'pos' : 'neg'}"><strong>${lv.net >= 0 ? '+' : '−'}${k0(Math.abs(lv.net))}</strong></td>
-        <td><span class="lv-tag ${lv.verdictA === '離脱推奨' ? 'go' : lv.verdictA === '継続' ? 'stay' : 'ok'}">${lv.verdictA}</span><div class="tot-diff" style="color:#888">${isFinite(lv.beA) ? (lv.beA * 100).toFixed(0) + '%' : '—'}</div></td></tr>`).join('')}
-    </tbody></table></div>
-    <div class="nb-mini">
-      <b>判定のしかた</b>：損益分岐の達成率 ＝ 失う支援額 ÷ 離脱後に目標（AICO廃棄${pct1(PH(2).nosup)}・値引 日販比${pct1(NEBIKI_TGT_RATE)}）まで下げた改善額。
-      <b>${(LEAVE_GO * 100).toFixed(0)}%以下＝離脱推奨</b>（目標の半分の達成で元が取れる）／<b>${(LEAVE_OK * 100).toFixed(0)}%以下＝離脱可</b>（8割の達成が必要）／それ以上＝継続（支援の方が大きい）。<br>
-      ${HQ_BIND
-        ? `<b>支援中の縛り</b>：在庫の担保量が指定されていて<b>発注を下方修正できない</b>。値引・廃棄が多いのはこの縛りのため（支援あり店の値引は支援なし店の約1.7倍）。離脱すれば値引も減らせるので、この判定（値引込み）を正式とする。右端はAICO廃棄だけで埋めた場合の参考値。<br>`
-        : `<b>厳しめ判定</b>：値引は支援を続けたままでも減らせる可能性があるので、AICO廃棄の削減（${pct1(PH(2).nosup)}まで）だけで支援額を埋められるかも並べた。両方とも「離脱推奨」の店は迷わず外してよい。<br>`}
-      支援額は本部SVレポート(B)の月換算。直近週は(A)概算×30で、<span class="neg">赤</span>は支援が減ってきている店。支援額・改善見込みとも売価（支援は(A)の売価÷原価で換算）。
-    </div>`
-    : '<div class="nb-mini">この絞り込みにAICO本部支援を受けている店はありません。</div>';
-
-  // 支援の推移（本部SVレポートの(A)概算 週別。売価/日×30＝月換算）
+  // ── くわしく：支援の推移 ──
   const wkLabels = (Object.values(HQ_AICO.stores)[0] || {weeks: []}).weeks.map(w => w[0]);
   if (wkLabels.length) {
     const nm = new Set(fp.map(s => s.name));
@@ -2176,67 +2107,36 @@ function renderNebiki() {
       .filter(([n]) => nm.has(n)).reduce((a, [, h]) => a + (h.weeks[i] ? h.weeks[i][1] : 0), 0) * 30}));
     const mx = Math.max(1, ...tr.map(t => t.tot));
     const peak = tr.reduce((a, t) => t.tot > a.tot ? t : a, tr[0]), last = tr[tr.length - 1];
-    const m = HQ_AICO.meta;
     document.getElementById('nbSupTrend').innerHTML = tr.map(t => `
       <div class="nb-tr-row"><span class="nb-tr-l">${t.lb}</span>
         <span class="nb-tr-bar"><i style="width:${t.tot / mx * 100}%"></i></span>
-        <span class="nb-tr-v">${k0(t.tot)}</span></div>`).join('') +
-      `<div class="nb-mini">直近（${last.lb}）は ${k0(last.tot)}千円/月で、ピーク（${peak.lb}）から <b>${last.tot < peak.tot ? '−' : '+'}${Math.abs((last.tot / (peak.tot || 1) - 1) * 100).toFixed(0)}%</b>。
-        ${m.periodFrom ? `本部支援の期間は <b>${m.periodFrom}〜${m.periodTo}</b>（${m.fixDate}確定）。` : ''}<br>
-        ※ 千円/月換算＝(A)概算本部支援額 売価(日)×30。(A)は単週の概算で、実際の計上額（B）とは異なる。出典：${m.file || '—'}（${m.sent || ''}配信）</div>`;
+        <span class="nb-tr-v">${man(t.tot)}</span></div>`).join('') +
+      `<div class="nb-mini">月あたり。いちばん多い週（${peak.lb}）から <b>${Math.abs((last.tot / (peak.tot || 1) - 1) * 100).toFixed(0)}% ${last.tot < peak.tot ? 'へった' : 'ふえた'}</b>。支援は${HQ_AICO.meta.periodTo || ''}まで。</div>`;
   } else {
-    document.getElementById('nbSupTrend').innerHTML = '<div class="nb-mini">本部SVレポートが取り込まれていません。</div>';
+    document.getElementById('nbSupTrend').innerHTML = '<div class="nb-mini">本部のレポートがまだありません。</div>';
   }
 
-  // 厨房限界突破チャレンジ（導入スケジュール＋実績）
+  // ── くわしく：厨房チャレンジ ──
   const kcRows = xs.filter(x => KITCHEN_START[x.s.name])
     .sort((p, q) => md2n(KITCHEN_START[p.s.name]) - md2n(KITCHEN_START[q.s.name]));
-  const kcSupTot = kcRows.reduce((a, x) => a + kcSupportDay(x.kc), 0);
   document.getElementById('nbKitchen').innerHTML = kcRows.length ? `
-    <div class="table-wrap"><table><thead><tr><th>店名</th><th>開始</th><th>状況</th><th>支援の<br>計算終了</th>
-      <th>作成高<br>実績/目標</th><th>厨房販売<br>前年比</th><th>売変<br>(うち値引)</th><th>販売率<br>目標75%</th><th>支援見込<br>(千円/日)</th></tr></thead><tbody>
+    <div class="table-wrap"><table class="nb-simple"><thead><tr><th>店</th><th>スタート</th><th>支援は<br>いつまで</th><th>売れた率<br>目標75%</th></tr></thead><tbody>
       ${kcRows.map(x => { const k = x.kc, st = KITCHEN_START[x.s.name], per = kcPeriod(st), status = kcStatus(st);
-        return `<tr onclick="showStoreDetail('${x.s.name}')">
-        <td>${x.s.name}</td><td>${st}</td>
-        <td><span class="kc-st kc-${status === '実施中' ? 'on' : status === '開始前' ? 'pre' : 'end'}">${status}</span></td>
-        <td>${per ? per.end + '<div class="tot-diff" style="color:#888">' + per.month + '計上</div>' : '—'}</td>
-        ${k ? `<td class="${k.make > k.makeTgt + 0.5 ? 'neg' : ''}">${k1(k.make)} / ${k1(k.makeTgt)}</td>
-          <td class="${k.sales / (k.salesPy || 1) >= KC_RULE.yoyTarget ? 'pos' : ''}">${(k.sales / (k.salesPy || 1) * 100).toFixed(0)}%</td>
-          <td class="neg">${k1(k.baihen)}<div class="tot-diff" style="color:#888">${k1(k.nebiki)}</div></td>
-          <td class="${k.rate >= KC_RULE.target ? 'pos' : 'neg'}">${pct1(k.rate)}</td>
-          <td>${k1(kcSupportDay(k))}</td>`
-        : '<td colspan="5" style="text-align:center;color:#999">実績データなし</td>'}</tr>`; }).join('')}
+        return `<tr onclick="showStoreDetail('${x.s.name}')"><td>${x.s.name}</td>
+          <td>${st} <span class="kc-st kc-${status === '実施中' ? 'on' : status === '開始前' ? 'pre' : 'end'}">${status === '実施中' ? '中' : status === '開始前' ? 'まだ' : '終わり'}</span></td>
+          <td>${per ? per.end : '—'}</td>
+          <td class="${k ? (k.rate >= KC_RULE.target ? 'pos' : 'neg') : ''}">${k ? pctS(k.rate) : '—'}</td></tr>`; }).join('')}
     </tbody></table></div>
-    <div class="nb-mini">
-      <b>支援のしくみ</b>：13〜18時の作成SKUが週平均で推奨の80%以上の週だけ、販売率80%を下回った分を10%まで本部が負担（ここでは売価で表示。精算書には原価50%で雑益計上）。Cn負担の増加分は相殺され、雑益に計上。<br>
-      <b>支援は期間限定</b>：開始週ごとに 10/19・11/16・12/14 で計算が終わる。<b>終わった後は厨房の売変がそのまま店の負担</b>になるので、期間中に販売率75%（目標）まで上げておく。<br>
-      本部の重点のひとつが<b>「作成後の即値引をしない」</b>。値引を減らす方針と同じ方向。<br>
-      支援見込＝条件達成時の上限の目安（売価・Cn相殺前）。実績は ${KITCHEN_CH.meta.file || '—'}（千円/日・売価）。取組中の支援 合計 約${k1(kcSupTot)}千円/日。
-    </div>`
-    : '<div class="nb-mini">この絞り込みに厨房チャレンジの導入店はありません。</div>';
+    <div class="nb-mini">支援が終わったら、残った分は全部お店の負担。それまでに売れた率75%へ。</div>` : '';
 
-  // 店舗別テーブル
-  const rows = [...xs].sort((a, b) => (!PH(nbScen).hqOn ? a.net - b.net : b.gain - a.gain));
+  // ── くわしく：店ごとの数字 ──
   document.getElementById('nbBody').innerHTML = rows.map(x => `
     <tr onclick="showStoreDetail('${x.s.name}')">
-      <td>${x.s.name}</td><td><span class="sc-chip">${x.sc}</span></td>
-      <td>${x.hasSup ? k0(x.hq) : '<span style="color:#999">なし</span>'}${KITCHEN_START[x.s.name] ? '<div class="tot-diff" style="color:#e65100">厨房' + KITCHEN_START[x.s.name] + '〜</div>' : ''}</td>
-      <td class="${x.aRate > x.aTgt ? 'neg' : 'pos'}">${pct1(x.aRate)}<div class="tot-diff" style="color:#888">目標${pct1(x.aTgt)}</div></td>
-      <td>${x.aCut >= 0.05 ? '−' + k1(x.aCut) : '—'}</td>
-      <td class="${x.nbRate > NEBIKI_TGT_RATE ? 'neg' : 'pos'}">${k1(x.nb)}<div class="tot-diff" style="color:#888">${pct1(x.nbRate)}</div></td>
-      <td>${x.nbCut >= 0.05 ? '−' + k1(x.nbCut) : '—'}</td>
-      <td class="pos"><strong>+${k0(x.gain)}</strong></td>
-      ${!PH(nbScen).hqOn ? `<td class="${x.net >= 0 ? 'pos' : 'neg'}"><strong>${x.net >= 0 ? '+' : '−'}${k0(Math.abs(x.net))}</strong></td>` : `<td class="${x.mdOver > 0 ? 'neg' : 'pos'}">${x.mdOver > 0 ? '+' : ''}${k0(x.mdOver)}</td>`}
+      <td>${x.s.name}</td>
+      <td class="${x.aRate > x.aTgt ? 'neg' : 'pos'}">${pctS(x.aRate)}<div class="tot-diff" style="color:#888">目標${pctS(x.aTgt)}</div></td>
+      <td class="${x.nbRate > NEBIKI_TGT_RATE ? 'neg' : 'pos'}">${yenD(x.nb)}<div class="tot-diff" style="color:#888">${pctS(x.nbRate)}</div></td>
+      <td class="pos"><b>${manS(x.gain)}</b></td>
     </tr>`).join('');
-  document.getElementById('nbLastHead').innerHTML = !PH(nbScen).hqOn
-    ? '支援減を<br>引いた差し引き' : '見切<br>予算差';
-
-  // 行動計画カード
-  document.getElementById('nbPlans').innerHTML = rows.map(x => `
-    <div class="nb-plan ${x.gain >= 200 ? 'hi' : x.gain >= 50 ? 'mid' : 'lo'}">
-      <div class="nb-plan-name">${x.s.name}<span class="sc-chip" style="margin-left:6px">${x.sc}</span></div>
-      ${nbPlanHtml(x)}
-    </div>`).join('');
 }
 
 // ===================================================================
