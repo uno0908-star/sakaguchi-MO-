@@ -1825,7 +1825,10 @@ function curPhaseKey() {   // 表示中の月度から今のフェーズを決�
   return fy <= 1 ? 1 : fy === 2 ? 2 : 3;
 }
 // AICO本部支援 離脱判定のしきい値：損益分岐の達成率（支援額 ÷ 離脱後に目標まで下げた改善額）
-const LEAVE_GO = 0.5, LEAVE_OK = 0.8;   // 50%以下＝離脱推奨／80%以下＝離脱可（要達成）／それ以上＝継続
+const LEAVE_GO = 0.5, LEAVE_OK = 0.8;
+// 支援を受けている間の縛り：在庫の担保量が指定されていて発注を下方修正できない（2026-10-16 神田さん確認）
+//   → 値引・廃棄が多いのは縛りのせい。離脱すれば値引も減らせる前提の「通常判定」を正式とする
+const HQ_BIND = true;   // 50%以下＝離脱推奨／80%以下＝離脱可（要達成）／それ以上＝継続
 const NEBIKI_TGT_RATE = 0.026;  // 値引の目標（日販比）＝10月度 支援なし7店の平均
 const COST_RATE  = 0.7;         // 値引・廃棄の原価換算（着地Excelの売価還元法70%）
 const MONTH_DAYS = 31;          // 着地Excelの月換算に合わせる
@@ -1928,7 +1931,7 @@ function nbSteps(x, html = true) {
     const lv = leaveCheck(s);
     steps.push({icon:'🏢', title:`AICO本部支援の離脱判定：${lv.verdict}`,
       sub: lv.gain > 0
-        ? `支援 約${k0(lv.S)}千円/月 ÷ 離脱後の改善見込み ${k0(lv.gain)}千円/月 ＝ 損益分岐の達成率 ${(lv.be * 100).toFixed(0)}%（${lv.be <= 1 ? `目標の${(lv.be * 100).toFixed(0)}%を達成できれば、支援を外しても損しない` : '目標を全部達成しても支援額に届かない'}）。AICO廃棄だけで見る厳しめ判定は「${lv.verdictA}」`
+        ? `支援 約${k0(lv.S)}千円/月 ÷ 離脱後の改善見込み ${k0(lv.gain)}千円/月 ＝ 損益分岐の達成率 ${(lv.be * 100).toFixed(0)}%（${lv.be <= 1 ? `目標の${(lv.be * 100).toFixed(0)}%を達成できれば、支援を外しても損しない` : '目標を全部達成しても支援額に届かない'}）。${HQ_BIND ? '支援中は在庫の担保量が指定され、発注を下方修正できない' : `AICO廃棄だけで見る厳しめ判定は「${lv.verdictA}」`}`
         : `廃棄・値引はすでに目標以内で、外すと支援 約${k0(lv.S)}千円/月 がそのまま減る`,
       lines: lv.be > LEAVE_OK ? [`${b('支援は続けた方が得')}。支援を受けながら、条件の範囲で廃棄・値引を下げる`]
            : [`離脱した後は ${b(`AICO廃棄 ${pct1(PH(2).nosup)}・値引 日販比${pct1(NEBIKI_TGT_RATE)}`)} を目標に、発注を自由に絞る`]});
@@ -2125,13 +2128,17 @@ function renderNebiki() {
   const lvCnt = v => lvRows.filter(r => r.lv.verdict === v);
   const lvGo = lvCnt('離脱推奨'), lvOk = lvCnt('離脱可（要達成）'), lvStay = lvCnt('継続');
   const sumS = rs => rs.reduce((a, r) => a + r.lv.S, 0), sumG = rs => rs.reduce((a, r) => a + r.lv.gain, 0);
+  const lvAll = lvRows.reduce((a, r) => a + r.lv.net, 0);
   document.getElementById('nbLeave').innerHTML = lvRows.length ? `
+    <div class="nb-concl-sub" style="margin:0 0 10px">${HQ_BIND ? '支援中は在庫の担保量が指定され発注を下げられない。' : ''}支援を受けている${lvRows.length}店のうち <b>${lvGo.length + lvOk.length}店は離脱した方が得</b>。
+      ${lvRows.length}店すべて外して目標まで下げると、差し引き <b class="${lvAll >= 0 ? 'pos' : 'neg'}">${lvAll >= 0 ? '+' : '−'}${k0(Math.abs(lvAll))}千円/月</b>。
+      ${HQ_AICO.meta.periodTo ? `今の支援の計算は <b>${HQ_AICO.meta.periodTo}まで</b>なので、11月から外すのが区切りがよい。` : ''}</div>
     <div class="lv-sum">
       <div class="lv-box go"><div class="lv-h">離脱推奨</div><div class="lv-n">${lvGo.length}<span>店</span></div><div class="lv-s">支援 −${k0(sumS(lvGo))} ／ 改善 +${k0(sumG(lvGo))}</div></div>
       <div class="lv-box ok"><div class="lv-h">離脱可（要達成）</div><div class="lv-n">${lvOk.length}<span>店</span></div><div class="lv-s">支援 −${k0(sumS(lvOk))} ／ 改善 +${k0(sumG(lvOk))}</div></div>
       <div class="lv-box stay"><div class="lv-h">継続</div><div class="lv-n">${lvStay.length}<span>店</span></div><div class="lv-s">支援 −${k0(sumS(lvStay))} ／ 改善 +${k0(sumG(lvStay))}</div></div>
     </div>
-    <div class="table-wrap"><table><thead><tr><th>店名</th><th>判定</th><th>損益分岐<br>達成率</th><th>AICO支援<br>/月</th><th>直近週<br>/月換算</th><th>離脱後の<br>改善見込/月</th><th>差し引き<br>/月</th><th>厳しめ判定<br>(AICO廃棄だけ)</th></tr></thead><tbody>
+    <div class="table-wrap"><table><thead><tr><th>店名</th><th>判定</th><th>損益分岐<br>達成率</th><th>AICO支援<br>/月</th><th>直近週<br>/月換算</th><th>離脱後の<br>改善見込/月</th><th>差し引き<br>/月</th><th>${HQ_BIND ? '参考：AICO<br>廃棄だけ' : '厳しめ判定<br>(AICO廃棄だけ)'}</th></tr></thead><tbody>
       ${lvRows.map(({x, lv}) => `<tr onclick="showStoreDetail('${x.s.name}')">
         <td>${x.s.name}</td>
         <td><span class="lv-tag ${lv.verdict === '離脱推奨' ? 'go' : lv.verdict === '継続' ? 'stay' : 'ok'}">${lv.verdict}</span></td>
@@ -2145,7 +2152,9 @@ function renderNebiki() {
     <div class="nb-mini">
       <b>判定のしかた</b>：損益分岐の達成率 ＝ 失う支援額 ÷ 離脱後に目標（AICO廃棄${pct1(PH(2).nosup)}・値引 日販比${pct1(NEBIKI_TGT_RATE)}）まで下げた改善額。
       <b>${(LEAVE_GO * 100).toFixed(0)}%以下＝離脱推奨</b>（目標の半分の達成で元が取れる）／<b>${(LEAVE_OK * 100).toFixed(0)}%以下＝離脱可</b>（8割の達成が必要）／それ以上＝継続（支援の方が大きい）。<br>
-      <b>厳しめ判定</b>：値引は支援を続けたままでも減らせる可能性があるので、AICO廃棄の削減（${pct1(PH(2).nosup)}まで）だけで支援額を埋められるかも並べた。両方とも「離脱推奨」の店は迷わず外してよい。<br>
+      ${HQ_BIND
+        ? `<b>支援中の縛り</b>：在庫の担保量が指定されていて<b>発注を下方修正できない</b>。値引・廃棄が多いのはこの縛りのため（支援あり店の値引は支援なし店の約1.7倍）。離脱すれば値引も減らせるので、この判定（値引込み）を正式とする。右端はAICO廃棄だけで埋めた場合の参考値。<br>`
+        : `<b>厳しめ判定</b>：値引は支援を続けたままでも減らせる可能性があるので、AICO廃棄の削減（${pct1(PH(2).nosup)}まで）だけで支援額を埋められるかも並べた。両方とも「離脱推奨」の店は迷わず外してよい。<br>`}
       支援額は本部SVレポート(B)の月換算。直近週は(A)概算×30で、<span class="neg">赤</span>は支援が減ってきている店。改善見込みは原価（×31日×70%）。
     </div>`
     : '<div class="nb-mini">この絞り込みにAICO本部支援を受けている店はありません。</div>';
