@@ -1939,7 +1939,9 @@ function nbSteps(x, html = true) {
   if (x.hasSup) {
     const lv = leaveCheck(s);
     steps.push({icon:'🏢', title:`AICO支援：${LV_LABEL[lv.verdict]}`,
-      sub:`支援 月${man(lv.S)} ／ やめて へらせる額 月${man(lv.gain)}`,
+      sub: lv.verdict === '離脱可（要達成）'
+        ? `やめるなら ${b('1日 ' + yenD(lv.S / MONTH_DAYS) + ' 以上')}へらさないと損（支援 月${man(lv.S)}）`
+        : `支援 月${man(lv.S)} ／ やめて へらせる額 月${man(lv.gain)}`,
       more:[HQ_BIND ? '支援中は在庫の量が決められていて、発注をへらせない' : '',
             lv.verdict === '継続' ? '支援の方が大きいので、続ける' : 'やめたら、発注を自由にへらして値引・廃棄を目標まで下げる'].filter(Boolean)});
   }
