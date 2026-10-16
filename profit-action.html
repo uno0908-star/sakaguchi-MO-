@@ -707,7 +707,13 @@ function supportTodo(x) {
   const hs = HQ_AICO.stores[x.s.name];   // 本部SVレポートの(B)を月換算。無ければ着地Excel
   const h = hs ? hs.b / (HQ_AICO.meta.bDays || 21) * 30 : (x.s.hqSupport || 0);
   if (h <= 0) return [];
-  return [`11月からAICOの本部支援 <b>約${yen(h)}千円/月</b> がなくなる想定。AICO廃棄は5%・値引は日販比${(NEBIKI_TGT_RATE * 100).toFixed(1)}%まで下げて埋める。`];
+  // 離脱判定（profit.html の leaveCheck と同じ考え方）：離脱後 AICO5%・値引目標まで下げた改善額と比べる
+  const aico = x.w ? Math.max(0, x.w.aico.actual - (x.w.aico.sales || 0) * 0.05) : 0;
+  const gain = (aico + nebikiCut(x.s)) * MONTH_DAYS * COST_RATE;
+  const be = gain > 0 ? h / gain : Infinity;
+  const v = be <= 0.5 ? '離脱推奨' : be <= 0.8 ? '離脱可（要達成）' : '継続';
+  return [`AICO本部支援 <b>約${yen(h)}千円/月</b> の離脱判定：<b>${v}</b>（損益分岐の達成率 ${isFinite(be) ? (be * 100).toFixed(0) + '%' : '—'}・離脱後の改善見込み +${yen(gain)}千円/月）。`
+    + `<br>→ ${v === '継続' ? '支援を受けながら、条件の範囲で廃棄・値引を下げる' : '離脱後はAICO廃棄5%・値引 日販比' + (NEBIKI_TGT_RATE * 100).toFixed(1) + '%を目標に発注を絞る'}（<a href="profit.html#nebiki">判定表</a>）`];
 }
 
 function kitchenTodo(x) {
@@ -939,7 +945,7 @@ function renderTable(v) {
 function render() {
   const v = view();
   document.getElementById('subLabel').textContent =
-    `${CUR_LABEL.month} ${CUR_LABEL.date}　${PREV ? '前週＝' + PREV.date : ''}　（自動生成 2026-10-16 13:02）`;
+    `${CUR_LABEL.month} ${CUR_LABEL.date}　${PREV ? '前週＝' + PREV.date : ''}　（自動生成 2026-10-16 13:36）`;
   renderSC(); renderKpis(v); renderSplit(v); renderTop3(v); renderCutPlan(v); renderGroups(v); renderTable(v);
   document.getElementById('howto').innerHTML =
     `<b>この画面の読み方</b><br>
