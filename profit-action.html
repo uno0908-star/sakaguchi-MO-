@@ -104,6 +104,15 @@ tr.miss td:first-child{border-left:3px solid #e53935}
 .note{font-size:11.5px;color:#666;background:#fff;border-radius:9px;padding:11px 13px;margin-top:14px;box-shadow:0 1px 4px rgba(0,0,0,.06)}
 .note code{background:#f2f4f8;padding:1px 5px;border-radius:3px;font-size:11px}
 
+/* スマホ：ヘッダーを固定しない・SCは1行で横スクロール */
+@media(max-width:640px){
+  .top-bar{position:static;padding:8px 12px;box-shadow:none}
+  .top-bar h1{font-size:14px}
+  .sc-row{flex-wrap:nowrap;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none}
+  .sc-row::-webkit-scrollbar{display:none}
+  #scRow{display:flex;gap:6px;flex-wrap:nowrap}
+  .sc-btn,.sc-label{flex:0 0 auto;white-space:nowrap}
+}
 @media print{.top-bar{position:static}.sc-row,.back{display:none}.store{break-inside:avoid}}
 </style>
 </head>
@@ -958,7 +967,7 @@ function renderTable(v) {
 function render() {
   const v = view();
   document.getElementById('subLabel').textContent =
-    `${CUR_LABEL.month} ${CUR_LABEL.date}　${PREV ? '前週＝' + PREV.date : ''}　（自動生成 2026-10-16 15:36）`;
+    `${CUR_LABEL.month} ${CUR_LABEL.date}　${PREV ? '前週＝' + PREV.date : ''}　（自動生成 2026-10-16 15:43）`;
   renderSC(); renderKpis(v); renderSplit(v); renderTop3(v); renderCutPlan(v); renderGroups(v); renderTable(v);
   document.getElementById('howto').innerHTML =
     `<b>この画面の読み方</b><br>

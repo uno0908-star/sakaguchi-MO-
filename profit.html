@@ -217,6 +217,16 @@ table.nb-cmp td,table.nb-cmp th{text-align:center !important}
   .cat-impact-grid{grid-template-columns:repeat(2,1fr)}
   .mover-grid{grid-template-columns:1fr}
 }
+/* スマホ：ヘッダーを固定しない・タブとSCは1行で横スクロール（上半分が埋まって見にくいため 2026-10-16） */
+@media(max-width:640px){
+  .top-bar{position:static;padding:8px 12px;box-shadow:none}
+  .top-bar h1{font-size:14px;margin-bottom:6px;line-height:1.4}
+  .tab-row,.sc-row{flex-wrap:nowrap;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none}
+  .tab-row::-webkit-scrollbar,.sc-row::-webkit-scrollbar{display:none}
+  .tab-btn,.sc-btn{flex:0 0 auto;white-space:nowrap}
+  .sc-row{margin-top:6px}
+  .sc-label{flex:0 0 auto}
+}
 @media(max-width:480px){
   .top-bar h1{font-size:14px}
   .card-value{font-size:17px}
@@ -2208,6 +2218,14 @@ function renderAll() {
 }
 
 if (location.hash === '#nebiki') switchTab('nebiki'); else renderAll();
+</script>
+<!-- 上へ戻るボタン（スマホでヘッダーを固定しないため） -->
+<button id="toTop" onclick="window.scrollTo({top:0,behavior:'smooth'})" aria-label="上へ"
+  style="position:fixed;right:14px;bottom:18px;z-index:150;min-width:56px;height:48px;border-radius:24px;border:none;background:#003087;color:#fff;font-size:14px;font-weight:700;box-shadow:0 3px 10px rgba(0,0,0,.3);display:none;cursor:pointer">▲上へ</button>
+<script>
+window.addEventListener('scroll', () => {
+  document.getElementById('toTop').style.display = window.scrollY > 400 ? 'block' : 'none';
+}, {passive:true});
 </script>
 </body>
 </html>
