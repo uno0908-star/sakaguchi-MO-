@@ -181,6 +181,8 @@ table.nb-cmp td,table.nb-cmp th{text-align:center !important}
 .nb-plan.hi{border-top-color:#e53935}.nb-plan.mid{border-top-color:#f57c00}.nb-plan.lo{border-top-color:#2e7d32}
 .nb-plan-name{font-size:15px;font-weight:800;margin-bottom:6px}
 .nb-plan-head{display:flex;flex-wrap:wrap;gap:4px 12px;font-size:12px;color:#555;margin-bottom:8px}
+.kc-st{display:inline-block;border-radius:8px;padding:1px 7px;font-size:10.5px;font-weight:700}
+.kc-on{background:#e8f5e9;color:#2e7d32}.kc-pre{background:#e3f2fd;color:#1565c0}.kc-end{background:#eceff1;color:#546e7a}
 .nb-tag-kc{background:#fff3e0;color:#e65100;border-radius:8px;padding:0 7px;font-size:11px;font-weight:700}
 .nb-tag-nosup{background:#eceff1;color:#546e7a;border-radius:8px;padding:0 7px;font-size:11px;font-weight:700}
 .nb-steps{padding-left:20px;margin:0}
@@ -324,7 +326,7 @@ table.nb-cmp td,table.nb-cmp th{text-align:center !important}
     <div id="nbSupTrend"></div>
   </div>
   <div class="section">
-    <div class="section-title">🍳 まちかど厨房チャレンジ（本部支援あり）</div>
+    <div class="section-title">🍳 厨房限界突破チャレンジ（導入スケジュールと本部支援）</div>
     <div id="nbKitchen"></div>
   </div>
   <div class="section">
@@ -959,6 +961,29 @@ const AICO_DEPT = {
 
 // 本部資料から自動取り込み（parse_hq_support.py）：AICO本部支援(SVレポートPDF)・まちかど厨房チャレンジ(xlsb)
 const HQ_AICO = {"meta": {"bFrom": "9/15", "bTo": "10/5", "bDays": 21, "periodFrom": "9/15", "periodTo": "10/19", "fixDate": "10/21", "sent": "10/7", "file": "【阪口商店】【SVレポート】260929週_世界一成長する店舗づくり大作戦Ver5.4確報 (1).pdf"}, "stores": {"五月ケ丘東": {"weeks": [["8/18週", 0.0], ["8/25週", 0.0], ["9/1週", 0.0], ["9/8週", 0.0], ["9/15週", 0.0], ["9/22週", 0.0], ["9/29週", 0.0]], "b": 0.0, "on": 0, "off": 17}, "江坂駅南口": {"weeks": [["8/18週", 6.717], ["8/25週", 8.051], ["9/1週", 3.48], ["9/8週", 3.875], ["9/15週", 8.164], ["9/22週", 7.65], ["9/29週", 5.356]], "b": 154.8, "on": 14, "off": 3}, "池田市役所前": {"weeks": [["8/18週", 0.0], ["8/25週", 0.0], ["9/1週", 0.0], ["9/8週", 0.0], ["9/15週", 0.0], ["9/22週", 0.0], ["9/29週", 0.0]], "b": 0.0, "on": 0, "off": 17}, "豊中服部西町三丁目": {"weeks": [["8/18週", 0.0], ["8/25週", 0.0], ["9/1週", 0.0], ["9/8週", 0.0], ["9/15週", 0.0], ["9/22週", 0.0], ["9/29週", 0.0]], "b": 0.0, "on": 0, "off": 17}, "吹田垂水三丁目": {"weeks": [["8/18週", 0.0], ["8/25週", 0.0], ["9/1週", 0.0], ["9/8週", 0.0], ["9/15週", 0.0], ["9/22週", 0.0], ["9/29週", 0.0]], "b": 0.0, "on": 0, "off": 17}, "豊里六丁目": {"weeks": [["8/18週", 0.0], ["8/25週", 0.0], ["9/1週", 0.0], ["9/8週", 0.0], ["9/15週", 0.0], ["9/22週", 0.0], ["9/29週", 0.0]], "b": 0.0, "on": 0, "off": 17}, "東淀川大道南": {"weeks": [["8/18週", 3.757], ["8/25週", 1.572], ["9/1週", 2.372], ["9/8週", 3.416], ["9/15週", 4.983], ["9/22週", 5.397], ["9/29週", 3.078]], "b": 97.6, "on": 14, "off": 3}, "吹田青山台三丁目": {"weeks": [["8/18週", 5.184], ["8/25週", 3.3], ["9/1週", 3.698], ["9/8週", 2.34], ["9/15週", 6.187], ["9/22週", 5.512], ["9/29週", 4.316]], "b": 116.4, "on": 14, "off": 3}, "新御堂筋上新田": {"weeks": [["8/18週", 4.616], ["8/25週", 4.232], ["9/1週", 4.618], ["9/8週", 4.246], ["9/15週", 6.314], ["9/22週", 8.397], ["9/29週", 6.106]], "b": 142.3, "on": 14, "off": 3}, "豊中服部元町一丁目": {"weeks": [["8/18週", 2.697], ["8/25週", 2.834], ["9/1週", 4.444], ["9/8週", 4.586], ["9/15週", 4.977], ["9/22週", 9.326], ["9/29週", 2.784]], "b": 114.8, "on": 14, "off": 3}, "吹田豊津中学校前": {"weeks": [["8/18週", 4.033], ["8/25週", 3.427], ["9/1週", 2.853], ["9/8週", 3.671], ["9/15週", 4.066], ["9/22週", 5.269], ["9/29週", 3.159]], "b": 81.6, "on": 14, "off": 3}, "吹田朝日町": {"weeks": [["8/18週", 4.346], ["8/25週", 2.966], ["9/1週", 5.875], ["9/8週", 3.3], ["9/15週", 6.179], ["9/22週", 6.107], ["9/29週", 4.377]], "b": 114.2, "on": 14, "off": 3}, "吹田警察署前": {"weeks": [["8/18週", 0.0], ["8/25週", 0.0], ["9/1週", 0.0], ["9/8週", 0.0], ["9/15週", 0.0], ["9/22週", 0.0], ["9/29週", 0.0]], "b": 0.0, "on": 0, "off": 17}, "江坂東": {"weeks": [["8/18週", 0.212], ["8/25週", 3.76], ["9/1週", 0.514], ["9/8週", 3.897], ["9/15週", 6.161], ["9/22週", 7.355], ["9/29週", 2.896]], "b": 114.5, "on": 14, "off": 3}, "大道南一丁目": {"weeks": [["8/18週", 0.0], ["8/25週", 0.0], ["9/1週", 0.0], ["9/8週", 0.0], ["9/15週", 0.0], ["9/22週", 0.0], ["9/29週", 0.0]], "b": 0.0, "on": 0, "off": 17}, "東淀川豊里五丁目": {"weeks": [["8/18週", 5.255], ["8/25週", 1.107], ["9/1週", 2.892], ["9/8週", 3.397], ["9/15週", 2.936], ["9/22週", 3.634], ["9/29週", 4.867]], "b": 76.0, "on": 14, "off": 3}, "南金田二丁目": {"weeks": [["8/18週", 5.451], ["8/25週", 4.252], ["9/1週", 6.914], ["9/8週", 1.948], ["9/15週", 6.698], ["9/22週", 6.265], ["9/29週", 3.146]], "b": 129.2, "on": 14, "off": 3}, "豊中利倉東一丁目": {"weeks": [["8/18週", 4.197], ["8/25週", 3.053], ["9/1週", 0.369], ["9/8週", 2.575], ["9/15週", 5.025], ["9/22週", 4.644], ["9/29週", 5.134]], "b": 100.1, "on": 14, "off": 3}, "豊中原田南一丁目": {"weeks": [["8/18週", 3.028], ["8/25週", 4.537], ["9/1週", 4.364], ["9/8週", 2.446], ["9/15週", 0.98], ["9/22週", 5.087], ["9/29週", 5.264]], "b": 76.7, "on": 14, "off": 3}, "箕面白島二丁目": {"weeks": [["8/18週", 0.0], ["8/25週", 0.0], ["9/1週", 4.993], ["9/8週", 3.128], ["9/15週", 3.617], ["9/22週", 4.213], ["9/29週", 3.643]], "b": 48.4, "on": 14, "off": 3}}};
+// 厨房限界突破チャレンジの導入週（取組開始日＝火曜）。本部資料「厨房講座実施店舗状況」より手入力（2026-10-16）
+const KITCHEN_START = {
+  '豊中原田南一丁目':'9/29','大道南一丁目':'9/29','東淀川大道南':'9/29',
+  '新御堂筋上新田':'10/6','吹田朝日町':'10/6','東淀川豊里五丁目':'10/6',
+  '吹田豊津中学校前':'10/13','豊中服部元町一丁目':'10/13','箕面白島二丁目':'10/13',
+  '南金田二丁目':'10/20','吹田青山台三丁目':'10/20','豊中利倉東一丁目':'10/20',
+  '吹田警察署前':'10/27','江坂駅南口':'10/27','江坂東':'10/27',
+};
+// 支援ルール（承諾確認 案内①〜③）：条件達成の週は 販売率80%以下を10%分まで、厨房原価率50%で支援（Cn負担増加分は相殺）
+const KC_RULE = {supTop:0.80, supBand:0.10, costRate:0.50, target:0.75, yoyTarget:1.50,
+  // 取組開始日 → 支援の計算終了日・計上月
+  periods:[{from:'9/29', to:'10/13', end:'10/19', month:'10月'}, {from:'10/20', to:'11/10', end:'11/16', month:'11月'}, {from:'11/17', to:'12/8', end:'12/14', month:'12月'}]};
+const md2n = t => { const [m, d] = t.split('/').map(Number); return (m < 4 ? m + 12 : m) * 100 + d; };   // 9/29 → 929（年度内の並び）
+function kcPeriod(start) { return KC_RULE.periods.find(p => md2n(start) >= md2n(p.from) && md2n(start) <= md2n(p.to)) || null; }
+function kcStatus(start) {
+  const today = CUR_LABEL.date.replace('時点', ''), per = kcPeriod(start);
+  if (md2n(today) < md2n(start)) return '開始前';
+  if (per && md2n(today) > md2n(per.end)) return '支援終了';
+  return '実施中';
+}
+// 条件達成時の支援見込み（千円/日・Cn相殺前）＝作成高 ×（80% − 販売率、上限10%）× 原価50%
+function kcSupportDay(k) { return k ? k.make * Math.max(0, Math.min(KC_RULE.supBand, KC_RULE.supTop - k.rate)) * KC_RULE.costRate : 0; }
+
 const KITCHEN_CH = {"meta": {"file": "★【1006週取組開始店舗】1006週_厨房チャレンジ実績_v5_1008.xlsb", "sheet": "★1006週まとめ"}, "stores": {"新御堂筋上新田": {"start": "10/6開始", "make": 47.423, "makeTgt": 36.898, "sales": 30.597, "salesPy": 18.556, "baihen": 16.825, "rate": 0.6452, "rateDiff": -0.0548, "haiki": 3.768, "nebiki": 13.057}, "吹田朝日町": {"start": "10/6開始", "make": 53.938, "makeTgt": 52.126, "sales": 36.33, "salesPy": 19.372, "baihen": 17.608, "rate": 0.6736, "rateDiff": -0.0264, "haiki": 0.392, "nebiki": 17.216}, "東淀川豊里五丁目": {"start": "10/6開始", "make": 49.532, "makeTgt": 43.96, "sales": 29.536, "salesPy": 21.167, "baihen": 19.996, "rate": 0.5963, "rateDiff": -0.1037, "haiki": 8.757, "nebiki": 11.239}}};
 
 const WCATS = ['aico','op','ff','kitch','dry'];
@@ -1886,15 +1911,21 @@ function nbSteps(x, html = true) {
     steps.push({icon:'🏢', title:'本部支援なし：廃棄・値引はそのまま店の利益から引かれる',
       sub: x.gain > 0 ? `①②を達成すると +${k0(x.gain)}千円/月 が店利益に戻る` : '目標以内をキープ', lines:[]});
   }
-  // ③-2 まちかど厨房チャレンジ（本部支援あり・取組店のみ）
-  if (x.kc) {
-    const k = x.kc, base = k.rate - k.rateDiff, over = k.make - k.makeTgt;
-    steps.push({icon:'🍳', title:`厨房チャレンジ（${k.start}）：販売率 ${pct1(k.rate)} → 基準 ${pct1(base)}`,
-      sub:`厨房の売変（廃棄＋値引）1日 ${k1(k.baihen)}千円（廃棄 ${k1(k.haiki)}／値引 ${k1(k.nebiki)}）。販売は前年の ${(k.sales / (k.salesPy || 1) * 100).toFixed(0)}%`,
-      lines:[
-        over > 0.5 ? `作成高が目標より ${b('1日 ' + k1(over) + '千円 多い')}（実績 ${k1(k.make)}／目標 ${k1(k.makeTgt)}）。${b('目標の作成高に合わせる')}` : `作成高は目標どおり（実績 ${k1(k.make)}／目標 ${k1(k.makeTgt)}）`,
-        `厨房の値引は店全体の値引の約${Math.round(k.nebiki / (x.nb || 1) * 100)}%。値引で売り切る前提の作り過ぎをやめる`,
-      ]});
+  // ③-2 厨房限界突破チャレンジ（導入店のみ）
+  const kst = KITCHEN_START[s.name];
+  if (kst) {
+    const per = kcPeriod(kst), st = kcStatus(kst), k = x.kc;
+    const lines = [];
+    if (k) {
+      const over = k.make - k.makeTgt;
+      lines.push(`いま：販売率 ${pct1(k.rate)}（目標${pct1(KC_RULE.target)}）・厨房販売は前年の${(k.sales / (k.salesPy || 1) * 100).toFixed(0)}%（目標150%）・売変 1日${k1(k.baihen)}千円（うち値引${k1(k.nebiki)}）`);
+      if (over > 0.5) lines.push(`作成高が目標より ${b('1日 ' + k1(over) + '千円 多い')}（実績${k1(k.make)}／目標${k1(k.makeTgt)}）。${b('目標の作成高に合わせる')}`);
+      lines.push(`条件達成なら支援は 1日 約${k1(kcSupportDay(k))}千円（Cn負担増加分の相殺前）。${b(`支援は${per ? per.end : ''}で終わる`)}ので、それまでに販売率${pct1(KC_RULE.target)}へ`);
+    }
+    lines.push(`本部の重点：①推奨SKU以上を作る ②${b('作った後すぐ値引しない')} ③夕方の3回目作成（13〜18時） ④ALiOTに作成登録`);
+    lines.push(`支援の条件：13:00〜17:59にALiOT登録したSKUが、週平均で推奨SKUの80%以上（週ごとに判定・救済なし）`);
+    steps.push({icon:'🍳', title:`厨房限界突破チャレンジ（${kst}開始・${st}）`,
+      sub: per ? `支援の計算は${kst}〜${per.end}、${per.month}の精算書で雑益に計上` : '支援期間は本部資料で確認', lines});
   }
   // ④ 確認
   steps.push({icon:'📅', title:'毎週月曜に確認する',
@@ -1909,7 +1940,7 @@ function nbPlanHtml(x) {
       <span>目標達成で <b class="pos">+${k0(x.gain)}</b>千円/月</span>
       <span>見切率 <b class="${x.mdRate > x.mdBgtRate ? 'neg' : 'pos'}">${pct1(x.mdRate)}</b>（予算${pct1(x.mdBgtRate)}）</span>
       ${x.hasSup ? `<span>AICO支援 約<b>${k0(x.hq)}</b>千円/月</span>` : '<span class="nb-tag-nosup">AICO支援なし</span>'}
-      ${x.kc ? '<span class="nb-tag-kc">厨房チャレンジ</span>' : ''}
+      ${KITCHEN_START[x.s.name] ? `<span class="nb-tag-kc">厨房CH ${KITCHEN_START[x.s.name]}〜</span>` : ''}
     </div>
     <ol class="nb-steps">${steps.map(st => `<li>
       <div class="nb-st-title">${st.icon} ${st.title}</div>
@@ -1986,7 +2017,7 @@ function renderNebiki() {
     <div class="nb-concl-h">結論</div>
     見切処分は予算に対して <b class="neg">${mdOver >= 0 ? '+' : '−'}${k0(Math.abs(mdOver))}千円/月</b> の${mdOver >= 0 ? '超過' : '下回り'}。
     中身は <b>値引が${nbShare.toFixed(0)}%</b>、<b>AICO廃棄が${aShare.toFixed(0)}%</b>。
-    売上に対して <b class="neg">${pct1(mdRate)}</b>（予算は原価で売上の${pct1(mdBgtRate)}）。<br>
+    売上に対して <b class="neg">${pct1(mdRate)}</b>（年度予算は 見切・処分÷売上＝${pct1(mdBgtRate)}）。<br>
     ${nbScen === 'nov'
       ? `11月からAICOの本部支援を外すと <b class="neg">−${k0(supLoss)}千円/月</b>。全店が目標（AICO廃棄${pct1(AICO_RATE_NOSUP)}・値引 日販比${pct1(NEBIKI_TGT_RATE)}）まで下げると <b class="pos">+${k0(gain)}千円/月</b>、差し引き <b class="${gain - supLoss >= 0 ? 'pos' : 'neg'}">${gain - supLoss >= 0 ? '+' : '−'}${k0(Math.abs(gain - supLoss))}千円/月</b>。`
       : `全店が目標（AICO廃棄 支援あり${pct1(AICO_RATE_SUP)}／なし${pct1(AICO_RATE_NOSUP)}・値引 日販比${pct1(NEBIKI_TGT_RATE)}）まで下げると <b class="pos">+${k0(gain)}千円/月</b>（AICO +${k0(gainA)}／値引 +${k0(gainN)}）。`}
@@ -2006,7 +2037,7 @@ function renderNebiki() {
       <div class="card-sub">実績 ${k0(mdAct)} ／ 予算 ${k0(mdBgt)}</div></div>
     <div class="card ${mdRate > mdBgtRate ? 'red' : 'green'}"><div class="card-label">見切率（原価÷売上）</div>
       <div class="card-value" style="color:${mdRate > mdBgtRate ? '#e53935' : '#2e7d32'}">${pct1(mdRate)}</div>
-      <div class="card-sub">予算 ${pct1(mdBgtRate)}（年度予算は毎月3.0%）</div></div>
+      <div class="card-sub">予算 ${pct1(mdBgtRate)}（年度予算の見切÷売上）</div></div>
     <div class="card amber"><div class="card-label">値引（売価）</div>
       <div class="card-value" style="color:#e65100">${k1(nbDay)}<span class="card-unit">千円/日</span></div>
       <div class="card-sub">日販比 ${pct1(nisshu ? nbDay / nisshu : 0)}（目標 ${pct1(NEBIKI_TGT_RATE)}）</div></div>
@@ -2072,29 +2103,39 @@ function renderNebiki() {
     document.getElementById('nbSupTrend').innerHTML = '<div class="nb-mini">本部SVレポートが取り込まれていません。</div>';
   }
 
-  // まちかど厨房チャレンジ
-  const kcs = xs.filter(x => x.kc);
-  document.getElementById('nbKitchen').innerHTML = kcs.length ? `
-    <div class="table-wrap"><table><thead><tr><th>店名</th><th>開始</th><th>作成高<br>実績/目標</th><th>厨房販売<br>前年比</th>
-      <th>売変<br>(廃棄+値引)</th><th>うち値引</th><th>販売率<br>(基準)</th><th>店の値引に<br>占める割合</th></tr></thead><tbody>
-      ${kcs.map(x => { const k = x.kc, base = k.rate - k.rateDiff; return `<tr onclick="showStoreDetail('${x.s.name}')">
-        <td>${x.s.name}</td><td>${k.start.replace('開始', '')}</td>
-        <td class="${k.make > k.makeTgt + 0.5 ? 'neg' : ''}">${k1(k.make)} / ${k1(k.makeTgt)}</td>
-        <td>${(k.sales / (k.salesPy || 1) * 100).toFixed(0)}%</td>
-        <td class="neg">${k1(k.baihen)}</td><td>${k1(k.nebiki)}</td>
-        <td class="${k.rate < base ? 'neg' : 'pos'}">${pct1(k.rate)}<div class="tot-diff" style="color:#888">${pct1(base)}</div></td>
-        <td>${Math.round(k.nebiki / (x.nb || 1) * 100)}%</td></tr>`; }).join('')}
+  // 厨房限界突破チャレンジ（導入スケジュール＋実績）
+  const kcRows = xs.filter(x => KITCHEN_START[x.s.name])
+    .sort((p, q) => md2n(KITCHEN_START[p.s.name]) - md2n(KITCHEN_START[q.s.name]));
+  const kcSupTot = kcRows.reduce((a, x) => a + kcSupportDay(x.kc), 0);
+  document.getElementById('nbKitchen').innerHTML = kcRows.length ? `
+    <div class="table-wrap"><table><thead><tr><th>店名</th><th>開始</th><th>状況</th><th>支援の<br>計算終了</th>
+      <th>作成高<br>実績/目標</th><th>厨房販売<br>前年比</th><th>売変<br>(うち値引)</th><th>販売率<br>目標75%</th><th>支援見込<br>(千円/日)</th></tr></thead><tbody>
+      ${kcRows.map(x => { const k = x.kc, st = KITCHEN_START[x.s.name], per = kcPeriod(st), status = kcStatus(st);
+        return `<tr onclick="showStoreDetail('${x.s.name}')">
+        <td>${x.s.name}</td><td>${st}</td>
+        <td><span class="kc-st kc-${status === '実施中' ? 'on' : status === '開始前' ? 'pre' : 'end'}">${status}</span></td>
+        <td>${per ? per.end + '<div class="tot-diff" style="color:#888">' + per.month + '計上</div>' : '—'}</td>
+        ${k ? `<td class="${k.make > k.makeTgt + 0.5 ? 'neg' : ''}">${k1(k.make)} / ${k1(k.makeTgt)}</td>
+          <td class="${k.sales / (k.salesPy || 1) >= KC_RULE.yoyTarget ? 'pos' : ''}">${(k.sales / (k.salesPy || 1) * 100).toFixed(0)}%</td>
+          <td class="neg">${k1(k.baihen)}<div class="tot-diff" style="color:#888">${k1(k.nebiki)}</div></td>
+          <td class="${k.rate >= KC_RULE.target ? 'pos' : 'neg'}">${pct1(k.rate)}</td>
+          <td>${k1(kcSupportDay(k))}</td>`
+        : '<td colspan="5" style="text-align:center;color:#999">実績データなし</td>'}</tr>`; }).join('')}
     </tbody></table></div>
-    <div class="nb-mini">単位は千円/日（売価）。出典：${KITCHEN_CH.meta.file}（${KITCHEN_CH.meta.sheet}）。厨房の販売は大きく伸びているが、売変が販売の半分以上ある。
-      <b>作成高を目標に合わせる</b>のが先。厨房の本部支援額は資料に無いため、改善額には入れていない。</div>`
-    : '<div class="nb-mini">この絞り込みに厨房チャレンジの取組店はありません。</div>';
+    <div class="nb-mini">
+      <b>支援のしくみ</b>：13〜18時の作成SKUが週平均で推奨の80%以上の週だけ、販売率80%を下回った分を10%まで（原価50%で）本部が負担。Cn負担の増加分は相殺され、雑益に計上。<br>
+      <b>支援は期間限定</b>：開始週ごとに 10/19・11/16・12/14 で計算が終わる。<b>終わった後は厨房の売変がそのまま店の負担</b>になるので、期間中に販売率75%（目標）まで上げておく。<br>
+      本部の重点のひとつが<b>「作成後の即値引をしない」</b>。値引を減らす方針と同じ方向。<br>
+      支援見込＝条件達成時の上限の目安（Cn相殺前）。実績は ${KITCHEN_CH.meta.file || '—'}（千円/日・売価）。取組中の支援 合計 約${k1(kcSupTot)}千円/日。
+    </div>`
+    : '<div class="nb-mini">この絞り込みに厨房チャレンジの導入店はありません。</div>';
 
   // 店舗別テーブル
   const rows = [...xs].sort((a, b) => (nbScen === 'nov' ? a.net - b.net : b.gain - a.gain));
   document.getElementById('nbBody').innerHTML = rows.map(x => `
     <tr onclick="showStoreDetail('${x.s.name}')">
       <td>${x.s.name}</td><td><span class="sc-chip">${x.sc}</span></td>
-      <td>${x.hasSup ? k0(x.hq) : '<span style="color:#999">なし</span>'}${x.kc ? '<div class="tot-diff" style="color:#e65100">厨房CH</div>' : ''}</td>
+      <td>${x.hasSup ? k0(x.hq) : '<span style="color:#999">なし</span>'}${KITCHEN_START[x.s.name] ? '<div class="tot-diff" style="color:#e65100">厨房' + KITCHEN_START[x.s.name] + '〜</div>' : ''}</td>
       <td class="${x.aRate > x.aTgt ? 'neg' : 'pos'}">${pct1(x.aRate)}<div class="tot-diff" style="color:#888">目標${pct1(x.aTgt)}</div></td>
       <td>${x.aCut >= 0.05 ? '−' + k1(x.aCut) : '—'}</td>
       <td class="${x.nbRate > NEBIKI_TGT_RATE ? 'neg' : 'pos'}">${k1(x.nb)}<div class="tot-diff" style="color:#888">${pct1(x.nbRate)}</div></td>
