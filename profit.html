@@ -801,6 +801,7 @@ PROFIT.forEach(s => {
   s.gpa      = gp.gpa ?? null;
   s.gpb      = gp.gpb ?? null;
   s.profitDiff = (s.gpa != null && s.gpb != null) ? s.gpa - s.gpb : null;
+  s.kitchenSupportMonth = Math.round(s.kitchenSupportMonth || 0);   // Excelは小数3桁。表示・合計は千円単位に丸める
 });
 
 // 最終利益要因コメント
