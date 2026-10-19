@@ -1024,16 +1024,25 @@ const KITCHEN_START = {
   '吹田警察署前':'10/27','江坂駅南口':'10/27','江坂東':'10/27',
 };
 // 支援ルール（承諾確認 案内①〜③）：条件達成の週は 販売率80%以下を10%分まで、厨房原価率50%で支援（Cn負担増加分は相殺）
+// 日付は「毎月の精算書に入る支援金の締め日」。締めをすぎても支援は続く（期限なし）。締めは28日ごと
 const KC_RULE = {supTop:0.80, supBand:0.10, costRate:0.50, target:0.75, yoyTarget:1.50,
-  // 取組開始日 → 支援の計算終了日・計上月
-  periods:[{from:'9/29', to:'10/13', end:'10/19', month:'10月'}, {from:'10/20', to:'11/10', end:'11/16', month:'11月'}, {from:'11/17', to:'12/8', end:'12/14', month:'12月'}]};
+  cutoffs:['10/19', '11/16', '12/14'], cycleDays:28};
 const md2n = t => { const [m, d] = t.split('/').map(Number); return (m < 4 ? m + 12 : m) * 100 + d; };   // 9/29 → 929（年度内の並び）
-function kcPeriod(start) { return KC_RULE.periods.find(p => md2n(start) >= md2n(p.from) && md2n(start) <= md2n(p.to)) || null; }
+// 締め日の一覧（決まっている分＋その先は28日ごと）
+function kcCutoffList(n = 12) {
+  const out = KC_RULE.cutoffs.map(kcDate);
+  while (out.length < n) out.push(new Date(out[out.length - 1].getTime() + KC_RULE.cycleDays * 864e5));
+  return out;
+}
+// ある日（M/D または Date）が入る締め：{end:'10/19', month:'10月', date}
+function kcCutoffOf(day) {
+  const d = typeof day === 'string' ? kcDate(day) : day;
+  const c = kcCutoffList(40).find(x => x >= d);
+  return c ? {end: kcMd(c), month: `${c.getMonth() + 1}月`, date: c} : null;
+}
 function kcStatus(start) {
-  const today = CUR_LABEL.date.replace('時点', ''), per = kcPeriod(start);
-  if (md2n(today) < md2n(start)) return '開始前';
-  if (per && md2n(today) > md2n(per.end)) return '支援終了';
-  return '実施中';
+  const today = CUR_LABEL.date.replace('時点', '');
+  return md2n(today) < md2n(start) ? '開始前' : '実施中';
 }
 // 条件達成時の支援見込み（売価・千円/日・Cn相殺前）＝作成高 ×（80% − 販売率、上限10%）。精算書には原価50%で計上される
 function kcSupportDay(k) { return k ? k.make * Math.max(0, Math.min(KC_RULE.supBand, KC_RULE.supTop - k.rate)) : 0; }
@@ -2019,14 +2028,14 @@ function nbSteps(x, html = true) {
   // ③ 厨房チャレンジ
   const kst = KITCHEN_START[s.name];
   if (kst) {
-    const per = kcPeriod(kst), st = kcStatus(kst), k = x.kc;
+    const st = kcStatus(kst), k = x.kc, nextCut = kcCutoffOf(CUR_LABEL.date.replace('時点', ''));
     const over = k ? k.make - k.makeTgt : 0;
     steps.push({icon:'🍳',
       title: k && over > 0.5 ? `厨房：作る量を1日 ${yenD(k.makeTgt)} にもどす` : '厨房：作ったらすぐ値引しない',
       sub: k ? `作る量 1日 ${yenD(k.make)}／売れた率 ${pctS(k.rate)} → 目標 ${pctS(KC_RULE.target)}`
              : `${kst}スタート（${st}）。13〜18時に3回目を作る`,
       more:[`本部の支援（決まった分）：${kcStoreTotal(s.name).toLocaleString()}円（くわしくは「厨房チャレンジ 本部支援の進み具合」）`,
-            `本部の支援は ${per ? per.end : ''} まで。そのあとは全部お店の負担`,
+            `本部の支援は毎週の結果で決まり、毎月の精算書に入る（次の締め ${nextCut ? nextCut.end : ''}）`,
             '13〜18時に作った商品をALiOTに登録（おすすめ数の80%以上）',
             '作ったあと、すぐ値引しない']});
   }
@@ -2236,14 +2245,14 @@ function renderNebiki() {
   const kcRows = xs.filter(x => KITCHEN_START[x.s.name])
     .sort((p, q) => md2n(KITCHEN_START[p.s.name]) - md2n(KITCHEN_START[q.s.name]));
   document.getElementById('nbKitchen').innerHTML = kcRows.length ? `
-    <div class="table-wrap"><table class="nb-simple"><thead><tr><th>店</th><th>スタート</th><th>支援は<br>いつまで</th><th>売れた率<br>目標75%</th></tr></thead><tbody>
-      ${kcRows.map(x => { const k = x.kc, st = KITCHEN_START[x.s.name], per = kcPeriod(st), status = kcStatus(st);
+    <div class="table-wrap"><table class="nb-simple"><thead><tr><th>店</th><th>スタート</th><th>精算書の<br>次の締め</th><th>売れた率<br>目標75%</th></tr></thead><tbody>
+      ${kcRows.map(x => { const k = x.kc, st = KITCHEN_START[x.s.name], status = kcStatus(st), per = kcCutoffOf(md2n(CUR_LABEL.date.replace('時点', '')) < md2n(st) ? st : CUR_LABEL.date.replace('時点', ''));
         return `<tr onclick="showStoreDetail('${x.s.name}')"><td>${x.s.name}</td>
-          <td>${st} <span class="kc-st kc-${status === '実施中' ? 'on' : status === '開始前' ? 'pre' : 'end'}">${status === '実施中' ? '中' : status === '開始前' ? 'まだ' : '終わり'}</span></td>
+          <td>${st} <span class="kc-st kc-${status === '実施中' ? 'on' : 'pre'}">${status === '実施中' ? '中' : 'まだ'}</span></td>
           <td>${per ? per.end : '—'}</td>
           <td class="${k ? (k.rate >= KC_RULE.target ? 'pos' : 'neg') : ''}">${k ? pctS(k.rate) : '—'}</td></tr>`; }).join('')}
     </tbody></table></div>
-    <div class="nb-mini">支援が終わったら、残った分は全部お店の負担。それまでに売れた率75%へ。</div>` : '';
+    <div class="nb-mini">本部の支援は毎月の精算書に入る（締めをすぎても続く）。売れた率75%を目指す。</div>` : '';
 
   // ── くわしく：店ごとの数字 ──
   document.getElementById('nbBody').innerHTML = rows.map(x => `
@@ -2260,9 +2269,8 @@ function renderNebiki() {
 // ===================================================================
 function kcDate(md) { const [m, d] = md.split('/').map(Number); return new Date(m < 4 ? 2027 : 2026, m - 1, d); }
 function kcMd(dt) { return `${dt.getMonth() + 1}/${dt.getDate()}`; }
-function kcWeeksOf(start) {          // 開始週〜計算終了日までの週（火曜はじまり）
-  const per = kcPeriod(start); if (!per) return [];
-  const out = [], end = kcDate(per.end);
+function kcWeeksOf(start, end) {     // 開始週〜表示する最後の締め日までの週（火曜はじまり）
+  const out = [];
   for (let d = kcDate(start); ; d = new Date(d.getTime() + 7 * 864e5)) {
     if (new Date(d.getTime() + 6 * 864e5) > end) break;
     out.push(kcMd(d));
@@ -2278,12 +2286,16 @@ function renderKcProg() {
   const R = KC_REPORT.stores || {};
   const today = kcDate(CUR_LABEL.date.replace('時点', ''));
   const names = Object.keys(KITCHEN_START).filter(n => currentSC === 'all' || SC_MAP[n] === currentSC).sort((a, b) => md2n(KITCHEN_START[a]) - md2n(KITCHEN_START[b]));
-  const allW = [...new Set(names.flatMap(n => kcWeeksOf(KITCHEN_START[n])))].sort((a, b) => kcDate(a) - kcDate(b));
+  // 表は「今日が入る締め」か「いちばん遅いスタートの最初の締め」の遅い方まで
+  const lastStart = Object.values(KITCHEN_START).sort((a, b) => kcDate(b) - kcDate(a))[0];
+  const showEnd = new Date(Math.max(kcCutoffOf(today).date, kcCutoffOf(new Date(kcDate(lastStart).getTime() + 6 * 864e5)).date));
+  const allW = [...new Set(names.flatMap(n => kcWeeksOf(KITCHEN_START[n], showEnd)))].sort((a, b) => kcDate(a) - kcDate(b));
+  const wCut = w => kcCutoffOf(new Date(kcDate(w).getTime() + 6 * 864e5));
   const yen = v => Math.round(v).toLocaleString() + '円';
   let tot = 0, nGot = 0, nWait = 0, nFut = 0, gTot = 0, kTot = 0;
   const byMonth = {}, colTot = {};
   const rows = names.map(n => {
-    const st = KITCHEN_START[n], per = kcPeriod(st), ws = kcWeeksOf(st), rep = (R[n] || {}).weeks || {};
+    const st = KITCHEN_START[n], ws = kcWeeksOf(st, showEnd), rep = (R[n] || {}).weeks || {};
     let sum = 0;
     const cells = allW.map(w => {
       if (!ws.includes(w)) return '<td class="kcp-out"></td>';
@@ -2292,7 +2304,8 @@ function renderKcProg() {
         const m = r.ok ? (r.m || 0) : 0;
         sum += m; tot += m; nGot++; gTot += r.ok ? (r.g || 0) : 0; kTot += r.ok ? (r.k || 0) : 0;
         colTot[w] = (colTot[w] || 0) + m;
-        byMonth[per.month] = (byMonth[per.month] || 0) + m;
+        const c = wCut(w), key = `${c.month}分（${c.end}締め）`;
+        byMonth[key] = (byMonth[key] || 0) + m;
         return `<td><div class="${m > 0 ? 'kcp-v' : 'kcp-v0'}">${r.ok ? yen(m) : '×条件ダメ'}</div>
           <div class="kcp-sub">売れた率 ${pctS(r.rate || 0)}</div></td>`;
       }
@@ -2301,22 +2314,22 @@ function renderKcProg() {
       nFut++; return '<td><span class="kcp-fut">これから</span></td>';
     }).join('');
     const status = kcStatus(st);
-    return `<tr onclick="showStoreDetail('${n}')"><td><b>${n}</b><div class="kcp-sub">${st}スタート・${per ? per.end : ''}まで
-      <span class="kc-st kc-${status === '実施中' ? 'on' : status === '開始前' ? 'pre' : 'end'}">${status === '実施中' ? '中' : status === '開始前' ? 'まだ' : '終わり'}</span></div></td>
+    return `<tr onclick="showStoreDetail('${n}')"><td><b>${n}</b><div class="kcp-sub">${st}スタート
+      <span class="kc-st kc-${status === '実施中' ? 'on' : 'pre'}">${status === '実施中' ? '中' : 'まだ'}</span></div></td>
       ${cells}<td class="kcp-tot">${sum ? yen(sum) : '—'}</td></tr>`;
   }).join('');
-  const monthTxt = Object.entries(byMonth).map(([m, v]) => `${m}分 ${yen(v)}`).join('／') || 'まだなし';
+  const monthTxt = Object.entries(byMonth).map(([m, v]) => `${m} ${yen(v)}`).join('／') || 'まだなし';
   const firstW = s => Object.entries(s.weeks)[0] || [];
   const ex = Object.entries(R).map(([n, s]) => [n, ...firstW(s)]).find(x => x[2] && x[2].cn && x[2].k);
   const exTs = Object.entries(R).map(([n, s]) => [n, ...firstW(s)]).find(x => x[2] && !x[2].cn);
   el.innerHTML = `
     <div class="kcp-cards">
       <div class="kcp-card"><div class="kcp-h">これまでに決まった本部支援</div><div class="kcp-n">${tot.toLocaleString()}<span>円</span></div><div class="kcp-s">${nGot}週分（レポートが来た分）</div></div>
-      <div class="kcp-card blue"><div class="kcp-h">精算書に入る月</div><div class="kcp-n" style="font-size:18px">${monthTxt}</div><div class="kcp-s">支援の計算が終わった月に入る</div></div>
-      <div class="kcp-card gray"><div class="kcp-h">まだ金額が出ていない週</div><div class="kcp-n">${nWait + nFut}<span>週</span></div><div class="kcp-s">レポート待ち ${nWait}／これから ${nFut}</div></div>
+      <div class="kcp-card blue"><div class="kcp-h">精算書に入る月</div><div class="kcp-n" style="font-size:18px">${monthTxt}</div><div class="kcp-s">締め日までの週の分が、その月の精算書に入る</div></div>
+      <div class="kcp-card gray"><div class="kcp-h">本部のレポート待ち</div><div class="kcp-n">${nWait}<span>週</span></div><div class="kcp-s">終わった週で、まだ金額が来ていない分</div></div>
       <div class="kcp-card gray"><div class="kcp-h">計算上の支援 → 実際にもらえる</div><div class="kcp-n" style="font-size:18px">${gTot.toLocaleString()} → ${tot.toLocaleString()}円</div><div class="kcp-s">Cnの本部負担がへる分 ${kTot.toLocaleString()}円 を引く</div></div>
     </div>
-    <div class="table-wrap"><table class="kcp"><thead><tr><th>店</th>${allW.map(w => `<th>${w}週</th>`).join('')}<th>合計</th></tr></thead>
+    <div class="table-wrap"><table class="kcp"><thead><tr><th>店</th>${allW.map(w => `<th>${w}週<div style="font-size:10px;font-weight:400;opacity:.8">${wCut(w).month}分</div></th>`).join('')}<th>合計</th></tr></thead>
       <tbody>${rows}</tbody>
       <tfoot><tr><td><b>合計</b></td>${allW.map(w => `<td class="kcp-tot">${colTot[w] ? yen(colTot[w]) : ''}</td>`).join('')}<td class="kcp-tot">${yen(tot)}</td></tr></tfoot>
     </table></div>
@@ -2327,7 +2340,7 @@ function renderKcProg() {
       ③ <b>CN店は、ここから「Cnの本部負担がへる分」を引いた残りがもらえる</b>（売変がへると、もともと本部が持ってくれていた分もへるため）<br>
       ${ex ? `例）${ex[0]} ${ex[1]}週：作った ${ex[2].make.toLocaleString()}円 × ${pctS(ex[2].f)} × 50% ＝ ${ex[2].g.toLocaleString()}円 → Cnの分 ${ex[2].k.toLocaleString()}円 を引く → <b>${ex[2].m.toLocaleString()}円</b><br>` : ''}
       ${exTs ? `TS店（Cnなし）は引かれない。例）${exTs[0]} ${exTs[1]}週：<b>${exTs[2].m.toLocaleString()}円</b>（計算上の支援そのまま）<br>` : ''}
-      ④ 支援の計算は ${KC_RULE.periods.map(p => `${p.from}〜${p.to}開始 → ${p.end}まで`).join('、')}。そのあとは全部お店の負担<br>
+      ④ 支援金は毎月の精算書に入る。締め日は ${kcCutoffList(5).map(kcMd).join('、')}…（28日ごと）。<b>締めをすぎても支援は続く</b>（その週の分は次の月の精算書に入る）<br>
       <span style="color:#888">レポート：${(KC_REPORT.meta.files || []).join('、') || 'なし'}</span>
     </div></details>
     <div class="nb-mini">店名を押すと、その店のくわしい画面が出ます。新しい週のレポートは、データフォルダに置いて「LAWSONデータ更新」で入ります。</div>`;
