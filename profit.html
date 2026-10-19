@@ -232,6 +232,28 @@ table.nb-cmp td,table.nb-cmp th{text-align:center !important}
   .card-value{font-size:17px}
   .donut-grid{grid-template-columns:repeat(auto-fill,minmax(130px,1fr))}
 }
+/* PC：広い画面を使い切る・字を大きく・SCの円グラフは1列に並べる（2026-10-19） */
+@media(min-width:1100px){
+  body{font-size:15px}
+  .content{max-width:1680px;padding:20px 28px}
+  .top-bar{padding:14px 28px}
+  .top-bar h1{font-size:21px}
+  .tab-btn{font-size:14px;padding:8px 18px}
+  .sc-btn{font-size:13px;padding:5px 14px}
+  .sc-label{font-size:13px}
+  .card{padding:16px 20px}
+  .card-label{font-size:13px}
+  .card-value{font-size:28px}
+  .card-unit,.card-sub{font-size:13px}
+  .section{padding:20px 24px}
+  .section-title{font-size:17px}
+  .donut-grid{grid-template-columns:repeat(8,1fr);gap:12px}
+  .donut-label{font-size:13px}
+  .donut-sub{font-size:12px}
+  table{font-size:14px}
+  thead th{font-size:13px;padding:10px 8px}
+  tbody td{font-size:14px;padding:9px 8px}
+}
 </style>
 </head>
 <body>
