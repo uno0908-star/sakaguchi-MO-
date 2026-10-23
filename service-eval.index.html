@@ -2,6 +2,30 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8">
+<script>
+/* 2026-10-23〜「SI」は使わない言葉になり「MOTR」へ。
+   保存データ（役職・評価者・資格の値）は 'SI' のまま。画面に出る文字だけ MOTR に置き換える */
+(function(){
+  var TEST=/(^|[^A-Za-z0-9])SI(?![A-Za-z0-9])/, ALL=/(^|[^A-Za-z0-9])SI(?![A-Za-z0-9])/g;
+  var SKIP={SCRIPT:1,STYLE:1,TEXTAREA:1,NOSCRIPT:1};
+  function rep(s){return s.replace(ALL,'$1MOTR')}
+  function fixText(t){var p=t.parentNode;if(p&&!SKIP[p.nodeName]&&!p.isContentEditable&&TEST.test(t.nodeValue))t.nodeValue=rep(t.nodeValue)}
+  function fixEl(el){['placeholder','title','aria-label'].forEach(function(a){var v=el.getAttribute&&el.getAttribute(a);if(v&&TEST.test(v))el.setAttribute(a,rep(v))})}
+  function fix(n){
+    if(n.nodeType===3){fixText(n);return}
+    if(n.nodeType!==1||SKIP[n.nodeName])return;
+    fixEl(n);
+    if(n.querySelectorAll)n.querySelectorAll('[placeholder],[title],[aria-label]').forEach(fixEl);
+    var w=document.createTreeWalker(n,NodeFilter.SHOW_TEXT),t;while((t=w.nextNode()))fixText(t);
+  }
+  ['alert','confirm','prompt'].forEach(function(k){var o=window[k];window[k]=function(m){var a=[].slice.call(arguments);if(typeof m==='string')a[0]=rep(m);return o.apply(window,a)}});
+  new MutationObserver(function(ms){ms.forEach(function(m){if(m.type==='characterData')fixText(m.target);else m.addedNodes.forEach(fix)})})
+    .observe(document.documentElement,{childList:true,subtree:true,characterData:true});
+  function all(){if(document.title&&TEST.test(document.title))document.title=rep(document.title);if(document.body)fix(document.body)}
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',all);else all();
+})();
+</script>
+
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
@@ -9,7 +33,7 @@
   <title>個店カルテ｜阪口商店</title>
 <script>
 (function(){
-  var VER = '20261023-1';
+  var VER = '20261023-2';
   var stored = localStorage.getItem('_evalAppVer');
   var param  = new URLSearchParams(location.search).get('_v');
   if (stored !== VER) {
@@ -1150,13 +1174,13 @@ const TRAINING_LEVELS=[{"key":"t1","label":"初期トレーニング","items":[[
   ["t4-10","システムマニュアル","","実践編","テキストP12",""],
   ["t4-11","システムマニュアル","","リーダークルー認定研修後取組み","テキストP13",""],
   ["t4-12","システムマニュアル","","終わりに","テキストP14",""]]}];
-const TR_COLS=[{k:'s',label:'本人'},{k:'m',label:'店長'},{k:'i',label:'SI'}];
+const TR_COLS=[{k:'s',label:'本人'},{k:'m',label:'店長'},{k:'i',label:'MOTR'}];
 // 個人カルテ・個店カルテの様式（データ\Excel\個人カルテ【江坂南】.xlsx と同じ項目）
 const KARTE_SLOTS=['朝','昼','夕','夜勤'];
 const KARTE_HYG=['FF研修','ゴースト','厨房'];
 const KARTE_WEB=['接客','売場','WS'];
 const KARTE_SEISAN=['送金','コピー機','切手買受','費用出金'];
-const KARTE_DELIVERY=['①FDC','②DDC','③CDC2便','④CDC3便','⑤たばこ'];
+const KARTE_DELIVERY=['①FDC','②DDC','③CDC2便','④CDC3便','⑤たばこ','⑥山崎パン'];
 const _kc=(e,c)=>(e.certifications||[]).includes(c);
 const KARTE_STORE_ROWS=[
   {label:'認定店長',test:e=>_kc(e,'認定店長')},

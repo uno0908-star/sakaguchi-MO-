@@ -2,6 +2,30 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
+<script>
+/* 2026-10-23〜「SI」は使わない言葉になり「MOTR」へ。
+   保存データ（役職・評価者・資格の値）は 'SI' のまま。画面に出る文字だけ MOTR に置き換える */
+(function(){
+  var TEST=/(^|[^A-Za-z0-9])SI(?![A-Za-z0-9])/, ALL=/(^|[^A-Za-z0-9])SI(?![A-Za-z0-9])/g;
+  var SKIP={SCRIPT:1,STYLE:1,TEXTAREA:1,NOSCRIPT:1};
+  function rep(s){return s.replace(ALL,'$1MOTR')}
+  function fixText(t){var p=t.parentNode;if(p&&!SKIP[p.nodeName]&&!p.isContentEditable&&TEST.test(t.nodeValue))t.nodeValue=rep(t.nodeValue)}
+  function fixEl(el){['placeholder','title','aria-label'].forEach(function(a){var v=el.getAttribute&&el.getAttribute(a);if(v&&TEST.test(v))el.setAttribute(a,rep(v))})}
+  function fix(n){
+    if(n.nodeType===3){fixText(n);return}
+    if(n.nodeType!==1||SKIP[n.nodeName])return;
+    fixEl(n);
+    if(n.querySelectorAll)n.querySelectorAll('[placeholder],[title],[aria-label]').forEach(fixEl);
+    var w=document.createTreeWalker(n,NodeFilter.SHOW_TEXT),t;while((t=w.nextNode()))fixText(t);
+  }
+  ['alert','confirm','prompt'].forEach(function(k){var o=window[k];window[k]=function(m){var a=[].slice.call(arguments);if(typeof m==='string')a[0]=rep(m);return o.apply(window,a)}});
+  new MutationObserver(function(ms){ms.forEach(function(m){if(m.type==='characterData')fixText(m.target);else m.addedNodes.forEach(fix)})})
+    .observe(document.documentElement,{childList:true,subtree:true,characterData:true});
+  function all(){if(document.title&&TEST.test(document.title))document.title=rep(document.title);if(document.body)fix(document.body)}
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',all);else all();
+})();
+</script>
+
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>コンプライアンス理解度テスト / Compliance Test</title>
 <style>
