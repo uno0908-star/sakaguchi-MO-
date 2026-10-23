@@ -6,10 +6,10 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
-  <title>接客評価システム｜阪口商店</title>
+  <title>個店カルテ｜阪口商店</title>
 <script>
 (function(){
-  var VER = '20260720-2';
+  var VER = '20261023-1';
   var stored = localStorage.getItem('_evalAppVer');
   var param  = new URLSearchParams(location.search).get('_v');
   if (stored !== VER) {
@@ -186,13 +186,81 @@ input,select,textarea,button{font-family:inherit;font-size:14px}
 .flex-between{display:flex;justify-content:space-between;align-items:center}
 .empty-state{text-align:center;padding:40px 20px;color:var(--text-sub)}
 .empty-state p{margin-top:8px;font-size:13px}
+
+/* 3段階カルテのパンくず */
+.karte-crumbs{display:flex;align-items:center;flex-wrap:wrap;gap:2px;margin-bottom:10px;font-size:13px}
+.karte-crumbs a{color:var(--blue);font-weight:700;cursor:pointer;padding:10px 8px;border-radius:8px;background:#fff;box-shadow:0 1px 2px rgba(0,0,0,.06)}
+.karte-crumbs b{padding:10px 4px}
+.karte-crumbs .sep{color:var(--gray);padding:0 2px}
+.store-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.store-tile{background:#fff;border:1px solid var(--border);border-radius:10px;padding:10px;min-height:64px;text-align:left;cursor:pointer}
+.store-tile:active{background:#EFF6FF}
+.store-tile .nm{font-weight:700;font-size:13px;color:var(--text)}
+.store-tile .mt{font-size:11px;color:var(--text-sub);margin-top:4px}
+@media(min-width:700px){.store-grid{grid-template-columns:repeat(4,minmax(0,1fr))}}
+/* トレーニングチェック */
+.tr-level{border:1px solid var(--border);border-radius:10px;margin-bottom:8px;overflow:hidden}
+.tr-level.open{border-color:var(--blue)}
+.tr-level-head{display:flex;align-items:center;gap:10px;padding:12px;cursor:pointer;min-height:56px}
+.tr-arrow{font-size:11px;color:var(--blue);font-weight:700;white-space:nowrap}
+.tr-body{padding:0 10px 10px;border-top:1px solid var(--border)}
+.tr-tools{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;font-size:11px;color:var(--text-sub);padding:8px 0}
+.tr-tool-btn{min-height:40px}
+.tr-cat{margin:12px 0 4px;padding:6px 10px;background:var(--blue);color:#fff;font-weight:700;font-size:12px;border-radius:6px}
+.tr-sub{margin:8px 0 2px;font-size:11px;font-weight:700;color:var(--blue)}
+.tr-item{padding:8px 0;border-bottom:1px solid var(--border)}
+.tr-item.done .tr-name{color:var(--green)}
+.tr-name{font-size:14px;font-weight:600;margin-bottom:6px}
+.tr-page{display:inline-block;margin-left:6px;font-size:10px;color:var(--text-sub);font-weight:400}
+.tr-note{display:inline-block;margin-left:6px;font-size:10px;color:var(--orange);font-weight:700}
+.tr-btns{display:flex;gap:6px}
+.tr-btn{flex:1;min-height:46px;border:2px solid var(--border);background:#fff;border-radius:8px;font-weight:700;font-size:13px;color:var(--text-sub);display:flex;flex-direction:column;align-items:center;justify-content:center;line-height:1.2;cursor:pointer}
+.tr-btn small{font-size:9px;font-weight:600;margin-top:2px;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.tr-btn.on{background:var(--green);border-color:var(--green);color:#fff}
+.tr-btn:disabled{cursor:default;opacity:.55}
+.tr-btn.on:disabled{opacity:.8}
+.tr-warn{background:#FEF3C7;color:#92400E;font-size:12px;padding:8px 10px;border-radius:8px;margin-bottom:8px}
+.tr-chip{display:inline-block;font-size:10px;font-weight:700;padding:2px 7px;border-radius:10px;background:#EFF6FF;color:var(--blue)}
+@media(min-width:1100px){.tr-name{font-size:15px}.tr-btns{max-width:520px}}
+
+/* 個人カルテ・個店カルテの様式欄 */
+.k-sec{margin:12px 0 4px;font-size:12px;font-weight:700;color:var(--blue);border-left:3px solid var(--blue);padding-left:6px}
+.k-info{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px;margin-top:8px}
+.k-info div{background:var(--gray-light);border-radius:8px;padding:8px}
+.k-info span{display:block;font-size:10px;color:var(--text-sub)}
+.k-info b{font-size:14px}
+.k-pill{display:inline-block;margin:2px 4px 2px 0;padding:4px 10px;border-radius:14px;font-size:12px;font-weight:700;background:var(--gray-light);color:#9CA3AF}
+.k-pill.on{background:var(--blue);color:#fff}
+.k-shift{display:flex;align-items:center;flex-wrap:wrap;gap:4px;margin:4px 0}
+.k-shift b{width:40px;font-size:12px}
+.k-items{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px}
+.k-item{display:flex;justify-content:space-between;align-items:center;gap:6px;background:var(--gray-light);border-radius:8px;padding:8px 10px;font-size:13px}
+.k-st{font-size:12px;font-weight:700;padding:2px 8px;border-radius:10px}
+.k-st.ok{background:#DCFCE7;color:#166534}.k-st.na{background:#E5E7EB;color:#6B7280}.k-st.no{background:#FEF2F2;color:#B91C1C}
+.k-text{font-size:13px;background:var(--gray-light);border-radius:8px;padding:8px 10px;line-height:1.6}
+.k-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.k-field{display:block;margin-bottom:6px}
+.k-field span{display:block;font-size:11px;color:var(--text-sub);margin-bottom:2px}
+.k-field input,.k-field select,.k-field textarea{width:100%;min-height:44px;padding:8px;border:1px solid var(--border);border-radius:8px;font-size:15px;background:#fff}
+.k-chk{display:inline-flex;align-items:center;gap:4px;min-height:44px;padding:0 12px;border:1px solid var(--border);border-radius:22px;font-weight:700;cursor:pointer}
+.k-chk input{width:18px;height:18px}
+.k-table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch}
+.k-table{width:100%;border-collapse:collapse;font-size:12px;min-width:460px}
+.k-table th,.k-table td{border:1px solid var(--border);padding:6px;vertical-align:top}
+.k-table thead th{background:var(--blue);color:#fff;font-weight:700}
+.k-table tbody th{background:var(--gray-light);text-align:left;white-space:nowrap;font-weight:700}
+.k-table td.empty{color:#D1D5DB;text-align:center}
+.k-table td a{color:var(--blue);font-weight:700;cursor:pointer;text-decoration:underline;text-underline-offset:2px}
+.k-cell{font-size:11px;margin-bottom:4px}
+.k-cell-in{width:100%;min-height:36px;padding:4px;border:1px solid var(--border);border-radius:6px;font-size:13px}
+@media(min-width:700px){.k-info{grid-template-columns:repeat(4,minmax(0,1fr))}.k-items{grid-template-columns:repeat(4,minmax(0,1fr))}.k-grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
 </style>
 </head>
 <body>
 
 <header id="app-header" class="hidden">
   <button id="btn-back" class="btn-back hidden" onclick="App.goBack()">&#8592;</button>
-  <h1 id="header-title">接客評価システム</h1>
+  <h1 id="header-title">個店カルテ</h1>
   <div id="header-user" class="header-user"></div>
 </header>
 
@@ -200,7 +268,7 @@ input,select,textarea,button{font-family:inherit;font-size:14px}
   <div class="login-wrap">
     <div class="login-logo">
       <div class="logo-badge">阪口商店</div>
-      <p class="login-subtitle">接客評価システム</p>
+      <p class="login-subtitle">個店カルテ</p>
     </div>
     <div class="card">
       <div class="form-group" id="login-name-wrap">
@@ -256,6 +324,10 @@ input,select,textarea,button{font-family:inherit;font-size:14px}
 
 <div id="view-employee-detail" class="view">
   <div class="view-content" id="employee-detail-content"></div>
+</div>
+
+<div id="view-store-karte" class="view">
+  <div class="view-content" id="store-karte-content"></div>
 </div>
 
 <div id="view-evaluation" class="view">
@@ -922,6 +994,179 @@ const Storage=(()=>{
    ===================================================== */
 
 const STORES=['五月ケ丘東','南金田二丁目','吹田垂水三丁目','吹田朝日町','吹田警察署前','吹田豊津中学校前','吹田青山台三丁目','大道南一丁目','新御堂筋上新田','東淀川大道南','東淀川豊里五丁目','江坂東','江坂駅南口','池田市役所前','箕面白島二丁目','豊中利倉東一丁目','豊中原田南一丁目','豊中服部元町一丁目','豊中服部西町三丁目','豊里六丁目'];
+// トレーニングチェックリスト（データ\Excel\トレーニングチェックリスト.xlsx から作成・2026-10-23）
+// [項目ID, 大分類, 小分類, 項目名, ページ, 注意]。項目IDは記録のキーなので、項目を足すときは末尾に新しい番号で足す（並べ替え・振り直し禁止）
+const TRAINING_LEVELS=[{"key":"t1","label":"初期トレーニング","items":[["t1-01","オリエンテーション（ストコン動画）","はじめに","研修の前に","P5",""],
+  ["t1-02","オリエンテーション（ストコン動画）","はじめに","企業理念・５宣言","P6",""],
+  ["t1-03","オリエンテーション（ストコン動画）","はじめに","ローソンとは","P7",""],
+  ["t1-04","オリエンテーション（ストコン動画）","はじめに","３つの徹底とローソンのお仕事","P8～P9",""],
+  ["t1-05","オリエンテーション（ストコン動画）","はじめに","クルー育成プログラム","P10",""],
+  ["t1-06","オリエンテーション（ストコン動画）","はじめに","ろーちゃん","P11",""],
+  ["t1-07","オリエンテーション（ストコン動画）","お店で守るべきルール","働く時のルールとマナー","P12",""],
+  ["t1-08","オリエンテーション（ストコン動画）","お店で守るべきルール","コンプライアンス","P12",""],
+  ["t1-09","オリエンテーション（ストコン動画）","お店で守るべきルール","働く上での情報の取り扱い","P13",""],
+  ["t1-10","オリエンテーション（ストコン動画）","お店で守るべきルール","緊急時の対応","P14～P15",""],
+  ["t1-11","オリエンテーション（ストコン動画）","売り場に立つ前に","身だしなみ","P16",""],
+  ["t1-12","オリエンテーション（ストコン動画）","売り場に立つ前に","あいさつ","P17～P18",""],
+  ["t1-13","オリエンテーション（ストコン動画）","売り場に立つ前に","出勤・退勤","P19～P22",""],
+  ["t1-14","接客基礎","接客応対","接客７ステップ","P26～P35",""],
+  ["t1-15","接客基礎","接客応対","ポイントカード","P24～P25",""],
+  ["t1-16","接客基礎","レジ操作","取消・数量変更","P28",""],
+  ["t1-17","接客基礎","レジ操作","領収証・値引き・年齢確認","P36～P38",""],
+  ["t1-18","接客基礎","レジ操作","返品・返金","P44",""],
+  ["t1-19","接客基礎","レジ操作","電子マネー・クレジットカード","P45～P51",""],
+  ["t1-20","接客基礎","レジ操作","プリペイドカード","P52～P53",""],
+  ["t1-21","接客基礎","レジ操作","ポイント利用","P54～P55",""],
+  ["t1-22","接客基礎","レジ操作","金券・クーポン券","P56～P57",""],
+  ["t1-23","接客基礎","レジ操作","ＱＵＯカード","P58～P59",""],
+  ["t1-24","接客基礎","レジ操作","バーコード決済","P60～P61",""],
+  ["t1-25","接客基礎","レジ操作","切手・印紙・ゴミ処理券","P62",""],
+  ["t1-26","接客基礎","レジ操作","収納代行","P63～P65",""],
+  ["t1-27","接客基礎","レジ操作","ギフトカード販売","P66～P67",""],
+  ["t1-28","接客基礎","レジ操作","ゆうパック・ｅ発送サービス","P69～P72 P76～P77",""],
+  ["t1-29","接客基礎","レジ操作","Loppi対応","P73～P75",""],
+  ["t1-30","衛生管理","鮮度管理","FF・マチカフェ販売","P79～P84",""],
+  ["t1-31","衛生管理","鮮度管理","先入れ先出し・販売許容","P86 ～P91",""],
+  ["t1-32","衛生管理","鮮度管理","食材・商品廃棄","P93～P95",""],
+  ["t1-33","衛生管理","温度","温度チェック","P96～P97",""],
+  ["t1-34","FF・マチカフェ","","FFの取り扱い","P99～P103",""],
+  ["t1-35","FF・マチカフェ","","ホットFF・常温FFの作り方","P104",""],
+  ["t1-36","FF・マチカフェ","","中華まんの作り方","P105",""],
+  ["t1-37","FF・マチカフェ","","マチカフェの取り扱い","P106～P108",""],
+  ["t1-38","売場","商品陳列","商品の並べ方・前陳","P110",""],
+  ["t1-39","売場","商品陳列","プライスカード","P113",""],
+  ["t1-40","清掃","店内","売り場・カウンター周辺","3-1～3-4",""],
+  ["t1-41","清掃","店内","店内清掃","P121",""],
+  ["t1-42","清掃","店内","トイレ点検・清掃","P122～P123",""],
+  ["t1-43","清掃","店内","Loppi・コピー機・ATM","3-54～3-55",""],
+  ["t1-44","清掃","店外","灰皿・駐車場","2-1～2-2",""],
+  ["t1-45","清掃","店外","入口ドア","2-6",""],
+  ["t1-46","外国人クルー用ポケットブック","はじめに","ローソンのグループ理念","P3",""],
+  ["t1-47","外国人クルー用ポケットブック","はじめに","コンビニエンスストアってどんなところ？","P4",""],
+  ["t1-48","外国人クルー用ポケットブック","はじめに","働く時のルール","P5～P7",""],
+  ["t1-49","外国人クルー用ポケットブック","外国人さん向け動画","日本の文化①","P8・P9",""],
+  ["t1-50","外国人クルー用ポケットブック","外国人さん向け動画","日本の文化②","P10",""],
+  ["t1-51","外国人クルー用ポケットブック","外国人さん向け動画","日本語って難しい？①","P11",""],
+  ["t1-52","外国人クルー用ポケットブック","外国人さん向け動画","日本語って難しい？②","P12",""],
+  ["t1-53","外国人クルー用ポケットブック","外国人さん向け動画","こんな時はどうする？①","P13",""],
+  ["t1-54","外国人クルー用ポケットブック","外国人さん向け動画","こんな時はどうする？②","P14",""],
+  ["t1-55","外国人クルー用ポケットブック","ローソンのお仕事","消耗品の付け方","P15～P20",""],
+  ["t1-56","外国人クルー用ポケットブック","ローソンのお仕事","温めるもの・温めないもの","P21",""],
+  ["t1-57","外国人クルー用ポケットブック","ローソンのお仕事","日本のお金","P22～P24",""],
+  ["t1-58","外国人クルー用ポケットブック","ローソンのお仕事","メニューキー","P25～P28",""],
+  ["t1-59","外国人クルー用ポケットブック","ローソンのお仕事","エラー金","P29",""],
+  ["t1-60","外国人クルー用ポケットブック","ローソンのお仕事","ファストフーズ","P30・P31",""]]},{"key":"t2","label":"レギュラー","items":[["t2-01","接客応用","レジ操作応用（初めてのローソン）","DEPT入力","P37",""],
+  ["t2-02","接客応用","レジ操作応用（初めてのローソン）","残高確認・両替","P40",""],
+  ["t2-03","接客応用","レジ操作応用（初めてのローソン）","釣銭補充・上限金種出金","P41",""],
+  ["t2-04","接客応用","レジ操作応用（初めてのローソン）","手入力出金・入金","P42",""],
+  ["t2-05","接客応用","レジ操作応用（初めてのローソン）","エラー金入力","P43",""],
+  ["t2-06","接客・販売","マニュアル④","レジ点検","4-13",""],
+  ["t2-07","接客・販売","マニュアル②","品出し（ドライ）","2-4～2-6",""],
+  ["t2-08","接客・販売","マニュアル②","プライスカード印刷・発行","2-9～2-13",""],
+  ["t2-09","接客・販売","マニュアル②","値引きシール印刷・貼付","2-16～2-25",""],
+  ["t2-10","接客・販売","マニュアル①","拾得物の取り扱い","1-36～1-38",""],
+  ["t2-11","接客・販売","マニュアル⑤","本・雑誌返品","5-13～5-17",""],
+  ["t2-12","接客・販売","マニュアル⑩","セルフレジ","全ページ","（キャッシュレスのみ）"],
+  ["t2-13","接客・販売","マニュアル⑩","フルセルフレジ","全ページ",""],
+  ["t2-14","カウンター内","マニュアル①A","サーマルシール発行","1A-33～1A-36",""],
+  ["t2-15","カウンター内","マニュアル①A","ダブルチェック","1A-37～1A-40",""],
+  ["t2-16","カウンター内","マニュアル③","カタログギフト・予約商品の受付","3－1～3-21",""],
+  ["t2-17","カウンター内","マニュアル④","ゆうパック受付（複数口）","4-13",""],
+  ["t2-18","カウンター内","マニュアル④","ゆうパック受付（ゴルフ・スキー・空港）","4-23～4-32",""],
+  ["t2-19","カウンター内","マニュアル⑤","コピー機消耗品補充","5-9～5-12",""],
+  ["t2-20","カウンター内","マニュアル⑦","マチカフェ清掃（メリタ）","7-63～7-71・7-75",""],
+  ["t2-21","カウンター内","マニュアル⑧","店内厨房","全ページ","※対象者のみ"],
+  ["t2-22","Loppi","マニュアル①","Loppi消耗品補充","1-9～1-14",""],
+  ["t2-23","Loppi","マニュアル④⑤⑦～⑬⑯⑰","Loppi再発券","※該当箇所確認",""],
+  ["t2-24","Loppi","マニュアル④⑤⑦～⑬⑯⑰","Loppi取消・返品","",""],
+  ["t2-25","Loppi","マニュアル⑫","バイク自賠責保険","12-1～12-16",""],
+  ["t2-26","Loppi","マニュアル③","Loppi機器トラブル対応","全ページ",""],
+  ["t2-27","清掃","マニュアル③","フィルター清掃","3-42",""],
+  ["t2-28","清掃","マニュアル③","棚清掃","3-34",""],
+  ["t2-29","清掃","マニュアル⑤","ホットFF・常温FF什器清掃","5-8～5-12",""],
+  ["t2-30","清掃","マニュアル⑤","中華まん什器清掃","5-15～5-16",""],
+  ["t2-31","清掃","マニュアル⑥","フライヤー清掃","全ページ",""],
+  ["t2-32","発注","マニュアル⑤","新聞返品","5-13～5-14",""],
+  ["t2-33","発注","マニュアル⑥","伝票整理","6-6～6-8",""],
+  ["t2-34","デリバリー","","Ｕｂｅｒ Ｅａｔｓ","①、③全ページ",""],
+  ["t2-35","デリバリー","","Ｍｅｎｕ","①、⑤全ページ",""],
+  ["t2-36","デリバリー","","Ｗｏｌｔ","①、④全ページ",""],
+  ["t2-37","デリバリー","","Yahoo！クイックマート","①、⑥全ページ",""],
+  ["t2-38","デリバリー","","ゴーストレストラン","",""],
+  ["t2-39","その他","夜勤帯","トイレ中清掃（毎日）","",""],
+  ["t2-40","その他","夜勤帯","トイレ大清掃（週1回）","",""],
+  ["t2-41","その他","初めてのローソン","電話応対","P18",""],
+  ["t2-42","その他","初めてのローソン","ポイントカード","P24",""],
+  ["t2-43","その他","初めてのローソン","ＱＵＯカード販売","P68",""],
+  ["t2-44","その他","初めてのローソン","品出し","P111",""],
+  ["t2-45","その他","初めてのローソン","プライスカード印刷","P114",""]]},{"key":"t3","label":"サブリーダー","items":[["t3-01","はじめに","","はじめに","テキストP1～P2",""],
+  ["t3-02","接客・販売","","５Ｓ・ワークスケジュールとは","テキストP3",""],
+  ["t3-03","接客・販売","","ポイントカードの取り扱い","テキストP4 / マニュアル⑥全ページ",""],
+  ["t3-04","接客・販売","","クレーム対応","テキストP5 / マニュアル①-31～①-34",""],
+  ["t3-05","接客・販売","","売り場づくり","テキストP6 / マニュアル②-1～②-15",""],
+  ["t3-06","接客・販売","","POP作りの注意点","テキストP7 / マニュアル②-38～②-40",""],
+  ["t3-07","接客・販売","","拾得物の取り扱い","テキストP8 / マニュアル①-36～①-38",""],
+  ["t3-08","接客・販売","","レジ点検","テキストP9 / マニュアル④-13",""],
+  ["t3-09","接客・販売","","入出金","テキストP10 / マニュアル③-58～③-62",""],
+  ["t3-10","接客・販売","","コピー機売上登録、精算業務","マニュアル④-21～④-33",""],
+  ["t3-11","接客・販売","","現金棚卸","マニュアル⑨-２７",""],
+  ["t3-12","接客・販売","","本・雑誌の検品と返本","テキストP11 / マニュアル⑤-1～⑤-14",""],
+  ["t3-13","接客・販売","","販促物の取扱い","マニュアル②-26～②-37",""],
+  ["t3-14","接客・販売","","トレーニングモード","テキストP12 / マニュアル③-55",""],
+  ["t3-15","接客・販売","","青果の取扱い","マニュアル⑧全ページ",""],
+  ["t3-16","カウンター内","","カタログギフト、予約商品の受付","テキストP13 / マニュアル③全ページ",""],
+  ["t3-17","カウンター内","","常温FF・サーマルパックの販売","テキストP14 / マニュアル①A-30～①A-37",""],
+  ["t3-18","カウンター内","","ゆうパックの受付","マニュアル④-13",""],
+  ["t3-19","カウンター内","","コピー機、デジカメプリント機の取扱い","テキストP15 / マニュアル⑤全ページ",""],
+  ["t3-20","Loppi","","Loppi関連・納品時の対応","テキストP16 / マニュアル①-13、 ⑩-26",""],
+  ["t3-21","Loppi","","Loppi再発券","マニュアル④-15～④-16",""],
+  ["t3-22","Loppi","","ローソンチケット払い戻し・取消・返品","マニュアル④-12～④-14",""],
+  ["t3-23","Loppi","","Loppi機器トラブル対応、受付状況確認","テキストP17 / マニュアル①-17～①-26、 ⑩-41",""],
+  ["t3-24","Loppi","","Loppiトレーニングモード","マニュアル②全ページ",""],
+  ["t3-25","衛生・安全","","事件の防止・発生時の対応","テキストP18 / マニュアル③-14",""],
+  ["t3-26","衛生・安全","","災害発生時の心得","マニュアル②-1～②-4",""],
+  ["t3-27","衛生・安全","","万引き予防・詐欺予防","マニュアル③-15～③-20",""],
+  ["t3-28","衛生・安全","","防犯カメラ映像の取扱い","テキストP19 / マニュアル③-8",""],
+  ["t3-29","衛生・安全","","災害ごとの対応","マニュアル②-10～②-27",""],
+  ["t3-30","衛生・安全","","停電対応","テキストP20 / マニュアル②-26～②",""],
+  ["t3-31","衛生・安全","","POT簡易レジ","マニュアル接客販売③-67～③-71",""],
+  ["t3-32","清掃","","カウンター清掃","テキストP21 / マニュアル⑤-1～⑤-7",""],
+  ["t3-33","清掃","","店内清掃","マニュアル③全ページ",""],
+  ["t3-34","清掃","","店外清掃","テキストP23 / マニュアル②-1～②-12",""],
+  ["t3-35","清掃","","バックルーム清掃","マニュアル④全ページ",""],
+  ["t3-36","清掃","","フライヤー周辺、FF什器清掃","テキストP24 / マニュアル⑤-8～⑤-16",""],
+  ["t3-37","清掃","","フライヤー清掃","マニュアル⑥全ページ",""],
+  ["t3-38","清掃","","定期清掃","マニュアル①-4～①-12",""],
+  ["t3-39","実践","","５Ｓ推進","テキストP25",""],
+  ["t3-40","実践","","最後に","テキストP26",""]]},{"key":"t4","label":"リーダー","items":[["t4-01","システムマニュアル","","はじめに","テキストP1",""],
+  ["t4-02","システムマニュアル","","５宣言","テキストP2 / マニュアル①-1～①-2",""],
+  ["t4-03","システムマニュアル","","ワークスケジュール","テキストP3～P4 / マニュアル⑦-3～⑦-4",""],
+  ["t4-04","システムマニュアル","","店内のコミュニケーション","テキストP５",""],
+  ["t4-05","システムマニュアル","","お客様とのコミュニケーション","テキストP6",""],
+  ["t4-06","システムマニュアル","","発注とは","テキストP7 / マニュアル④",""],
+  ["t4-07","システムマニュアル","","お客様満足度の高い売場とは","テキストP8 / マニュアル③-1～③-２",""],
+  ["t4-08","システムマニュアル","","衛生管理の重要性","テキストP9 / マニュアル衛生管理 ①全ページ",""],
+  ["t4-09","システムマニュアル","","トレーニングの４ステップとは","テキストP10～P11 / マニュアル⑥-75～⑥-78",""],
+  ["t4-10","システムマニュアル","","実践編","テキストP12",""],
+  ["t4-11","システムマニュアル","","リーダークルー認定研修後取組み","テキストP13",""],
+  ["t4-12","システムマニュアル","","終わりに","テキストP14",""]]}];
+const TR_COLS=[{k:'s',label:'本人'},{k:'m',label:'店長'},{k:'i',label:'SI'}];
+// 個人カルテ・個店カルテの様式（データ\Excel\個人カルテ【江坂南】.xlsx と同じ項目）
+const KARTE_SLOTS=['朝','昼','夕','夜勤'];
+const KARTE_HYG=['FF研修','ゴースト','厨房'];
+const KARTE_WEB=['接客','売場','WS'];
+const KARTE_SEISAN=['送金','コピー機','切手買受','費用出金'];
+const KARTE_DELIVERY=['①FDC','②DDC','③CDC2便','④CDC3便','⑤たばこ'];
+const _kc=(e,c)=>(e.certifications||[]).includes(c);
+const KARTE_STORE_ROWS=[
+  {label:'認定店長',test:e=>_kc(e,'認定店長')},
+  {label:'リーダー',test:e=>(e.crewRoles||[]).includes('リーダー')},
+  {label:'サブリーダー',test:e=>(e.crewRoles||[]).includes('サブリーダー')},
+  {label:'ファンタジスタ【マチカフェ】',test:e=>_kc(e,'ファンタジスタ（マチカフェ）')||_kc(e,'グランドファンタジスタ（マチカフェ）')},
+  {label:'ファンタジスタ【接客】',test:e=>_kc(e,'ファンタジスタ（接客）')||_kc(e,'グランドファンタジスタ（接客）')},
+  {label:'ファンタジスタ【FF】',test:e=>_kc(e,'ファンタジスタ（FF）')||_kc(e,'グランドファンタジスタ（FF）')},
+  {label:'ファンタジスタ【厨房】',test:e=>_kc(e,'ファンタジスタ（厨房）')||_kc(e,'グランドファンタジスタ（厨房）')}
+];
 
 const SERVICE_ITEMS=[
   {key:'s1',label:'接客①',title:'身だしなみルール',points:'身だしなみルールが守られている',criteria:{'◎':'意識しなくてもできる','○':'意識したらできる','△':'指摘されたらできる','✕':'指摘されてもできない'},good:'制服はユニフォームを着用している・左胸に名札をつけている',bad:'ユニフォーム未着用・名札なし・規定外の服装',note:'名札は必ず着用。ユニフォームは清潔に保つ。',img:'images/service_01.png'},
@@ -1280,6 +1525,7 @@ const App={
     const el=document.getElementById('view-'+viewId);if(!el)return;
     el.classList.add('active');
     if(pushHistory&&this._view!==viewId)this._history.push(this._view);
+    if(this._view!==viewId)this._kEditing=null;
     this._view=viewId;this._updateHeader(viewId);this._updateNav(viewId);this._renderView(viewId);window.scrollTo(0,0);
   },
 
@@ -1287,9 +1533,10 @@ const App={
   goBack(){const p=this._history.pop();if(p)this.showView(p,false)},
 
   _updateHeader(viewId){
-    const titles={login:'接客評価システム',dashboard:'阪口商店 接客評価',employees:'クルー一覧','employee-detail':'クルー詳細',evaluation:'評価入力',observation:'気づきメモ',improvement:'改善必要者','store-analysis':'店舗別分析','analysis-menu':'分析','employee-form':'クルー登録・編集',settings:'管理設定',discussion:'目線合わせ','item-ranking':'項目別弱点ランキング',compliance:'コンプラ回答状況','coaching-week':'週間指導レポート','staff-composition':'店舗別 人員構成','role-monthly':'月間 役割・資格リスト'};
+    const titles={login:'個店カルテ',dashboard:'組織カルテ',employees:'クルー一覧','employee-detail':'個人カルテ','store-karte':'個店カルテ',evaluation:'評価入力',observation:'気づきメモ',improvement:'改善必要者','store-analysis':'店舗別分析','analysis-menu':'分析','employee-form':'クルー登録・編集',settings:'管理設定',discussion:'目線合わせ','item-ranking':'項目別弱点ランキング',compliance:'コンプラ回答状況','coaching-week':'週間指導レポート','staff-composition':'店舗別 人員構成','role-monthly':'月間 役割・資格リスト'};
     let title=titles[viewId]||'';
-    if(viewId==='dashboard'){const u=DB.user();if(u&&u.role==='一般クルー'&&u.employeeId)title='マイカルテ';else if(u&&u.role==='店舗責任者'&&u.store)title=u.store}
+    if(viewId==='dashboard'){const u=DB.user();if(u&&u.role==='一般クルー'&&u.employeeId)title='マイカルテ';else if(u&&u.role==='店舗責任者'&&u.store)title='個店カルテ｜'+u.store}
+    if(viewId==='store-karte'&&this._currentStore)title='個店カルテ｜'+this._currentStore;
     document.getElementById('header-title').textContent=title;
     const back=document.getElementById('btn-back');
     back.classList.toggle('hidden',['dashboard','employees','observation','analysis-menu','settings','login'].includes(viewId));
@@ -1300,7 +1547,7 @@ const App={
   },
 
   _renderView(viewId){
-    const map={dashboard:'renderDashboard',employees:'renderEmployeeList','employee-detail':'renderEmployeeDetail',evaluation:'renderEvaluation',observation:'renderObservations',improvement:'renderImprovement','store-analysis':'renderStoreAnalysis','employee-form':'renderEmployeeForm',settings:'renderSettings',discussion:'renderDiscussion','item-ranking':'renderItemRanking',compliance:'renderCompliance','coaching-week':'renderCoachingWeek','staff-composition':'renderStaffComposition','role-monthly':'renderRoleMonthly'};
+    const map={dashboard:'renderDashboard',employees:'renderEmployeeList','employee-detail':'renderEmployeeDetail',evaluation:'renderEvaluation',observation:'renderObservations',improvement:'renderImprovement','store-analysis':'renderStoreAnalysis','employee-form':'renderEmployeeForm',settings:'renderSettings',discussion:'renderDiscussion','item-ranking':'renderItemRanking',compliance:'renderCompliance','coaching-week':'renderCoachingWeek','staff-composition':'renderStaffComposition','role-monthly':'renderRoleMonthly','store-karte':'renderStoreKartePage'};
     if(map[viewId])this[map[viewId]]();
   },
 
@@ -1342,7 +1589,19 @@ const App={
       const rows=SERVICE_ITEMS.map(item=>this._changeRow(evals,e.id,item.key,item.label)).join('');
       return`<div class="imp-row" onclick="App.openEmployee('${e.id}')"><div class="flex-between"><div class="imp-name">${e.name}</div><span style="color:var(--gray)">›</span></div><div class="imp-store">${e.store}</div><div style="margin-top:4px">${rows}</div></div>`;
     }).join('');
+    const storeTiles=STORES.map(s=>{
+      const se=emps.filter(e=>e.store===s);if(!se.length)return '';
+      const st=storeStats.find(x=>x.store===s);
+      const ni=needImprove.filter(e=>e.store===s).length;
+      return`<button class="store-tile" onclick="App.openStoreKarte('${s.replace(/'/g,"\\'")}')"><div class="nm">🏪 ${s} ›</div><div class="mt">${se.length}名｜評価 ${st?st.rate:0}%${ni?`｜<span style="color:var(--red);font-weight:700">要改善${ni}</span>`:''}</div></button>`;
+    }).join('');
     document.getElementById('dashboard-content').innerHTML=`
+      <div class="card" style="background:linear-gradient(135deg,#005BAC,#0074D9);color:#fff">
+        <div style="font-size:12px;opacity:.85">組織カルテ / Company Report</div>
+        <div style="font-size:20px;font-weight:800;margin-top:2px">阪口商店 全店</div>
+        <div style="font-size:12px;opacity:.9;margin-top:4px">組織カルテ → 個店カルテ → 個人カルテ の順に見られます</div>
+      </div>
+      <div class="card"><div class="section-title" style="margin-top:0">🏪 個店カルテ（店舗をタップ）</div><div class="store-grid">${storeTiles}</div></div>
       <div class="stats-grid">
         <div class="stat-card"><div class="stat-num">${emps.length}</div><div class="stat-label">在籍クルー数</div></div>
         <div class="stat-card tappable" ontouchstart="" onclick="App.showCompletionRateDetail()"><div class="stat-num" style="color:var(--green)">${rate}%</div><div class="stat-label">評価完了率 ›</div></div>
@@ -1371,7 +1630,7 @@ const App={
       ${needImprove.length?`<div class="section-title">改善必要クルー（上位5名）</div>${improveList}<button class="btn btn-secondary btn-full" onclick="App.navTo('improvement')">全員を見る</button>`:''}
       <div class="section-title" style="margin-top:12px">店舗別評価完了率</div>
       <div style="display:flex;gap:12px;margin-bottom:8px;font-size:11px;color:var(--text-sub)"><span><span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:#00A651;margin-right:3px"></span>責任者</span><span><span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:#0369A1;margin-right:3px"></span>SC</span><span><span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:#1E40AF;margin-right:3px"></span>SI</span></div>
-      ${storeStats.map(s=>`<div class="store-bar-wrap"><div class="store-bar-name"><span>${s.store}</span><span>全体 ${s.evaled}/${s.total}名 ${s.rate}%</span></div><div class="store-bar-track"><div class="store-bar-fill" style="width:${s.rate}%"></div></div>${[['責任者',s.smRate,'#00A651'],['SC',s.scRate,'#0369A1'],['SI',s.siRate,'#1E40AF']].map(([l,r,c])=>`<div style="display:flex;align-items:center;gap:6px;margin-top:3px"><span style="font-size:10px;width:36px;color:var(--text-sub)">${l}</span><div class="store-bar-track" style="flex:1;height:6px;margin:0"><div style="height:100%;border-radius:inherit;background:${c};width:${r}%"></div></div><span style="font-size:10px;width:32px;text-align:right;color:var(--text-sub)">${r}%</span></div>`).join('')}${s.impTotal?`<div onclick="App.showStoreImprovement('${s.store.replace(/'/g,"\\'")}')" style="display:flex;align-items:center;gap:6px;margin-top:5px;padding-top:5px;border-top:1px dashed var(--border);cursor:pointer"><span style="font-size:10px;width:36px;color:var(--green);font-weight:700">🔄改善</span><div class="store-bar-track" style="flex:1;height:6px;margin:0"><div style="height:100%;border-radius:inherit;background:var(--green);width:${s.impRate}%"></div></div><span style="font-size:10px;width:52px;text-align:right;color:var(--text-sub)">${s.fixedItems}/${s.impTotal}件 ›</span></div>`:''}</div>`).join('')}
+      ${storeStats.map(s=>`<div class="store-bar-wrap"><div class="store-bar-name" onclick="App.openStoreKarte('${s.store.replace(/'/g,"\\'")}')" style="cursor:pointer"><span style="color:var(--blue);font-weight:700">${s.store} ›</span><span>全体 ${s.evaled}/${s.total}名 ${s.rate}%</span></div><div class="store-bar-track"><div class="store-bar-fill" style="width:${s.rate}%"></div></div>${[['責任者',s.smRate,'#00A651'],['SC',s.scRate,'#0369A1'],['SI',s.siRate,'#1E40AF']].map(([l,r,c])=>`<div style="display:flex;align-items:center;gap:6px;margin-top:3px"><span style="font-size:10px;width:36px;color:var(--text-sub)">${l}</span><div class="store-bar-track" style="flex:1;height:6px;margin:0"><div style="height:100%;border-radius:inherit;background:${c};width:${r}%"></div></div><span style="font-size:10px;width:32px;text-align:right;color:var(--text-sub)">${r}%</span></div>`).join('')}${s.impTotal?`<div onclick="App.showStoreImprovement('${s.store.replace(/'/g,"\\'")}')" style="display:flex;align-items:center;gap:6px;margin-top:5px;padding-top:5px;border-top:1px dashed var(--border);cursor:pointer"><span style="font-size:10px;width:36px;color:var(--green);font-weight:700">🔄改善</span><div class="store-bar-track" style="flex:1;height:6px;margin:0"><div style="height:100%;border-radius:inherit;background:var(--green);width:${s.impRate}%"></div></div><span style="font-size:10px;width:52px;text-align:right;color:var(--text-sub)">${s.fixedItems}/${s.impTotal}件 ›</span></div>`:''}</div>`).join('')}
       <div style="height:8px"></div>
       ${(DB.user().role==='管理者'||DB.user().role==='SC')?`<button class="btn btn-secondary btn-full" onclick="window.open('compliance-status.html','_blank')" style="margin-top:8px">📝 コンプラ提出状況を見る（別アプリ）</button>`:''}
       ${Storage.AUTH.can(DB.user(),'sysAdmin')?`<button class="btn btn-secondary btn-full" onclick="App.navTo('settings')" style="margin-top:8px">⚙️ 管理設定</button>`:''}
@@ -1425,17 +1684,25 @@ const App={
       </div>
       ${myEvals.length?'':'<div class="card"><div class="empty-state"><p>接客チェックはまだありません。<br>チェックを受けるとここに結果が表示されます。</p></div></div>'}
       <div class="card"><div style="font-weight:700">📋 接客チェック結果</div><div style="font-size:11px;color:var(--text-sub);margin:4px 0 8px">「📖 出来栄え基準を見る」を押すと、◎○△✕の基準・良い例・悪い例（＝正解）を確認できます / Tap 📖 to see the standard</div>${evalSummary}</div>
+      ${this._trCardHtml(e)}
+      ${this._kEmpCardHtml(e)}
       ${monthlyGraph}
       <div class="card"><div style="font-weight:700;margin-bottom:8px">📘 自分あての指導メモ</div>${coachHtml}</div>
       <button class="btn btn-secondary btn-full" onclick="App.logout()" style="margin-top:8px">ログアウト</button>`;
+    this._trLoad(String(e.id));
+    if(!this._kLoaded)this._kLoad();
   },
 
   /* 店舗責任者向けトップ: 自店クルーだけのカルテ一覧（他店舗の情報は出さない） */
-  renderStoreKarte(store){
-    const box=document.getElementById('dashboard-content');
+  renderStoreKarte(store,boxId='dashboard-content'){
+    const box=document.getElementById(boxId);
     const me=DB.user();
+    const isTop=boxId==='dashboard-content';
+    const isSM=me&&me.role==='店舗責任者';
+    if(!this._trAllLoaded)this._trLoadAll();
+    if(!this._kLoaded)this._kLoad();
     const emps=DB.employees().filter(e=>e.status==='在籍中'&&e.store===store);
-    if(!emps.length){box.innerHTML='<div class="empty-state"><p>自店のクルーデータがありません。<br>電波の良い場所で再読み込みしてください。</p></div><button class="btn btn-secondary btn-full" onclick="App.logout()">ログアウト</button>';return}
+    if(!emps.length){box.innerHTML=this._crumbs(store)+'<div class="empty-state"><p>この店舗のクルーデータがありません。<br>電波の良い場所で再読み込みしてください。</p></div>'+(isTop?'<button class="btn btn-secondary btn-full" onclick="App.logout()">ログアウト</button>':'');return}
     const evalTarget=emps.filter(e=>!e.evalExcluded);
     const excluded=emps.length-evalTarget.length;
     const evals=DB.evaluations();
@@ -1449,7 +1716,9 @@ const App={
     const rows=evalTarget.map(e=>{
       let open=0,none=0;
       SERVICE_ITEMS.forEach(item=>{const s=this._getItemStatus(evals,e.id,item.key).status;if(s==='要改善')open++;else if(!s||s==='未')none++});
-      const chips=SERVICE_ITEMS.map(item=>{const r=this._getFinalRank(evals,e.id,item.key);return`<span class="rank-chip ${r||'未'}" style="font-size:10px">${item.label.replace('接客','')}${r||'未'}</span>`}).join('');
+      let chips=SERVICE_ITEMS.map(item=>{const r=this._getFinalRank(evals,e.id,item.key);return`<span class="rank-chip ${r||'未'}" style="font-size:10px">${item.label.replace('接客','')}${r||'未'}</span>`}).join('');
+      const lvKey=this._trLevelOf(e);const lv=TRAINING_LEVELS.find(l=>l.key===lvKey);const ts=this._trStats(this._trGet(String(e.id)),lv);
+      chips+=`<span class="tr-chip">🎓 ${lv.label} ${ts.done}/${ts.total}</span>`;
       return{e,open,none,chips};
     }).sort((a,b)=>b.open-a.open||b.none-a.none||a.e.name.localeCompare(b.e.name,'ja'));
     const needImproveCount=rows.filter(r=>r.open>0).length;
@@ -1463,11 +1732,13 @@ const App={
       </div>`;
     }).join('');
     box.innerHTML=`
+      ${this._crumbs(store)}
       <div class="card" style="background:linear-gradient(135deg,#00A651,#059669);color:#fff">
-        <div style="font-size:12px;opacity:.85">自店カルテ / Store Report</div>
+        <div style="font-size:12px;opacity:.85">個店カルテ / Store Report</div>
         <div style="font-size:20px;font-weight:800;margin-top:2px">${store}</div>
-        <div style="font-size:12px;opacity:.9;margin-top:4px">責任者：${me?me.name:''}</div>
+        ${isSM?`<div style="font-size:12px;opacity:.9;margin-top:4px">責任者：${me.name}</div>`:''}
       </div>
+      ${this._kStoreCardHtml(store)}
       <div class="stats-grid">
         <div class="stat-card"><div class="stat-num">${emps.length}</div><div class="stat-label">在籍クルー数</div></div>
         <div class="stat-card"><div class="stat-num" style="color:var(--green)">${rate}%</div><div class="stat-label">評価完了率</div></div>
@@ -1482,11 +1753,329 @@ const App={
         <div class="cycle-bar-track"><div class="cycle-bar-fill" style="width:${impRate}%"></div></div>
         <div class="text-sub" style="font-size:11px;margin-top:4px;text-align:right">改善率 <b style="color:var(--green)">${impRate}%</b>（${impStats.fixedItems}/${impAll}件が○◎化）</div>
       </div>
-      <div class="section-title">自店クルー一覧（${evalTarget.length}名・要改善が上）</div>
-      <div class="text-sub" style="font-size:11px;margin-bottom:6px">タップすると個人カルテ（評価入力・指導メモ）が開きます</div>
+      <div class="section-title">${isSM?'自店':''}クルー一覧（${evalTarget.length}名・要改善が上）</div>
+      <div class="text-sub" style="font-size:11px;margin-bottom:6px">タップすると個人カルテ（評価・トレーニングチェック・指導メモ）が開きます</div>
       ${listHtml}
       ${excluded?`<div class="text-sub" style="font-size:11px;margin-top:6px">※ 評価対象外：${excluded}名（クルー一覧から確認できます）</div>`:''}
-      <button class="btn btn-secondary btn-full" onclick="App.logout()" style="margin-top:12px">ログアウト</button>`;
+      ${isTop?'<button class="btn btn-secondary btn-full" onclick="App.logout()" style="margin-top:12px">ログアウト</button>':`<button class="btn btn-secondary btn-full" onclick="App.navTo('dashboard')" style="margin-top:12px;min-height:44px">🏢 組織カルテへ戻る</button>`}`;
+  },
+
+  /* ===== 個人カルテ・個店カルテの様式項目（Excel「個人カルテ」様式と同じ並び） ===== */
+  _kAll(){
+    if(!this._karte){try{this._karte=JSON.parse(localStorage.getItem('karte_v1')||'{}')}catch(e){this._karte={}}}
+    return this._karte;
+  },
+  _kGet(key){return this._kAll()[key]||{}},
+  async _kLoad(){
+    if(this._kLoading)return;this._kLoading=true;
+    try{
+      const res=await fetch(`${GAS_URL}?action=getKarte`,{redirect:'follow'});
+      const d=await res.json();
+      if(!d.ok){this._kServerMissing=/不明なアクション/.test(d.error||'');return}
+      this._kServerMissing=false;
+      const m={};(d.rows||[]).forEach(r=>{m[r.key]=r.data||{}});
+      this._karte=m;try{localStorage.setItem('karte_v1',JSON.stringify(m))}catch(e){}
+      this._kLoaded=true;
+      if(!this._kEditing)this._kRerenderView();
+    }catch(e){}finally{this._kLoading=false}
+  },
+  _kRerenderView(){
+    if(this._view==='employee-detail')this.renderEmployeeDetail();
+    else if(this._view==='store-karte')this.renderStoreKartePage();
+    else if(this._view==='dashboard'){const u=DB.user();if(u&&(u.role==='店舗責任者'||u.role==='一般クルー'))this.renderDashboard()}
+  },
+  _kCanEdit(store){
+    const me=DB.user();if(!me)return false;
+    if(me.role==='管理者'||me.role==='SC'||me.role==='SI')return true;
+    if(me.role==='店舗責任者')return me.store===store;
+    return false;
+  },
+  _kEsc(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;')},
+  _kStat(v){return v==='済'?'<span class="k-st ok">✓ 済</span>':v==='対象外'?'<span class="k-st na">対象外</span>':'<span class="k-st no">未</span>'},
+
+  /* 個人カルテの様式カード */
+  _kEmpCardHtml(e){
+    const key='emp:'+e.id;const d=this._kGet(key);
+    const can=this._kCanEdit(e.store);const editing=this._kEditing===key;
+    const certs=e.certifications||[];const roles=e.crewRoles||[];
+    const has=c=>certs.includes(c);
+    const roleRow=['ルーキー（新人）','レギュラー','サブリーダー','リーダー'].map(r=>`<span class="k-pill ${roles.includes(r)?'on':''}">${r.replace('（新人）','')}</span>`).join('')+`<span class="k-pill ${has('認定店長')?'on':''}">認定店長</span>`;
+    const fanta=['FF','厨房','接客','マチカフェ'].map(x=>`<span class="k-pill ${has('ファンタジスタ（'+x+'）')?'on':''}">${x}</span>`).join('');
+    const grand=['FF','厨房','接客','マチカフェ'].map(x=>`<span class="k-pill ${has('グランドファンタジスタ（'+x+'）')?'on':''}">${x}</span>`).join('');
+    const sh=d.shifts||{};
+    const warn=this._kServerMissing?'<div class="tr-warn">⚠️ サーバー（GAS）の更新がまだのため、保存できません。</div>':'';
+    if(editing){
+      const chk=(grp,slot)=>`<label class="k-chk"><input type="checkbox" data-k="shift" data-g="${grp}" value="${slot}" ${(sh[grp]||[]).includes(slot)?'checked':''}><span>${slot}</span></label>`;
+      const sel=(grp,name,opts)=>`<label class="k-field"><span>${name}</span><select data-k="${grp}" data-n="${name}">${opts.map(o=>`<option value="${o}" ${((d[grp]||{})[name]||'')===o?'selected':''}>${o||'未'}</option>`).join('')}</select></label>`;
+      return`<div class="card" id="k-emp-card"><div style="font-weight:700;margin-bottom:8px">🗂️ 個人カルテ（基本情報・育成）を編集</div>${warn}
+        <div class="k-grid">
+          <label class="k-field"><span>ふりがな</span><input data-k="furigana" value="${this._kEsc(d.furigana)}"></label>
+          <label class="k-field"><span>国籍</span><input data-k="nationality" value="${this._kEsc(d.nationality)}"></label>
+          <label class="k-field"><span>雇用年月日</span><input type="date" data-k="hireDate" value="${this._kEsc(d.hireDate)}"></label>
+        </div>
+        <div class="k-sec">勤務時間帯</div>
+        <div class="k-shift"><b>平日</b>${KARTE_SLOTS.map(s=>chk('wd',s)).join('')}</div>
+        <div class="k-shift"><b>土日</b>${KARTE_SLOTS.map(s=>chk('we',s)).join('')}</div>
+        <div class="k-sec">衛生管理</div><div class="k-grid">${KARTE_HYG.map(n=>sel('hyg',n,['','済','対象外'])).join('')}</div>
+        <div class="k-sec">WEB講座</div><div class="k-grid">${KARTE_WEB.map(n=>sel('web',n,['','済'])).join('')}</div>
+        <div class="k-sec">精算（ひとりでできる）</div><div class="k-grid">${KARTE_SEISAN.map(n=>sel('seisan',n,['','済'])).join('')}</div>
+        <div class="k-sec">強み・弱み・育成計画</div>
+        <label class="k-field"><span>強み</span><textarea data-k="strength" rows="2">${this._kEsc(d.strength)}</textarea></label>
+        <label class="k-field"><span>弱み</span><textarea data-k="weakness" rows="2">${this._kEsc(d.weakness)}</textarea></label>
+        <label class="k-field"><span>育成計画</span><textarea data-k="plan" rows="3">${this._kEsc(d.plan)}</textarea></label>
+        <div class="text-sub" style="font-size:11px;margin:6px 0">※ 役職・ファンタジスタは上の「編集」（クルー登録）で変更します</div>
+        <div style="display:flex;gap:8px;margin-top:8px"><button class="btn btn-secondary" style="flex:1;min-height:44px" onclick="App.kCancel()">やめる</button><button class="btn btn-primary" style="flex:2;min-height:44px" onclick="App.kSaveEmp('${e.id}')">保存する</button></div>
+      </div>`;
+    }
+    const shiftTxt=g=>(sh[g]||[]).length?(sh[g]||[]).map(s=>`<span class="k-pill on">${s}</span>`).join(''):'<span class="text-sub">－</span>';
+    const stRow=(grp,names)=>names.map(n=>`<div class="k-item"><span>${n}</span>${this._kStat((d[grp]||{})[n])}</div>`).join('');
+    const txt=v=>v?this._kEsc(v).replace(/\n/g,'<br>'):'<span class="text-sub">－</span>';
+    return`<div class="card" id="k-emp-card"><div class="flex-between"><div style="font-weight:700">🗂️ 個人カルテ（基本情報・育成）</div>${can?`<button class="btn btn-secondary btn-sm" style="min-height:40px" onclick="App.kEdit('${key}')">✏️ 編集</button>`:''}</div>${warn}
+      <div class="k-info">
+        <div><span>ふりがな</span><b>${txt(d.furigana)}</b></div>
+        <div><span>国籍</span><b>${txt(d.nationality)}</b></div>
+        <div><span>雇用年月日</span><b>${d.hireDate?d.hireDate.replace(/-/g,'/'):'<span class="text-sub">－</span>'}</b></div>
+        <div><span>勤務歴</span><b>${this._kTenure(e,d)||'<span class="text-sub">－</span>'}</b></div>
+      </div>
+      <div class="k-sec">勤務時間帯</div>
+      <div class="k-shift"><b>平日</b>${shiftTxt('wd')}</div>
+      <div class="k-shift"><b>土日</b>${shiftTxt('we')}</div>
+      <div class="k-sec">役職</div><div>${roleRow}</div>
+      <div class="k-sec">ファンタジスタ</div><div>${fanta}</div>
+      <div class="k-sec">グランドファンタジスタ</div><div>${grand}</div>
+      <div class="k-sec">衛生管理</div><div class="k-items">${stRow('hyg',KARTE_HYG)}</div>
+      <div class="k-sec">WEB講座</div><div class="k-items">${stRow('web',KARTE_WEB)}</div>
+      <div class="k-sec">精算</div><div class="k-items">${stRow('seisan',KARTE_SEISAN)}</div>
+      <div class="k-sec">強み</div><div class="k-text">${txt(d.strength)}</div>
+      <div class="k-sec">弱み</div><div class="k-text">${txt(d.weakness)}</div>
+      <div class="k-sec">育成計画</div><div class="k-text">${txt(d.plan)}</div>
+    </div>`;
+  },
+  _kTenure(e,d){
+    const t=this._tenureText(e.id);if(t)return t;
+    if(!d.hireDate)return '';
+    const h=new Date(d.hireDate);if(isNaN(h))return '';
+    const n=new Date();let m=(n.getFullYear()-h.getFullYear())*12+(n.getMonth()-h.getMonth());if(n.getDate()<h.getDate())m--;
+    if(m<0)m=0;return(Math.floor(m/12)?Math.floor(m/12)+'年':'')+(m%12)+'ヶ月';
+  },
+  kEdit(key){this._kEditing=key;this._kRerenderView()},
+  kCancel(){this._kEditing=null;this._kRerenderView()},
+  async _kSave(key,patch){
+    const me=DB.user();const all=this._kAll();
+    const prev=JSON.parse(JSON.stringify(all[key]||{}));
+    all[key]={...(all[key]||{}),...patch};
+    try{localStorage.setItem('karte_v1',JSON.stringify(all))}catch(e){}
+    this._kEditing=null;this._kRerenderView();
+    try{
+      const res=await fetch(GAS_URL,{method:'POST',redirect:'follow',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify({action:'setKarte',key,patch,user:me?me.name:''})});
+      const d=await res.json();if(!d.ok)throw new Error(d.error||'保存エラー');
+      all[key]=d.data||all[key];try{localStorage.setItem('karte_v1',JSON.stringify(all))}catch(e){}
+      this._kServerMissing=false;this.showToast('保存しました','success');
+    }catch(err){
+      all[key]=prev;try{localStorage.setItem('karte_v1',JSON.stringify(all))}catch(e){}
+      if(/不明なアクション/.test(err.message))this._kServerMissing=true;
+      this._kRerenderView();this.showToast('保存できませんでした: '+err.message,'error');
+    }
+  },
+  kSaveEmp(id){
+    const box=document.getElementById('k-emp-card');if(!box)return;
+    const v=k=>(box.querySelector(`[data-k="${k}"]`)?.value||'').trim();
+    const patch={furigana:v('furigana'),nationality:v('nationality'),hireDate:v('hireDate'),strength:v('strength'),weakness:v('weakness'),plan:v('plan'),shifts:{wd:[],we:[]},hyg:{},web:{},seisan:{}};
+    box.querySelectorAll('input[data-k="shift"]:checked').forEach(c=>patch.shifts[c.dataset.g].push(c.value));
+    box.querySelectorAll('select[data-k]').forEach(s=>{patch[s.dataset.k][s.dataset.n]=s.value});
+    this._kSave('emp:'+id,patch);
+  },
+
+  /* 個店カルテ：時間帯別の人材表＋納品時間 */
+  _kStoreCardHtml(store){
+    const key='store:'+store;const d=this._kGet(key);
+    const can=this._kCanEdit(store);const editing=this._kEditing===key;
+    const emps=DB.employees().filter(e=>e.status==='在籍中'&&e.store===store);
+    const extra=d.extra||{};
+    const del=d.delivery||{};
+    const warn=this._kServerMissing?'<div class="tr-warn">⚠️ サーバー（GAS）の更新がまだのため、保存できません。</div>':'';
+    const short=n=>String(n||'').split(/[\s　]+/)[0];
+    const cell=(row,slot)=>{
+      const names=emps.filter(e=>row.test(e)&&(()=>{const s=this._kGet('emp:'+e.id).shifts||{};return(s.wd||[]).includes(slot)||(s.we||[]).includes(slot)})()).map(e=>`<a onclick="App.openEmployee('${e.id}')">${short(e.name)}</a>`);
+      const ex=extra[row.label+'|'+slot];
+      if(editing)return`<td><div class="k-cell">${names.join('、')}</div><input class="k-cell-in" data-cell="${row.label}|${slot}" value="${this._kEsc(ex)}" placeholder="追記"></td>`;
+      const all=names.concat(ex?[`<span>${this._kEsc(ex)}</span>`]:[]);
+      return`<td class="${all.length?'':'empty'}">${all.join('、')||'－'}</td>`;
+    };
+    const table=`<div class="k-table-wrap"><table class="k-table"><thead><tr><th></th>${KARTE_SLOTS.map(s=>`<th>${s==='夜勤'?'夜勤':s+'勤'}</th>`).join('')}</tr></thead><tbody>${KARTE_STORE_ROWS.map(r=>`<tr><th>${r.label}</th>${KARTE_SLOTS.map(s=>cell(r,s)).join('')}</tr>`).join('')}</tbody></table></div>`;
+    const noShift=emps.filter(e=>{const s=this._kGet('emp:'+e.id).shifts||{};return!(s.wd||[]).length&&!(s.we||[]).length}).length;
+    const delHtml=editing
+      ?KARTE_DELIVERY.map(n=>`<label class="k-field"><span>${n}</span><input type="time" data-del="${n}" value="${this._kEsc(del[n])}"></label>`).join('')
+      :KARTE_DELIVERY.map(n=>`<div class="k-item"><span>${n}</span><b>${del[n]||'－'}</b></div>`).join('');
+    return`<div class="card" id="k-store-card"><div class="flex-between"><div style="font-weight:700">🗂️ 個店カルテ（時間帯別の人材・納品時間）</div>${can&&!editing?`<button class="btn btn-secondary btn-sm" style="min-height:40px" onclick="App.kEdit('${key.replace(/'/g,"\\'")}')">✏️ 編集</button>`:''}</div>${warn}
+      ${editing?`<label class="k-field" style="max-width:220px"><span>店舗コード</span><input data-k="storeCode" inputmode="numeric" value="${this._kEsc(d.storeCode)}"></label>`:(d.storeCode?`<div class="text-sub" style="font-size:12px;margin-top:2px">店舗コード：${this._kEsc(d.storeCode)}</div>`:'')}
+      <div class="k-sec">時間帯別の役職・ファンタジスタ</div>
+      <div class="text-sub" style="font-size:11px;margin-bottom:4px">各クルーの個人カルテ「勤務時間帯」と役職から自動で並びます${editing?'。名簿にいない人（店長など）は「追記」に書けます':''}</div>
+      ${table}
+      ${noShift&&!editing?`<div class="text-sub" style="font-size:11px;margin-top:4px">※ 勤務時間帯が未入力のクルー：${noShift}名（個人カルテで入力すると表に出ます）</div>`:''}
+      <div class="k-sec">納品時間</div><div class="${editing?'k-grid':'k-items'}">${delHtml}</div>
+      ${editing?`<div style="display:flex;gap:8px;margin-top:10px"><button class="btn btn-secondary" style="flex:1;min-height:44px" onclick="App.kCancel()">やめる</button><button class="btn btn-primary" style="flex:2;min-height:44px" onclick="App.kSaveStore('${store.replace(/'/g,"\\'")}')">保存する</button></div>`:''}
+    </div>`;
+  },
+  kSaveStore(store){
+    const box=document.getElementById('k-store-card');if(!box)return;
+    const patch={storeCode:(box.querySelector('[data-k="storeCode"]')?.value||'').trim(),extra:{},delivery:{}};
+    box.querySelectorAll('[data-cell]').forEach(i=>{const v=i.value.trim();if(v)patch.extra[i.dataset.cell]=v});
+    box.querySelectorAll('[data-del]').forEach(i=>{if(i.value)patch.delivery[i.dataset.del]=i.value});
+    this._kSave('store:'+store,patch);
+  },
+
+  /* ===== 3段階カルテ（組織 → 個店 → 個人）の移動 ===== */
+  openStoreKarte(store){
+    const me=DB.user();
+    if(me&&me.role==='店舗責任者'){this.navTo('dashboard');return}
+    this._currentStore=store;this.showView('store-karte');
+  },
+  renderStoreKartePage(){this.renderStoreKarte(this._currentStore||STORES[0],'store-karte-content')},
+  _crumbs(store,name){
+    const me=DB.user();const isSM=me&&me.role==='店舗責任者';const isCrew=me&&me.role==='一般クルー';
+    if(isCrew)return '';
+    const esc=s=>String(s||'').replace(/'/g,"\\'");
+    const parts=[];
+    if(!isSM)parts.push(`<a onclick="App.navTo('dashboard')">🏢 組織カルテ</a>`);
+    if(store)parts.push(name?`<a onclick="App.openStoreKarte('${esc(store)}')">🏪 ${store}</a>`:`<b>🏪 ${store}</b>`);
+    if(name)parts.push(`<b>👤 ${name}</b>`);
+    return parts.length>1?`<div class="karte-crumbs">${parts.join('<span class="sep">›</span>')}</div>`:'';
+  },
+
+  /* ===== トレーニングチェックリスト ===== */
+  _trKey(id){return 'trv1_'+id},
+  _trGet(id){
+    this._tr=this._tr||{};
+    if(!this._tr[id]){try{this._tr[id]=JSON.parse(localStorage.getItem(this._trKey(id))||'{}')}catch(e){this._tr[id]={}}}
+    return this._tr[id];
+  },
+  _trSave(id){try{localStorage.setItem(this._trKey(id),JSON.stringify(this._tr[id]||{}))}catch(e){}},
+  _trRowsToMap(rows){
+    const out={};
+    (rows||[]).forEach(r=>{
+      const eid=String(r.employeeId);if(!out[eid])out[eid]={};
+      if(r.checked===true||String(r.checked).toUpperCase()==='TRUE'){
+        (out[eid][r.itemId]=out[eid][r.itemId]||{})[r.col]={by:r.by||'',at:r.at||''};
+      }
+    });
+    return out;
+  },
+  async _trLoad(id){
+    try{
+      const res=await fetch(`${GAS_URL}?action=getTraining&employeeId=${encodeURIComponent(id)}`,{redirect:'follow'});
+      const d=await res.json();
+      if(!d.ok){this._trServerMissing=/不明なアクション/.test(d.error||'');this._trRefresh(id);return}
+      this._trServerMissing=false;
+      this._tr=this._tr||{};this._tr[String(id)]=this._trRowsToMap(d.rows)[String(id)]||{};this._trSave(String(id));this._trRefresh(id);
+    }catch(e){}
+  },
+  async _trLoadAll(){
+    if(this._trAllLoading)return;this._trAllLoading=true;
+    try{
+      const res=await fetch(`${GAS_URL}?action=getTraining`,{redirect:'follow'});
+      const d=await res.json();if(!d.ok)return;
+      const m=this._trRowsToMap(d.rows);this._tr=this._tr||{};
+      DB.employees().forEach(e=>{const id=String(e.id);this._tr[id]=m[id]||{};this._trSave(id)});
+      this._trAllLoaded=true;
+      if(this._view==='store-karte')this.renderStoreKartePage();
+      else if(this._view==='dashboard'&&DB.user()?.role==='店舗責任者')this.renderDashboard();
+    }catch(e){}finally{this._trAllLoading=false}
+  },
+  _trLevelOf(e){
+    const r=(e.crewRoles||[]).join(',');
+    if(/(^|,)リーダー/.test(r))return 't4';
+    if(r.includes('サブリーダー'))return 't3';
+    if(r.includes('レギュラー'))return 't2';
+    return 't1';
+  },
+  _trStats(map,lv){
+    const items=lv.items;let done=0;const c={s:0,m:0,i:0};
+    items.forEach(it=>{const x=map[it[0]]||{};if(x.s)c.s++;if(x.m)c.m++;if(x.i)c.i++;if(x.s&&x.m&&x.i)done++});
+    return{total:items.length,done,c,pct:items.length?Math.round(done/items.length*100):0};
+  },
+  _trCan(col,e){
+    const me=DB.user();if(!me)return false;const r=me.role;
+    if(r==='一般クルー')return col==='s'&&String(me.employeeId)===String(e.id);
+    if(r==='管理者'||r==='SC')return true;
+    if(r==='SI')return col!=='m';
+    if(r==='店舗責任者')return col!=='i'&&e.store===me.store;
+    return false;
+  },
+  _trCardHtml(e){
+    const map=this._trGet(String(e.id));
+    const cur=this._trLevelOf(e);
+    if(this._trOpenFor!==e.id){this._trOpenFor=e.id;this._trOpen=cur;this._trOnlyTodo=false}
+    const isCrew=DB.user()?.role==='一般クルー';
+    const levels=TRAINING_LEVELS.map(lv=>{
+      const st=this._trStats(map,lv);const open=this._trOpen===lv.key;
+      const color=st.pct>=100?'var(--green)':st.pct>0?'var(--blue)':'var(--gray)';
+      let body='';
+      if(open){
+        let lastCat=null,lastSub=null;
+        const rows=lv.items.map(it=>{
+          const [iid,cat,sub,name,page,note]=it;const x=map[iid]||{};
+          const all=x.s&&x.m&&x.i;
+          if(this._trOnlyTodo&&all)return '';
+          let head='';
+          if(cat!==lastCat){head+=`<div class="tr-cat">${cat}</div>`;lastCat=cat;lastSub=null}
+          if(sub&&sub!==lastSub){head+=`<div class="tr-sub">${sub}</div>`;lastSub=sub}
+          const btns=TR_COLS.map(c=>{
+            const v=x[c.k];const can=this._trCan(c.k,e);
+            const dt=v&&v.at?new Date(v.at):null;
+            const when=dt&&!isNaN(dt)?`${dt.getMonth()+1}/${dt.getDate()}`:'';
+            return`<button class="tr-btn ${v?'on':''}" ${can?`onclick="App.trToggle('${e.id}','${iid}','${c.k}')"`:'disabled'}><span>${v?'✓ ':''}${c.label}</span>${v?`<small>${when}${v.by?' '+v.by.split(/\s/)[0]:''}</small>`:''}</button>`;
+          }).join('');
+          return`${head}<div class="tr-item ${all?'done':''}"><div class="tr-name">${all?'✅ ':''}${name}${note?`<span class="tr-note">${note}</span>`:''}${page?`<span class="tr-page">📖 ${page}</span>`:''}</div><div class="tr-btns">${btns}</div></div>`;
+        }).join('');
+        body=`<div class="tr-body">
+          <div class="tr-tools"><span>本人 ${st.c.s}・店長 ${st.c.m}・SI ${st.c.i}／${st.total}項目</span><button class="btn btn-secondary btn-sm tr-tool-btn" onclick="App.trOnlyTodo()">${this._trOnlyTodo?'すべて表示':'まだの項目だけ'}</button></div>
+          ${rows||'<div class="empty-state"><p>すべて完了しています 🎉</p></div>'}
+          <button class="btn btn-secondary btn-full" style="margin-top:8px;min-height:44px" onclick="App.trOpenLevel('${lv.key}')">▲ ${lv.label}を閉じる</button></div>`;
+      }
+      return`<div class="tr-level ${open?'open':''}">
+        <div class="tr-level-head" onclick="App.trOpenLevel('${lv.key}')">
+          <div style="flex:1;min-width:0"><div class="flex-between"><span style="font-weight:700">${lv.label}${lv.key===cur?' <span class="badge badge-sub">いまの段階</span>':''}</span><span style="font-weight:800;color:${color}">${st.done}/${st.total}</span></div>
+          <div class="store-bar-track" style="margin:6px 0 0"><div class="store-bar-fill" style="width:${st.pct}%;background:${color}"></div></div></div>
+          <span class="tr-arrow">${open?'▲ 閉じる':'▼ 開く'}</span>
+        </div>${body}</div>`;
+    }).join('');
+    const warn=this._trServerMissing?'<div class="tr-warn">⚠️ サーバー（GAS）の更新がまだのため、チェックを保存できません。</div>':'';
+    return`<div class="card" id="tr-card"><div style="font-weight:700">🎓 トレーニングチェック${isCrew?' / Training':''}</div>
+      <div class="text-sub" style="font-size:11px;margin:4px 0 8px">本人・店長・SIの3つがそろうと完了（✅）。段階をタップすると項目が開きます${isCrew?'<br>After you learn it, tap「本人」(Me).':''}</div>${warn}${levels}</div>`;
+  },
+  _trRefresh(id){
+    const el=document.getElementById('tr-card');if(!el)return;
+    const e=DB.employees().find(x=>String(x.id)===String(id));if(!e)return;
+    el.outerHTML=this._trCardHtml(e);
+  },
+  trOpenLevel(k){this._trOpen=this._trOpen===k?null:k;this._trRefresh(this._trOpenFor)},
+  trOnlyTodo(){this._trOnlyTodo=!this._trOnlyTodo;this._trRefresh(this._trOpenFor)},
+  async trToggle(empId,itemId,col){
+    const e=DB.employees().find(x=>String(x.id)===String(empId));if(!e||!this._trCan(col,e))return;
+    const me=DB.user();const map=this._trGet(String(empId));
+    const cur=(map[itemId]||{})[col];
+    const pk=empId+'|'+itemId+'|'+col;
+    if(cur){
+      // 取り消しは誤タップ防止のため3秒以内に2回押す
+      if(this._trPending!==pk){this._trPending=pk;clearTimeout(this._trPendingT);this._trPendingT=setTimeout(()=>{this._trPending=null},3000);this.showToast('もう一度押すと取り消します','info');return}
+      this._trPending=null;
+    }
+    const prev=cur?{...cur}:null;
+    map[itemId]=map[itemId]||{};
+    if(cur)delete map[itemId][col];else map[itemId][col]={by:me.name,at:new Date().toISOString()};
+    this._trSave(String(empId));this._trRefresh(empId);
+    try{
+      const res=await fetch(GAS_URL,{method:'POST',redirect:'follow',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify({action:'setTraining',user:me.name,records:[{employeeId:String(empId),itemId,col,checked:!cur,by:me.name,byRole:me.role}]})});
+      const d=await res.json();if(!d.ok)throw new Error(d.error||'保存エラー');
+      this._trServerMissing=false;
+    }catch(err){
+      if(prev)map[itemId][col]=prev;else delete map[itemId][col];
+      this._trSave(String(empId));
+      if(/不明なアクション/.test(err.message))this._trServerMissing=true;
+      this._trRefresh(empId);
+      this.showToast('保存できませんでした: '+err.message,'error');
+    }
   },
 
   renderEmployeeList(){
@@ -1537,10 +2126,15 @@ const App={
     const canEdit=this._canEdit();
     const monthlyGraph=this._getMonthlyTrend(evals,id);
     document.getElementById('employee-detail-content').innerHTML=`
-      <div class="card"><div class="flex-between"><div><div style="font-size:20px;font-weight:800">${e.name}</div><div class="text-sub">${e.store}｜${this._typeName(e.type)}｜ID:${e.id}</div>${this._tenureFull(e.id)?`<div class="text-sub" style="margin-top:3px;color:#005BAC;font-weight:600">📅 在籍年数：${this._tenureFull(e.id)}</div>`:''}</div><div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px"><span class="badge ${e.status==='在籍中'?'badge-sub':'badge-crew'}">${e.status}</span>${canEdit?`<button class="btn btn-secondary btn-sm" onclick="App.editEmployee('${e.id}')">編集</button>`:''}</div></div><div class="emp-badges" style="margin-top:10px">${this._roleBadges(e)}</div></div>
+      ${this._crumbs(e.store,e.name)}
+      <div class="card"><div class="flex-between"><div><div style="font-size:12px;color:var(--text-sub)">個人カルテ</div><div style="font-size:20px;font-weight:800">${e.name}</div><div class="text-sub">${e.store}｜${this._typeName(e.type)}｜ID:${e.id}</div>${this._tenureFull(e.id)?`<div class="text-sub" style="margin-top:3px;color:#005BAC;font-weight:600">📅 在籍年数：${this._tenureFull(e.id)}</div>`:''}</div><div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px"><span class="badge ${e.status==='在籍中'?'badge-sub':'badge-crew'}">${e.status}</span>${canEdit?`<button class="btn btn-secondary btn-sm" onclick="App.editEmployee('${e.id}')">編集</button>`:''}</div></div><div class="emp-badges" style="margin-top:10px">${this._roleBadges(e)}</div></div>
       <div class="card"><div class="flex-between"><div style="font-weight:700">評価サマリー</div>${canEdit?`<button class="btn btn-primary btn-sm" onclick="App.openEvaluation('${e.id}')">評価入力</button>`:''}</div><div style="font-size:11px;color:var(--text-sub);margin:4px 0 8px">📖項目名をタッチすると出来栄え基準（正解）が見れます</div>${evalSummary}</div>
+      ${this._trCardHtml(e)}
+      ${this._kEmpCardHtml(e)}
       ${monthlyGraph}
       <div class="card"><div class="flex-between" style="margin-bottom:8px"><div style="font-weight:700">指導メモ</div>${canEdit?`<button class="btn btn-primary btn-sm" onclick="App.showAddCoaching('${e.id}')">追加</button>`:''}</div>${coachHtml}</div>`;
+    this._trLoad(String(e.id));
+    if(!this._kLoaded)this._kLoad();
   },
 
   openEvaluation(id){this._currentEmpId=id;this.showView('evaluation')},
