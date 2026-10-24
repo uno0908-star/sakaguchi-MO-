@@ -932,7 +932,9 @@ async function submitShift(){
       try{
         btn.innerHTML='保存を確認中...';
         const data=await jsonpFetch(GAS_URL,20000);
-        saved=!!(data&&Array.isArray(data.data)&&data.data.some(x=>String(x.id)===String(sub.id)));
+        // 同じidか、30分以内の同じ人・同じ希望日の提出があれば保存済み（GAS側で二重送信を弾いた場合）
+        const sameDates=x=>JSON.stringify((x.dates||[]).map(d=>d.date).sort())===JSON.stringify(sub.dates.map(d=>d.date));
+        saved=!!(data&&Array.isArray(data.data)&&data.data.some(x=>String(x.id)===String(sub.id)||(String(x.empId)===sub.empId&&sameDates(x)&&Math.abs(Number(x.id)-sub.id)<30*60*1000)));
       }catch(e){}
       if(!saved)throw postErr;
     }
@@ -1434,6 +1436,7 @@ function buildDeleteRangeOptions(){
   }));
   const todayStr=ds(new Date());
   let html='<option value="">-- 削除する範囲を選択 --</option>';
+  html+='<option value="dedupe">🧹 二重送信の重複を整理（同じ内容は1件にまとめる）</option>';
   html+='<option value="past">📅 過去の希望をまとめて削除（今日より前）</option>';
   [...mondays].sort().forEach(mon=>{
     const md=ds2d(mon);
@@ -1470,6 +1473,7 @@ async function executeDelete(){
   // 確認メッセージとGASアクションを組み立て
   let confirmMsg,query;
   const todayStr=ds(new Date());
+  if(range==='dedupe'){await executeDedupe(val);return;}
   if(range==='all'){
     confirmMsg='本当に全データを削除しますか？\nこの操作は元に戻せません。';
     query='action=clearAll';
@@ -1521,6 +1525,32 @@ async function executeDelete(){
     detail=`\n（希望日 ${res.removedDates}件・提出 ${res.removedSubs}件・確定 ${res.removedConfirmed}件を削除）`;
   }
   alert('✅ 削除しました。'+detail);
+  renderAdmin();
+}
+
+// ★二重送信の重複整理：まず件数を確認→OKなら実行（確定が付いた提出は消さない）
+async function executeDedupe(pw){
+  const btn=document.querySelector('.action-btn.danger');
+  const origText=btn?btn.innerHTML:'';
+  if(btn){btn.disabled=true;btn.innerHTML='🔄 重複を確認中...';}
+  const restore=()=>{if(btn){btn.disabled=false;btn.innerHTML=origText;}};
+  let res=null;
+  try{res=await jsonpFetch(GAS_URL+'?action=dedupe&dryRun=1&pw='+encodeURIComponent(pw),60000);}catch(e){}
+  if(!(res&&res.status==='ok')){
+    restore();
+    alert('⚠ 重複の確認に失敗しました。\n'+(res&&res.error?('エラー：'+res.error):'通信環境を確認して再度お試しください。\n（GASが旧バージョンの場合は、新しいGASコードのデプロイが必要です）'));
+    return;
+  }
+  if(!res.removedSubs){restore();alert('✅ 重複している提出はありません。');return;}
+  const names=(res.people||[]).slice(0,15).join('\n')+((res.people||[]).length>15?'\n…ほか':'');
+  if(!confirm(`同じ内容の二重送信が ${res.removedSubs}件 あります。\n各1件だけ残して整理しますか？\n（確定が付いている提出は消しません）\n\n${names}`)){restore();return;}
+  if(btn)btn.innerHTML='🔄 整理中...';
+  res=null;
+  try{res=await jsonpFetch(GAS_URL+'?action=dedupe&pw='+encodeURIComponent(pw),180000);}catch(e){}
+  restore();
+  if(!(res&&res.status==='ok')){alert('⚠ 整理に失敗しました。最新データを再取得して確認します。');}
+  else alert(`✅ 重複 ${res.removedSubs}件を整理しました。`);
+  await fetchSheetData();
   renderAdmin();
 }
 
