@@ -919,10 +919,23 @@ async function submitShift(){
 
   try{
     // text/plain送信ならプリフライトなしでレスポンスを読める → 保存成功を確認できる
-    const res=await fetch(GAS_URL,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify(sub)});
-    let result=null;
-    try{result=await res.json();}catch(e){}
-    if(!res.ok||(result&&result.status==='error'))throw new Error((result&&result.error)||('HTTP '+res.status));
+    let postErr=null;
+    try{
+      const res=await fetch(GAS_URL,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify(sub)});
+      let result=null;
+      try{result=await res.json();}catch(e){}
+      if(!res.ok||(result&&result.status==='error'))postErr=new Error((result&&result.error)||('HTTP '+res.status));
+    }catch(e){postErr=e;}
+    // ★返事が受け取れなくても保存されている事がある（端末・回線による）→ 再取得して保存済みなら成功扱い（二重送信防止）
+    if(postErr){
+      let saved=false;
+      try{
+        btn.innerHTML='保存を確認中...';
+        const data=await jsonpFetch(GAS_URL,20000);
+        saved=!!(data&&Array.isArray(data.data)&&data.data.some(x=>String(x.id)===String(sub.id)));
+      }catch(e){}
+      if(!saved)throw postErr;
+    }
     const stored=JSON.parse(localStorage.getItem('shiftData')||'[]');
     stored.push(sub);
     localStorage.setItem('shiftData',JSON.stringify(stored));
