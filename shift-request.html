@@ -889,6 +889,12 @@ function buildStoreOpts(id){
 
 // ===== GAS エンドポイント =====
 const GAS_URL='https://script.google.com/macros/s/AKfycbyMcb6QN2kpUhM_1E_HFwzLjQ-9PE_AdJjiGtoEnQiyBzVDCzWI87rm6Oc_HSHq5_8h4Q/exec';
+// ★スマホの保存領域（同じgithub.io配下の全アプリで共有・約5MB）が満杯でも止まらないようにする
+// 書けない時は自分のキャッシュを消して1回だけ再挑戦、それでもダメなら諦める（GAS側には保存済み）
+function lsSet(key,val){
+  try{localStorage.setItem(key,val);return true;}catch(e){}
+  try{localStorage.removeItem('shiftData');localStorage.setItem(key,val);return true;}catch(e){console.warn('localStorage full:',key,e);return false;}
+}
 
 // 送信
 async function submitShift(){
@@ -940,7 +946,7 @@ async function submitShift(){
     }
     const stored=JSON.parse(localStorage.getItem('shiftData')||'[]');
     stored.push(sub);
-    localStorage.setItem('shiftData',JSON.stringify(stored));
+    lsSet('shiftData',JSON.stringify(stored));
     ['card-basic','card-cal','card-other','card-note','submitBtn','deadlineBanner'].forEach(id=>{
       const el=document.getElementById(id);if(el)el.style.display='none';
     });
@@ -1012,7 +1018,7 @@ async function fetchSheetData(){
     const data=await jsonpFetch(GAS_URL,15000);
     if(data&&Array.isArray(data.data)){
       const norm=normalizeSubmissions(data.data);
-      localStorage.setItem('shiftData',JSON.stringify(norm));
+      lsSet('shiftData',JSON.stringify(norm));
       return norm;
     }
   }catch(e){
@@ -1034,7 +1040,7 @@ async function fetchConfirmed(){
     const data=await jsonpFetch(GAS_URL+'?action=getConfirmed',10000);
     if(data&&data.confirmed){
       _confirmedCache=normalizeConfirmed(data.confirmed);
-      localStorage.setItem('shiftConfirmed',JSON.stringify(_confirmedCache));
+      lsSet('shiftConfirmed',JSON.stringify(_confirmedCache));
       return _confirmedCache;
     }
   }catch(e){
@@ -1087,7 +1093,7 @@ async function confirmShift(sid,date,currentStore){
     const dateJa=isNaN(d.getTime())?date:`${d.getMonth()+1}月${d.getDate()}日(${days[d.getDay()]})`;
     if(!confirm(`「${dateJa}」の確定（${existing}）を解除しますか？`))return;
     delete _confirmedCache[key];
-    localStorage.setItem('shiftConfirmed',JSON.stringify(_confirmedCache));
+    lsSet('shiftConfirmed',JSON.stringify(_confirmedCache));
     renderAdminFromCache(); // ★即座にUI更新（GAS待ちなし）
     deleteConfirmFromGAS(sid,date); // バックグラウンドでGAS更新
   }else{
@@ -1564,13 +1570,13 @@ function applyLocalDeletion(range,todayStr){
   let data=loadLocalData();
   data=data.map(s=>({...s,dates:(s.dates||[]).filter(dt=>!inRange(dt.date))}))
            .filter(s=>(s.dates||[]).length>0);
-  localStorage.setItem('shiftData',JSON.stringify(data));
+  lsSet('shiftData',JSON.stringify(data));
   // 確定データも同期削除
   Object.keys(_confirmedCache).forEach(k=>{
     const i=k.indexOf('_');
     if(i>=0&&inRange(k.slice(i+1)))delete _confirmedCache[k];
   });
-  localStorage.setItem('shiftConfirmed',JSON.stringify(_confirmedCache));
+  lsSet('shiftConfirmed',JSON.stringify(_confirmedCache));
   // 削除した週がフィルター選択中なら解除
   const fwSel=document.getElementById('filterWeek');
   if(fwSel&&fwSel.value&&(range==='all'||(range.startsWith('week:')&&fwSel.value===range.slice(5))||(range==='past'&&fwSel.value<todayStr)))fwSel.value='';
@@ -1801,7 +1807,7 @@ async function submitConfirmModal(){
   // キャッシュを即更新
   const key=confirmedKey(sid,date);
   _confirmedCache[key]=store;
-  localStorage.setItem('shiftConfirmed',JSON.stringify(_confirmedCache));
+  lsSet('shiftConfirmed',JSON.stringify(_confirmedCache));
   // ★GAS再取得なしでキャッシュだけで即描画
   renderAdminFromCache();
   // バックグラウンドでGASに保存（待たない）
