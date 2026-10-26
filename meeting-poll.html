@@ -336,6 +336,7 @@ async function hostEdit(mid) {
         <button class="btn gray sm" id="tpl">10/28の 質問を 入れる</button></div>
         <div class="hint">ワードクラウド＝短い ことばを 集めて 大きさで 見せる／選択式＝えらぶ／5段階＝1〜5で 点数／自由記入＝文章</div></div>
       <div class="card"><div class="tabs"><button class="btn gray sm" id="csv">⬇ 回答を Excel用CSVで 保存</button>
+        <button class="btn red sm" id="resetAll">回答を 全部 リセット（最初から とりなおす）</button>
         <button class="btn red sm" id="del" style="margin-left:auto">この 会議を 消す</button></div></div>
     </div>`;
     $('#qlist').innerHTML = qs.map((q, i) => `<div class="qedit" data-i="${i}">
@@ -381,6 +382,13 @@ async function hostEdit(mid) {
     document.querySelectorAll('[data-dn]').forEach(b => b.onclick = () => { pull(); const i = +b.dataset.dn; [qs[i + 1], qs[i]] = [qs[i], qs[i + 1]]; draw(); });
     document.querySelectorAll('[data-rm]').forEach(b => b.onclick = () => { if (!confirm('この 質問を 消しますか？')) return; pull(); qs.splice(+b.dataset.rm, 1); draw(); });
     $('#csv').onclick = () => exportCsv(mid);
+    $('#resetAll').onclick = async () => {
+      if (!confirm('この 会議の 回答を ぜんぶ 消して、最初から とりなおします。質問は のこります。よろしいですか？')) return;
+      await apiGet({ action: 'clear', key: hostKey, m: mid });
+      await apiGet({ action: 'active', key: hostKey, m: mid, q: '', show: false });
+      for (const q of qs) await apiGet({ action: 'clear', key: hostKey, m: mid, q: q.id });   // 集計の キャッシュも 消す
+      hostEdit(mid);
+    };
     $('#del').onclick = async () => {
       if (!confirm('この 会議と 回答を ぜんぶ 消します。よろしいですか？')) return;
       await apiGet({ action: 'clear', key: hostKey, m: mid }); await apiGet({ action: 'remove', key: hostKey, m: mid }); hostList();
