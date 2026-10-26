@@ -75,7 +75,7 @@ table.stick1 thead tr:first-child th:first-child{background:#003087;z-index:3}
 table.stick1 tbody td:first-child{background:#fff}
 table.stick1 tbody tr:nth-child(even) td:first-child{background:#f8f9fb}
 table.stick1 tbody tr.avg-row td:first-child{background:#e8ecf3}
-@media(max-width:700px){table.stick1 tbody td:first-child,table.stick1 thead tr:first-child th:first-child{white-space:normal;min-width:6.2em;max-width:6.2em;line-height:1.3}}
+@media(max-width:700px){table.stick1 tbody td:first-child,table.stick1 thead tr:first-child th:first-child{white-space:normal;min-width:8em;max-width:8em;line-height:1.3}}
 tbody td{padding:7px 6px;text-align:right;border-bottom:1px solid #eaecf0;white-space:nowrap;font-size:12px}
 tbody td:first-child{text-align:left;padding-left:10px;font-weight:600}
 tbody td:nth-child(2){text-align:center}
@@ -328,9 +328,10 @@ table.dlv thead th:first-child{background:#003087}
         <th>平均日販<br>(千円)</th>
         <th>前年比実績<br>(%)<br><span style="font-size:9px;font-weight:400;opacity:.8">予算差(%Pt)</span></th>
         <th>ジー収入<br>実績(千円)<br><span style="font-size:9px;font-weight:400;opacity:.8">差異(実績−予算)</span></th>
-        <th>本部支援<br>/月(千円)<br><span style="font-size:9px;font-weight:400;opacity:.8">AICO＋限界突破</span></th>
+        <th>AICO<br>本部支援<br>/月(千円)</th>
+        <th>限界突破<br>本部支援<br>/月(千円)<br><span style="font-size:9px;font-weight:400;opacity:.8">精算書の締めまで</span></th>
         <th>厨房売上<br>/日(千円)</th>
-        <th>厨房支援<br>/月(千円)<br><span style="font-size:9px;font-weight:400;opacity:.8">厨房売上×率</span></th>
+        <th>ふだんの<br>厨房支援<br>/月(千円)<br><span style="font-size:9px;font-weight:400;opacity:.8">厨房売上×率</span></th>
         <th>雑益追加<br>(千円)<br><span style="font-size:9px;font-weight:400;opacity:.8">CN/TS+最低保証</span></th>
         <th>見切差異<br>(千円)<br><span style="font-size:9px;font-weight:400;opacity:.8">実績−予算</span></th>
         <th style="background:#1b5e20">総荒利<br>差異(千円)</th>
@@ -913,7 +914,8 @@ function renderProfitAnalysis(fp) {
       <div class="pa-block-title t-blue">② 収入加算（プラス要因）</div>
       <div class="pa-kpi blue">+${incTot.toLocaleString()}<span style="font-size:12px;font-weight:400;color:#888">千円</span></div>
       <div style="font-size:11px;color:#888;margin-bottom:8px">${fp.length}店合算/月</div>
-      <div class="pa-row2"><span class="k">🏢 本部支援<span style="font-size:10px;color:#888">（AICO＋限界突破${kcTot>0?' '+kcTot.toLocaleString():''}）</span></span><span class="v blue">+${hqTot.toLocaleString()}千円</span></div>
+      <div class="pa-row2"><span class="k">🏢 AICO本部支援</span><span class="v blue">+${(hqTot-kcTot).toLocaleString()}千円</span></div>
+      <div class="pa-row2"><span class="k">🔥 厨房限界突破 本部支援</span><span class="v blue">+${kcTot.toLocaleString()}千円</span></div>
       <div class="pa-row2"><span class="k">🍱 厨房支援金<span style="font-size:10px;color:#888">（厨房売上×率）</span></span><span class="v blue">+${kitTot.toLocaleString()}千円</span></div>
       <div class="pa-row2"><span class="k">💰 雑益追加(CN/TS)</span><span class="v blue">+${miscTot.toLocaleString()}千円</span></div>
       ${miscMinTot>0?`<div class="pa-row2"><span class="k">🔒 雑益追加(最低保証)</span><span class="v blue">+${miscMinTot.toLocaleString()}千円</span></div>`:''}
@@ -1251,7 +1253,8 @@ function renderProfit() {
       <td>${s.nisshu.toFixed(1)}</td>
       <td class="${yoyDiffCls}">${yoyStr}${yoyDiffStr ? '<br><span style="font-size:10px">'+yoyDiffStr+'</span>' : ''}</td>
       <td class="${fjDiffCls}" style="font-weight:700">${s.fjIncome != null ? s.fjIncome.toLocaleString() : '—'}${fjMinGuarantee ? '<span style="margin-left:3px;font-size:9px;background:#b71c1c;color:#fff;padding:1px 4px;border-radius:3px;font-weight:700">最低保証</span>' : ''}<br><span style="font-size:10px">${fjDiffStr}</span></td>
-      <td>${s.hqSupport>0?s.hqSupport.toLocaleString():'—'}${s.hqKc>0?'<br><span style="font-size:10px;color:#888">うち限界突破 '+s.hqKc+'</span>':''}</td>
+      <td>${s.hqSupport-(s.hqKc||0)>0?(s.hqSupport-(s.hqKc||0)).toLocaleString():'—'}</td>
+      <td>${s.hqKc>0?s.hqKc.toLocaleString():'—'}</td>
       <td>${s.kitchenSalesDay>0?s.kitchenSalesDay.toFixed(1):'—'}</td>
       <td>${s.kitchenSupportMonth>0?s.kitchenSupportMonth.toLocaleString():'—'}</td>
       <td style="color:#2e7d32;font-weight:700">${miscStr}</td>
@@ -1438,12 +1441,17 @@ function showStoreDetail(name) {
         <td style="padding:5px 8px;font-size:10px;color:#888">雑収入</td>
       </tr>
       <tr style="background:#e8f5e9">
-        <td style="padding:5px 8px">📥 本部支援着地（原価）/月</td>
-        <td style="padding:5px 8px;text-align:right;font-weight:700;color:#2e7d32">+${p.hqSupport.toLocaleString()}</td>
-        <td style="padding:5px 8px;font-size:10px;color:#888">AICO ${(p.hqSupport-(p.hqKc||0)).toLocaleString()}${p.hqKc>0?'＋限界突破 '+p.hqKc:''}</td>
+        <td style="padding:5px 8px">📥 AICO本部支援（原価）/月</td>
+        <td style="padding:5px 8px;text-align:right;font-weight:700;color:#2e7d32">+${(p.hqSupport-(p.hqKc||0)).toLocaleString()}</td>
+        <td style="padding:5px 8px;font-size:10px;color:#888">精算期間の本部支援</td>
       </tr>
       <tr style="background:#e8f5e9">
-        <td style="padding:5px 8px">📥 厨房支援金/月　<span style="font-size:10px;background:#fff3e0;padding:1px 5px;border-radius:8px">${p.kitchenSalesDay>0?p.kitchenSalesDay.toFixed(1)+'千円/日 × '+Math.round(p.kitchenSupportRate*100)+'%':'厨房なし'}</span></td>
+        <td style="padding:5px 8px">📥 厨房限界突破 本部支援（原価）/月</td>
+        <td style="padding:5px 8px;text-align:right;font-weight:700;color:#2e7d32">+${(p.hqKc||0).toLocaleString()}</td>
+        <td style="padding:5px 8px;font-size:10px;color:#888">${p.hqKc>0?'締めまでの週の合計':'対象外・支援なし'}</td>
+      </tr>
+      <tr style="background:#e8f5e9">
+        <td style="padding:5px 8px">📥 ふだんの厨房支援金/月　<span style="font-size:10px;background:#fff3e0;padding:1px 5px;border-radius:8px">${p.kitchenSalesDay>0?p.kitchenSalesDay.toFixed(1)+'千円/日 × '+Math.round(p.kitchenSupportRate*100)+'%':'厨房なし'}</span></td>
         <td style="padding:5px 8px;text-align:right;font-weight:700;color:#2e7d32">+${p.kitchenSupportMonth.toLocaleString()}</td>
         <td style="padding:5px 8px;font-size:10px;color:#888">ふだんの厨房支援（限界突破とは別）</td>
       </tr>
@@ -1586,12 +1594,12 @@ function showStoreDetail(name) {
   }
 
   // 本部支援
-  if (p.hqSupport === 0 && p.type === 'CN') {
+  if (p.hqSupport - (p.hqKc||0) === 0 && p.type === 'CN') {
     improvements.push({
       priority: 'mid',
       icon: '🏢',
-      title: '本部支援の確認',
-      detail: '本部支援着地がゼロ。本部支援の申請・確認を推奨。',
+      title: 'AICO本部支援の確認',
+      detail: 'AICO本部支援がゼロ。本部支援の申請・確認を推奨。',
       effect: '他店平均 約130千円/月の機会損失'
     });
   }
@@ -1964,7 +1972,7 @@ const k0   = v => Math.round(v).toLocaleString();
 // AICO本部支援 千円/月（売価）：SVレポート(B)を(A)の売価÷原価で売価に換算した値 ÷日数×30。無ければ着地Excel(原価)÷70%
 function hqMonth(s) {
   const h = HQ_AICO.stores[s.name], d = HQ_AICO.meta.bDays || 21;
-  return h ? (h.bu != null ? h.bu : h.b / COST_RATE) / d * (HQ_AICO.meta.settleDays || 30) : (s.hqSupport || 0) / COST_RATE;
+  return h ? (h.bu != null ? h.bu : h.b / COST_RATE) / d * (HQ_AICO.meta.settleDays || 30) : ((s.hqSupport || 0) - (s.hqKc || 0)) / COST_RATE;
 }
 // 見切処分（売価）：実績＝売変高Ⅲ×31日。予算＝年度予算（原価）÷ その店の原価率（実績の原価÷実績の売価）
 function mdU(s) {
