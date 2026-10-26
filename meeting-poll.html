@@ -46,7 +46,15 @@ label.lbl{display:block;font-size:13px;font-weight:700;color:var(--sub);margin:1
 .err{background:#ffebee;color:var(--ng);border-radius:10px;padding:10px 12px;font-size:14px;margin-top:10px}
 /* 結果 */
 .cloud{display:flex;flex-wrap:wrap;justify-content:center;align-items:center;gap:6px 16px;padding:10px;min-height:160px}
-.cloud span{font-weight:800;line-height:1.15;transition:font-size .4s}
+.cloud .w{--d:0s;display:inline-block;font-weight:800;line-height:1.1;transition:font-size .7s cubic-bezier(.34,1.56,.64,1),opacity .7s,color .7s;animation:mpFloat 4.5s ease-in-out var(--d) infinite}
+.cloud .w.pop{animation:mpPop .8s cubic-bezier(.34,1.56,.64,1) both,mpFloat 4.5s ease-in-out calc(.8s + var(--d)) infinite}
+.cloud .w.bump{animation:mpBump .7s cubic-bezier(.34,1.56,.64,1),mpFloat 4.5s ease-in-out calc(.7s + var(--d)) infinite}
+.cloud .w.wtop{text-shadow:0 3px 0 rgba(0,0,0,.12)}
+.cloud .w .c{font-size:.32em;font-weight:700;opacity:.55;margin-left:.15em;vertical-align:super}
+@keyframes mpPop{0%{transform:scale(0) rotate(-10deg);opacity:0}65%{transform:scale(1.25) rotate(2deg);opacity:1}100%{transform:scale(1) rotate(0)}}
+@keyframes mpBump{0%{transform:scale(1)}35%{transform:scale(1.35)}100%{transform:scale(1)}}
+@keyframes mpFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-7px)}}
+@media(prefers-reduced-motion:reduce){.cloud .w,.cloud .w.pop,.cloud .w.bump{animation:none}}
 .bars .row{margin-bottom:12px}
 .bars .lab{display:flex;justify-content:space-between;font-weight:700;font-size:15px;margin-bottom:4px;gap:10px}
 .bars .track{height:26px;background:#eef1f6;border-radius:8px;overflow:hidden}
@@ -170,6 +178,53 @@ function renderResults(q, r) {
   return h;
 }
 
+// ワードクラウドを その場で 更新（新しい ことばは ポンと 出る／増えたら はずむ／いつも ふわふわ 動く）
+function showResults(el, q, r, big) {
+  if (!r || q.type !== 'word') { el._cloud = null; el.innerHTML = renderResults(q, r); return; }
+  if (!el._cloud || el._cloud.qid !== q.id || !el.querySelector('.cloud')) {
+    el.innerHTML = '<div class="meta"></div><div class="cloud"></div>';
+    el._cloud = { qid: q.id, spans: {}, n: 0 };
+  }
+  const C = el._cloud, box = el.querySelector('.cloud');
+  el.querySelector('.meta').textContent = `回答 ${r.people}人（${r.n}件）`;
+  const ws = r.words || [];
+  const ph = box.querySelector('.wait');
+  if (!ws.length) { box.innerHTML = '<div class="wait" style="padding:30px">まだ ありません</div>'; C.spans = {}; return; }
+  if (ph) ph.remove();
+  const max = ws[0][1], minF = big ? 15 : 12, maxF = big ? 130 : 60;
+  const keep = new Set();
+  let added = false;
+  ws.forEach(([w, c], rank) => {
+    keep.add(w);
+    const t = max > 1 ? (c - 1) / (max - 1) : 0.35;          // 1件だけの ことばは 小さく、いちばん 多い ことばは 特大
+    let sp = C.spans[w];
+    if (!sp) {
+      sp = document.createElement('span');
+      sp.className = 'w pop';
+      sp.innerHTML = esc(w);
+      sp.style.color = COLORS[C.n % COLORS.length];
+      sp.style.setProperty('--d', (-Math.random() * 4.5).toFixed(2) + 's');
+      sp.addEventListener('animationend', e => { if (e.animationName === 'mpPop' || e.animationName === 'mpBump') sp.classList.remove('pop', 'bump'); });
+      box.append(sp);
+      C.n++; added = true;
+      C.spans[w] = sp;
+    } else if (+sp.dataset.c < c) {
+      sp.classList.remove('pop', 'bump'); void sp.offsetWidth; sp.classList.add('bump');
+    }
+    sp.dataset.c = c;
+    sp.style.fontSize = Math.round(minF + (maxF - minF) * Math.pow(t, 1.15)) + 'px';
+    sp.style.opacity = (0.5 + 0.5 * Math.max(t, 0.15)).toFixed(2);
+    sp.style.fontWeight = t >= 0.5 ? 900 : t >= 0.2 ? 800 : 600;
+    sp.classList.toggle('wtop', rank === 0 && max > 1);
+    sp.title = c + '件';
+  });
+  Object.keys(C.spans).forEach(w => { if (!keep.has(w)) { C.spans[w].remove(); delete C.spans[w]; } });
+  if (added) {                                              // 新しい ことばが 来た時だけ 並べ直す（多い ことばを まん中へ）
+    const arr = []; ws.forEach(([w], i) => i % 2 ? arr.push(w) : arr.unshift(w));
+    arr.forEach(w => C.spans[w] && box.append(C.spans[w]));
+  }
+}
+
 // ======================================================================
 // 参加者
 // ======================================================================
@@ -188,7 +243,8 @@ function participant(mid) {
       if (s.q && s.showResults) {
         const r = await apiGet({ action: 'results', m: mid, q: s.q.id });
         $('#pRes').classList.remove('hide');
-        $('#pRes').innerHTML = '<div class="qno">みんなの 答え</div>' + renderResults(s.q, r);
+        if (!$('#pResBody')) $('#pRes').innerHTML = '<div class="qno">みんなの 答え</div><div id="pResBody"></div>';
+        showResults($('#pResBody'), s.q, r, false);
       } else $('#pRes').classList.add('hide');
     } catch (e) {
       $('#pBox').innerHTML = `<div class="wait"><div class="ic">📶</div>${esc(e.message)}<br><span style="font-size:13px">自動で もう一度 つなぎます</span></div>`;
@@ -456,7 +512,7 @@ async function present(mid) {
   };
   const pull = async () => {
     const q = qs[idx]; if (!q) return;
-    try { const r = await apiGet({ action: 'results', m: mid, q: q.id }); $('#pres').innerHTML = renderResults(q, r); $('#pcnt').textContent = r.people; }
+    try { const r = await apiGet({ action: 'results', m: mid, q: q.id }); showResults($('#pres'), q, r, true); $('#pcnt').textContent = r.people; }
     catch (e) { $('#pres').innerHTML = `<div class="err">${esc(e.message)}</div>`; }
   };
   // 前・次 は その質問を すぐ 出す（メンチメーターと 同じ 動き）
