@@ -311,11 +311,12 @@ async function hostList() {
 }
 
 const newId = () => 'q' + Math.random().toString(36).slice(2, 8);
-const TEMPLATES = [
+const TEMPLATES = [   // 10/28 会議の 質問
   { type: 'word', text: '今の 気持ちを ひとことで', maxWords: 3 },
-  { type: 'scale', text: '今の お店の 状態は？', options: ['売場づくり', '人の 育成', 'チームワーク', '店利益'], labels: ['よくない', 'とても よい'] },
-  { type: 'choice', text: 'いちばん 力を 入れたい ことは？', options: ['廃棄・値引を へらす', '厨房の 売上', '人の 育成', '接客', 'その他'], multi: false },
-  { type: 'open', text: '本音で 言いたい こと・こまっている こと' }
+  { type: 'open', text: '今 いちばん 困っている ことは？' },
+  { type: 'scale', text: 'お店の 状態を 5段階で あらわすと？（5が いちばん よい）', options: [], labels: ['よくない', 'とても よい'] },
+  { type: 'open', text: '店利益を 上げる アイデアは？' },
+  { type: 'word', text: '会議で 何を 勉強したい？', maxWords: 3 }
 ];
 
 async function hostEdit(mid) {
@@ -332,7 +333,7 @@ async function hostEdit(mid) {
       <div id="qlist"></div>
       <div class="card"><div class="tabs">
         ${Object.entries(TYPE_LABEL).map(([k, v]) => `<button class="btn sub sm" data-add="${k}">＋ ${v}</button>`).join('')}
-        <button class="btn gray sm" id="tpl">見本の 質問を 入れる</button></div>
+        <button class="btn gray sm" id="tpl">10/28の 質問を 入れる</button></div>
         <div class="hint">ワードクラウド＝短い ことばを 集めて 大きさで 見せる／選択式＝えらぶ／5段階＝1〜5で 点数／自由記入＝文章</div></div>
       <div class="card"><div class="tabs"><button class="btn gray sm" id="csv">⬇ 回答を Excel用CSVで 保存</button>
         <button class="btn red sm" id="del" style="margin-left:auto">この 会議を 消す</button></div></div>
