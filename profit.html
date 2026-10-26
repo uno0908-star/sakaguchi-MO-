@@ -326,7 +326,8 @@ table.dlv thead th:first-child{background:#003087}
       <tr>
         <th>店名</th><th>契約</th><th>担当SC</th>
         <th>平均日販<br>(千円)</th>
-        <th>前年比実績<br>(%)<br><span style="font-size:9px;font-weight:400;opacity:.8">予算差(%Pt)</span></th>
+        <th>売上目標<br>前年比<br>(%)</th>
+        <th>前年比実績<br>(%)<br><span style="font-size:9px;font-weight:400;opacity:.8">目標との差(%Pt)</span></th>
         <th>ジー収入<br>実績(千円)<br><span style="font-size:9px;font-weight:400;opacity:.8">差異(実績−予算)</span></th>
         <th>AICO<br>本部支援<br>/月(千円)</th>
         <th>限界突破<br>本部支援<br>/月(千円)<br><span style="font-size:9px;font-weight:400;opacity:.8">精算書の締めまで</span></th>
@@ -1176,6 +1177,11 @@ function renderProfit() {
   const avgYoy       = yoyStores.length
     ? yoyStores.reduce((a,s)=>a+s.nisshu,0) / yoyStores.reduce((a,s)=>a+s.nisshu/(s.yoy/100),0) * 100
     : null;
+  // 売上目標の前年比（前年日販で加重）
+  const tgtStores    = yoyStores.filter(s => s.yoyBudget != null);
+  const avgYoyBudget = tgtStores.length
+    ? tgtStores.reduce((a,s)=>a+s.nisshu/(s.yoy/100)*s.yoyBudget,0) / tgtStores.reduce((a,s)=>a+s.nisshu/(s.yoy/100),0)
+    : null;
 
   // Cards
   const pctBudget = Math.round(totalLanding/totalBudget*100);
@@ -1193,7 +1199,7 @@ function renderProfit() {
     <div class="card blue">
       <div class="card-label">平均日販</div>
       <div class="card-value">${Math.round(avgNisshu).toLocaleString()}<span class="card-unit">千円</span></div>
-      <div class="card-sub">前年比 ${avgYoy?avgYoy.toFixed(1)+'%':'—'}</div>
+      <div class="card-sub">前年比 ${avgYoy?avgYoy.toFixed(1)+'%':'—'}<br>目標の前年比 ${avgYoyBudget?avgYoyBudget.toFixed(1)+'%':'—'}${avgYoy&&avgYoyBudget?'（<span style="color:'+(avgYoy>=avgYoyBudget?'#2e7d32':'#e53935')+'">'+(avgYoy-avgYoyBudget>=0?'+':'')+(avgYoy-avgYoyBudget).toFixed(1)+'pt</span>）':''}</div>
     </div>
     <div class="card gray">
       <div class="card-label">予算達成店 / 対象店</div>
@@ -1251,6 +1257,7 @@ function renderProfit() {
       <td><span class="tag tag-${s.type.toLowerCase()}">${s.type}</span></td>
       <td><span class="sc-chip">${sc}</span></td>
       <td>${s.nisshu.toFixed(1)}</td>
+      <td>${s.yoyBudget != null ? s.yoyBudget.toFixed(1)+'%' : '—'}</td>
       <td class="${yoyDiffCls}">${yoyStr}${yoyDiffStr ? '<br><span style="font-size:10px">'+yoyDiffStr+'</span>' : ''}</td>
       <td class="${fjDiffCls}" style="font-weight:700">${s.fjIncome != null ? s.fjIncome.toLocaleString() : '—'}${fjMinGuarantee ? '<span style="margin-left:3px;font-size:9px;background:#b71c1c;color:#fff;padding:1px 4px;border-radius:3px;font-weight:700">最低保証</span>' : ''}<br><span style="font-size:10px">${fjDiffStr}</span></td>
       <td>${s.hqSupport-(s.hqKc||0)>0?(s.hqSupport-(s.hqKc||0)).toLocaleString():'—'}</td>
@@ -1422,7 +1429,7 @@ function showStoreDetail(name) {
       <div class="popup-kv"><div class="k">担当SC</div><div class="v" style="font-size:11px">${sc}</div></div>
       <div class="popup-kv"><div class="k">契約形態</div><div class="v">${p.type}</div></div>
       <div class="popup-kv"><div class="k">平均日販</div><div class="v">${p.nisshu.toFixed(1)}千円</div></div>
-      <div class="popup-kv"><div class="k">前年比</div><div class="v" style="color:${p.yoy&&p.yoy>=100?'#2e7d32':'#e53935'}">${p.yoy?p.yoy.toFixed(2)+'%':'—'}</div></div>
+      <div class="popup-kv"><div class="k">前年比</div><div class="v" style="color:${p.yoy&&p.yoy>=(p.yoyBudget||100)?'#2e7d32':'#e53935'}">${p.yoy?p.yoy.toFixed(2)+'%':'—'}</div><div style="font-size:11px;color:#666;margin-top:2px">目標 ${p.yoyBudget!=null?p.yoyBudget.toFixed(1)+'%':'—'}${p.yoy&&p.yoyBudget!=null?'（'+(p.yoy-p.yoyBudget>=0?'+':'')+(p.yoy-p.yoyBudget).toFixed(1)+'pt）':''}</div></div>
     </div></div>`;
 
   // ---- 2. 店利益 構成（ウォーターフォール型テーブル） ----
