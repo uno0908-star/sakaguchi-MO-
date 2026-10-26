@@ -69,6 +69,13 @@ tbody tr{transition:background .15s;cursor:pointer}
 tbody tr:hover{background:#e8f0fe !important}
 tbody tr:nth-child(even){background:#f8f9fb}
 tbody tr.avg-row{background:#e8ecf3;font-weight:700}
+/* 横スクロールしても店名を左に固定 */
+table.stick1 tbody td:first-child,table.stick1 thead tr:first-child th:first-child{position:sticky;left:0;z-index:2;box-shadow:2px 0 4px rgba(0,0,0,.12)}
+table.stick1 thead tr:first-child th:first-child{background:#003087;z-index:3}
+table.stick1 tbody td:first-child{background:#fff}
+table.stick1 tbody tr:nth-child(even) td:first-child{background:#f8f9fb}
+table.stick1 tbody tr.avg-row td:first-child{background:#e8ecf3}
+@media(max-width:700px){table.stick1 tbody td:first-child,table.stick1 thead tr:first-child th:first-child{white-space:normal;min-width:6.2em;max-width:6.2em;line-height:1.3}}
 tbody td{padding:7px 6px;text-align:right;border-bottom:1px solid #eaecf0;white-space:nowrap;font-size:12px}
 tbody td:first-child{text-align:left;padding-left:10px;font-weight:600}
 tbody td:nth-child(2){text-align:center}
@@ -315,7 +322,7 @@ table.dlv thead th:first-child{background:#003087}
   </div>
   <div class="section">
     <div class="section-title">全店舗 詳細データ</div>
-    <div class="table-wrap"><table><thead>
+    <div class="table-wrap"><table class="stick1"><thead>
       <tr>
         <th>店名</th><th>契約</th><th>担当SC</th>
         <th>平均日販<br>(千円)</th>
@@ -355,7 +362,7 @@ table.dlv thead th:first-child{background:#003087}
   </div>
   <div class="section">
     <div class="section-title">全店舗 カテゴリ別 廃棄差異（実績−指標 / 千円/日）　<span style="font-size:11px;font-weight:400;color:#888">■赤＝超過　■緑＝適正以下　／　合計の実績は指標超過で着色（黄→橙→赤）、下段は超過幅</span></div>
-    <div class="table-wrap"><table>
+    <div class="table-wrap"><table class="stick1">
       <thead>
         <tr>
           <th rowspan="2">店名</th><th rowspan="2">担当SC</th>
@@ -441,7 +448,7 @@ table.dlv thead th:first-child{background:#003087}
   </div>
   <div class="section">
     <div class="section-title">全店舗 前週対比一覧　<span style="font-size:11px;font-weight:400;color:#888">着地の下がり幅が大きい順</span></div>
-    <div class="table-wrap"><table><thead>
+    <div class="table-wrap"><table class="stick1"><thead>
       <tr>
         <th>店名</th><th>担当SC</th>
         <th>前週<br>着地(千円)</th>
