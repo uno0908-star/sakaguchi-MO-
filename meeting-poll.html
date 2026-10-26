@@ -1,0 +1,479 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>会議アンケート</title>
+<script src="ls-guard.js?v=20261024"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<style>
+:root{--navy:#003087;--blue:#1565c0;--bg:#f0f2f7;--card:#fff;--line:#e3e6ee;--text:#1a1a2e;--sub:#667;--ok:#2e7d32;--ng:#c62828;--accent:#ff9800}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Noto Sans JP","Yu Gothic UI",sans-serif;-webkit-text-size-adjust:100%}
+.top{background:var(--navy);color:#fff;padding:12px 16px;position:sticky;top:0;z-index:10;display:flex;align-items:center;gap:10px}
+.top h1{font-size:17px;margin:0;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.wrap{max-width:720px;margin:0 auto;padding:16px}
+.card{background:var(--card);border-radius:14px;padding:18px;margin-bottom:14px;box-shadow:0 1px 4px rgba(0,0,0,.06)}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;min-height:48px;padding:0 18px;border-radius:12px;border:0;font-size:16px;font-weight:700;cursor:pointer;background:var(--navy);color:#fff}
+.btn.sub{background:#fff;color:var(--navy);border:2px solid var(--navy)}
+.btn.gray{background:#eceff4;color:#333}
+.btn.red{background:#fff;color:var(--ng);border:2px solid #f3b8b8}
+.btn.big{width:100%;min-height:56px;font-size:18px}
+.btn:disabled{opacity:.45;cursor:default}
+.btn.sm{min-height:44px;padding:0 12px;font-size:14px}
+input[type=text],input[type=password],textarea,select{width:100%;font-size:17px;padding:12px;border:2px solid var(--line);border-radius:10px;background:#fff;font-family:inherit}
+textarea{resize:vertical;min-height:90px}
+label.lbl{display:block;font-size:13px;font-weight:700;color:var(--sub);margin:10px 0 4px}
+.qno{font-size:13px;color:var(--sub);font-weight:700}
+.qtext{font-size:22px;font-weight:800;line-height:1.45;margin:6px 0 14px;white-space:pre-wrap}
+.hint{font-size:13px;color:var(--sub);margin-top:8px;line-height:1.6}
+.opt{display:flex;align-items:center;gap:12px;min-height:56px;padding:10px 14px;border:2px solid var(--line);border-radius:12px;margin-bottom:10px;font-size:17px;font-weight:600;cursor:pointer;background:#fff}
+.opt.on{border-color:var(--navy);background:#e8eefb}
+.opt .mk{width:26px;height:26px;border-radius:50%;border:2px solid #b0b8c8;flex:none;display:flex;align-items:center;justify-content:center;font-size:15px;color:#fff}
+.opt.multi .mk{border-radius:7px}
+.opt.on .mk{background:var(--navy);border-color:var(--navy)}
+.scale-item{margin-bottom:16px}
+.scale-item .t{font-weight:700;margin-bottom:6px}
+.scale-row{display:grid;grid-template-columns:repeat(5,1fr);gap:6px}
+.scale-row button{min-height:52px;border-radius:10px;border:2px solid var(--line);background:#fff;font-size:20px;font-weight:800;cursor:pointer;color:#333}
+.scale-row button.on{background:var(--navy);border-color:var(--navy);color:#fff}
+.scale-lbl{display:flex;justify-content:space-between;font-size:12px;color:var(--sub);margin-top:4px}
+.done{text-align:center;padding:26px 10px}
+.done .ic{font-size:54px}
+.done .t{font-size:20px;font-weight:800;margin:8px 0}
+.wait{text-align:center;padding:40px 10px;color:var(--sub);font-size:17px;line-height:1.8}
+.wait .ic{font-size:50px}
+.err{background:#ffebee;color:var(--ng);border-radius:10px;padding:10px 12px;font-size:14px;margin-top:10px}
+/* 結果 */
+.cloud{display:flex;flex-wrap:wrap;justify-content:center;align-items:center;gap:6px 16px;padding:10px;min-height:160px}
+.cloud span{font-weight:800;line-height:1.15;transition:font-size .4s}
+.bars .row{margin-bottom:12px}
+.bars .lab{display:flex;justify-content:space-between;font-weight:700;font-size:15px;margin-bottom:4px;gap:10px}
+.bars .track{height:26px;background:#eef1f6;border-radius:8px;overflow:hidden}
+.bars .fill{height:100%;background:var(--blue);border-radius:8px;transition:width .5s}
+.sc-res{margin-bottom:16px}
+.sc-res .head{display:flex;justify-content:space-between;align-items:baseline;font-weight:700;gap:10px}
+.sc-res .avg{font-size:26px;font-weight:900;color:var(--navy)}
+.sc-res .track{position:relative;height:14px;background:linear-gradient(90deg,#ffcdd2,#fff9c4,#c8e6c9);border-radius:7px;margin:6px 0}
+.sc-res .dot{position:absolute;top:-5px;width:24px;height:24px;border-radius:50%;background:var(--navy);border:3px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,.3);transform:translateX(-50%);transition:left .5s}
+.sc-res .dist{display:grid;grid-template-columns:repeat(5,1fr);gap:4px;font-size:12px;color:var(--sub);text-align:center}
+.texts{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px}
+.texts div{background:#fffde7;border:1px solid #f5e9a8;border-radius:10px;padding:10px 12px;font-size:15px;line-height:1.5;white-space:pre-wrap;word-break:break-word}
+.meta{font-size:13px;color:var(--sub);margin-bottom:8px}
+/* 司会 */
+.mlist .item{display:flex;align-items:center;gap:10px;padding:12px 0;border-bottom:1px solid var(--line)}
+.mlist .item .t{flex:1;font-weight:700;min-width:0}
+.mlist .item .s{font-size:12px;color:var(--sub);font-weight:400}
+.qedit{border:2px solid var(--line);border-radius:12px;padding:12px;margin-bottom:12px;background:#fafbfd}
+.qedit .bar{display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin-bottom:6px}
+.qedit .bar .n{font-weight:800;color:var(--navy);margin-right:auto}
+.tabs{display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap}
+.chk{display:flex;align-items:center;gap:8px;font-size:15px;margin-top:8px;min-height:44px}
+.chk input{width:22px;height:22px}
+/* 発表画面 */
+.pres{display:grid;grid-template-columns:1fr 300px;gap:16px;max-width:1680px;margin:0 auto;padding:16px}
+.pres .main{background:#fff;border-radius:16px;padding:24px 28px;min-height:70vh}
+.pres .side{display:flex;flex-direction:column;gap:12px}
+.pres .qtext{font-size:32px}
+.pres .cloud{min-height:420px}
+.pres .bars .lab{font-size:20px}.pres .bars .track{height:36px}
+.pres .texts div{font-size:18px}
+.join{background:#fff;border-radius:16px;padding:16px;text-align:center}
+.join .url{font-size:14px;word-break:break-all;color:var(--navy);font-weight:700;margin-top:8px}
+.join #qr{display:flex;justify-content:center}
+.join #qr img,.join #qr canvas{width:220px!important;height:220px!important}
+.count{background:#fff;border-radius:16px;padding:14px;text-align:center}
+.count .n{font-size:44px;font-weight:900;color:var(--navy);line-height:1.1}
+.ctrl{background:#fff;border-radius:16px;padding:14px;display:flex;flex-direction:column;gap:8px}
+.ctrl .row2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.status{display:inline-block;border-radius:20px;padding:4px 12px;font-size:13px;font-weight:800}
+.status.on{background:#e8f5e9;color:var(--ok)}.status.off{background:#eceff4;color:#555}
+@media(max-width:900px){.pres{grid-template-columns:1fr}.pres .qtext{font-size:24px}.pres .cloud{min-height:260px}}
+@media(min-width:1100px){.wrap{max-width:900px}}
+.hide{display:none!important}
+</style>
+</head>
+<body>
+<div class="top"><h1 id="topTitle">会議アンケート</h1><span id="topRight" style="font-size:13px;opacity:.85"></span></div>
+<div id="app"></div>
+
+<script>
+// ===== 設定 =====
+const GAS_URL = '';   // デプロイ後に ウェブアプリURL を入れる
+const BASE_URL = location.origin + location.pathname;
+
+// ===== 共通 =====
+const $ = s => document.querySelector(s);
+const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const ls = {
+  get(k, d) { try { const v = localStorage.getItem(k); return v == null ? d : JSON.parse(v); } catch (e) { return d; } },
+  set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} },
+  del(k) { try { localStorage.removeItem(k); } catch (e) {} }
+};
+async function apiGet(params) {
+  if (!GAS_URL) throw new Error('まだ 準備中です（GASのURLが 未設定）');
+  const r = await fetch(GAS_URL + '?' + new URLSearchParams(params).toString(), { cache: 'no-store' });
+  const j = await r.json();
+  if (j.error) throw new Error(j.error);
+  return j;
+}
+async function apiPost(body) {
+  if (!GAS_URL) throw new Error('まだ 準備中です（GASのURLが 未設定）');
+  const r = await fetch(GAS_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify(body) });
+  const j = await r.json();
+  if (j.error) throw new Error(j.error);
+  return j;
+}
+const deviceId = (() => {
+  let d = ls.get('mp_device', '');
+  if (!d) { d = Math.random().toString(36).slice(2) + Date.now().toString(36); ls.set('mp_device', d); }
+  return d;
+})();
+const TYPE_LABEL = { word: 'ワードクラウド', choice: '選択式', scale: '5段階', open: '自由記入' };
+const COLORS = ['#003087', '#1565c0', '#e65100', '#2e7d32', '#6a1b9a', '#c62828', '#00838f', '#ef6c00', '#283593', '#558b2f'];
+
+// ===== 結果の 表示（参加者・発表 共通）=====
+function renderResults(q, r) {
+  if (!r) return '<div class="meta">集計中…</div>';
+  let h = `<div class="meta">回答 ${r.people}人${r.type === 'word' || r.type === 'open' ? `（${r.n}件）` : ''}</div>`;
+  if (q.type === 'word') {
+    const ws = r.words || [];
+    if (!ws.length) return h + '<div class="wait" style="padding:30px">まだ ありません</div>';
+    const max = ws[0][1];
+    // 大きい言葉を まん中に（左右に ふりわけ）
+    const arr = []; ws.forEach((w, i) => i % 2 ? arr.push(w) : arr.unshift(w));
+    h += '<div class="cloud">' + arr.map(([w, c]) => {
+      const i = ws.findIndex(x => x[0] === w);
+      const size = 15 + Math.round(Math.sqrt(c / max) * 46);
+      return `<span style="font-size:${size}px;color:${COLORS[i % COLORS.length]}" title="${c}">${esc(w)}</span>`;
+    }).join('') + '</div>';
+  } else if (q.type === 'choice') {
+    const tot = (r.counts || []).reduce((a, b) => a + b, 0) || 1;
+    h += '<div class="bars">' + (q.options || []).map((o, i) => {
+      const c = (r.counts || [])[i] || 0;
+      return `<div class="row"><div class="lab"><span>${esc(o)}</span><span>${c}人・${Math.round(c / tot * 100)}%</span></div>
+        <div class="track"><div class="fill" style="width:${c / tot * 100}%;background:${COLORS[i % COLORS.length]}"></div></div></div>`;
+    }).join('') + '</div>';
+  } else if (q.type === 'scale') {
+    const items = q.options && q.options.length ? q.options : [''];
+    h += items.map((t, i) => {
+      const it = (r.items || [])[i] || {};
+      const pos = it.avg == null ? 0 : (it.avg - 1) / 4 * 100;
+      return `<div class="sc-res"><div class="head"><span>${esc(t)}</span><span class="avg">${it.avg == null ? '—' : it.avg.toFixed(1)}</span></div>
+        <div class="track">${it.avg == null ? '' : `<div class="dot" style="left:${pos}%"></div>`}</div>
+        <div class="dist">${(it.dist || [0,0,0,0,0]).map((c, k) => `<div>${k + 1}：${c}人</div>`).join('')}</div></div>`;
+    }).join('') + `<div class="scale-lbl"><span>1＝${esc((q.labels || [])[0] || 'そう思わない')}</span><span>5＝${esc((q.labels || [])[1] || 'そう思う')}</span></div>`;
+  } else {
+    const ts = r.texts || [];
+    h += ts.length ? '<div class="texts">' + ts.map(t => `<div>${esc(t)}</div>`).join('') + '</div>' : '<div class="wait" style="padding:30px">まだ ありません</div>';
+  }
+  return h;
+}
+
+// ======================================================================
+// 参加者
+// ======================================================================
+function participant(mid) {
+  let cur = null, sel = null, sentKey = '', timer = null, lastQ = '';
+  const app = $('#app');
+  app.innerHTML = `<div class="wrap"><div class="card" id="pBox"><div class="wait"><div class="ic">⏳</div>つないでいます…</div></div><div class="card hide" id="pRes"></div></div>`;
+  async function tick() {
+    try {
+      const s = await apiGet({ action: 'state', m: mid });
+      $('#topTitle').textContent = s.title || '会議アンケート';
+      document.title = s.title || '会議アンケート';
+      const qid = s.q ? s.q.id : '';
+      if (qid !== lastQ) { lastQ = qid; cur = s; sel = null; draw(); }
+      else { cur = s; }
+      if (s.q && s.showResults) {
+        const r = await apiGet({ action: 'results', m: mid, q: s.q.id });
+        $('#pRes').classList.remove('hide');
+        $('#pRes').innerHTML = '<div class="qno">みんなの 答え</div>' + renderResults(s.q, r);
+      } else $('#pRes').classList.add('hide');
+    } catch (e) {
+      $('#pBox').innerHTML = `<div class="wait"><div class="ic">📶</div>${esc(e.message)}<br><span style="font-size:13px">自動で もう一度 つなぎます</span></div>`;
+      lastQ = '__err';
+    }
+  }
+  function draw() {
+    const box = $('#pBox'), q = cur && cur.q;
+    if (!q) { box.innerHTML = `<div class="wait"><div class="ic">☕</div>つぎの 質問を 待っています<br><span style="font-size:13px">この 画面の まま 待ってください</span></div>`; return; }
+    const doneKey = `mp_done_${mid}_${q.id}`;
+    const done = ls.get(doneKey, null);
+    let h = `<div class="qno">質問 ${cur.idx} / ${cur.total}</div><div class="qtext">${esc(q.text)}</div>`;
+    if (done && (q.type === 'choice' || q.type === 'scale') && sel === null) {
+      box.innerHTML = h + `<div class="done"><div class="ic">✅</div><div class="t">送りました</div>
+        <button class="btn sub" id="redo">答えを 変える</button></div>`;
+      $('#redo').onclick = () => { sel = done; drawInput(); };
+      return;
+    }
+    drawInput();
+  }
+  function drawInput() {
+    const box = $('#pBox'), q = cur.q;
+    let h = `<div class="qno">質問 ${cur.idx} / ${cur.total}</div><div class="qtext">${esc(q.text)}</div>`;
+    const sentN = ls.get(`mp_n_${mid}_${q.id}`, 0);
+    if (q.type === 'word') {
+      const n = q.maxWords || 3;
+      h += Array.from({ length: n }, (_, i) => `<input type="text" class="w" maxlength="25" placeholder="ことば ${i + 1}" style="margin-bottom:8px">`).join('');
+      h += `<div class="hint">短い ことばで（1つでも OK）。何回でも 送れます${sentN ? `／送った回数 ${sentN}` : ''}</div>`;
+    } else if (q.type === 'choice') {
+      const multi = !!q.multi;
+      if (sel === null) sel = multi ? [] : null;
+      h += (q.options || []).map((o, i) => {
+        const on = multi ? (sel || []).includes(i) : sel === i;
+        return `<div class="opt ${multi ? 'multi' : ''} ${on ? 'on' : ''}" data-i="${i}"><span class="mk">${on ? '✓' : ''}</span><span>${esc(o)}</span></div>`;
+      }).join('');
+      if (multi) h += `<div class="hint">いくつでも 選べます</div>`;
+    } else if (q.type === 'scale') {
+      const items = q.options && q.options.length ? q.options : [''];
+      if (!Array.isArray(sel)) sel = items.map(() => null);
+      h += items.map((t, i) => `<div class="scale-item">${t ? `<div class="t">${esc(t)}</div>` : ''}
+        <div class="scale-row">${[1, 2, 3, 4, 5].map(v => `<button data-i="${i}" data-v="${v}" class="${sel[i] === v ? 'on' : ''}">${v}</button>`).join('')}</div>
+        <div class="scale-lbl"><span>1 ${esc((q.labels || [])[0] || 'そう思わない')}</span><span>${esc((q.labels || [])[1] || 'そう思う')} 5</span></div></div>`).join('');
+    } else {
+      h += `<textarea id="ta" maxlength="300" placeholder="自由に 書いてください（名前は 出ません）"></textarea>
+        <div class="hint">何回でも 送れます${sentN ? `／送った回数 ${sentN}` : ''}</div>`;
+    }
+    h += `<div style="margin-top:14px"><button class="btn big" id="send">送る</button></div><div id="perr"></div>
+      <div class="hint" style="text-align:center">🔒 名前は 出ません</div>`;
+    box.innerHTML = h;
+    box.querySelectorAll('.opt').forEach(el => el.onclick = () => {
+      const i = +el.dataset.i;
+      if (q.multi) { sel = sel.includes(i) ? sel.filter(x => x !== i) : [...sel, i]; } else sel = i;
+      drawInput();
+    });
+    box.querySelectorAll('.scale-row button').forEach(el => el.onclick = () => { sel[+el.dataset.i] = +el.dataset.v; drawInput(); });
+    $('#send').onclick = send;
+  }
+  async function send() {
+    const q = cur.q; let value;
+    if (q.type === 'word') { value = [...document.querySelectorAll('.w')].map(x => x.value.trim()).filter(Boolean); if (!value.length) return perr('ことばを 入れてください'); }
+    else if (q.type === 'choice') { value = sel; if (value === null || (Array.isArray(value) && !value.length)) return perr('えらんでください'); }
+    else if (q.type === 'scale') { value = sel; if (sel.some(v => v == null)) return perr('ぜんぶ えらんでください'); }
+    else { value = ($('#ta').value || '').trim(); if (!value) return perr('書いてください'); }
+    const b = $('#send'); b.disabled = true; b.textContent = '送っています…';
+    try {
+      await apiPost({ action: 'submit', m: mid, q: q.id, device: deviceId, value: value });
+      const nk = `mp_n_${mid}_${q.id}`; ls.set(nk, ls.get(nk, 0) + 1);
+      if (q.type === 'choice' || q.type === 'scale') { ls.set(`mp_done_${mid}_${q.id}`, value); sel = null; draw(); }
+      else {
+        $('#pBox').innerHTML = `<div class="qno">質問 ${cur.idx} / ${cur.total}</div><div class="qtext">${esc(q.text)}</div>
+          <div class="done"><div class="ic">✅</div><div class="t">送りました</div><button class="btn sub" id="more">もう1つ 送る</button></div>`;
+        $('#more').onclick = drawInput;
+      }
+      tick();
+    } catch (e) { perr(e.message); b.disabled = false; b.textContent = '送る'; }
+  }
+  function perr(m) { const el = $('#perr'); if (el) el.innerHTML = `<div class="err">${esc(m)}</div>`; }
+  tick(); timer = setInterval(tick, 4000);
+}
+
+// ======================================================================
+// 司会
+// ======================================================================
+let hostKey = ls.get('mp_hostkey', '');
+function host() {
+  $('#topTitle').textContent = '会議アンケート（司会）';
+  if (!hostKey) return hostLogin();
+  hostList();
+}
+function hostLogin(msg) {
+  $('#app').innerHTML = `<div class="wrap"><div class="card"><div class="qtext" style="font-size:20px">司会の パスコード</div>
+    <input type="password" id="pw" placeholder="パスコード" autocomplete="current-password">
+    <div style="margin-top:12px"><button class="btn big" id="go">入る</button></div>${msg ? `<div class="err">${esc(msg)}</div>` : ''}</div></div>`;
+  $('#go').onclick = async () => {
+    try { await apiGet({ action: 'login', key: $('#pw').value }); hostKey = $('#pw').value; ls.set('mp_hostkey', hostKey); hostList(); }
+    catch (e) { hostLogin(e.message); }
+  };
+}
+async function hostList() {
+  $('#app').innerHTML = `<div class="wrap"><div class="card"><div class="tabs"><button class="btn" id="new">＋ 新しい 会議</button>
+    <button class="btn gray sm" id="out" style="margin-left:auto">ログアウト</button></div><div class="mlist" id="ml">読みこみ中…</div></div></div>`;
+  $('#out').onclick = () => { ls.del('mp_hostkey'); hostKey = ''; hostLogin(); };
+  $('#new').onclick = async () => {
+    const t = prompt('会議の 名前', '');
+    if (t == null) return;
+    const r = await apiGet({ action: 'create', key: hostKey, title: t || '会議アンケート' });
+    hostEdit(r.id);
+  };
+  try {
+    const r = await apiGet({ action: 'list', key: hostKey });
+    $('#ml').innerHTML = r.meetings.length ? r.meetings.map(m => `<div class="item"><div class="t">${esc(m.title)}<div class="s">質問 ${m.questions}つ</div></div>
+      <button class="btn sub sm" data-e="${m.id}">編集</button><button class="btn sm" data-p="${m.id}">▶ 発表</button></div>`).join('')
+      : '<div class="hint">まだ ありません。「＋ 新しい 会議」から 作ります。</div>';
+    document.querySelectorAll('[data-e]').forEach(b => b.onclick = () => hostEdit(b.dataset.e));
+    document.querySelectorAll('[data-p]').forEach(b => b.onclick = () => { location.href = `${BASE_URL}?host&present=${b.dataset.p}`; });
+  } catch (e) {
+    if (/パスコード/.test(e.message)) { ls.del('mp_hostkey'); hostKey = ''; return hostLogin(e.message); }
+    $('#ml').innerHTML = `<div class="err">${esc(e.message)}</div>`;
+  }
+}
+
+const newId = () => 'q' + Math.random().toString(36).slice(2, 8);
+const TEMPLATES = [
+  { type: 'word', text: '今の 気持ちを ひとことで', maxWords: 3 },
+  { type: 'scale', text: '今の お店の 状態は？', options: ['売場づくり', '人の 育成', 'チームワーク', '店利益'], labels: ['よくない', 'とても よい'] },
+  { type: 'choice', text: 'いちばん 力を 入れたい ことは？', options: ['廃棄・値引を へらす', '厨房の 売上', '人の 育成', '接客', 'その他'], multi: false },
+  { type: 'open', text: '本音で 言いたい こと・こまっている こと' }
+];
+
+async function hostEdit(mid) {
+  $('#app').innerHTML = '<div class="wrap"><div class="card">読みこみ中…</div></div>';
+  let m;
+  try { m = await apiGet({ action: 'get', key: hostKey, m: mid }); } catch (e) { $('#app').innerHTML = `<div class="wrap"><div class="err">${esc(e.message)}</div></div>`; return; }
+  let qs = m.questions || [];
+  const draw = () => {
+    $('#app').innerHTML = `<div class="wrap">
+      <div class="card"><label class="lbl">会議の 名前</label><input type="text" id="title" value="${esc(m.title)}">
+        <div class="tabs" style="margin-top:12px"><button class="btn gray sm" id="back">← 一覧</button>
+        <button class="btn sm" id="save">💾 保存</button><button class="btn sub sm" id="pres">▶ 発表画面へ</button></div>
+        <div id="msg"></div></div>
+      <div id="qlist"></div>
+      <div class="card"><div class="tabs">
+        ${Object.entries(TYPE_LABEL).map(([k, v]) => `<button class="btn sub sm" data-add="${k}">＋ ${v}</button>`).join('')}
+        <button class="btn gray sm" id="tpl">見本の 質問を 入れる</button></div>
+        <div class="hint">ワードクラウド＝短い ことばを 集めて 大きさで 見せる／選択式＝えらぶ／5段階＝1〜5で 点数／自由記入＝文章</div></div>
+      <div class="card"><div class="tabs"><button class="btn gray sm" id="csv">⬇ 回答を Excel用CSVで 保存</button>
+        <button class="btn red sm" id="del" style="margin-left:auto">この 会議を 消す</button></div></div>
+    </div>`;
+    $('#qlist').innerHTML = qs.map((q, i) => `<div class="qedit" data-i="${i}">
+      <div class="bar"><span class="n">質問 ${i + 1}（${TYPE_LABEL[q.type]}）${m.counts && m.counts[q.id] ? `・回答 ${m.counts[q.id]}件` : ''}</span>
+        <button class="btn gray sm" data-up="${i}" ${i ? '' : 'disabled'}>↑</button><button class="btn gray sm" data-dn="${i}" ${i < qs.length - 1 ? '' : 'disabled'}>↓</button>
+        <button class="btn red sm" data-rm="${i}">消す</button></div>
+      <label class="lbl">質問の 文</label><textarea class="f-text" rows="2">${esc(q.text)}</textarea>
+      ${q.type === 'choice' ? `<label class="lbl">えらぶ ものを 1行に 1つ</label><textarea class="f-opt" rows="4">${esc((q.options || []).join('\n'))}</textarea>
+        <label class="chk"><input type="checkbox" class="f-multi" ${q.multi ? 'checked' : ''}> いくつでも えらべる</label>` : ''}
+      ${q.type === 'scale' ? `<label class="lbl">点数を つける 項目を 1行に 1つ（空なら 質問 そのものに 1〜5）</label><textarea class="f-opt" rows="4">${esc((q.options || []).join('\n'))}</textarea>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px"><div><label class="lbl">1の 意味</label><input type="text" class="f-l1" value="${esc((q.labels || [])[0] || 'そう思わない')}"></div>
+        <div><label class="lbl">5の 意味</label><input type="text" class="f-l5" value="${esc((q.labels || [])[1] || 'そう思う')}"></div></div>` : ''}
+      ${q.type === 'word' ? `<label class="lbl">1回に 入れられる ことばの 数</label><select class="f-max">${[1, 2, 3, 5].map(n => `<option ${(q.maxWords || 3) === n ? 'selected' : ''}>${n}</option>`).join('')}</select>` : ''}
+    </div>`).join('') || '<div class="card hint">下の ボタンで 質問を 足してください。</div>';
+    const pull = () => {
+      m.title = $('#title').value;
+      document.querySelectorAll('.qedit').forEach(el => {
+        const q = qs[+el.dataset.i];
+        q.text = el.querySelector('.f-text').value.trim();
+        const o = el.querySelector('.f-opt'); if (o) q.options = o.value.split('\n').map(s => s.trim()).filter(Boolean);
+        const mu = el.querySelector('.f-multi'); if (mu) q.multi = mu.checked;
+        const l1 = el.querySelector('.f-l1'); if (l1) q.labels = [l1.value, el.querySelector('.f-l5').value];
+        const mx = el.querySelector('.f-max'); if (mx) q.maxWords = +mx.value;
+      });
+    };
+    const save = async (quiet) => {
+      pull();
+      const bad = qs.findIndex(q => !q.text || (q.type === 'choice' && (q.options || []).length < 2));
+      if (bad >= 0) { $('#msg').innerHTML = `<div class="err">質問 ${bad + 1}：文が 空か、えらぶ ものが 2つ 未満です</div>`; return false; }
+      $('#msg').innerHTML = '<div class="hint">保存中…</div>';
+      try { await apiPost({ action: 'save', key: hostKey, m: mid, title: m.title, questions: qs }); $('#msg').innerHTML = quiet ? '' : '<div class="hint" style="color:#2e7d32;font-weight:700">✓ 保存しました</div>'; return true; }
+      catch (e) { $('#msg').innerHTML = `<div class="err">${esc(e.message)}</div>`; return false; }
+    };
+    $('#back').onclick = hostList;
+    $('#save').onclick = () => save();
+    $('#pres').onclick = async () => { if (await save(true)) location.href = `${BASE_URL}?host&present=${mid}`; };
+    document.querySelectorAll('[data-add]').forEach(b => b.onclick = () => {
+      pull(); const t = b.dataset.add;
+      qs.push({ id: newId(), type: t, text: '', options: t === 'choice' ? ['', ''] : [], maxWords: 3 }); draw();
+    });
+    $('#tpl').onclick = () => { pull(); TEMPLATES.forEach(t => qs.push(JSON.parse(JSON.stringify({ id: newId(), ...t })))); draw(); };
+    document.querySelectorAll('[data-up]').forEach(b => b.onclick = () => { pull(); const i = +b.dataset.up; [qs[i - 1], qs[i]] = [qs[i], qs[i - 1]]; draw(); });
+    document.querySelectorAll('[data-dn]').forEach(b => b.onclick = () => { pull(); const i = +b.dataset.dn; [qs[i + 1], qs[i]] = [qs[i], qs[i + 1]]; draw(); });
+    document.querySelectorAll('[data-rm]').forEach(b => b.onclick = () => { if (!confirm('この 質問を 消しますか？')) return; pull(); qs.splice(+b.dataset.rm, 1); draw(); });
+    $('#csv').onclick = () => exportCsv(mid);
+    $('#del').onclick = async () => {
+      if (!confirm('この 会議と 回答を ぜんぶ 消します。よろしいですか？')) return;
+      await apiGet({ action: 'clear', key: hostKey, m: mid }); await apiGet({ action: 'remove', key: hostKey, m: mid }); hostList();
+    };
+  };
+  draw();
+}
+
+async function exportCsv(mid) {
+  const r = await apiGet({ action: 'export', key: hostKey, m: mid });
+  const rows = [['時刻', '質問番号', '質問', '形', '答え']];
+  const qi = {}; r.questions.forEach((q, i) => qi[q.id] = [i + 1, q]);
+  r.answers.forEach(a => {
+    const [n, q] = qi[a.qid] || ['', { text: '(消した質問)', type: '' }];
+    let v = a.value;
+    if (q.type === 'choice') v = (Array.isArray(v) ? v : [v]).map(i => (q.options || [])[i]).join('／');
+    else if (q.type === 'scale') v = (Array.isArray(v) ? v : [v]).map((x, i) => ((q.options || [])[i] ? q.options[i] + '=' : '') + x).join('／');
+    else if (Array.isArray(v)) v = v.join('／');
+    rows.push([new Date(a.ts).toLocaleString('ja-JP'), n, q.text, TYPE_LABEL[q.type] || '', v]);
+  });
+  const csv = '﻿' + rows.map(r => r.map(x => `"${String(x == null ? '' : x).replace(/"/g, '""')}"`).join(',')).join('\r\n');
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv' }));
+  a.download = `${r.title}_回答.csv`; a.click();
+}
+
+// ===== 発表画面 =====
+async function present(mid) {
+  let m, idx = 0, timer = null, active = '', show = false;
+  try { m = await apiGet({ action: 'get', key: hostKey, m: mid }); } catch (e) { if (/パスコード/.test(e.message)) return hostLogin(e.message); $('#app').innerHTML = `<div class="wrap"><div class="err">${esc(e.message)}</div></div>`; return; }
+  const qs = m.questions || [];
+  active = m.activeQ; show = m.showResults;
+  if (active) idx = Math.max(0, qs.findIndex(q => q.id === active));
+  $('#topTitle').textContent = m.title;
+  document.title = m.title;
+  const joinUrl = `${BASE_URL}?m=${mid}`;
+  $('#app').innerHTML = `<div class="pres">
+    <div class="main"><div class="qno" id="pno"></div><div class="qtext" id="ptext"></div><div id="pres"></div></div>
+    <div class="side">
+      <div class="join"><div style="font-weight:800;margin-bottom:8px">スマホで 参加</div><div id="qr"></div><div class="url">${esc(joinUrl)}</div></div>
+      <div class="count"><div class="qno">回答</div><div class="n" id="pcnt">0</div><div class="qno">人</div></div>
+      <div class="ctrl">
+        <div style="text-align:center"><span class="status" id="pst"></span></div>
+        <div class="row2"><button class="btn gray" id="prev">◀ 前</button><button class="btn gray" id="next">次 ▶</button></div>
+        <button class="btn" id="open">この 質問を 出す</button>
+        <button class="btn sub" id="close">しめきる</button>
+        <label class="chk"><input type="checkbox" id="show"> 参加者の スマホにも 結果を 見せる</label>
+        <button class="btn red sm" id="clear">この 質問の 回答を リセット</button>
+        <button class="btn gray sm" id="edit">✏ 編集に もどる</button>
+      </div>
+    </div></div>`;
+  new QRCode($('#qr'), { text: joinUrl, width: 440, height: 440, correctLevel: QRCode.CorrectLevel.M });
+  const setActive = async (qid) => { active = qid; await apiGet({ action: 'active', key: hostKey, m: mid, q: qid, show: show }); draw(); };
+  const draw = () => {
+    const q = qs[idx];
+    if (!q) { $('#ptext').textContent = '質問が ありません（編集で 足してください）'; return; }
+    $('#pno').textContent = `質問 ${idx + 1} / ${qs.length}・${TYPE_LABEL[q.type]}`;
+    $('#ptext').textContent = q.text;
+    const on = active === q.id;
+    $('#pst').className = 'status ' + (on ? 'on' : 'off');
+    $('#pst').textContent = on ? '● 受付中（スマホに 出ています）' : active ? '別の 質問が 出ています' : 'しめきり中';
+    $('#open').disabled = on; $('#close').disabled = !active;
+    $('#prev').disabled = idx === 0; $('#next').disabled = idx >= qs.length - 1;
+    $('#show').checked = show;
+  };
+  const pull = async () => {
+    const q = qs[idx]; if (!q) return;
+    try { const r = await apiGet({ action: 'results', m: mid, q: q.id }); $('#pres').innerHTML = renderResults(q, r); $('#pcnt').textContent = r.people; }
+    catch (e) { $('#pres').innerHTML = `<div class="err">${esc(e.message)}</div>`; }
+  };
+  // 前・次 は その質問を すぐ 出す（メンチメーターと 同じ 動き）
+  $('#prev').onclick = async () => { idx--; $('#pres').innerHTML = ''; await setActive(qs[idx].id); pull(); };
+  $('#next').onclick = async () => { idx++; $('#pres').innerHTML = ''; await setActive(qs[idx].id); pull(); };
+  $('#open').onclick = () => setActive(qs[idx].id);
+  $('#close').onclick = () => setActive('');
+  $('#show').onchange = async () => { show = $('#show').checked; await apiGet({ action: 'active', key: hostKey, m: mid, q: active, show: show }); };
+  $('#clear').onclick = async () => { if (!confirm('この 質問の 回答を ぜんぶ 消します')) return; await apiGet({ action: 'clear', key: hostKey, m: mid, q: qs[idx].id }); pull(); };
+  $('#edit').onclick = () => { location.href = `${BASE_URL}?host&edit=${mid}`; };
+  document.addEventListener('keydown', e => { if (e.key === 'ArrowRight' && !$('#next').disabled) $('#next').click(); if (e.key === 'ArrowLeft' && !$('#prev').disabled) $('#prev').click(); });
+  draw(); pull(); timer = setInterval(pull, 3000);
+}
+
+// ===== 起動 =====
+(function () {
+  const p = new URLSearchParams(location.search);
+  if (p.has('host')) {
+    if (!hostKey) return hostLogin();
+    if (p.get('present')) return present(p.get('present'));
+    if (p.get('edit')) return hostEdit(p.get('edit'));
+    return host();
+  }
+  if (p.get('m')) return participant(p.get('m'));
+  $('#app').innerHTML = `<div class="wrap"><div class="card"><div class="wait"><div class="ic">📱</div>司会の 画面の QRコードを 読んで 参加してください</div></div></div>`;
+})();
+</script>
+</body>
+</html>
