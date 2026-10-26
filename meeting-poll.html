@@ -174,7 +174,7 @@ function renderResults(q, r) {
 // 参加者
 // ======================================================================
 function participant(mid) {
-  let cur = null, sel = null, sentKey = '', timer = null, lastQ = '';
+  let cur = null, sel = null, timer = null, lastQ = null;   // null＝まだ一度も 描いていない
   const app = $('#app');
   app.innerHTML = `<div class="wrap"><div class="card" id="pBox"><div class="wait"><div class="ic">⏳</div>つないでいます…</div></div><div class="card hide" id="pRes"></div></div>`;
   async function tick() {
