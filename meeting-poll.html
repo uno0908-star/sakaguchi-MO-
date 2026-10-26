@@ -313,9 +313,9 @@ async function hostList() {
 const newId = () => 'q' + Math.random().toString(36).slice(2, 8);
 const TEMPLATES = [   // 10/28 会議の 質問
   { type: 'word', text: '今の 気持ちを ひとことで', maxWords: 3 },
-  { type: 'open', text: '今 いちばん 困っている ことは？' },
+  { type: 'word', text: '今 いちばん 困っている ことは？', maxWords: 3 },
   { type: 'scale', text: 'お店の 状態を 5段階で あらわすと？（5が いちばん よい）', options: [], labels: ['よくない', 'とても よい'] },
-  { type: 'open', text: '店利益を 上げる アイデアは？' },
+  { type: 'word', text: '店利益を 上げる アイデアは？', maxWords: 3 },
   { type: 'word', text: '会議で 何を 勉強したい？', maxWords: 3 }
 ];
 
