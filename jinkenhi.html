@@ -1,0 +1,460 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<script src="ls-guard.js?v=20261024"></script>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>人件費 予実 | 阪口商店</title>
+<style>
+:root{
+  --blue:#005BAC;--act:#2a78d6;--over:#eb6834;--ref:#52514e;
+  --green:#047857;--red:#B91C1C;--amber:#92400E;
+  --bg:#F3F4F6;--card:#fff;--border:#E5E7EB;--text:#1F2937;--sub:#6B7280;--muted:#9CA3AF;--radius:12px;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+body{font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Noto Sans JP",sans-serif;
+  background:var(--bg);color:var(--text);font-size:15px;line-height:1.6;padding-bottom:60px}
+button,select,input,textarea{font-family:inherit}
+.hdr{position:sticky;top:0;z-index:50;background:#fff;border-bottom:1px solid var(--border);
+  padding:8px 12px;display:flex;align-items:center;gap:8px;box-shadow:0 1px 3px rgba(0,0,0,.05)}
+.hdr-ttl{font-size:16px;font-weight:800;flex:1;min-width:0}
+.hdr-ttl small{display:block;font-size:11px;font-weight:600;color:var(--sub)}
+.who{font-size:12px;font-weight:700;padding:6px 10px;border-radius:20px;background:#EEF4FB;color:var(--blue);white-space:nowrap}
+.btn{min-height:44px;padding:0 14px;border-radius:10px;border:1.5px solid var(--border);background:#fff;
+  font-size:14px;font-weight:700;color:var(--text);cursor:pointer;white-space:nowrap}
+.btn.pri{background:var(--blue);border-color:var(--blue);color:#fff}
+.btn.sm{min-height:40px;font-size:13px;padding:0 10px}
+.bar{background:#fff;border-bottom:1px solid var(--border);padding:8px 12px;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+select,input[type=text],input[type=number],input[type=password],textarea{font-size:16px;padding:10px;border:1.5px solid var(--border);
+  border-radius:10px;background:#fff;color:var(--text);width:100%}
+select{min-height:44px;font-weight:600}
+.wrap{padding:12px;max-width:760px;margin:0 auto}
+.card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:14px;margin-bottom:12px}
+h2{font-size:15px;font-weight:800;margin-bottom:8px}
+h3{font-size:13px;font-weight:800;color:var(--sub);margin:12px 0 6px}
+.note{font-size:12px;color:var(--sub)}
+.big{display:flex;gap:8px;text-align:center}
+.big>div{flex:1;background:var(--bg);border-radius:10px;padding:10px 4px}
+.big .l{font-size:12px;font-weight:700;color:var(--sub)}
+.big .v{font-size:24px;font-weight:800;line-height:1.3}
+.big .v small{font-size:12px;font-weight:700}
+.verdict{margin-top:10px;padding:12px;border-radius:10px;font-weight:800;font-size:16px;text-align:center}
+.verdict.over{background:#FFF1EA;color:#9A3412;border:1.5px solid var(--over)}
+.verdict.ok{background:#ECFDF5;color:var(--green);border:1.5px solid #6EE7B7}
+.verdict .s{display:block;font-size:13px;font-weight:700;margin-top:2px}
+.pl{color:var(--red);font-weight:800}.mi{color:var(--green);font-weight:800}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th,td{padding:6px 4px;border-bottom:1px solid var(--border);text-align:right;white-space:nowrap}
+th:first-child,td:first-child{text-align:left}
+th{font-size:11px;color:var(--sub);font-weight:700}
+tr.tot td{font-weight:800;border-top:2px solid var(--text)}
+.wdbars{display:grid;grid-template-columns:28px 1fr 74px;gap:6px 8px;align-items:center;font-size:13px}
+.wdbars .bk{position:relative;height:22px;background:var(--bg);border-radius:4px}
+.wdbars .mid{position:absolute;left:50%;top:-3px;bottom:-3px;width:2px;background:var(--ref)}
+.wdbars .b{position:absolute;top:3px;bottom:3px;border-radius:4px}
+.wdbars .val{text-align:right;font-weight:800}
+.chart{position:relative}
+.chart svg{display:block;width:100%;height:auto}
+.tip{position:absolute;pointer-events:none;background:#111827;color:#fff;font-size:12px;padding:6px 8px;border-radius:8px;
+  white-space:nowrap;transform:translate(-50%,-110%);display:none;z-index:5}
+.legend{display:flex;gap:14px;font-size:12px;color:var(--sub);margin:4px 0 6px;flex-wrap:wrap}
+.legend i{display:inline-block;width:14px;height:10px;border-radius:2px;margin-right:4px;vertical-align:middle}
+.legend i.ln{height:0;border-top:2px dashed var(--ref);border-radius:0}
+.slist .st{display:block;width:100%;text-align:left;background:#fff;border:1px solid var(--border);border-radius:var(--radius);
+  padding:12px 14px;margin-bottom:10px;cursor:pointer;color:var(--text)}
+.st-hd{display:flex;justify-content:space-between;gap:8px;align-items:baseline}
+.st-name{font-weight:800;font-size:16px}
+.st-mh{font-size:13px;color:var(--sub)}
+.st-row{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px}
+.chip{display:inline-block;font-size:12px;font-weight:700;padding:3px 9px;border-radius:20px;background:var(--bg);color:var(--sub)}
+.chip.over{background:#FFF1EA;color:#9A3412}.chip.ok{background:#ECFDF5;color:var(--green)}
+.chip.wait{background:#FEF3C7;color:var(--amber)}.chip.done{background:#EEF4FB;color:var(--blue)}
+.money td.k{color:var(--sub)}
+.gai{display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid var(--border);flex-wrap:wrap}
+.gai .t{flex:1;min-width:170px;font-size:13px}
+.gai .st{font-size:12px;font-weight:800}
+.seg{display:flex;gap:6px}
+.seg .btn.on{background:var(--blue);border-color:var(--blue);color:#fff}
+.seg .btn.on.ng{background:var(--over);border-color:var(--over)}
+label.f{display:block;font-size:13px;font-weight:700;margin:10px 0 4px}
+textarea{min-height:70px;resize:vertical}
+.savebar{display:flex;gap:8px;margin-top:12px;align-items:center}
+.savebar .msg{font-size:13px;color:var(--green);font-weight:700}
+.ov{position:fixed;inset:0;background:rgba(31,41,55,.55);z-index:100;display:flex;align-items:center;justify-content:center;padding:16px}
+.ovbox{background:#fff;border-radius:18px;padding:22px 18px;max-width:420px;width:100%;max-height:92vh;overflow-y:auto}
+.ovbox h1{font-size:19px;text-align:center;margin-bottom:4px}
+.grp{font-size:12px;font-weight:800;color:var(--sub);margin:14px 0 6px}
+.names{display:flex;flex-wrap:wrap;gap:8px}
+.names .btn{flex:1 0 30%}
+.names .btn.on{background:var(--blue);color:#fff;border-color:var(--blue)}
+.err{color:var(--red);font-weight:700;font-size:13px;margin-top:8px;text-align:center}
+.loading{text-align:center;color:var(--sub);padding:40px 0}
+details{margin-top:8px}
+summary{cursor:pointer;font-weight:700;font-size:13px;color:var(--blue);min-height:40px;display:flex;align-items:center}
+.back{margin-bottom:10px}
+.hidden{display:none!important}
+@media(min-width:1100px){
+  body{font-size:16px}
+  .wrap{max-width:1680px;padding:20px}
+  .slist{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+  .slist .st{margin:0}
+  .detail{display:grid;grid-template-columns:1fr 1fr;gap:14px;align-items:start}
+  .detail>.col>.card{margin-bottom:14px}
+}
+</style>
+</head>
+<body>
+<div class="hdr">
+  <div class="hdr-ttl">人件費 予実<small id="hdrSub">予算と実績の時間をくらべる</small></div>
+  <span class="who hidden" id="who"></span>
+  <button class="btn sm hidden" id="btnOut" onclick="logout()">ログアウト</button>
+</div>
+<div class="bar hidden" id="bar">
+  <select id="selMonth" onchange="loadMonth(this.value)" style="max-width:220px"></select>
+  <span class="note" id="period"></span>
+</div>
+<div class="wrap" id="main"><div class="loading">読み込み中…</div></div>
+
+<div class="ov hidden" id="login">
+  <div class="ovbox">
+    <h1>人件費 予実</h1>
+    <p class="note" style="text-align:center">名前をえらんで、パスコードを入れてください</p>
+    <div id="nameGroups"><div class="loading">名前を読み込み中…</div></div>
+    <label class="f" for="pass">パスコード</label>
+    <input type="password" id="pass" autocomplete="current-password" onkeydown="if(event.key==='Enter')doLogin()">
+    <div class="err" id="loginErr"></div>
+    <button class="btn pri" style="width:100%;margin-top:12px" onclick="doLogin()">ログイン</button>
+  </div>
+</div>
+
+<script>
+const GAS_URL = 'https://script.google.com/macros/s/AKfycbwvfreulUH0kdpV2H4PXUZ1xEYGNX3ckePiFipI10_hSi2Jou3GCkjaV2NvKcws6334/exec';
+const REASONS = ["欠員の穴埋め","新人教育","長期休み・帰国","ヘルプ受け入れ","売上・客数増","厨房投資",
+  "店長・社員の時間不足","深夜・時給の高い人の偏り","手当・有給","シフトの組みすぎ","その他"];
+const WDS = "月火水木金土日";
+const LS_KEY = 'jinkenhi_login';
+
+let ME = null;          // {name, pass, role}
+let PICK = '';          // ログイン画面で選んだ名前
+let D = null;           // getMonthの結果
+let CUR = null;         // 表示中の店 ab
+
+// ---------- 通信 ----------
+async function api(body){
+  const r = await fetch(GAS_URL,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify(body)});
+  const j = await r.json();
+  if(!j.ok) throw new Error(j.error||'エラー');
+  return j;
+}
+const authBody = (o)=>Object.assign({name:ME.name,pass:ME.pass},o);
+function lsGet(k){try{return JSON.parse(localStorage.getItem(k)||'null')}catch(e){return null}}
+function lsSet(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}
+function lsDel(k){try{localStorage.removeItem(k)}catch(e){}}
+
+// ---------- 表示用 ----------
+const esc = s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const h1 = v=>(Math.round(v*10)/10).toLocaleString();
+const hs = v=>(v>0?'+':v<0?'▲':'')+h1(Math.abs(v));
+const yen = v=>Math.round(v).toLocaleString()+'円';
+const yens = v=>(v>0?'+':v<0?'▲':'')+Math.round(Math.abs(v)).toLocaleString()+'円';
+function man(v){const a=Math.abs(v)/10000;return (v>0?'+':v<0?'▲':'')+(a>=10?Math.round(a):Math.round(a*10)/10)+'万円'}
+const sum = a=>a.reduce((x,y)=>x+y,0);
+
+// ---------- 計算 ----------
+function judgeOf(id){const j=D.judges.find(x=>x.id===id);return j?j.status:''}
+function calc(s){
+  const mhIn = sum(s.a.daily);
+  const rate = s.a.rate||0;
+  let okH=0, ngH=0, waitH=0;
+  (s.gai||[]).forEach(g=>{const st=judgeOf(g.id); if(st==='ok')okH+=g.h; else if(st==='ng')ngH+=g.h; else waitH+=g.h;});
+  const mhStore = mhIn + ngH;                 // 店の時間（予算に追加しない店外は店の時間に入れる）
+  const dMh = mhStore - s.b.mh;
+  const r = {mhIn, mhStore, dMh, rate, okH, ngH, waitH, t1: dMh*rate, perDay: dMh/D.meta.days};
+  if(s.b.nendo!==undefined){
+    const adj = (D.adjs.find(a=>a.ab===s.ab)||{}).yen||0;
+    r.nendo = s.b.nendo; r.fixed = s.b.fixed; r.adj = Number(adj)||0;
+    r.rateGap = (rate - s.b.rate)*s.b.mh;
+    r.gaiOk = okH*rate;
+    r.budget = s.b.nendo - s.b.fixed + r.rateGap + r.adj + r.gaiOk;
+    r.actual = s.a.pay;
+    r.diff = r.actual - r.budget;
+    r.t4 = waitH*rate;
+    r.t3 = r.diff - r.t1 - r.t4;
+  }
+  return r;
+}
+function wdStats(s){
+  const out = WDS.split('').map(w=>({w,b:0,a:0,n:0}));
+  D.meta.wds.forEach((w,i)=>{const o=out[WDS.indexOf(w)]; o.b+=s.b.daily[i]; o.a+=s.a.daily[i]; o.n++;});
+  return out;
+}
+
+// ---------- ログイン ----------
+async function showLogin(){
+  document.getElementById('login').classList.remove('hidden');
+  try{
+    const r = await fetch(GAS_URL,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify({action:'names'})}).then(x=>x.json());
+    const grp = (t,arr)=>arr.length?`<div class="grp">${t}</div><div class="names">${arr.map(n=>`<button class="btn" data-n="${esc(n)}" onclick="pickName(this)">${esc(n)}</button>`).join('')}</div>`:'';
+    document.getElementById('nameGroups').innerHTML = grp('店長',r.mgr.filter(n=>!r.sc.includes(n)))+grp('SC・ASC',r.sc)+grp('管理者',r.admin);
+  }catch(e){
+    document.getElementById('nameGroups').innerHTML = '<div class="err">名前を読み込めませんでした。通信を確認してください。</div>';
+  }
+}
+function pickName(b){PICK=b.dataset.n;document.querySelectorAll('.names .btn').forEach(x=>x.classList.toggle('on',x===b));document.getElementById('pass').focus()}
+async function doLogin(){
+  const err=document.getElementById('loginErr'); err.textContent='';
+  const pass=document.getElementById('pass').value.trim();
+  if(!PICK){err.textContent='名前をえらんでください';return}
+  if(!pass){err.textContent='パスコードを入れてください';return}
+  try{
+    const r = await api({action:'login',name:PICK,pass});
+    ME={name:r.name,pass,role:r.role}; lsSet(LS_KEY,ME);
+    document.getElementById('login').classList.add('hidden');
+    afterLogin(r.months);
+  }catch(e){err.textContent=e.message}
+}
+function logout(){lsDel(LS_KEY);ME=null;D=null;location.reload()}
+function afterLogin(months){
+  const w=document.getElementById('who'); w.textContent=ME.name+'（'+({admin:'管理者',sc:'SC',mgr:'店長'})[ME.role]+'）'; w.classList.remove('hidden');
+  document.getElementById('btnOut').classList.remove('hidden');
+  document.getElementById('bar').classList.remove('hidden');
+  if(!months.length){document.getElementById('main').innerHTML='<div class="card">まだデータがありません。</div>';return}
+  const sel=document.getElementById('selMonth');
+  sel.innerHTML=months.map(m=>`<option value="${m}">${m.slice(0,4)}年${+m.slice(4)}月度</option>`).join('');
+  loadMonth(months[0]);
+}
+async function loadMonth(ym){
+  const cacheKey='jinkenhi_cache_'+ME.name+'_'+ym;
+  const cached=lsGet(cacheKey);
+  if(cached){D=cached;route()} else document.getElementById('main').innerHTML='<div class="loading">読み込み中…</div>';
+  try{
+    D = await api(authBody({action:'getMonth',ym}));
+    lsSet(cacheKey,D); route();
+  }catch(e){ if(!cached) document.getElementById('main').innerHTML=`<div class="card err">${esc(e.message)}</div>`; }
+}
+function route(){
+  document.getElementById('period').textContent=D.meta.period+'（'+D.meta.days+'日）';
+  if(CUR && D.stores.find(s=>s.ab===CUR)) return showStore(CUR);
+  if(D.stores.length===1) return showStore(D.stores[0].ab);
+  showList();
+}
+
+// ---------- 一覧 ----------
+function showList(){
+  CUR=null; window.scrollTo(0,0);
+  const rows = D.stores.map(s=>({s,c:calc(s),n:D.notes.find(x=>x.ab===s.ab)}));
+  rows.sort((a,b)=>b.c.dMh-a.c.dMh);
+  const money = ME.role!=='mgr';
+  let top='';
+  if(money){
+    const T=k=>sum(rows.map(r=>r.c[k]||0));
+    const over=rows.filter(r=>r.c.dMh>0).length;
+    const wait=sum(rows.map(r=>(r.s.gai||[]).filter(g=>!judgeOf(g.id)).length));
+    top=`<div class="card"><h2>${esc(D.meta.label)} ぜんたい（${rows.length}店）</h2>
+      <div class="big">
+        <div><div class="l">予算との差</div><div class="v ${T('diff')>0?'pl':'mi'}">${man(T('diff'))}</div></div>
+        <div><div class="l">① 時間の差</div><div class="v ${T('t1')>0?'pl':'mi'}">${man(T('t1'))}</div></div>
+        <div><div class="l">③ 時間以外</div><div class="v">${man(T('t3'))}</div></div>
+      </div>
+      <p class="note" style="margin-top:8px">時間オーバーの店：<b>${over}店</b>${wait?` ／ 店外の判断待ち：<b>${wait}件</b>`:''}。
+      差＝①時間の差（店長）＋③時間以外（手当・有給など）${T('t4')?'＋④店外の判断待ち':''}</p></div>`;
+  }
+  const cards = rows.map(({s,c,n})=>{
+    const wait=(s.gai||[]).filter(g=>!judgeOf(g.id)).length;
+    return `<button class="st" onclick="showStore('${s.ab}')">
+      <div class="st-hd"><span class="st-name">${esc(s.ab)} <small class="note">${esc(s.name)}</small></span>
+        <span class="${c.dMh>0?'pl':'mi'}">${hs(c.dMh)}h</span></div>
+      <div class="st-mh">予算 ${h1(s.b.mh)}h → 実績 ${h1(c.mhStore)}h ／ ① ${man(c.t1)}${money?` ／ 差 ${man(c.diff)}`:''}</div>
+      <div class="st-row">
+        <span class="chip ${c.dMh>0?'over':'ok'}">${c.dMh>0?'▲ 時間オーバー':'✓ 予算内'}</span>
+        ${n&&n.r1?`<span class="chip done">理由：${esc(n.r1)}</span>`:`<span class="chip">理由 まだ</span>`}
+        ${wait?`<span class="chip wait">店外 判断待ち ${wait}件</span>`:''}
+        <span class="chip">${esc(s.sc)}SC</span>
+      </div></button>`;
+  }).join('');
+  document.getElementById('main').innerHTML = top + `<div class="slist">${cards}</div>`;
+}
+
+// ---------- 店の画面 ----------
+function showStore(ab){
+  CUR=ab; window.scrollTo(0,0);
+  const s=D.stores.find(x=>x.ab===ab); const c=calc(s);
+  const money = ME.role!=='mgr';
+  const n=D.notes.find(x=>x.ab===ab)||{};
+  const over=c.dMh>0;
+  const back = D.stores.length>1?`<button class="btn back" onclick="showList()">← 店の一覧へ</button>`:'';
+
+  // 結論
+  const head = `<div class="card">
+    <h2>${esc(s.ab)}（${esc(s.name)}）${esc(D.meta.label)}</h2>
+    <div class="big">
+      <div><div class="l">予算</div><div class="v">${h1(s.b.mh)}<small>h</small></div></div>
+      <div><div class="l">実績</div><div class="v">${h1(c.mhStore)}<small>h</small></div></div>
+      <div><div class="l">差</div><div class="v ${over?'pl':'mi'}">${hs(c.dMh)}<small>h</small></div></div>
+    </div>
+    <div class="verdict ${over?'over':'ok'}">${over?`予算より ${h1(c.dMh)}時間 多い`:`予算より ${h1(-c.dMh)}時間 少ない ✓`}
+      <span class="s">1日あたり ${hs(c.perDay)}時間 ≒ ${yens(c.perDay*c.rate)}　／　1か月で ${man(c.t1)}</span></div>
+    <p class="note" style="margin-top:8px">実績＝バイト・契約社員が店の中で働いた時間（SC巡回・MT・研修などの店外は入れていません）</p>
+  </div>`;
+
+  // 曜日別
+  const ws=wdStats(s); const mx=Math.max(1,...ws.map(w=>Math.abs((w.a-w.b)/(w.n||1))));
+  const wdHtml = `<div class="card"><h2>曜日ごとの差（1日あたり）</h2>
+    <p class="note">右（オレンジ）＝予算より多い、左（青）＝少ない</p>
+    <div class="wdbars" style="margin-top:8px">${ws.map(w=>{
+      const d=w.n?(w.a-w.b)/w.n:0; const pct=Math.abs(d)/mx*50;
+      const st=d>=0?`left:50%;width:${pct}%;background:var(--over)`:`right:50%;width:${pct}%;background:var(--act)`;
+      return `<b>${w.w}</b><div class="bk" title="${w.w}曜 予算${h1(w.b/(w.n||1))}h 実績${h1(w.a/(w.n||1))}h"><div class="b" style="${st}"></div><div class="mid"></div></div>
+        <span class="val ${d>0?'pl':'mi'}">${hs(d)}h</span>`;}).join('')}</div>
+    <details><summary>表で見る</summary><table style="margin-top:6px"><tr><th>曜日</th><th>日数</th><th>予算(1日)</th><th>実績(1日)</th><th>差(1日)</th><th>差(月)</th></tr>
+    ${ws.map(w=>`<tr><td>${w.w}</td><td>${w.n}</td><td>${h1(w.b/(w.n||1))}</td><td>${h1(w.a/(w.n||1))}</td><td>${hs((w.a-w.b)/(w.n||1))}</td><td>${hs(w.a-w.b)}</td></tr>`).join('')}
+    </table></details></div>`;
+
+  // 日別
+  const dayHtml = `<div class="card"><h2>日ごとの時間</h2>
+    <div class="legend"><span><i style="background:var(--act)"></i>実績（予算内）</span><span><i style="background:var(--over)"></i>実績（予算より多い）</span><span><i class="ln"></i>予算</span></div>
+    <div class="chart" id="dayChart">${daySvg(s)}<div class="tip" id="tip"></div></div>
+    <details><summary>表で見る</summary><table style="margin-top:6px"><tr><th>日</th><th>曜</th><th>予算</th><th>実績</th><th>差</th></tr>
+    ${D.meta.dates.map((d,i)=>`<tr><td>${d}</td><td>${D.meta.wds[i]}</td><td>${h1(s.b.daily[i])}</td><td>${h1(s.a.daily[i])}</td><td class="${s.a.daily[i]>s.b.daily[i]?'pl':''}">${hs(s.a.daily[i]-s.b.daily[i])}</td></tr>`).join('')}
+    </table></details></div>`;
+
+  // お金（SC・管理者）
+  let moneyHtml='';
+  if(money){
+    moneyHtml=`<div class="card money"><h2>お金で見る</h2>
+    <table>
+      <tr><td class="k">年度予算（パート給与）</td><td>${yen(c.nendo)}</td></tr>
+      <tr><td class="k">− 固定手当（予算・実績の両方から外す）</td><td>${yens(-c.fixed)}</td></tr>
+      <tr><td class="k">＋ 時給のズレ（後付け）<br><small>予算 ${h1(s.b.rate)}円 → 実績 ${h1(c.rate)}円</small></td><td>${yens(c.rateGap)}</td></tr>
+      ${c.adj?`<tr><td class="k">＋ 後付け予算の追加</td><td>${yens(c.adj)}</td></tr>`:''}
+      ${c.gaiOk?`<tr><td class="k">＋ 店外（予算に追加）</td><td>${yens(c.gaiOk)}</td></tr>`:''}
+      <tr class="tot"><td>修正後予算</td><td>${yen(c.budget)}</td></tr>
+      <tr><td class="k">実績（バイト・契約）</td><td>${yen(c.actual)}</td></tr>
+      <tr class="tot"><td>差</td><td class="${c.diff>0?'pl':'mi'}">${yens(c.diff)}</td></tr>
+      <tr><td class="k">　① 時間の差（店長）</td><td>${yens(c.t1)}</td></tr>
+      <tr><td class="k">　③ 時間以外（手当・有給・交通費など）</td><td>${yens(c.t3)}</td></tr>
+      ${c.t4?`<tr><td class="k">　④ 店外の判断待ち</td><td>${yens(c.t4)}</td></tr>`:''}
+    </table>
+    <h3>社員の時間（参考）</h3>
+    <p class="note">予算 ${h1(s.b.shainMh)}h → 実績 ${h1(s.a.shainMh)}h（${hs(s.a.shainMh-s.b.shainMh)}h）。社員が少ないとバイトの時間が増えます。</p>
+    </div>`;
+  }
+
+  // 店外（クルー・契約社員）
+  let gaiHtml='';
+  if((s.gai||[]).length){
+    const isAdmin=ME.role==='admin';
+    gaiHtml=`<div class="card"><h2>店外の時間（クルー・契約社員）</h2>
+      <p class="note">MT・研修などで店の外で働いた時間です。${isAdmin?'予算に追加するかどうかを決めてください。「追加しない」は店の時間に入ります。':'予算に追加するかは神田さんが決めます。'}</p>
+      ${s.gai.map(g=>{const st=judgeOf(g.id);
+        return `<div class="gai"><div class="t"><b>${esc(g.d)}（${esc(g.wd)}）${esc(g.name)}</b><br>${esc(g.start)}〜${esc(g.end)}　${h1(g.h)}h${money?`（約${yen(g.h*c.rate)}）`:''}</div>
+        ${isAdmin?`<div class="seg"><button class="btn sm ${st==='ok'?'on':''}" onclick="doJudge('${g.id}','${s.ab}','ok')">予算に追加</button>
+          <button class="btn sm ${st==='ng'?'on ng':''}" onclick="doJudge('${g.id}','${s.ab}','ng')">追加しない</button></div>`
+          :`<span class="st">${st==='ok'?'予算に追加':st==='ng'?'追加しない（店の時間）':'判断待ち'}</span>`}</div>`}).join('')}
+      <p class="note" style="margin-top:6px">※店外の日の合計時間から、どのシフトかを当てはめています。</p></div>`;
+  }
+
+  // 後付け予算の追加（管理者）
+  let adjHtml='';
+  if(ME.role==='admin'){
+    const a=D.adjs.find(x=>x.ab===ab)||{};
+    adjHtml=`<div class="card"><h2>後付け予算の追加（神田さん）</h2>
+      <p class="note">異動で時給の人が増えた分など、店の責任ではない金額を予算に足します。</p>
+      <label class="f">金額（円）</label><input type="number" id="adjYen" value="${a.yen||''}" placeholder="例 306747">
+      <label class="f">理由</label><input type="text" id="adjMemo" value="${esc(a.memo||'')}" placeholder="例 ボガティ時給化（ネパリ正社員の代わり）">
+      <div class="savebar"><button class="btn pri" onclick="saveAdj('${ab}')">保存</button><span class="msg" id="adjMsg"></span></div></div>`;
+  }
+
+  // 理由・来月やること
+  const past = (D.past||[]).filter(p=>p.ab===ab).slice(0,3);
+  const canMgr = ME.role==='admin'||ME.role==='mgr'||(ME.role==='sc'&&s.mgr.split('・').includes(ME.name));
+  const opt = v=>`<option value="">えらぶ</option>`+REASONS.map(r=>`<option ${r===v?'selected':''}>${r}</option>`).join('');
+  const noteHtml = `<div class="card"><h2>なぜ？ 来月どうする？</h2>
+    ${past.length?`<p class="note">前の月の理由：${past.map(p=>`${+p.ym.slice(4)}月「${esc(p.r1||'—')}」`).join('　')}</p>`:''}
+    <label class="f">理由1</label><select id="r1" ${canMgr?'':'disabled'}>${opt(n.r1)}</select>
+    <label class="f">理由2</label><select id="r2" ${canMgr?'':'disabled'}>${opt(n.r2)}</select>
+    <label class="f">何があった？（ひと言）</label><textarea id="memo" ${canMgr?'':'disabled'} placeholder="例 10/1〜新人2人の教育で夕方を2人体制にした">${esc(n.memo||'')}</textarea>
+    <label class="f">来月やること</label><textarea id="next" ${canMgr?'':'disabled'} placeholder="例 土日の夕方を1日2時間へらす">${esc(n.next||'')}</textarea>
+    ${ME.role!=='mgr'?`<label class="f">SCのコメント</label><textarea id="scMemo" placeholder="店長へのアドバイス">${esc(n.scMemo||'')}</textarea>`:(n.scMemo?`<h3>SCのコメント</h3><p>${esc(n.scMemo)}</p>`:'')}
+    <div class="savebar"><button class="btn pri" onclick="saveNote('${ab}',${canMgr})">保存</button><span class="msg" id="noteMsg"></span></div>
+    ${n.by?`<p class="note" style="margin-top:6px">最後に保存：${esc(n.by)}</p>`:''}</div>`;
+
+  const left = head + wdHtml + dayHtml;
+  const right = noteHtml + moneyHtml + gaiHtml + adjHtml;
+  document.getElementById('main').innerHTML = back + `<div class="detail"><div class="col">${left}</div><div class="col">${right}</div></div>` +
+    (back?`<div style="margin-top:4px">${back}</div>`:'');
+  bindTip(s);
+}
+
+function daySvg(s){
+  const n=D.meta.days, W=640, H=220, L=34, R=6, T=10, B=28;
+  const mx=Math.max(...s.a.daily,...s.b.daily)*1.1||1;
+  const bw=(W-L-R)/n, y=v=>T+(H-T-B)*(1-v/mx);
+  const step=mx>60?20:mx>30?10:5;
+  let g='';
+  for(let v=0;v<=mx;v+=step) g+=`<line x1="${L}" x2="${W-R}" y1="${y(v)}" y2="${y(v)}" stroke="#E5E7EB"/><text x="${L-4}" y="${y(v)+4}" font-size="10" text-anchor="end" fill="#6B7280">${v}</text>`;
+  let bars='', line='', lbl='';
+  s.a.daily.forEach((v,i)=>{
+    const x=L+i*bw+1, w=Math.max(2,bw-2), over=v>s.b.daily[i];
+    bars+=`<path d="M${x},${y(0)}V${y(v)+3}q0,-3 3,-3h${w-6}q3,0 3,3V${y(0)}Z" fill="${over?'var(--over)':'var(--act)'}"/>`;
+    bars+=`<rect class="hit" data-i="${i}" x="${L+i*bw}" y="${T}" width="${bw}" height="${H-T-B}" fill="transparent"/>`;
+    line+=(i?'L':'M')+(L+i*bw)+','+y(s.b.daily[i])+'H'+(L+(i+1)*bw);
+    if(i%5===0||i===n-1) lbl+=`<text x="${L+i*bw+bw/2}" y="${H-10}" font-size="10" text-anchor="middle" fill="#6B7280">${D.meta.dates[i]}</text>`;
+  });
+  return `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="日ごとの実績MHと予算MH">${g}${bars}<path d="${line}" fill="none" stroke="var(--ref)" stroke-width="2" stroke-dasharray="4 3"/>${lbl}</svg>`;
+}
+function bindTip(s){
+  const box=document.getElementById('dayChart'); if(!box) return;
+  const tip=document.getElementById('tip');
+  const show=e=>{const t=e.target.closest('.hit'); if(!t){tip.style.display='none';return}
+    const i=+t.dataset.i, r=box.getBoundingClientRect(), b=t.getBoundingClientRect();
+    tip.innerHTML=`${D.meta.dates[i]}（${D.meta.wds[i]}）<br>実績 ${h1(s.a.daily[i])}h ／ 予算 ${h1(s.b.daily[i])}h<br>差 ${hs(s.a.daily[i]-s.b.daily[i])}h`;
+    tip.style.left=(b.left-r.left+b.width/2)+'px'; tip.style.top=(b.top-r.top+20)+'px'; tip.style.display='block';};
+  box.addEventListener('mousemove',show); box.addEventListener('click',show);
+  box.addEventListener('mouseleave',()=>tip.style.display='none');
+}
+
+// ---------- 保存 ----------
+async function saveNote(ab,canMgr){
+  const msg=document.getElementById('noteMsg'); msg.textContent='保存中…';
+  const body={action:'saveNote',ym:D.meta.ym,ab};
+  if(canMgr){['r1','r2','memo','next'].forEach(k=>body[k]=document.getElementById(k).value); if(ME.role==='sc') body.asMgr=true;}
+  const sm=document.getElementById('scMemo'); if(sm) body.scMemo=sm.value;
+  try{
+    const r=await api(authBody(body));
+    const i=D.notes.findIndex(x=>x.ab===ab); if(i>=0) D.notes[i]=r.note; else D.notes.push(r.note);
+    msg.textContent='保存しました ✓';
+  }catch(e){msg.textContent='';alert('保存できませんでした：'+e.message)}
+}
+async function doJudge(id,ab,status){
+  const cur=judgeOf(id); if(cur===status) status='';
+  try{
+    await api(authBody({action:'judge',ym:D.meta.ym,id,ab,status}));
+    const i=D.judges.findIndex(x=>x.id===id); if(i>=0) D.judges[i].status=status; else D.judges.push({ym:D.meta.ym,id,ab,status});
+    showStore(ab);
+  }catch(e){alert('保存できませんでした：'+e.message)}
+}
+async function saveAdj(ab){
+  const msg=document.getElementById('adjMsg'); msg.textContent='保存中…';
+  const yenV=Number(document.getElementById('adjYen').value)||0, memo=document.getElementById('adjMemo').value;
+  try{
+    await api(authBody({action:'saveAdj',ym:D.meta.ym,ab,yen:yenV,memo}));
+    const i=D.adjs.findIndex(x=>x.ab===ab); if(i>=0){D.adjs[i].yen=yenV;D.adjs[i].memo=memo} else D.adjs.push({ym:D.meta.ym,ab,yen:yenV,memo});
+    showStore(ab);
+  }catch(e){msg.textContent='';alert('保存できませんでした：'+e.message)}
+}
+
+// ---------- 起動 ----------
+(async function(){
+  const saved=lsGet(LS_KEY);
+  if(saved&&saved.name&&saved.pass){
+    ME=saved;
+    try{const r=await api({action:'login',name:ME.name,pass:ME.pass}); ME.role=r.role; afterLogin(r.months); return}
+    catch(e){lsDel(LS_KEY); ME=null}
+  }
+  document.getElementById('main').innerHTML='';
+  showLogin();
+})();
+</script>
+</body>
+</html>
