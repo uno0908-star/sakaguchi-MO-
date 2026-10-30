@@ -168,8 +168,13 @@ function calc(s){
   let okH=0, ngH=0, waitH=0;
   (s.gai||[]).forEach(g=>{const st=judgeOf(g.id); if(st==='ok')okH+=g.h; else if(st==='ng')ngH+=g.h; else waitH+=g.h;});
   const mhStore = mhIn + ngH;                 // 店の時間（予算に追加しない店外は店の時間に入れる）
-  const dMh = mhStore - s.b.mh;
-  const r = {mhIn, mhStore, dMh, rate, okH, ngH, waitH, t1: dMh*rate, perDay: dMh/D.meta.days};
+  const dBaito = mhStore - s.b.mh;
+  // 社員：契約時間との差（出退勤データ）。店全体＝バイト＋社員で見る
+  const sh = s.shain||[];
+  const shC = sum(sh.map(x=>x.c)), shA = sum(sh.map(x=>x.a)), dShain = shA - shC;
+  const dMh = dBaito + dShain;
+  const r = {mhIn, mhStore, dBaito, shC, shA, dShain, bAll: s.b.mh+shC, aAll: mhStore+shA,
+    dMh, rate, okH, ngH, waitH, t1: dMh*rate, t5: -dShain*rate, perDay: dMh/D.meta.days};
   if(s.b.nendo!==undefined){
     const adj = (D.adjs.find(a=>a.ab===s.ab)||{}).yen||0;
     r.nendo = s.b.nendo; r.fixed = s.b.fixed; r.adj = Number(adj)||0;
@@ -179,7 +184,7 @@ function calc(s){
     r.actual = s.a.pay;
     r.diff = r.actual - r.budget;
     r.t4 = waitH*rate;
-    r.t3 = r.diff - r.t1 - r.t4;
+    r.t3 = r.diff - r.t1 - r.t4 - r.t5;
   }
   return r;
 }
@@ -257,14 +262,14 @@ function showList(){
         <div><div class="l">③ 時間以外</div><div class="v">${man(T('t3'))}</div></div>
       </div>
       <p class="note" style="margin-top:8px">時間オーバーの店：<b>${over}店</b>${wait?` ／ 店外の判断待ち：<b>${wait}件</b>`:''}。
-      差＝①時間の差（店長）＋③時間以外（手当・有給など）${T('t4')?'＋④店外の判断待ち':''}</p></div>`;
+      差＝①時間の差（店長・社員＋バイト）＋③時間以外（手当・有給など）${T('t4')?'＋④店外の判断待ち':''}＋⑤社員の過不足の分（${man(T('t5'))}）</p></div>`;
   }
   const cards = rows.map(({s,c,n})=>{
     const wait=(s.gai||[]).filter(g=>!judgeOf(g.id)).length;
     return `<button class="st" onclick="showStore('${s.ab}')">
       <div class="st-hd"><span class="st-name">${esc(s.ab)} <small class="note">${esc(s.name)}</small></span>
         <span class="${c.dMh>0?'pl':'mi'}">${hs(c.dMh)}h</span></div>
-      <div class="st-mh">予算 ${h1(s.b.mh)}h → 実績 ${h1(c.mhStore)}h ／ ① ${man(c.t1)}${money?` ／ 差 ${man(c.diff)}`:''}</div>
+      <div class="st-mh">予算 ${h1(c.bAll)}h → 実績 ${h1(c.aAll)}h（バイト ${hs(c.dBaito)}・社員 ${hs(c.dShain)}） ／ ① ${man(c.t1)}${money?` ／ 差 ${man(c.diff)}`:''}</div>
       <div class="st-row">
         <span class="chip ${c.dMh>0?'over':'ok'}">${c.dMh>0?'▲ 時間オーバー':'✓ 予算内'}</span>
         ${n&&n.r1?`<span class="chip done">理由：${esc(n.r1)}</span>`:`<span class="chip">理由 まだ</span>`}
@@ -288,18 +293,21 @@ function showStore(ab){
   const head = `<div class="card">
     <h2>${esc(s.ab)}（${esc(s.name)}）${esc(D.meta.label)}</h2>
     <div class="big">
-      <div><div class="l">予算</div><div class="v">${h1(s.b.mh)}<small>h</small></div></div>
-      <div><div class="l">実績</div><div class="v">${h1(c.mhStore)}<small>h</small></div></div>
+      <div><div class="l">予算</div><div class="v">${h1(c.bAll)}<small>h</small></div></div>
+      <div><div class="l">実績</div><div class="v">${h1(c.aAll)}<small>h</small></div></div>
       <div><div class="l">差</div><div class="v ${over?'pl':'mi'}">${hs(c.dMh)}<small>h</small></div></div>
     </div>
     <div class="verdict ${over?'over':'ok'}">${over?`予算より ${h1(c.dMh)}時間 多い`:`予算より ${h1(-c.dMh)}時間 少ない ✓`}
       <span class="s">1日あたり ${hs(c.perDay)}時間 ≒ ${yens(c.perDay*c.rate)}　／　1か月で ${man(c.t1)}</span></div>
-    <p class="note" style="margin-top:8px">実績＝バイト・契約社員が店の中で働いた時間（SC巡回・MT・研修などの店外は入れていません）</p>
+    <table style="margin-top:8px"><tr><th></th><th>予算</th><th>実績</th><th>差</th></tr>
+      <tr><td class="k">バイト・契約社員</td><td>${h1(s.b.mh)}</td><td>${h1(c.mhStore)}</td><td class="${c.dBaito>0?'pl':'mi'}">${hs(c.dBaito)}</td></tr>
+      <tr><td class="k">社員（契約時間）</td><td>${h1(c.shC)}</td><td>${h1(c.shA)}</td><td class="${c.dShain>0?'pl':'mi'}">${hs(c.dShain)}</td></tr></table>
+    <p class="note" style="margin-top:6px">店全体（社員＋バイト）で見ています。社員が契約より少ない分をバイトで埋めても、合計が予算内ならOKです。バイトはSC巡回・MT・研修などの店外を入れていません。</p>
   </div>`;
 
   // 曜日別
   const ws=wdStats(s); const mx=Math.max(1,...ws.map(w=>Math.abs((w.a-w.b)/(w.n||1))));
-  const wdHtml = `<div class="card"><h2>曜日ごとの差（1日あたり）</h2>
+  const wdHtml = `<div class="card"><h2>曜日ごとの差（バイト・1日あたり）</h2>
     <p class="note">右（オレンジ）＝予算より多い、左（青）＝少ない</p>
     <div class="wdbars" style="margin-top:8px">${ws.map(w=>{
       const d=w.n?(w.a-w.b)/w.n:0; const pct=Math.abs(d)/mx*50;
@@ -311,7 +319,7 @@ function showStore(ab){
     </table></details></div>`;
 
   // 日別
-  const dayHtml = `<div class="card"><h2>日ごとの時間</h2>
+  const dayHtml = `<div class="card"><h2>日ごとの時間（バイト）</h2>
     <div class="legend"><span><i style="background:var(--act)"></i>実績（予算内）</span><span><i style="background:var(--over)"></i>実績（予算より多い）</span><span><i class="ln"></i>予算</span></div>
     <div class="chart" id="dayChart">${daySvg(s)}<div class="tip" id="tip"></div></div>
     <details><summary>表で見る</summary><table style="margin-top:6px"><tr><th>日</th><th>曜</th><th>予算</th><th>実績</th><th>差</th></tr>
@@ -334,11 +342,19 @@ function showStore(ab){
       <tr><td class="k">　① 時間の差（店長）</td><td>${yens(c.t1)}</td></tr>
       <tr><td class="k">　③ 時間以外（手当・有給・交通費など）</td><td>${yens(c.t3)}</td></tr>
       ${c.t4?`<tr><td class="k">　④ 店外の判断待ち</td><td>${yens(c.t4)}</td></tr>`:''}
+      ${c.dShain?`<tr><td class="k">　⑤ 社員の過不足の分<br><small>社員 ${hs(c.dShain)}h × 実績時給。月給なのでバイト代は動かない（①から戻す）</small></td><td>${yens(c.t5)}</td></tr>`:''}
     </table>
-    <h3>社員の時間（参考）</h3>
-    <p class="note">予算 ${h1(s.b.shainMh)}h → 実績 ${h1(s.a.shainMh)}h（${hs(s.a.shainMh-s.b.shainMh)}h）。社員が少ないとバイトの時間が増えます。</p>
     </div>`;
   }
+
+  // 社員（契約時間との差）
+  const sh=s.shain||[];
+  const shainHtml = sh.length?`<div class="card"><h2>社員の時間（契約との差）</h2>
+    <table><tr><th>名前</th><th>契約</th><th>実績</th><th>差</th></tr>
+    ${sh.map(x=>`<tr><td class="k">${esc(x.n)}${x.sc?'<br><small>店のシフト分</small>':''}</td><td>${h1(x.c)}</td><td>${h1(x.a)}</td><td class="${x.a-x.c>0?'pl':'mi'}">${hs(x.a-x.c)}</td></tr>`).join('')}
+    <tr class="tot"><td>合計</td><td>${h1(c.shC)}</td><td>${h1(c.shA)}</td><td>${hs(c.dShain)}</td></tr></table>
+    <p class="note" style="margin-top:6px">社員の出退勤データ（契約の月時間と実際の勤務時間）から。社員が少ないと、その分バイトの時間が増えます。</p></div>`
+    :`<div class="card"><h2>社員の時間</h2><p class="note">この店の社員の出退勤データはありません。</p></div>`;
 
   // 店外（クルー・契約社員）
   let gaiHtml='';
@@ -379,7 +395,7 @@ function showStore(ab){
     <div class="savebar"><button class="btn pri" onclick="saveNote('${ab}',${canMgr})">保存</button><span class="msg" id="noteMsg"></span></div>
     ${n.by?`<p class="note" style="margin-top:6px">最後に保存：${esc(n.by)}</p>`:''}</div>`;
 
-  const left = head + wdHtml + dayHtml;
+  const left = head + shainHtml + wdHtml + dayHtml;
   const right = noteHtml + moneyHtml + gaiHtml + adjHtml;
   document.getElementById('main').innerHTML = back + `<div class="detail"><div class="col">${left}</div><div class="col">${right}</div></div>` +
     (back?`<div style="margin-top:4px">${back}</div>`:'');
