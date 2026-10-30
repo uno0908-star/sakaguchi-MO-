@@ -351,7 +351,7 @@ function showStore(ab){
   const sh=s.shain||[];
   const shainHtml = sh.length?`<div class="card"><h2>社員の時間（契約との差）</h2>
     <table><tr><th>名前</th><th>契約</th><th>この店で<br>働いた</th><th>差</th></tr>
-    ${sh.map(x=>`<tr><td class="k">${esc(x.n)}${x.g?`<br><small>応援（予算は${esc(x.g)}）</small>`:''}${x.sc&&!x.g?'<br><small>SC・店のシフト分</small>':''}${x.o>0?`<br><small>ほかの店で ${h1(x.o)}h</small>`:''}</td><td>${x.g?'−':h1(x.c)}</td><td>${h1(x.a)}</td><td class="${x.a-x.c>0?'pl':'mi'}">${hs(x.a-x.c)}</td></tr>`).join('')}
+    ${sh.map(x=>`<tr><td class="k">${esc(x.n)}${x.g?`<br><small>応援（予算は${esc(x.g)}）</small>`:''}${x.sc&&!x.g?'<br><small>SC・店のシフト分</small>':''}${x.f?'<br><small>契約＝正社員詳細の枠</small>':''}${x.o>0?`<br><small>ほかの店で ${h1(x.o)}h</small>`:''}</td><td>${x.g?'−':h1(x.c)}</td><td>${h1(x.a)}</td><td class="${x.a-x.c>0?'pl':'mi'}">${hs(x.a-x.c)}</td></tr>`).join('')}
     <tr class="tot"><td>合計</td><td>${h1(c.shC)}</td><td>${h1(c.shA)}</td><td>${hs(c.dShain)}</td></tr></table>
     <p class="note" style="margin-top:6px">契約（休憩を除いた時間）は予算をつけている店に、働いた時間は実際に入った店に付けています。ほかの店の応援に行った分・契約より少ない分はマイナス、応援に来てもらった分はプラスになり、そのぶんバイトの時間と相殺されます。</p></div>`
     :`<div class="card"><h2>社員の時間</h2><p class="note">この店の社員の出退勤データはありません。</p></div>`;
