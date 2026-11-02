@@ -53,6 +53,9 @@ tr.tot td{font-weight:800;border-top:2px solid var(--text)}
 .wdbars .mid{position:absolute;left:50%;top:-3px;bottom:-3px;width:2px;background:var(--ref)}
 .wdbars .b{position:absolute;top:3px;bottom:3px;border-radius:4px}
 .wdbars .val{text-align:right;font-weight:800}
+.wdbars.band{grid-template-columns:auto 1fr 64px}
+.wdbars.band b{font-size:12px;white-space:nowrap}
+.bt td,.bt th{padding:5px 3px;font-size:12px}
 .chart{position:relative}
 .chart svg{display:block;width:100%;height:auto}
 .tip{position:absolute;pointer-events:none;background:#111827;color:#fff;font-size:12px;padding:6px 8px;border-radius:8px;
@@ -206,6 +209,25 @@ function calc(s){
   }
   return r;
 }
+// 時間帯別：予算＝〇〇MHシートの枠の割合で1日の予算（バイト＋社員の契約）を分ける／実績＝勤怠の時刻（社員は出退勤の合計に合わせる）
+function bandStats(s,c){
+  if(!s.band||!D.meta.bands) return null;
+  const NB=D.meta.bands.length, W='月火水木金土日';
+  const shSum=sum(s.band.shain.map(x=>sum(x))); const f=shSum?c.shA/shSum:0;
+  const bud=Array(NB).fill(0), act=Array(NB).fill(0);
+  const wd=W.split('').map(()=>({n:0,b:Array(NB).fill(0),a:Array(NB).fill(0)}));
+  D.meta.wds.forEach((w,i)=>{
+    const k=W.indexOf(w), pr=s.band.prof[k]||[], P=sum(pr);
+    const day=s.b.daily[i]+c.shC/D.meta.days; wd[k].n++;
+    for(let j=0;j<NB;j++){
+      const b=P?pr[j]/P*day:day/NB, a=(s.band.baito[i]||[])[j]+((s.band.shain[i]||[])[j]||0)*f;
+      bud[j]+=b; act[j]+=a; wd[k].b[j]+=b; wd[k].a[j]+=a;
+    }
+  });
+  const n=D.meta.days;
+  return {rows:D.meta.bands.map((nm,j)=>({nm,b:bud[j]/n,a:act[j]/n,d:(act[j]-bud[j])/n,m:act[j]-bud[j]})),
+    wd:wd.map((x,k)=>({w:W[k],n:x.n,d:x.b.map((b,j)=>x.n?(x.a[j]-b)/x.n:0)}))};
+}
 function wdStats(s){
   const out = WDS.split('').map(w=>({w,b:0,a:0,n:0}));
   D.meta.wds.forEach((w,i)=>{const o=out[WDS.indexOf(w)]; o.b+=s.b.daily[i]; o.a+=s.a.daily[i]; o.n++;});
@@ -339,6 +361,25 @@ function showStore(ab){
     ${ws.map(w=>`<tr><td>${w.w}</td><td>${w.n}</td><td>${h1(w.b/(w.n||1))}</td><td>${h1(w.a/(w.n||1))}</td><td>${hs((w.a-w.b)/(w.n||1))}</td><td>${hs(w.a-w.b)}</td></tr>`).join('')}
     </table></details></div>`;
 
+  // 時間帯別
+  const bs=bandStats(s,c); let bandHtml='';
+  if(bs){
+    const bmx=Math.max(1,...bs.rows.map(r=>Math.abs(r.d)));
+    bandHtml=`<div class="card"><h2>時間帯ごとの差（店長・社員＋バイト・1日あたり）</h2>
+    <p class="note">右（オレンジ）＝予算より多い、左（青）＝少ない</p>
+    <div class="wdbars band" style="margin-top:8px">${bs.rows.map(r=>{const pct=Math.abs(r.d)/bmx*50;
+      const st=r.d>=0?`left:50%;width:${pct}%;background:var(--over)`:`right:50%;width:${pct}%;background:var(--act)`;
+      return `<b>${esc(r.nm)}</b><div class="bk" title="予算${h1(r.b)}h 実績${h1(r.a)}h"><div class="b" style="${st}"></div><div class="mid"></div></div><span class="val ${r.d>0?'pl':'mi'}">${hs(r.d)}h</span>`}).join('')}</div>
+    <details><summary>表で見る（時間帯×曜日）</summary>
+      <table style="margin-top:6px"><tr><th>時間帯</th><th>予算(1日)</th><th>実績(1日)</th><th>差(1日)</th><th>差(月)</th></tr>
+      ${bs.rows.map(r=>`<tr><td class="k">${esc(r.nm)}</td><td>${h1(r.b)}</td><td>${h1(r.a)}</td><td class="${r.d>0?'pl':''}">${hs(r.d)}</td><td>${hs(r.m)}</td></tr>`).join('')}</table>
+      <p class="note" style="margin-top:8px">曜日ごと（1日あたりの差・時間）</p>
+      <table class="bt" style="margin-top:4px"><tr><th>曜</th>${D.meta.bands.map(b=>`<th>${esc(b.split('（')[0])}</th>`).join('')}</tr>
+      ${bs.wd.map(w=>`<tr><td>${w.w}</td>${w.d.map(v=>`<td class="${v>=1?'pl':v<=-1?'mi':''}">${hs(v)}</td>`).join('')}</tr>`).join('')}</table>
+    </details>
+    <p class="note" style="margin-top:6px">予算は人件費計算シートの「${esc(s.ab.slice(0,2))}MH」（時間ごとの人の枠）の割合で1日の予算を分けたものです。</p></div>`;
+  }
+
   // 日別
   const dayHtml = `<div class="card"><h2>日ごとの時間（バイト）</h2>
     <div class="legend"><span><i style="background:var(--act)"></i>実績（予算内）</span><span><i style="background:var(--over)"></i>実績（予算より多い）</span><span><i class="ln"></i>予算</span></div>
@@ -426,7 +467,7 @@ function showStore(ab){
     <div class="savebar"><button class="btn pri" onclick="saveNote('${ab}',${canMgr})">保存</button><span class="msg" id="noteMsg"></span></div>
     ${n.by?`<p class="note" style="margin-top:6px">最後に保存：${esc(n.by)}</p>`:''}</div>`;
 
-  const left = head + chkHtml + shainHtml + wdHtml + dayHtml;
+  const left = head + chkHtml + shainHtml + wdHtml + bandHtml + dayHtml;
   const right = noteHtml + moneyHtml + gaiHtml + adjHtml;
   document.getElementById('main').innerHTML = back + `<div class="detail"><div class="col">${left}</div><div class="col">${right}</div></div>` +
     (back?`<div style="margin-top:4px">${back}</div>`:'');
@@ -445,6 +486,16 @@ function checkCard(s,c,money){
   const wk=wdStats(s).map(w=>({w:w.w,d:w.n?(w.a-w.b)/w.n:0,m:w.a-w.b})).filter(x=>x.d>=0.5).sort((a,b)=>b.d-a.d).slice(0,2);
   if(wk.length) it.push({who:'m',t:`毎週多い曜日：${wk.map(x=>`<b>${x.w}曜 1日${hs(x.d)}h</b>（月${hs(x.m)}h）`).join('、')}`,
     w:'→ この曜日の基本シフト（いつも入る人・時間）を見直す。1回だけでなく毎週なので、ここを直すと一番きく'});
+  // 2-2) 時間帯
+  const bst=bandStats(s,c);
+  if(bst){
+    const bb=bst.rows.filter(r=>r.d>=0.5).sort((a,b)=>b.d-a.d).slice(0,2);
+    if(bb.length){
+      const top=bb[0], j=bst.rows.indexOf(top), w2=bst.wd.slice().sort((a,b)=>b.d[j]-a.d[j])[0];
+      it.push({who:'m',t:`多い時間帯：${bb.map(r=>`<b>${esc(r.nm)} 1日${hs(r.d)}h</b>`).join('、')}${w2&&w2.d[j]>=1?`（とくに${w2.w}曜 ${hs(w2.d[j])}h）`:''}`,
+        w:'→ その時間に何人いたかをシフト表で見る。交代の前後の重なり・早く来る／残る人・人数の多すぎがないか'});
+    }
+  }
   // 3) 社員
   (s.shain||[]).filter(x=>!x.g).map(x=>({n:x.n,d:x.a-x.c})).filter(x=>Math.abs(x.d)>=8).sort((a,b)=>a.d-b.d).slice(0,3).forEach(x=>{
     it.push({who:'m',t:`社員 <b>${esc(x.n)}</b> が契約より <b>${hs(x.d)}h</b>`,
