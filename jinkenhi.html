@@ -73,6 +73,21 @@ tr.tot td{font-weight:800;border-top:2px solid var(--text)}
 td.k{white-space:normal;text-align:left;line-height:1.4;overflow-wrap:anywhere}
 .money table{table-layout:fixed}.money td:last-child{width:8.5em}
 td.k small{font-size:11px}
+.mline{display:flex;justify-content:space-between;align-items:baseline;gap:8px;padding:6px 0;font-size:14px}
+.mline b{font-size:18px}
+.mbar{display:grid;grid-template-columns:1fr auto;gap:2px 10px;padding:8px 0;border-top:1px solid var(--border)}
+.mbar .lb{font-size:13px;font-weight:700;line-height:1.4}
+.mbar .lb small{display:block;font-weight:600;color:var(--sub);font-size:11px}
+.mbar .vv{font-weight:800;text-align:right;white-space:nowrap}
+.mbar .tr{grid-column:1/-1;height:8px;background:var(--bg);border-radius:4px;position:relative}
+.mbar .tr i{position:absolute;top:0;bottom:0;border-radius:4px}
+.who-tag{display:inline-block;font-size:11px;font-weight:800;padding:1px 7px;border-radius:10px;margin-right:4px;vertical-align:1px}
+.who-tag.m{background:#EEF4FB;color:var(--blue)}.who-tag.s{background:#FEF3C7;color:var(--amber)}
+.chk{list-style:none;padding:0;margin:6px 0 0}
+.chk li{padding:9px 0;border-top:1px solid var(--border);font-size:14px;line-height:1.5}
+.chk li:first-child{border-top:0}
+.chk .w{display:block;font-size:12px;color:var(--sub);margin-top:2px}
+.goal{margin-top:8px;padding:10px;border-radius:10px;background:#EEF4FB;color:var(--blue);font-weight:800;font-size:14px;text-align:center}
 .gai{display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid var(--border);flex-wrap:wrap}
 .gai .t{flex:1;min-width:170px;font-size:13px}
 .gai .st{font-size:12px;font-weight:800}
@@ -308,6 +323,9 @@ function showStore(ab){
     <p class="note" style="margin-top:6px">店全体（社員＋バイト）で見ています。社員が契約より少ない分をバイトで埋めても、合計が予算内ならOKです。バイトはSC巡回・MT・研修などの店外を入れていません。</p>
   </div>`;
 
+  // どこを調べる？（自動で出す）
+  const chkHtml = checkCard(s,c,money);
+
   // 曜日別
   const ws=wdStats(s); const mx=Math.max(1,...ws.map(w=>Math.abs((w.a-w.b)/(w.n||1))));
   const wdHtml = `<div class="card"><h2>曜日ごとの差（バイト・1日あたり）</h2>
@@ -332,21 +350,31 @@ function showStore(ab){
   // お金（SC・管理者）
   let moneyHtml='';
   if(money){
-    moneyHtml=`<div class="card money"><h2>お金で見る</h2>
-    <table>
+    const parts=[
+      {lb:'① 時間が多い・少ない（店長・社員＋バイト）',sm:'シフトの組み方で変えられる',v:c.t1,who:'m'},
+      c.dShain?{lb:c.dShain<0?'⑤ 社員が契約より少なかった分を戻す':'⑤ 社員が契約より多く働いた分を戻す',sm:'社員は月給なので、この時間ぶんのお金は動かない',v:c.t5,who:''}:null,
+      {lb:'③ 時間以外（有給・手当・交通費・深夜など）',sm:'給与の明細で中身を見る',v:c.t3,who:'s'},
+      c.t4?{lb:'④ 店外の判断待ち',sm:'神田さんが「予算に追加」かを決める',v:c.t4,who:''}:null,
+    ].filter(Boolean);
+    const mx=Math.max(1,...parts.map(x=>Math.abs(x.v)));
+    moneyHtml=`<div class="card money"><h2>お金で見る（バイト・契約社員の給与）</h2>
+    <div class="mline"><span>使ってよいお金（予算）</span><b>${yen(c.budget)}</b></div>
+    <div class="mline"><span>実際に使ったお金</span><b>${yen(c.actual)}</b></div>
+    <div class="verdict ${c.diff>0?'over':'ok'}" style="margin-top:4px">${c.diff>0?`予算より ${man(c.diff).replace('+','')} 多い`:`予算より ${man(-c.diff).replace('+','')} 少ない ✓`}</div>
+    <h3 style="margin-top:12px;font-size:14px">なぜ差が出た？（内訳）</h3>
+    <p class="note">＋は予算より多く使った、▲は少なかった。足すと上の差になります。</p>
+    ${parts.map(x=>{const w=Math.abs(x.v)/mx*50;const st=x.v>=0?`left:50%;width:${w}%;background:var(--over)`:`right:50%;width:${w}%;background:var(--act)`;
+      return `<div class="mbar"><div class="lb">${x.who==='m'?'<span class="who-tag m">店長</span>':x.who==='s'?'<span class="who-tag s">SC</span>':''}${x.lb}<small>${x.sm}</small></div>
+        <div class="vv ${x.v>0?'pl':'mi'}">${yens(x.v)}</div><div class="tr"><i style="${st}"></i></div></div>`}).join('')}
+    <details><summary>予算の作り方を見る</summary>
+    <table style="margin-top:6px">
       <tr><td class="k">年度予算（パート給与）</td><td>${yen(c.nendo)}</td></tr>
-      <tr><td class="k">− 固定手当（予算・実績の両方から外す）</td><td>${yens(-c.fixed)}</td></tr>
-      <tr><td class="k">＋ 時給のズレ（後付け）<br><small>予算 ${h1(s.b.rate)}円 → 実績 ${h1(c.rate)}円</small></td><td>${yens(c.rateGap)}</td></tr>
+      <tr><td class="k">− 固定手当<br><small>予算・実績の両方から外す</small></td><td>${yens(-c.fixed)}</td></tr>
+      <tr><td class="k">＋ 時給のズレ<br><small>平均時給 予算 ${h1(s.b.rate)}円 → 実績 ${h1(c.rate)}円。時給が上がった分は店のせいにしない</small></td><td>${yens(c.rateGap)}</td></tr>
       ${c.adj?`<tr><td class="k">＋ 後付け予算の追加</td><td>${yens(c.adj)}</td></tr>`:''}
       ${c.gaiOk?`<tr><td class="k">＋ 店外（予算に追加）</td><td>${yens(c.gaiOk)}</td></tr>`:''}
-      <tr class="tot"><td>修正後予算</td><td>${yen(c.budget)}</td></tr>
-      <tr><td class="k">実績（バイト・契約）</td><td>${yen(c.actual)}</td></tr>
-      <tr class="tot"><td>差</td><td class="${c.diff>0?'pl':'mi'}">${yens(c.diff)}</td></tr>
-      <tr><td class="k">　① 時間の差（店長）</td><td>${yens(c.t1)}</td></tr>
-      <tr><td class="k">　③ 時間以外（手当・有給・交通費など）</td><td>${yens(c.t3)}</td></tr>
-      ${c.t4?`<tr><td class="k">　④ 店外の判断待ち</td><td>${yens(c.t4)}</td></tr>`:''}
-      ${c.dShain?`<tr><td class="k">　⑤ 社員の過不足の分<br><small>社員 ${hs(c.dShain)}h × 実績時給。月給なのでバイト代は動かない（①から戻す）</small></td><td>${yens(c.t5)}</td></tr>`:''}
-    </table>
+      <tr class="tot"><td>使ってよいお金（予算）</td><td>${yen(c.budget)}</td></tr>
+    </table></details>
     </div>`;
   }
 
@@ -398,11 +426,42 @@ function showStore(ab){
     <div class="savebar"><button class="btn pri" onclick="saveNote('${ab}',${canMgr})">保存</button><span class="msg" id="noteMsg"></span></div>
     ${n.by?`<p class="note" style="margin-top:6px">最後に保存：${esc(n.by)}</p>`:''}</div>`;
 
-  const left = head + shainHtml + wdHtml + dayHtml;
+  const left = head + chkHtml + shainHtml + wdHtml + dayHtml;
   const right = noteHtml + moneyHtml + gaiHtml + adjHtml;
   document.getElementById('main').innerHTML = back + `<div class="detail"><div class="col">${left}</div><div class="col">${right}</div></div>` +
     (back?`<div style="margin-top:4px">${back}</div>`:'');
   bindTip(s);
+}
+
+// 店長・SCが「どこを調べるか」を数字から自動で出す
+function checkCard(s,c,money){
+  const it=[]; const D_=D.meta;
+  const diff=s.a.daily.map((v,i)=>v-s.b.daily[i]);
+  // 1) 多かった日 TOP3
+  const days=diff.map((d,i)=>({d,i})).filter(x=>x.d>=1).sort((a,b)=>b.d-a.d).slice(0,3);
+  if(days.length) it.push({who:'m',t:`予算より多かった日：${days.map(x=>`<b>${D_.dates[x.i]}(${D_.wds[x.i]}) ${hs(x.d)}h</b>`).join('、')}`,
+    w:'→ その日のシフト表と勤怠を見る。だれが・何時に・なぜ多く入ったか（新人の教育？欠員？納品？）'});
+  // 2) 曜日のくせ
+  const wk=wdStats(s).map(w=>({w:w.w,d:w.n?(w.a-w.b)/w.n:0,m:w.a-w.b})).filter(x=>x.d>=0.5).sort((a,b)=>b.d-a.d).slice(0,2);
+  if(wk.length) it.push({who:'m',t:`毎週多い曜日：${wk.map(x=>`<b>${x.w}曜 1日${hs(x.d)}h</b>（月${hs(x.m)}h）`).join('、')}`,
+    w:'→ この曜日の基本シフト（いつも入る人・時間）を見直す。1回だけでなく毎週なので、ここを直すと一番きく'});
+  // 3) 社員
+  (s.shain||[]).filter(x=>!x.g).map(x=>({n:x.n,d:x.a-x.c})).filter(x=>Math.abs(x.d)>=8).sort((a,b)=>a.d-b.d).slice(0,3).forEach(x=>{
+    it.push({who:'m',t:`社員 <b>${esc(x.n)}</b> が契約より <b>${hs(x.d)}h</b>`,
+      w:x.d<0?'→ 休み・ほかの店の応援・SC業務のどれか。足りない分をバイトで埋めたかを確認':'→ 契約より多く入っている。バイトに回せる時間がないか確認'});
+  });
+  // 4) 時給・時間以外（SC）
+  if(money){
+    const rg=c.rate-s.b.rate;
+    if(rg>=15) it.push({who:'s',t:`平均時給が予算より <b>${Math.round(rg)}円</b> 高い`,w:'→ 昇給・深夜・時給の高い人が多く入っていないか（予算は時給のズレを足してあるので、店の差には入らない）'});
+    if(c.t3!==undefined&&Math.abs(c.t3)>=30000) it.push({who:'s',t:`③ 時間以外が <b>${yens(c.t3)}</b>`,w:'→ 給与の明細で、有給・手当・交通費・深夜のどれが多いかを見る'});
+  }
+  if(c.waitH>0) it.push({who:'',t:`店外の時間 <b>${h1(c.waitH)}h</b> が判断待ち`,w:'→ 下の「店外の時間」で神田さんが決める'});
+  const goal=c.dMh>0?`<div class="goal">来月は 1日あたり ${h1(c.dMh/D_.days)}時間 へらせば 予算内</div>`:'';
+  const body=it.length?`<ul class="chk">${it.map(x=>`<li>${x.who==='m'?'<span class="who-tag m">店長</span>':x.who==='s'?'<span class="who-tag s">SC</span>':''}${x.t}<span class="w">${x.w}</span></li>`).join('')}</ul>`
+    :'<p class="note">大きなズレはありません。このままでOKです。</p>';
+  return `<div class="card"><h2>どこを調べる？</h2>${body}${goal}
+    <p class="note" style="margin-top:8px">調べたら、下の「なぜ？ 来月どうする？」に理由と来月やることを書いてください。</p></div>`;
 }
 
 function daySvg(s){
