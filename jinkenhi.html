@@ -95,6 +95,10 @@ td.k small{font-size:11px}
 .gai .t{flex:1;min-width:170px;font-size:13px}
 .gai .st{font-size:12px;font-weight:800}
 .seg{display:flex;gap:6px}
+.req{display:flex;flex-direction:column;gap:6px;padding:10px 0;border-bottom:1px solid var(--border);font-size:13px}
+.req .st{display:inline-block;font-size:12px;font-weight:800;padding:1px 8px;border-radius:10px;margin-left:4px}
+.req .st.ok{background:#E7F6EC;color:#15803D}.req .st.ng{background:#FDECEC;color:var(--over)}.req .st.wait{background:#FEF3C7;color:var(--amber)}
+.req .btn.sm{align-self:flex-start}
 .seg .btn.on{background:var(--blue);border-color:var(--blue);color:#fff}
 .seg .btn.on.ng{background:var(--over);border-color:var(--over)}
 label.f{display:block;font-size:13px;font-weight:700;margin:10px 0 4px}
@@ -152,6 +156,7 @@ summary{cursor:pointer;font-weight:700;font-size:13px;color:var(--blue);min-heig
 const GAS_URL = 'https://script.google.com/macros/s/AKfycbwvfreulUH0kdpV2H4PXUZ1xEYGNX3ckePiFipI10_hSi2Jou3GCkjaV2NvKcws6334/exec';
 const REASONS = ["欠員の穴埋め","新人教育","長期休み・帰国","ヘルプ受け入れ","売上・客数増","厨房投資",
   "店長・社員の時間不足","深夜・時給の高い人の偏り","手当・有給","シフトの組みすぎ","その他"];
+const REQ_CATS = ["本部・外部の研修","厨房研修","接客講座・サービス向上の研修","新人トレーニング","その他"];  // GASのREQ_CATSと同じ
 const WDS = "月火水木金土日";
 const LS_KEY = 'jinkenhi_login';
 
@@ -182,6 +187,7 @@ function man(v){const a=Math.abs(v)/10000;return (v>0?'+':v<0?'▲':'')+(a>=10?M
 const sum = a=>a.reduce((x,y)=>x+y,0);
 
 // ---------- 計算 ----------
+function reqsOf(ab){return (D.reqs||[]).filter(x=>x.ab===ab)}
 function judgeOf(id){const j=D.judges.find(x=>x.id===id);return j?j.status:''}
 function calc(s){
   const mhIn = sum(s.a.daily);
@@ -189,19 +195,23 @@ function calc(s){
   let okH=0, ngH=0, waitH=0;
   (s.gai||[]).forEach(g=>{const st=judgeOf(g.id); if(st==='ok')okH+=g.h; else if(st==='ng')ngH+=g.h; else waitH+=g.h;});
   const mhStore = mhIn + ngH;                 // 店の時間（予算に追加しない店外は店の時間に入れる）
-  const dBaito = mhStore - s.b.mh;
+  // 後付け予算の申告：神田さんが「予算に追加」した時間はバイトの予算に足す（判断待ちはまだ足さない）
+  const rq=reqsOf(s.ab), reqOkH=sum(rq.filter(x=>x.status==='ok').map(x=>+x.h||0)), reqWait=rq.filter(x=>!x.status).length;
+  const bMh = s.b.mh + reqOkH;
+  const dBaito = mhStore - bMh;
   // 社員：契約時間との差（出退勤データ）。店全体＝バイト＋社員で見る
   const sh = s.shain||[];
   const shC = sum(sh.map(x=>x.c)), shA = sum(sh.map(x=>x.a)), dShain = shA - shC;
   const dMh = dBaito + dShain;
-  const r = {mhIn, mhStore, dBaito, shC, shA, dShain, bAll: s.b.mh+shC, aAll: mhStore+shA,
-    dMh, rate, okH, ngH, waitH, t1: dMh*rate, t5: -dShain*rate, perDay: dMh/D.meta.days};
+  const r = {mhIn, mhStore, dBaito, shC, shA, dShain, bAll: bMh+shC, aAll: mhStore+shA,
+    dMh, rate, okH, ngH, waitH, reqOkH, reqWait, bMh, t1: dMh*rate, t5: -dShain*rate, perDay: dMh/D.meta.days};
   if(s.b.nendo!==undefined){
     const adj = (D.adjs.find(a=>a.ab===s.ab)||{}).yen||0;
     r.nendo = s.b.nendo; r.fixed = s.b.fixed; r.adj = Number(adj)||0;
     r.rateGap = (rate - s.b.rate)*s.b.mh;
     r.gaiOk = okH*rate;
-    r.budget = s.b.nendo - s.b.fixed + r.rateGap + r.adj + r.gaiOk;
+    r.reqOk = reqOkH*rate;
+    r.budget = s.b.nendo - s.b.fixed + r.rateGap + r.adj + r.gaiOk + r.reqOk;
     r.actual = s.a.pay;
     r.diff = r.actual - r.budget;
     r.t4 = waitH*rate;
@@ -303,13 +313,14 @@ function showList(){
     const T=k=>sum(rows.map(r=>r.c[k]||0));
     const over=rows.filter(r=>r.c.dMh>0).length;
     const wait=sum(rows.map(r=>(r.s.gai||[]).filter(g=>!judgeOf(g.id)).length));
+    const rw=sum(rows.map(r=>r.c.reqWait));
     top=`<div class="card"><h2>${esc(D.meta.label)} ぜんたい（${rows.length}店）</h2>
       <div class="big">
         <div><div class="l">予算との差</div><div class="v ${T('diff')>0?'pl':'mi'}">${man(T('diff'))}</div></div>
         <div><div class="l">① 時間の差</div><div class="v ${T('t1')>0?'pl':'mi'}">${man(T('t1'))}</div></div>
         <div><div class="l">③ 時間以外</div><div class="v">${man(T('t3'))}</div></div>
       </div>
-      <p class="note" style="margin-top:8px">時間オーバーの店：<b>${over}店</b>${wait?` ／ 店外の判断待ち：<b>${wait}件</b>`:''}。
+      <p class="note" style="margin-top:8px">時間オーバーの店：<b>${over}店</b>${wait?` ／ 店外の判断待ち：<b>${wait}件</b>`:''}${rw?` ／ 後付け予算の申告 判断待ち：<b>${rw}件</b>`:''}。
       差＝①時間の差（店長・社員＋バイト）＋③時間以外（手当・有給など）${T('t4')?'＋④店外の判断待ち':''}＋⑤社員の過不足の分（${man(T('t5'))}）${T('t6')?`＋⑥時給の減額（${man(T('t6'))}）`:''}${T('t7')?`＋⑦年度予算の不足（${man(T('t7'))}）`:''}</p></div>`;
   }
   const cards = rows.map(({s,c,n})=>{
@@ -322,6 +333,7 @@ function showList(){
         <span class="chip ${c.dMh>0?'over':'ok'}">${c.dMh>0?'▲ 時間オーバー':'✓ 予算内'}</span>
         ${n&&n.r1?`<span class="chip done">理由：${esc(n.r1)}</span>`:`<span class="chip">理由 まだ</span>`}
         ${wait?`<span class="chip wait">店外 判断待ち ${wait}件</span>`:''}
+        ${c.reqWait?`<span class="chip wait">申告 判断待ち ${c.reqWait}件</span>`:''}
         <span class="chip">${esc(s.sc)}SC</span>
       </div></button>`;
   }).join('');
@@ -348,7 +360,7 @@ function showStore(ab){
     <div class="verdict ${over?'over':'ok'}">${over?`予算より ${h1(c.dMh)}時間 多い`:`予算より ${h1(-c.dMh)}時間 少ない ✓`}
       <span class="s">1日あたり ${hs(c.perDay)}時間 ≒ ${yens(c.perDay*c.rate)}　／　1か月で ${man(c.t1)}</span></div>
     <table style="margin-top:8px"><tr><th></th><th>予算</th><th>実績</th><th>差</th></tr>
-      <tr><td class="k">バイト・契約社員${s.b.mae2h?`<br><small>予算は出退勤の前後2分 ${h1(s.b.mae2h)}h を含む</small>`:''}</td><td>${h1(s.b.mh)}</td><td>${h1(c.mhStore)}</td><td class="${c.dBaito>0?'pl':'mi'}">${hs(c.dBaito)}</td></tr>
+      <tr><td class="k">バイト・契約社員${s.b.mae2h?`<br><small>予算は出退勤の前後2分 ${h1(s.b.mae2h)}h を含む</small>`:''}</td><td>${h1(c.bMh)}${c.reqOkH?`<br><small>申告 +${h1(c.reqOkH)}</small>`:''}</td><td>${h1(c.mhStore)}</td><td class="${c.dBaito>0?'pl':'mi'}">${hs(c.dBaito)}</td></tr>
       <tr><td class="k">社員（契約時間）</td><td>${h1(c.shC)}</td><td>${h1(c.shA)}</td><td class="${c.dShain>0?'pl':'mi'}">${hs(c.dShain)}</td></tr></table>
     <p class="note" style="margin-top:6px">店全体（社員＋バイト）で見ています。社員が契約より少ない分をバイトで埋めても、合計が予算内ならOKです。バイトはSC巡回・MT・研修などの店外を入れていません。</p>
   </div>`;
@@ -404,7 +416,7 @@ function showStore(ab){
       c.dShain?{lb:c.dShain<0?'⑤ 社員が契約より少なかった分を戻す':'⑤ 社員が契約より多く働いた分を戻す',sm:'社員は月給なので、この時間ぶんのお金は動かない',v:c.t5,who:''}:null,
       {lb:'③ 時間以外（有給・手当・交通費など）',sm:ntBkText(s)+(s.b.yuq?`／予算：有給 ${yen(s.b.yuq)}`:''),v:c.t3,who:'s'},
       c.t4?{lb:'④ 店外の判断待ち',sm:'神田さんが「予算に追加」かを決める',v:c.t4,who:''}:null,
-      c.t7?{lb:s.b.plan?'⑦ 計画どおりの超過（あえて人をかけている）':'⑦ 年度予算がMH予算より少ない分',sm:s.b.plan?esc(s.b.plan)+'。売上・収益とあわせて見る':'年度予算（パート給与）が「MH×時給＋有給4万」より少ない。予算の作り方を確認する',v:c.t7,who:''}:null,
+      c.t7?{lb:'⑦ 年度予算がシフト表の枠より少ない分',sm:'年度予算（パート給与）が「シフト表（MH）×時給＋有給4万」より少ない分',v:c.t7,who:''}:null,
       c.t6?{lb:'⑥ 時給の減額（5%・10%）',sm:(s.a.genList||[]).map(x=>esc(x.n)+' '+yens(x.yen)).join('／'),v:c.t6,who:''}:null,
     ].filter(Boolean);
     const mx=Math.max(1,...parts.map(x=>Math.abs(x.v)));
@@ -423,7 +435,8 @@ function showStore(ab){
       <tr><td class="k">− 固定手当<br><small>予算・実績の両方から外す</small></td><td>${yens(-c.fixed)}</td></tr>
       ${s.b.yuq!==undefined?`<tr><td class="k" colspan="2"><small>年度予算の中身：バイトMH×予算時給＋MT費 ${yen(c.nendo-c.fixed-s.b.yuq-s.b.mae2h*s.b.rate-(s.b.zure||0))}（MH ${h1(s.b.mh-s.b.mae2h)}h）／有給 ${yen(s.b.yuq)}／出退勤の前後2分 ${yen(s.b.mae2h*s.b.rate)}（${h1(s.b.mae2h)}h・時間の予算に入れています）${s.b.zure?`／不足 ${yens(s.b.zure)}`:''}</small></td></tr>`:''}
       <tr><td class="k">＋ 時給のズレ<br><small>平均時給 予算 ${h1(s.b.rate)}円 → 実績 ${h1(c.rate)}円。時給が上がった分は店のせいにしない</small></td><td>${yens(c.rateGap)}</td></tr>
-      ${c.adj?`<tr><td class="k">＋ 後付け予算の追加</td><td>${yens(c.adj)}</td></tr>`:''}
+      ${c.adj?`<tr><td class="k">＋ 会社が入れた予算<br><small>${esc((D.adjs.find(a=>a.ab===s.ab)||{}).memo||'')}</small></td><td>${yens(c.adj)}</td></tr>`:''}
+      ${c.reqOk?`<tr><td class="k">＋ 後付け予算の申告（予算に追加）<br><small>${h1(c.reqOkH)}h × 実績時給</small></td><td>${yens(c.reqOk)}</td></tr>`:''}
       ${c.gaiOk?`<tr><td class="k">＋ 店外（予算に追加）</td><td>${yens(c.gaiOk)}</td></tr>`:''}
       <tr class="tot"><td>使ってよいお金（予算）</td><td>${yen(c.budget)}</td></tr>
     </table></details>
@@ -457,8 +470,8 @@ function showStore(ab){
   let adjHtml='';
   if(ME.role==='admin'){
     const a=D.adjs.find(x=>x.ab===ab)||{};
-    adjHtml=`<div class="card"><h2>後付け予算の追加（神田さん）</h2>
-      <p class="note">異動で時給の人が増えた分など、店の責任ではない金額を予算に足します。</p>
+    adjHtml=`<div class="card"><h2>会社が入れる予算（神田さん）</h2>
+      <p class="note">異動で時給の人が増えた分など、会社として最初から分かっている金額を予算に足します。店長・SCにも理由が見えます。</p>
       <label class="f">金額（円）</label><input type="number" id="adjYen" value="${a.yen||''}" placeholder="例 306747">
       <label class="f">理由</label><input type="text" id="adjMemo" value="${esc(a.memo||'')}" placeholder="例 ボガティ時給化（ネパリ正社員の代わり）">
       <div class="savebar"><button class="btn pri" onclick="saveAdj('${ab}')">保存</button><span class="msg" id="adjMsg"></span></div></div>`;
@@ -478,8 +491,9 @@ function showStore(ab){
     <div class="savebar"><button class="btn pri" onclick="saveNote('${ab}',${canMgr})">保存</button><span class="msg" id="noteMsg"></span></div>
     ${n.by?`<p class="note" style="margin-top:6px">最後に保存：${esc(n.by)}</p>`:''}</div>`;
 
+  const reqHtml = reqCard(s,c);
   const left = head + chkHtml + shainHtml + wdHtml + bandHtml + dayHtml;
-  const right = noteHtml + moneyHtml + gaiHtml + adjHtml;
+  const right = noteHtml + reqHtml + moneyHtml + gaiHtml + adjHtml;
   document.getElementById('main').innerHTML = back + `<div class="detail"><div class="col">${left}</div><div class="col">${right}</div></div>` +
     (back?`<div style="margin-top:4px">${back}</div>`:'');
   bindTip(s);
@@ -518,12 +532,41 @@ function checkCard(s,c,money){
     if(rg>=15) it.push({who:'s',t:`平均時給が予算より <b>${Math.round(rg)}円</b> 高い`,w:'→ 昇給・深夜・時給の高い人が多く入っていないか（予算は時給のズレを足してあるので、店の差には入らない）'});
     if(c.t3!==undefined&&Math.abs(c.t3)>=30000) it.push({who:'s',t:`③ 時間以外が <b>${yens(c.t3)}</b>`,w:'→ '+ntBkText(s)});
   }
+  if(c.reqWait) it.push({who:'',t:`後付け予算の申告 <b>${c.reqWait}件</b> が判断待ち`,w:'→ 下の「後付け予算の申告」で神田さんが決める'});
   if(c.waitH>0) it.push({who:'',t:`店外の時間 <b>${h1(c.waitH)}h</b> が判断待ち`,w:'→ 下の「店外の時間」で神田さんが決める'});
   const goal=c.dMh>0?`<div class="goal">来月は 1日あたり ${h1(c.dMh/D_.days)}時間 へらせば 予算内</div>`:'';
   const body=it.length?`<ul class="chk">${it.map(x=>`<li>${x.who==='m'?'<span class="who-tag m">店長</span>':x.who==='s'?'<span class="who-tag s">SC</span>':''}${x.t}<span class="w">${x.w}</span></li>`).join('')}</ul>`
     :'<p class="note">大きなズレはありません。このままでOKです。</p>';
   return `<div class="card"><h2>どこを調べる？</h2>${body}${goal}
-    <p class="note" style="margin-top:8px">調べたら、下の「なぜ？ 来月どうする？」に理由と来月やることを書いてください。</p></div>`;
+    <p class="note" style="margin-top:8px">調べたら、下の「なぜ？ 来月どうする？」に理由と来月やることを書いてください。研修・新人トレーニングなどで予算を足してほしい時は「後付け予算の申告」から申告してください。</p></div>`;
+}
+
+// 後付け予算の申告（店長・SCが申告 → 神田さんが判断）
+function reqCard(s,c){
+  const isAdmin=ME.role==='admin';
+  const canAdd=isAdmin||(ME.role==='sc'&&s.sc===ME.name)||s.mgr.split('・').includes(ME.name);
+  const rq=reqsOf(s.ab);
+  const stTxt=x=>x.status==='ok'?'<span class="st ok">予算に追加</span>':x.status==='ng'?'<span class="st ng">追加しない</span>':'<span class="st wait">判断待ち</span>';
+  const list=rq.length?rq.map(x=>`<div class="req">
+      <div class="t"><b>${esc(x.cat)}</b>　${esc(x.d)}${x.who?`　${esc(x.who)}`:''}　<b>${h1(+x.h)}h</b>${c.rate?`（約${yen(x.h*c.rate)}）`:''} ${stTxt(x)}
+        <br>${esc(x.memo)}<br><small class="note">申告：${esc(x.by)}${x.reply?`　／　神田さん：${esc(x.reply)}`:''}</small></div>
+      ${isAdmin?`<div class="seg" style="flex-wrap:wrap"><input type="text" id="rr_${x.id}" value="${esc(x.reply||'')}" placeholder="ひと言（なくてもOK）" style="flex:1;min-width:160px">
+        <button class="btn sm ${x.status==='ok'?'on':''}" onclick="doJudgeReq('${x.id}','${s.ab}','ok')">予算に追加</button>
+        <button class="btn sm ${x.status==='ng'?'on ng':''}" onclick="doJudgeReq('${x.id}','${s.ab}','ng')">追加しない</button></div>`:''}
+      ${(isAdmin||(x.by===ME.name&&x.status!=='ok'))?`<button class="btn sm" onclick="doDelReq('${x.id}','${s.ab}')">取り消す</button>`:''}
+    </div>`).join(''):'<p class="note">まだ申告はありません。</p>';
+  const form=canAdd?`<h3 style="margin-top:12px;font-size:14px">申告する</h3>
+    <label class="f">種類</label><select id="rqCat"><option value="">えらぶ</option>${REQ_CATS.map(x=>`<option>${x}</option>`).join('')}</select>
+    <label class="f">日にち</label><input type="text" id="rqD" placeholder="例 10/5、10/5・10/12">
+    <label class="f">だれが</label><input type="text" id="rqWho" placeholder="例 新人 山田さん・教える人 田中さん">
+    <label class="f">増えた時間（合計）</label><input type="number" id="rqH" step="0.5" min="0" inputmode="decimal" placeholder="例 6">
+    <label class="f">内容（なぜ店の時間が増えたか）</label><textarea id="rqMemo" placeholder="例 新人の初日トレーニングで夕方に1人多く入れた（3h×2日）"></textarea>
+    <div class="savebar"><button class="btn pri" onclick="addReq('${s.ab}')">申告する</button><span class="msg" id="rqMsg"></span></div>`:'';
+  return `<div class="card"><h2>後付け予算の申告</h2>
+    <p class="note">会社の決まりで店の時間が増えたものは、申告すると神田さんが確認して予算に足します。<br>
+    <b>申告できる例</b>：本部・外部の研修／厨房研修／接客講座などサービス向上の研修／新人トレーニング<br>
+    <b>申告できない</b>：毎月の月次ミーティング（勉強会）…最初から予算に入っています。店外の時間（下の「店外の時間」に出ているもの）も申告はいりません。</p>
+    ${list}${form}</div>`;
 }
 
 function daySvg(s){
@@ -582,6 +625,35 @@ async function saveAdj(ab){
     const i=D.adjs.findIndex(x=>x.ab===ab); if(i>=0){D.adjs[i].yen=yenV;D.adjs[i].memo=memo} else D.adjs.push({ym:D.meta.ym,ab,yen:yenV,memo});
     showStore(ab);
   }catch(e){msg.textContent='';alert('保存できませんでした：'+e.message)}
+}
+
+async function addReq(ab){
+  const msg=document.getElementById('rqMsg');
+  const v=k=>document.getElementById(k).value.trim();
+  const body={action:'addReq',ym:D.meta.ym,ab,cat:v('rqCat'),d:v('rqD'),who:v('rqWho'),h:Number(v('rqH')),memo:v('rqMemo')};
+  if(!body.cat){msg.textContent='種類をえらんでください';return}
+  if(!(body.h>0)){msg.textContent='時間を入れてください';return}
+  if(!body.memo){msg.textContent='内容を書いてください';return}
+  msg.textContent='送信中…';
+  try{
+    const r=await api(authBody(body));
+    (D.reqs=D.reqs||[]).push(r.req); showStore(ab);
+  }catch(e){msg.textContent='送れませんでした：'+e.message}
+}
+async function doJudgeReq(id,ab,status){
+  const x=(D.reqs||[]).find(r=>r.id===id); if(!x) return;
+  if(x.status===status) status='';
+  const reply=(document.getElementById('rr_'+id)||{}).value||'';
+  try{
+    await api(authBody({action:'judgeReq',id,status,reply}));
+    x.status=status; x.reply=reply; showStore(ab);
+  }catch(e){alert('保存できませんでした：'+e.message)}
+}
+async function doDelReq(id,ab){
+  try{
+    await api(authBody({action:'delReq',id}));
+    D.reqs=(D.reqs||[]).filter(r=>r.id!==id); showStore(ab);
+  }catch(e){alert('取り消せませんでした：'+e.message)}
 }
 
 // ---------- 起動 ----------
