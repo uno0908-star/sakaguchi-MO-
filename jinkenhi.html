@@ -206,7 +206,8 @@ function calc(s){
     r.diff = r.actual - r.budget;
     r.t4 = waitH*rate;
     r.t6 = (s.a.ntBk&&s.a.ntBk.gen)||0;     // 時給の減額（5%・10%）。事実として見せるだけで予算は直さない
-    r.t3 = r.diff - r.t1 - r.t4 - r.t5 - r.t6;
+    r.t7 = -(s.b.zure||0);                  // 年度予算がMH予算＋有給4万より少ない分（朝日町など）
+    r.t3 = r.diff - r.t1 - r.t4 - r.t5 - r.t6 - r.t7;
   }
   return r;
 }
@@ -309,7 +310,7 @@ function showList(){
         <div><div class="l">③ 時間以外</div><div class="v">${man(T('t3'))}</div></div>
       </div>
       <p class="note" style="margin-top:8px">時間オーバーの店：<b>${over}店</b>${wait?` ／ 店外の判断待ち：<b>${wait}件</b>`:''}。
-      差＝①時間の差（店長・社員＋バイト）＋③時間以外（手当・有給など）${T('t4')?'＋④店外の判断待ち':''}＋⑤社員の過不足の分（${man(T('t5'))}）${T('t6')?`＋⑥時給の減額（${man(T('t6'))}）`:''}</p></div>`;
+      差＝①時間の差（店長・社員＋バイト）＋③時間以外（手当・有給など）${T('t4')?'＋④店外の判断待ち':''}＋⑤社員の過不足の分（${man(T('t5'))}）${T('t6')?`＋⑥時給の減額（${man(T('t6'))}）`:''}${T('t7')?`＋⑦年度予算の不足（${man(T('t7'))}）`:''}</p></div>`;
   }
   const cards = rows.map(({s,c,n})=>{
     const wait=(s.gai||[]).filter(g=>!judgeOf(g.id)).length;
@@ -347,7 +348,7 @@ function showStore(ab){
     <div class="verdict ${over?'over':'ok'}">${over?`予算より ${h1(c.dMh)}時間 多い`:`予算より ${h1(-c.dMh)}時間 少ない ✓`}
       <span class="s">1日あたり ${hs(c.perDay)}時間 ≒ ${yens(c.perDay*c.rate)}　／　1か月で ${man(c.t1)}</span></div>
     <table style="margin-top:8px"><tr><th></th><th>予算</th><th>実績</th><th>差</th></tr>
-      <tr><td class="k">バイト・契約社員</td><td>${h1(s.b.mh)}</td><td>${h1(c.mhStore)}</td><td class="${c.dBaito>0?'pl':'mi'}">${hs(c.dBaito)}</td></tr>
+      <tr><td class="k">バイト・契約社員${s.b.mae2h?`<br><small>予算は出退勤の前後2分 ${h1(s.b.mae2h)}h を含む</small>`:''}</td><td>${h1(s.b.mh)}</td><td>${h1(c.mhStore)}</td><td class="${c.dBaito>0?'pl':'mi'}">${hs(c.dBaito)}</td></tr>
       <tr><td class="k">社員（契約時間）</td><td>${h1(c.shC)}</td><td>${h1(c.shA)}</td><td class="${c.dShain>0?'pl':'mi'}">${hs(c.dShain)}</td></tr></table>
     <p class="note" style="margin-top:6px">店全体（社員＋バイト）で見ています。社員が契約より少ない分をバイトで埋めても、合計が予算内ならOKです。バイトはSC巡回・MT・研修などの店外を入れていません。</p>
   </div>`;
@@ -401,8 +402,9 @@ function showStore(ab){
     const parts=[
       {lb:'① 時間が多い・少ない（店長・社員＋バイト）',sm:'シフトの組み方で変えられる',v:c.t1,who:'m'},
       c.dShain?{lb:c.dShain<0?'⑤ 社員が契約より少なかった分を戻す':'⑤ 社員が契約より多く働いた分を戻す',sm:'社員は月給なので、この時間ぶんのお金は動かない',v:c.t5,who:''}:null,
-      {lb:'③ 時間以外（有給・手当・交通費など）',sm:ntBkText(s),v:c.t3,who:'s'},
+      {lb:'③ 時間以外（有給・手当・交通費など）',sm:ntBkText(s)+(s.b.yuq?`／予算：有給 ${yen(s.b.yuq)}`:''),v:c.t3,who:'s'},
       c.t4?{lb:'④ 店外の判断待ち',sm:'神田さんが「予算に追加」かを決める',v:c.t4,who:''}:null,
+      c.t7?{lb:'⑦ 年度予算がMH予算より少ない分',sm:'年度予算（パート給与）が「MH×時給＋有給4万」より少ない。予算の作り方を確認する',v:c.t7,who:''}:null,
       c.t6?{lb:'⑥ 時給の減額（5%・10%）',sm:(s.a.genList||[]).map(x=>esc(x.n)+' '+yens(x.yen)).join('／'),v:c.t6,who:''}:null,
     ].filter(Boolean);
     const mx=Math.max(1,...parts.map(x=>Math.abs(x.v)));
@@ -419,6 +421,7 @@ function showStore(ab){
     <table style="margin-top:6px">
       <tr><td class="k">年度予算（パート給与）</td><td>${yen(c.nendo)}</td></tr>
       <tr><td class="k">− 固定手当<br><small>予算・実績の両方から外す</small></td><td>${yens(-c.fixed)}</td></tr>
+      ${s.b.yuq!==undefined?`<tr><td class="k" colspan="2"><small>年度予算の中身：バイトMH×予算時給＋MT費 ${yen(c.nendo-c.fixed-s.b.yuq-s.b.mae2h*s.b.rate-(s.b.zure||0))}（MH ${h1(s.b.mh-s.b.mae2h)}h）／有給 ${yen(s.b.yuq)}／出退勤の前後2分 ${yen(s.b.mae2h*s.b.rate)}（${h1(s.b.mae2h)}h・時間の予算に入れています）${s.b.zure?`／不足 ${yens(s.b.zure)}`:''}</small></td></tr>`:''}
       <tr><td class="k">＋ 時給のズレ<br><small>平均時給 予算 ${h1(s.b.rate)}円 → 実績 ${h1(c.rate)}円。時給が上がった分は店のせいにしない</small></td><td>${yens(c.rateGap)}</td></tr>
       ${c.adj?`<tr><td class="k">＋ 後付け予算の追加</td><td>${yens(c.adj)}</td></tr>`:''}
       ${c.gaiOk?`<tr><td class="k">＋ 店外（予算に追加）</td><td>${yens(c.gaiOk)}</td></tr>`:''}
