@@ -404,7 +404,7 @@ function showStore(ab){
       c.dShain?{lb:c.dShain<0?'⑤ 社員が契約より少なかった分を戻す':'⑤ 社員が契約より多く働いた分を戻す',sm:'社員は月給なので、この時間ぶんのお金は動かない',v:c.t5,who:''}:null,
       {lb:'③ 時間以外（有給・手当・交通費など）',sm:ntBkText(s)+(s.b.yuq?`／予算：有給 ${yen(s.b.yuq)}`:''),v:c.t3,who:'s'},
       c.t4?{lb:'④ 店外の判断待ち',sm:'神田さんが「予算に追加」かを決める',v:c.t4,who:''}:null,
-      c.t7?{lb:'⑦ 年度予算がMH予算より少ない分',sm:'年度予算（パート給与）が「MH×時給＋有給4万」より少ない。予算の作り方を確認する',v:c.t7,who:''}:null,
+      c.t7?{lb:s.b.plan?'⑦ 計画どおりの超過（あえて人をかけている）':'⑦ 年度予算がMH予算より少ない分',sm:s.b.plan?esc(s.b.plan)+'。売上・収益とあわせて見る':'年度予算（パート給与）が「MH×時給＋有給4万」より少ない。予算の作り方を確認する',v:c.t7,who:''}:null,
       c.t6?{lb:'⑥ 時給の減額（5%・10%）',sm:(s.a.genList||[]).map(x=>esc(x.n)+' '+yens(x.yen)).join('／'),v:c.t6,who:''}:null,
     ].filter(Boolean);
     const mx=Math.max(1,...parts.map(x=>Math.abs(x.v)));
