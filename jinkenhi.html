@@ -205,9 +205,16 @@ function calc(s){
     r.actual = s.a.pay;
     r.diff = r.actual - r.budget;
     r.t4 = waitH*rate;
-    r.t3 = r.diff - r.t1 - r.t4 - r.t5;
+    r.t6 = (s.a.ntBk&&s.a.ntBk.gen)||0;     // 時給の減額（5%・10%）。事実として見せるだけで予算は直さない
+    r.t3 = r.diff - r.t1 - r.t4 - r.t5 - r.t6;
   }
   return r;
+}
+// ③の実績の中身（手当１＝有給・臨時・スキル、手当２＝役職・資格。手当１のマイナス＝時給の減額は時給の側）
+function ntBkText(s){
+  const b=s.a.ntBk; if(!b) return '給与の明細で中身を見る';
+  const it=[['有給・臨時・スキル',b.rinji],['役職・資格手当',b.yaku],['交通費',b.kotsu],['その他',b.other]].filter(x=>x[1]);
+  return '実績の中身：'+(it.length?it.map(x=>x[0]+' '+yen(x[1])).join('／'):'なし');
 }
 // 時間帯別：予算＝〇〇MHシートの枠の割合で1日の予算（バイト＋社員の契約）を分ける／実績＝勤怠の時刻（社員は出退勤の合計に合わせる）
 function bandStats(s,c){
@@ -302,7 +309,7 @@ function showList(){
         <div><div class="l">③ 時間以外</div><div class="v">${man(T('t3'))}</div></div>
       </div>
       <p class="note" style="margin-top:8px">時間オーバーの店：<b>${over}店</b>${wait?` ／ 店外の判断待ち：<b>${wait}件</b>`:''}。
-      差＝①時間の差（店長・社員＋バイト）＋③時間以外（手当・有給など）${T('t4')?'＋④店外の判断待ち':''}＋⑤社員の過不足の分（${man(T('t5'))}）</p></div>`;
+      差＝①時間の差（店長・社員＋バイト）＋③時間以外（手当・有給など）${T('t4')?'＋④店外の判断待ち':''}＋⑤社員の過不足の分（${man(T('t5'))}）${T('t6')?`＋⑥時給の減額（${man(T('t6'))}）`:''}</p></div>`;
   }
   const cards = rows.map(({s,c,n})=>{
     const wait=(s.gai||[]).filter(g=>!judgeOf(g.id)).length;
@@ -394,8 +401,9 @@ function showStore(ab){
     const parts=[
       {lb:'① 時間が多い・少ない（店長・社員＋バイト）',sm:'シフトの組み方で変えられる',v:c.t1,who:'m'},
       c.dShain?{lb:c.dShain<0?'⑤ 社員が契約より少なかった分を戻す':'⑤ 社員が契約より多く働いた分を戻す',sm:'社員は月給なので、この時間ぶんのお金は動かない',v:c.t5,who:''}:null,
-      {lb:'③ 時間以外（有給・手当・交通費・深夜など）',sm:'給与の明細で中身を見る',v:c.t3,who:'s'},
+      {lb:'③ 時間以外（有給・手当・交通費など）',sm:ntBkText(s),v:c.t3,who:'s'},
       c.t4?{lb:'④ 店外の判断待ち',sm:'神田さんが「予算に追加」かを決める',v:c.t4,who:''}:null,
+      c.t6?{lb:'⑥ 時給の減額（5%・10%）',sm:(s.a.genList||[]).map(x=>esc(x.n)+' '+yens(x.yen)).join('／'),v:c.t6,who:''}:null,
     ].filter(Boolean);
     const mx=Math.max(1,...parts.map(x=>Math.abs(x.v)));
     moneyHtml=`<div class="card money"><h2>お金で見る（バイト・契約社員の給与）</h2>
@@ -505,7 +513,7 @@ function checkCard(s,c,money){
   if(money){
     const rg=c.rate-s.b.rate;
     if(rg>=15) it.push({who:'s',t:`平均時給が予算より <b>${Math.round(rg)}円</b> 高い`,w:'→ 昇給・深夜・時給の高い人が多く入っていないか（予算は時給のズレを足してあるので、店の差には入らない）'});
-    if(c.t3!==undefined&&Math.abs(c.t3)>=30000) it.push({who:'s',t:`③ 時間以外が <b>${yens(c.t3)}</b>`,w:'→ 給与の明細で、有給・手当・交通費・深夜のどれが多いかを見る'});
+    if(c.t3!==undefined&&Math.abs(c.t3)>=30000) it.push({who:'s',t:`③ 時間以外が <b>${yens(c.t3)}</b>`,w:'→ '+ntBkText(s)});
   }
   if(c.waitH>0) it.push({who:'',t:`店外の時間 <b>${h1(c.waitH)}h</b> が判断待ち`,w:'→ 下の「店外の時間」で神田さんが決める'});
   const goal=c.dMh>0?`<div class="goal">来月は 1日あたり ${h1(c.dMh/D_.days)}時間 へらせば 予算内</div>`:'';
