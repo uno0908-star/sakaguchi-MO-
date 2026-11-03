@@ -297,7 +297,7 @@ function showList(){
   CUR=null; window.scrollTo(0,0);
   const rows = D.stores.map(s=>({s,c:calc(s),n:D.notes.find(x=>x.ab===s.ab)}));
   rows.sort((a,b)=>b.c.dMh-a.c.dMh);
-  const money = ME.role!=='mgr';
+  const money = D.stores.every(s=>s.a&&s.a.pay!==undefined);   // 店長・SC・管理者で同じ画面（2026-11-03）。金額が届いていれば全員に出す
   let top='';
   if(money){
     const T=k=>sum(rows.map(r=>r.c[k]||0));
@@ -332,7 +332,7 @@ function showList(){
 function showStore(ab){
   CUR=ab; window.scrollTo(0,0);
   const s=D.stores.find(x=>x.ab===ab); const c=calc(s);
-  const money = ME.role!=='mgr';
+  const money = s.a&&s.a.pay!==undefined;   // 店長・SC・管理者で同じ画面（2026-11-03）
   const n=D.notes.find(x=>x.ab===ab)||{};
   const over=c.dMh>0;
   const back = D.stores.length>1?`<button class="btn back" onclick="showList()">← 店の一覧へ</button>`:'';
