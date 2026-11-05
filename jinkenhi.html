@@ -95,6 +95,22 @@ td.k small{font-size:11px}
 .gai .t{flex:1;min-width:170px;font-size:13px}
 .gai .st{font-size:12px;font-weight:800}
 .seg{display:flex;gap:6px}
+.dchips{display:flex;gap:6px;flex-wrap:wrap;margin:4px 0 8px}
+.dchips .btn{min-height:40px;font-size:13px;padding:0 10px}
+.dchips .btn.on{background:var(--blue);border-color:var(--blue);color:#fff}
+.why{list-style:none;padding:0;margin:8px 0 0}
+.why li{padding:7px 0;border-top:1px solid var(--border);font-size:14px;line-height:1.5}
+.why li:first-child{border-top:0}
+.why small{display:block;color:var(--sub);font-size:12px}
+.ppl td{white-space:normal}
+.ppl tr.up td{background:#FFF7ED}
+.tag{display:inline-block;font-size:11px;font-weight:800;padding:0 6px;border-radius:8px;margin-left:4px;background:var(--bg);color:var(--sub)}
+.tag.o{background:#FFF1EA;color:#9A3412}
+.hrs{overflow-x:auto;margin-top:6px}
+.hrs table{width:auto;min-width:100%}
+.hrs td,.hrs th{padding:3px 0;min-width:22px;text-align:center;font-size:12px}
+.hrs td.up{background:#FFE4D1;color:#9A3412;font-weight:800}
+.hrs td.dn{background:#E0EDFF;color:var(--blue)}
 .req{display:flex;flex-direction:column;gap:6px;padding:10px 0;border-bottom:1px solid var(--border);font-size:13px}
 .req .st{display:inline-block;font-size:12px;font-weight:800;padding:1px 8px;border-radius:10px;margin-left:4px}
 .req .st.ok{background:#E7F6EC;color:#15803D}.req .st.ng{background:#FDECEC;color:var(--over)}.req .st.wait{background:#FEF3C7;color:var(--amber)}
@@ -228,9 +244,10 @@ function ntBkText(s){
   return '実績の中身：'+(it.length?it.map(x=>x[0]+' '+yen(x[1])).join('／'):'なし');
 }
 // 時間帯別：予算＝〇〇MHシートの枠の割合で1日の予算（バイト＋社員の契約）を分ける／実績＝勤怠の時刻（社員は出退勤の合計に合わせる）
+const BANDS=()=>D.meta.bands||((D.stores[0]||{}).bands)||null;
 function bandStats(s,c){
-  if(!s.band||!D.meta.bands) return null;
-  const NB=D.meta.bands.length, W='月火水木金土日';
+  if(!s.band||!BANDS()) return null;
+  const NB=BANDS().length, W='月火水木金土日';
   const shSum=sum(s.band.shain.map(x=>sum(x))); const f=shSum?c.shA/shSum:0;
   const bud=Array(NB).fill(0), act=Array(NB).fill(0);
   const wd=W.split('').map(()=>({n:0,b:Array(NB).fill(0),a:Array(NB).fill(0)}));
@@ -243,7 +260,7 @@ function bandStats(s,c){
     }
   });
   const n=D.meta.days;
-  return {rows:D.meta.bands.map((nm,j)=>({nm,b:bud[j]/n,a:act[j]/n,d:(act[j]-bud[j])/n,m:act[j]-bud[j]})),
+  return {rows:BANDS().map((nm,j)=>({nm,b:bud[j]/n,a:act[j]/n,d:(act[j]-bud[j])/n,m:act[j]-bud[j]})),
     wd:wd.map((x,k)=>({w:W[k],n:x.n,d:x.b.map((b,j)=>x.n?(x.a[j]-b)/x.n:0)}))};
 }
 function wdStats(s){
@@ -394,7 +411,7 @@ function showStore(ab){
       <table style="margin-top:6px"><tr><th>時間帯</th><th>予算(1日)</th><th>実績(1日)</th><th>差(1日)</th><th>差(月)</th></tr>
       ${bs.rows.map(r=>`<tr><td class="k">${esc(r.nm)}</td><td>${h1(r.b)}</td><td>${h1(r.a)}</td><td class="${r.d>0?'pl':''}">${hs(r.d)}</td><td>${hs(r.m)}</td></tr>`).join('')}</table>
       <p class="note" style="margin-top:8px">曜日ごと（1日あたりの差・時間）</p>
-      <table class="bt" style="margin-top:4px"><tr><th>曜</th>${D.meta.bands.map(b=>`<th>${esc(b.split('（')[0])}</th>`).join('')}</tr>
+      <table class="bt" style="margin-top:4px"><tr><th>曜</th>${BANDS().map(b=>`<th>${esc(b.split('（')[0])}</th>`).join('')}</tr>
       ${bs.wd.map(w=>`<tr><td>${w.w}</td>${w.d.map(v=>`<td class="${v>=1?'pl':v<=-1?'mi':''}">${hs(v)}</td>`).join('')}</tr>`).join('')}</table>
     </details>
     <p class="note" style="margin-top:6px">予算は人件費計算シートの「${esc(s.ab.slice(0,2))}MH」の色塗り（1マス＝1人1時間・赤は除く）の割合で1日の予算を分けたものです。実績も休憩を含めていた時間の割合で分けています。</p></div>`;
@@ -492,7 +509,7 @@ function showStore(ab){
     ${n.by?`<p class="note" style="margin-top:6px">最後に保存：${esc(n.by)}</p>`:''}</div>`;
 
   const reqHtml = reqCard(s,c);
-  const left = head + chkHtml + shainHtml + wdHtml + bandHtml + dayHtml;
+  const left = head + chkHtml + `<div class="card" id="dayDet">${dayDetail(s,c,pickDay(s))}</div>` + shainHtml + wdHtml + bandHtml + dayHtml;
   const right = noteHtml + reqHtml + moneyHtml + gaiHtml + adjHtml;
   document.getElementById('main').innerHTML = back + `<div class="detail"><div class="col">${left}</div><div class="col">${right}</div></div>` +
     (back?`<div style="margin-top:4px">${back}</div>`:'');
@@ -505,8 +522,8 @@ function checkCard(s,c,money){
   const diff=s.a.daily.map((v,i)=>v-s.b.daily[i]);
   // 1) 多かった日 TOP3
   const days=diff.map((d,i)=>({d,i})).filter(x=>x.d>=1).sort((a,b)=>b.d-a.d).slice(0,3);
-  if(days.length) it.push({who:'m',t:`予算より多かった日：${days.map(x=>`<b>${D_.dates[x.i]}(${D_.wds[x.i]}) ${hs(x.d)}h</b>`).join('、')}`,
-    w:'→ その日のシフト表と勤怠を見る。だれが・何時に・なぜ多く入ったか（新人の教育？欠員？納品？）'});
+  if(days.length) it.push({who:'m',t:`予算より多かった日：${days.map(x=>`<a href="#dayDet" onclick="showDay(${x.i});return false"><b>${D_.dates[x.i]}(${D_.wds[x.i]}) ${hs(x.d)}h</b></a>`).join('、')}`,
+    w:'→ 下の「日ごとの中身」に、その日に入った人・時間ごとの人数・ふだんとの差を出しています。なぜその人数・その時間になったかを調べる'});
   // 2) 曜日のくせ
   const wk=wdStats(s).map(w=>({w:w.w,d:w.n?(w.a-w.b)/w.n:0,m:w.a-w.b})).filter(x=>x.d>=0.5).sort((a,b)=>b.d-a.d).slice(0,2);
   if(wk.length) it.push({who:'m',t:`毎週多い曜日：${wk.map(x=>`<b>${x.w}曜 1日${hs(x.d)}h</b>（月${hs(x.m)}h）`).join('、')}`,
@@ -569,6 +586,82 @@ function reqCard(s,c){
     ${list}${form}</div>`;
 }
 
+// ---------- 日ごとの中身（だれが・何時に・ふだんとくらべて） ----------
+let DAY_SEL=null;   // {ab, i}
+const HRS=[...Array(24)].map((_,k)=>k+5);   // 5時〜翌4時
+function pickDay(s){
+  if(DAY_SEL&&DAY_SEL.ab===s.ab) return DAY_SEL.i;
+  const d=s.a.daily.map((v,i)=>v-s.b.daily[i]); let m=0; d.forEach((v,i)=>{if(v>d[m])m=i}); return m;
+}
+function showDay(i){
+  const s=D.stores.find(x=>x.ab===CUR); if(!s) return;
+  DAY_SEL={ab:s.ab,i}; const box=document.getElementById('dayDet');
+  box.innerHTML=dayDetail(s,calc(s),i); box.scrollIntoView({behavior:'smooth',block:'start'});
+}
+const holOf=(s,i)=>(s.hol||{})[D.meta.dates[i]]||'';
+// その日に店にいた人数（店外は入れない）。休憩は時刻が分からないので引かない
+function headcount(s,i){
+  const sh=(s.shifts||[])[i]||[];
+  return HRS.map(h=>sh.filter(r=>r[4]!=='g'&&r[5]<=h*60+30&&r[6]>h*60+30).length);
+}
+// ふだん＝同じ曜日のほかの日（祝日は外す）
+function usualDays(s,i){return D.meta.wds.map((w,k)=>k).filter(k=>k!==i&&D.meta.wds[k]===D.meta.wds[i]&&!holOf(s,k))}
+function dayDetail(s,c,i){
+  if(!s.shifts) return '<h2>日ごとの中身</h2><p class="note">この月はシフトのくわしいデータがありません。</p>';
+  const M=D.meta, a=s.a.daily[i], b=s.b.daily[i], d=a-b, hol=holOf(s,i);
+  const diffs=s.a.daily.map((v,k)=>v-s.b.daily[k]);
+  const top=diffs.map((v,k)=>({v,k})).filter(x=>x.v>=1).sort((x,y)=>y.v-x.v).slice(0,6).sort((x,y)=>x.k-y.k);
+  const chips=top.map(x=>`<button class="btn ${x.k===i?'on':''}" onclick="showDay(${x.k})">${M.dates[x.k]}(${M.wds[x.k]}) ${hs(x.v)}h</button>`).join('');
+  const sel=`<select onchange="showDay(+this.value)" style="max-width:240px">${M.dates.map((dt,k)=>`<option value="${k}" ${k===i?'selected':''}>${dt}（${M.wds[k]}${holOf(s,k)?'・祝':''}） ${hs(diffs[k])}h</option>`).join('')}</select>`;
+  const ud=usualDays(s,i), uAvg=ud.length?sum(ud.map(k=>s.a.daily[k]))/ud.length:null;
+  // その日の人（同じ人の複数行はまとめる。店外は別の行）
+  const sh=s.shifts[i]||[], ppl=[];
+  sh.forEach(r=>{const g=r[4]==='g'; let p=ppl.find(x=>x.n===r[0]&&(x.k==='g')===g);
+    if(!p){p={n:r[0],k:r[4],t:[],h:0};ppl.push(p)} p.t.push(r[1]+'〜'+r[2]); p.h+=r[3];});
+  const usualH=n=>ud.length?sum(ud.map(k=>sum(((s.shifts[k]||[]).filter(r=>r[0]===n&&r[4]!=='g')).map(r=>r[3]))))/ud.length:null;
+  ppl.forEach(p=>{p.u=p.k==='g'?null:usualH(p.n)});
+  const rows=ppl.map(p=>{const up=p.k==='b'&&p.u!==null&&(p.u<0.05||p.h-p.u>=2);
+    return `<tr class="${up?'up':''}"><td class="k">${esc(p.n)}${p.k==='s'?'<span class="tag">社員</span>':''}${p.k==='g'?'<span class="tag">店外</span>':''}</td>
+      <td class="k">${p.t.map(esc).join('<br>')}</td><td>${h1(p.h)}h</td>
+      <td class="k">${p.k==='g'?'<small>店の時間に入れない</small>':p.u===null?'−':p.u<0.05?'<span class="tag o">ふだんは入らない</span>':`${h1(p.u)}h${p.k==='b'&&p.h-p.u>=2?`<span class="tag o">${hs(p.h-p.u)}h</span>`:''}`}</td></tr>`}).join('');
+  // 時間ごとの人数
+  const hc=headcount(s,i), hus=ud.map(k=>headcount(s,k)), hu=HRS.map((_,j)=>ud.length?sum(hus.map(x=>x[j]))/ud.length:null);
+  const more=[]; HRS.forEach((h,j)=>{if(hu[j]!==null&&hc[j]-hu[j]>=0.75){const l=more[more.length-1];
+    if(l&&l.e===h){l.e=h+1;l.n0=Math.min(l.n0,hc[j]);l.n1=Math.max(l.n1,hc[j]);l.u0=Math.min(l.u0,hu[j]);l.u1=Math.max(l.u1,hu[j])}
+    else more.push({s:h,e:h+1,n0:hc[j],n1:hc[j],u0:hu[j],u1:hu[j]})}});
+  const rg=(x,y)=>Math.round(x)===Math.round(y)?String(Math.round(x)):Math.round(x)+'〜'+Math.round(y);
+  const hh=h=>(h%24)+'時';
+  // 社員
+  const shC1=c.shC/M.days, shA1=(s.a.dailyShain||[])[i]||0, shGap=shC1-shA1;
+  const yq=(s.shain||[]).filter(x=>!x.g&&x.y>=8);
+  const why=[];
+  if(hol) why.push(`<b>祝日（${esc(hol)}）</b><small>ふだんの${M.wds[i]}曜とお客さんの数がちがう日。「祝日で忙しいから人をふやした」なら、売上も見てふやしすぎでないか確認</small>`);
+  if(uAvg!==null) why.push(`ふだんの${M.wds[i]}曜（${ud.length}日の平均）は <b>${h1(uAvg)}h</b> → この日は <b class="${a-uAvg>0?'pl':'mi'}">${hs(a-uAvg)}h</b>`+
+    `<small>${a-uAvg>=1?'この日だけ多かった分。下の「ふだんより人が多い時間」「ふだんより長い人」を見る':'この日だけ多いのではなく、ふだんの'+M.wds[i]+'曜から予算より多い（毎週のシフトの組み方を見る）'}</small>`);
+  if(shC1>0&&shGap>=1) why.push(`社員が店にいたのは <b>${h1(shA1)}h</b>（契約どおりなら1日 ${h1(shC1)}h）→ <b>${h1(shGap)}h</b> 少ない`+
+    `<small>${yq.length?yq.map(x=>`${esc(x.n)}：この月は有給 ${h1(x.y)}h（店に入っていない）`).join('／')+'。':''}社員がいない分をバイトでうめると、バイトの時間は予算より多くなる</small>`);
+  if(more.length) why.push(`ふだんより人が多い時間：${more.map(m=>`<b>${hh(m.s)}〜${hh(m.e)} ${rg(m.n0,m.n1)}人</b>（ふだん${rg(m.u0,m.u1)}人）`).join('、')}<small>この時間に、なぜ人を多く入れたかを見る（新人の教育？納品？忙しい？交代の重なり？）</small>`);
+  const longP=ppl.filter(p=>p.k==='b'&&p.u!==null&&(p.u<0.05||p.h-p.u>=2));
+  if(longP.length) why.push(`ふだんより長い・ふだんは入らない人：${longP.map(p=>`<b>${esc(p.n)}</b> ${h1(p.h)}h${p.u<0.05?'（ふだんは入らない）':`（ふだん${h1(p.u)}h）`}`).join('、')}<small>だれかの代わり（欠勤・欠員）？　教育？　なぜこの時間になったかを本人・シフトを作った人に聞く</small>`);
+  return `<h2>日ごとの中身（だれが・何時に）</h2>
+    <p class="note">予算より多かった日（多い順に6日まで）：</p><div class="dchips">${chips||'<span class="note">なし</span>'}</div>
+    <div style="margin-bottom:8px">${sel}</div>
+    <h3 style="font-size:15px;color:var(--text)">${M.dates[i]}（${M.wds[i]}${hol?'・祝 '+esc(hol):''}）</h3>
+    <div class="big"><div><div class="l">予算(バイト)</div><div class="v">${h1(b)}<small>h</small></div></div>
+      <div><div class="l">実績(バイト)</div><div class="v">${h1(a)}<small>h</small></div></div>
+      <div><div class="l">差</div><div class="v ${d>0?'pl':'mi'}">${hs(d)}<small>h</small></div></div></div>
+    ${why.length?`<ul class="why">${why.map(x=>`<li>${x}</li>`).join('')}</ul>`:''}
+    <h3>この日に入った人</h3>
+    <table class="ppl"><tr><th>名前</th><th>時間</th><th>働いた</th><th>ふだんの${M.wds[i]}曜</th></tr>${rows||'<tr><td colspan="4" class="k">出勤なし</td></tr>'}</table>
+    <p class="note" style="margin-top:4px">働いた＝休憩を引いた時間。オレンジの行＝ふだんより2h以上長い人・ふだんは入らない人。</p>
+    <h3>時間ごとの人数（店にいた人・社員もふくむ）</h3>
+    <div class="hrs"><table><tr><th></th>${HRS.map(h=>`<th>${h%24}</th>`).join('')}</tr>
+      <tr><th>この日</th>${hc.map((v,j)=>`<td class="${hu[j]!==null&&v-hu[j]>=0.75?'up':hu[j]!==null&&hu[j]-v>=0.75?'dn':''}">${v}</td>`).join('')}</tr>
+      <tr><th>ふだん</th>${hu.map(v=>`<td>${v===null?'−':h1(v)}</td>`).join('')}</tr></table></div>
+    <p class="note" style="margin-top:4px">各時間の30分の時点で店にいた人数（休憩は時刻が分からないので引いていません）。オレンジ＝ふだんより多い、青＝少ない。ふだん＝同じ曜日のほかの日（祝日をのぞく）の平均。横にスクロールできます。</p>
+    <p class="note" style="margin-top:8px"><b>店長・SCへ</b>：だれが・何時にいたかはこの表で分かります。<b>なぜ</b>その人数・その時間にしたのかを調べて、「なぜ？ 来月どうする？」に書いてください。</p>`;
+}
+
 function daySvg(s){
   const n=D.meta.days, W=640, H=220, L=34, R=6, T=10, B=28;
   const mx=Math.max(...s.a.daily,...s.b.daily)*1.1||1;
@@ -591,9 +684,9 @@ function bindTip(s){
   const tip=document.getElementById('tip');
   const show=e=>{const t=e.target.closest('.hit'); if(!t){tip.style.display='none';return}
     const i=+t.dataset.i, r=box.getBoundingClientRect(), b=t.getBoundingClientRect();
-    tip.innerHTML=`${D.meta.dates[i]}（${D.meta.wds[i]}）<br>実績 ${h1(s.a.daily[i])}h ／ 予算 ${h1(s.b.daily[i])}h<br>差 ${hs(s.a.daily[i]-s.b.daily[i])}h`;
+    tip.innerHTML=`${D.meta.dates[i]}（${D.meta.wds[i]}）<br>実績 ${h1(s.a.daily[i])}h ／ 予算 ${h1(s.b.daily[i])}h<br>差 ${hs(s.a.daily[i]-s.b.daily[i])}h<br><small>押すと中身</small>`;
     tip.style.left=(b.left-r.left+b.width/2)+'px'; tip.style.top=(b.top-r.top+20)+'px'; tip.style.display='block';};
-  box.addEventListener('mousemove',show); box.addEventListener('click',show);
+  box.addEventListener('mousemove',show); box.addEventListener('click',e=>{show(e);const t=e.target.closest('.hit');if(t)showDay(+t.dataset.i)});
   box.addEventListener('mouseleave',()=>tip.style.display='none');
 }
 
