@@ -532,20 +532,22 @@ const ALERT_KIND={
   round:{lb:'手入力らしい時刻',w:'ストコンで打刻すると 8:58・17:02 のように少しずれます。ちょうどの時刻が続くのは、後から手で入れた・直した可能性。ストコンの勤怠修正の記録とシフト表をくらべる'},
   split:{lb:'1日に何回も分かれた勤務',w:'本当に分けて働いたか。ほかの日の分をまとめて入れていないか'},
   overlap:{lb:'同じ時間に2か所',w:'同じ人が同じ時間に2つの店にいることはできない。どちらかが入力ミスか、乗せ換え'},
+  alias:{lb:'会社で把握している名義の勤務',w:'期限までになくす分（神田さんだけに表示）'},
   roster:{lb:'名簿にいない人',w:'個店カルテ（名簿）に登録がない。新人の登録漏れか、だれの勤務か確認（神田さんだけに表示）'},
   kotsu:{lb:'交通費',w:'出勤した日数×往復の金額より多い／この店で働いていない。どの日の分か確認'},
   tatekae:{lb:'立替金',w:'何の立替か、レシートと理由を確認'},
   chosei:{lb:'前月調整',w:'何を調整したか（前月の打刻漏れ・時給の直し など）を確認'},
   teate:{lb:'手当',w:'有給なら有給の日数と合っているか。臨時・スキルなら、だれが決めた何の手当か確認'},
 };
-function alertsOf(s){return (s.alerts||[]).filter(a=>a.k!=='roster'||ME.role==='admin')}
+// 名簿にいない人・会社で把握している名義の人が関わるもの（adm）は管理者だけ
+function alertsOf(s){return (s.alerts||[]).filter(a=>ME.role==='admin'||(a.k!=='roster'&&!a.adm))}
 function alertCard(s){
   const L=alertsOf(s);
   if(!L.length) return '';
   const g={}; L.forEach(a=>(g[a.k]=g[a.k]||[]).push(a));
   const body=Object.keys(ALERT_KIND).filter(k=>g[k]).map(k=>`<div class="al">
       <div class="alh">${ALERT_KIND[k].lb} <span class="note">${g[k].length}件</span></div>
-      <ul>${g[k].map(a=>`<li><b>${esc(a.n)}</b>　${esc(a.t)}</li>`).join('')}</ul>
+      <ul>${g[k].map(a=>`<li><b>${esc(a.n)}</b>　${esc(a.t)}${a.adm&&a.k!=='alias'?' <span class="tag">神田さんだけ</span>':''}</li>`).join('')}</ul>
       <p class="note">→ ${ALERT_KIND[k].w}</p></div>`).join('');
   return `<div class="card alertcard"><h2>⚠ 確認してほしいこと（予算の多い少ないに関係なく）</h2>
     <p class="note">不正と決まったわけではありません。入力のあとが気になるものを機械的に拾っています。店長・SCは中身を確かめて、理由を「なぜ？ 来月どうする？」に書いてください。</p>
