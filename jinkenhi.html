@@ -95,6 +95,13 @@ td.k small{font-size:11px}
 .gai .t{flex:1;min-width:170px;font-size:13px}
 .gai .st{font-size:12px;font-weight:800}
 .seg{display:flex;gap:6px}
+.chip.alert{background:#FDECEC;color:var(--over);font-weight:800}
+.alertcard{border:2px solid #F5B5B5}
+.alertcard .al{padding:8px 0;border-top:1px solid var(--border)}
+.alertcard .al:first-of-type{border-top:0}
+.alertcard .alh{font-weight:800;font-size:15px;color:var(--over)}
+.alertcard ul{margin:4px 0 2px;padding-left:18px;font-size:13px;line-height:1.55}
+.alertcard li{word-break:break-all}
 .dchips{display:flex;gap:6px;flex-wrap:wrap;margin:4px 0 8px}
 .dchips .btn{min-height:40px;font-size:13px;padding:0 10px}
 .dchips .btn.on{background:var(--blue);border-color:var(--blue);color:#fff}
@@ -351,6 +358,7 @@ function showList(){
         ${n&&n.r1?`<span class="chip done">理由：${esc(n.r1)}</span>`:`<span class="chip">理由 まだ</span>`}
         ${wait?`<span class="chip wait">店外 判断待ち ${wait}件</span>`:''}
         ${c.reqWait?`<span class="chip wait">申告 判断待ち ${c.reqWait}件</span>`:''}
+        ${alertsOf(s).length?`<span class="chip alert">⚠ 要確認 ${alertsOf(s).length}件</span>`:''}
         <span class="chip">${esc(s.sc)}SC</span>
       </div></button>`;
   }).join('');
@@ -509,7 +517,7 @@ function showStore(ab){
     ${n.by?`<p class="note" style="margin-top:6px">最後に保存：${esc(n.by)}</p>`:''}</div>`;
 
   const reqHtml = reqCard(s,c);
-  const left = head + chkHtml + `<div class="card" id="dayDet">${dayDetail(s,c,pickDay(s))}</div>` + shainHtml + wdHtml + bandHtml + dayHtml;
+  const left = head + alertCard(s) + chkHtml + `<div class="card" id="dayDet">${dayDetail(s,c,pickDay(s))}</div>` + shainHtml + wdHtml + bandHtml + dayHtml;
   const right = noteHtml + reqHtml + moneyHtml + gaiHtml + adjHtml;
   document.getElementById('main').innerHTML = back + `<div class="detail"><div class="col">${left}</div><div class="col">${right}</div></div>` +
     (back?`<div style="margin-top:4px">${back}</div>`:'');
@@ -517,6 +525,32 @@ function showStore(ab){
 }
 
 // 店長・SCが「どこを調べるか」を数字から自動で出す
+// ---------- 要確認（出退勤・お金）：予算の多い少ないに関係なく出す ----------
+// 2026-11-06 江坂東で、別の日の出退勤を消して別の日に乗せ換えていたことが分かったため追加。
+// プルーフリストには「直した印」が出ないので、手入力らしい跡とお金の入力から拾う。
+const ALERT_KIND={
+  round:{lb:'手入力らしい時刻',w:'ストコンで打刻すると 8:58・17:02 のように少しずれます。ちょうどの時刻が続くのは、後から手で入れた・直した可能性。ストコンの勤怠修正の記録とシフト表をくらべる'},
+  split:{lb:'1日に何回も分かれた勤務',w:'本当に分けて働いたか。ほかの日の分をまとめて入れていないか'},
+  overlap:{lb:'同じ時間に2か所',w:'同じ人が同じ時間に2つの店にいることはできない。どちらかが入力ミスか、乗せ換え'},
+  roster:{lb:'名簿にいない人',w:'個店カルテ（名簿）に登録がない。新人の登録漏れか、だれの勤務か確認（神田さんだけに表示）'},
+  kotsu:{lb:'交通費',w:'出勤した日数×往復の金額より多い／この店で働いていない。どの日の分か確認'},
+  tatekae:{lb:'立替金',w:'何の立替か、レシートと理由を確認'},
+  chosei:{lb:'前月調整',w:'何を調整したか（前月の打刻漏れ・時給の直し など）を確認'},
+  teate:{lb:'手当',w:'有給なら有給の日数と合っているか。臨時・スキルなら、だれが決めた何の手当か確認'},
+};
+function alertsOf(s){return (s.alerts||[]).filter(a=>a.k!=='roster'||ME.role==='admin')}
+function alertCard(s){
+  const L=alertsOf(s);
+  if(!L.length) return '';
+  const g={}; L.forEach(a=>(g[a.k]=g[a.k]||[]).push(a));
+  const body=Object.keys(ALERT_KIND).filter(k=>g[k]).map(k=>`<div class="al">
+      <div class="alh">${ALERT_KIND[k].lb} <span class="note">${g[k].length}件</span></div>
+      <ul>${g[k].map(a=>`<li><b>${esc(a.n)}</b>　${esc(a.t)}</li>`).join('')}</ul>
+      <p class="note">→ ${ALERT_KIND[k].w}</p></div>`).join('');
+  return `<div class="card alertcard"><h2>⚠ 確認してほしいこと（予算の多い少ないに関係なく）</h2>
+    <p class="note">不正と決まったわけではありません。入力のあとが気になるものを機械的に拾っています。店長・SCは中身を確かめて、理由を「なぜ？ 来月どうする？」に書いてください。</p>
+    ${body}</div>`;
+}
 function checkCard(s,c,money){
   const it=[]; const D_=D.meta;
   const diff=s.a.daily.map((v,i)=>v-s.b.daily[i]);
