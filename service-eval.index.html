@@ -636,7 +636,7 @@ const GAS_URL='https://script.google.com/macros/s/AKfycbyHEBH5Q8VBcZFBzfH5tYQm46
 /* 完全削除する従業員ID（全端末で常に一覧・同期から除外し、GASにも残らないよう自動削除）
    7192986=ビスタ ラチミ(改番ミスで生成された架空ID・本物は7192985) … 二重登録の解消
    ※旧: 4189928 を誤って削除対象にしていた（本物のID）。掛け持ち2店舗を別人と誤認した改番ミス。2026-07-22に除去・本物IDへ復旧 */
-const REMOVED_EMPLOYEE_IDS=['7192986'];
+const REMOVED_EMPLOYEE_IDS=['7192986','4189929']; // 4189929=ブイ ティ トゥ チャン(正は4189928)の打ち間違い登録 2026-11-09
 
 const STORAGE_KEYS={EMPLOYEES:'se_employees',EVALUATIONS:'se_evaluations',COACHINGS:'se_coachings',OBSERVATIONS:'se_observations',USERS:'se_users',USER:'se_user',DISCUSSIONS:'se_discussions'};
 const Storage=(()=>{
