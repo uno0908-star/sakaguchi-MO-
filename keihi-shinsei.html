@@ -1,0 +1,660 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<script src="ls-guard.js?v=20261024"></script>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>経費・人件費 申請 | 阪口商店</title>
+<style>
+:root{
+  --blue:#005BAC;--green:#047857;--red:#B91C1C;--amber:#B45309;
+  --bg:#F3F4F6;--card:#fff;--border:#E5E7EB;--text:#1F2937;--sub:#6B7280;--muted:#9CA3AF;--radius:12px;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+body{font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Noto Sans JP",sans-serif;
+  background:var(--bg);color:var(--text);font-size:15px;line-height:1.6;padding-bottom:80px}
+button,select,input,textarea{font-family:inherit}
+.hdr{position:sticky;top:0;z-index:50;background:#fff;border-bottom:1px solid var(--border);
+  padding:8px 12px;display:flex;align-items:center;gap:8px;box-shadow:0 1px 3px rgba(0,0,0,.05)}
+.hdr-ttl{font-size:16px;font-weight:800;flex:1;min-width:0}
+.hdr-ttl small{display:block;font-size:11px;font-weight:600;color:var(--sub)}
+.who{font-size:12px;font-weight:700;padding:6px 10px;border-radius:20px;background:#EEF4FB;color:var(--blue);white-space:nowrap}
+.btn{min-height:44px;padding:0 14px;border-radius:10px;border:1.5px solid var(--border);background:#fff;
+  font-size:14px;font-weight:700;color:var(--text);cursor:pointer;white-space:nowrap}
+.btn.pri{background:var(--blue);border-color:var(--blue);color:#fff}
+.btn.ok{background:var(--green);border-color:var(--green);color:#fff}
+.btn.ng{background:#fff;border-color:var(--red);color:var(--red)}
+.btn.sm{min-height:40px;font-size:13px;padding:0 10px}
+.btn.wide{width:100%;min-height:52px;font-size:16px}
+.btn:disabled{opacity:.5}
+.tabs{display:flex;gap:6px;padding:8px 12px;background:#fff;border-bottom:1px solid var(--border);overflow-x:auto}
+.tab{flex:1;min-height:44px;border-radius:10px;border:1.5px solid var(--border);background:#fff;font-weight:800;font-size:14px;cursor:pointer;white-space:nowrap;padding:0 10px;position:relative}
+.tab.on{background:var(--blue);border-color:var(--blue);color:#fff}
+.tab .cnt{display:inline-block;min-width:20px;padding:0 6px;margin-left:4px;border-radius:10px;background:var(--red);color:#fff;font-size:12px;line-height:20px}
+.wrap{padding:12px;max-width:760px;margin:0 auto}
+.card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:14px;margin-bottom:12px}
+h2{font-size:16px;font-weight:800;margin-bottom:8px}
+label.f{display:block;font-size:13px;font-weight:800;margin:14px 0 6px}
+label.f .en{font-weight:600;color:var(--muted);font-size:11px;margin-left:4px}
+label.f .req{color:var(--red);font-size:11px;margin-left:4px}
+select,input[type=text],input[type=number],input[type=password],input[type=date],textarea{font-size:16px;padding:10px;border:1.5px solid var(--border);
+  border-radius:10px;background:#fff;color:var(--text);width:100%}
+select{min-height:44px;font-weight:600}
+textarea{min-height:70px}
+.note{font-size:12px;color:var(--sub)}
+.seg{display:flex;gap:8px}
+.seg button{flex:1;min-height:56px;border-radius:12px;border:2px solid var(--border);background:#fff;font-size:16px;font-weight:800;cursor:pointer}
+.seg button small{display:block;font-size:11px;font-weight:600;color:var(--sub)}
+.seg button.on{border-color:var(--blue);background:#EEF4FB;color:var(--blue)}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{min-height:44px;padding:6px 12px;border-radius:22px;border:1.5px solid var(--border);background:#fff;font-size:14px;font-weight:700;cursor:pointer;text-align:left;line-height:1.3}
+.chip small{display:block;font-size:10px;font-weight:600;color:var(--sub)}
+.chip.on{border-color:var(--blue);background:var(--blue);color:#fff}
+.chip.on small{color:#dbeafe}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.amount{font-size:22px !important;font-weight:800;text-align:right}
+.photos{display:flex;gap:8px;flex-wrap:wrap}
+.ph{position:relative;width:88px;height:88px;border-radius:10px;overflow:hidden;border:1px solid var(--border);background:var(--bg)}
+.ph img{width:100%;height:100%;object-fit:cover;cursor:zoom-in}
+.ph button{position:absolute;top:2px;right:2px;width:28px;height:28px;border-radius:14px;border:0;background:rgba(0,0,0,.6);color:#fff;font-size:16px;cursor:pointer}
+.ph button::after{content:"";position:absolute;inset:-8px}
+.addph{width:88px;height:88px;border-radius:10px;border:2px dashed var(--muted);background:#fff;font-size:13px;font-weight:700;color:var(--sub);cursor:pointer;line-height:1.3}
+.filters{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px}
+.filters select{flex:1;min-width:120px;width:auto}
+.item{background:#fff;border:1px solid var(--border);border-radius:12px;padding:12px;margin-bottom:8px;display:flex;gap:10px;align-items:flex-start;cursor:pointer}
+.item .main{flex:1;min-width:0}
+.item .t1{font-weight:800;font-size:15px}
+.item .t2{font-size:13px;color:var(--sub);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.item .amt{font-weight:800;font-size:17px;white-space:nowrap;text-align:right}
+.item input[type=checkbox]{width:26px;height:26px;margin-top:4px;flex:none}
+.badge{display:inline-block;font-size:11px;font-weight:800;padding:2px 8px;border-radius:10px;margin-right:4px;vertical-align:1px}
+.b-pending{background:#FEF3C7;color:var(--amber)}
+.b-approved{background:#D1FAE5;color:var(--green)}
+.b-rejected{background:#FEE2E2;color:var(--red)}
+.b-labor{background:#EDE9FE;color:#5B21B6}
+.b-expense{background:#E0F2FE;color:#075985}
+.empty{text-align:center;color:var(--sub);padding:30px 10px}
+.sum{display:flex;gap:8px;margin-bottom:10px}
+.sum>div{flex:1;background:#fff;border:1px solid var(--border);border-radius:10px;padding:8px;text-align:center}
+.sum .l{font-size:12px;font-weight:700;color:var(--sub)}
+.sum .v{font-size:20px;font-weight:800}
+.tblwrap{overflow-x:auto;-webkit-overflow-scrolling:touch}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th,td{padding:6px 6px;border-bottom:1px solid var(--border);text-align:right;white-space:nowrap}
+th:first-child,td:first-child{text-align:left;position:sticky;left:0;background:#fff}
+th{font-size:11px;color:var(--sub);font-weight:700}
+tr.tot td{font-weight:800;border-top:2px solid var(--text)}
+.bottombar{position:fixed;left:0;right:0;bottom:0;background:#fff;border-top:1px solid var(--border);padding:8px 12px calc(8px + env(safe-area-inset-bottom));display:flex;gap:8px;z-index:60}
+.bottombar .btn{flex:1}
+.modal{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:100;display:none;align-items:flex-end;justify-content:center}
+.modal.on{display:flex}
+.sheet{background:#fff;width:100%;max-width:640px;max-height:92vh;overflow:auto;border-radius:16px 16px 0 0;padding:16px 16px calc(16px + env(safe-area-inset-bottom))}
+.kv{display:grid;grid-template-columns:84px 1fr;gap:4px 10px;font-size:14px;margin:10px 0}
+.kv dt{color:var(--sub);font-weight:700;font-size:13px}
+.kv dd{font-weight:600;word-break:break-all}
+.hist{font-size:12px;color:var(--sub);border-left:3px solid var(--border);padding-left:8px;margin-top:8px}
+.cmt{background:#FEF2F2;border:1px solid #FECACA;color:#7F1D1D;border-radius:10px;padding:10px;font-weight:700;margin:8px 0}
+.viewer{position:fixed;inset:0;background:#000;z-index:200;display:none;align-items:center;justify-content:center}
+.viewer.on{display:flex}
+.viewer img{max-width:100%;max-height:100%}
+.viewer button{position:absolute;top:12px;right:12px;min-height:44px;padding:0 16px;border-radius:22px;border:0;font-weight:800;font-size:15px}
+.toast{position:fixed;left:50%;bottom:90px;transform:translateX(-50%);background:#111827;color:#fff;padding:10px 16px;border-radius:10px;font-weight:700;z-index:300;display:none;max-width:90%}
+.warn{background:#FFFBEB;border:1px solid #FCD34D;color:#78350F;border-radius:10px;padding:10px;font-size:13px;font-weight:700;margin-bottom:10px}
+.login{max-width:420px;margin:30px auto;padding:0 12px}
+.hidden{display:none !important}
+@media (min-width:1100px){
+  body{font-size:16px}
+  .wrap{max-width:1100px}
+  .lists2{display:grid;grid-template-columns:1fr 1fr;gap:0 12px}
+  .hdr-ttl{font-size:18px}
+}
+</style>
+</head>
+<body>
+
+<!-- ログイン -->
+<div id="loginView" class="login hidden">
+  <div class="card">
+    <h2>💴 経費・人件費 申請</h2>
+    <p class="note">名前をえらんで、パスコードを入れてください。<br>Choose your name and enter the passcode.</p>
+    <label class="f">名前<span class="en">Name</span></label>
+    <select id="lgName"></select>
+    <label class="f">パスコード<span class="en">Passcode</span></label>
+    <input type="password" id="lgPass" autocomplete="current-password">
+    <div style="height:14px"></div>
+    <button class="btn pri wide" id="lgBtn" onclick="doLogin()">はじめる / Start</button>
+    <p class="note" id="lgMsg" style="color:var(--red);margin-top:8px"></p>
+  </div>
+</div>
+
+<!-- 本体 -->
+<div id="appView" class="hidden">
+  <div class="hdr">
+    <div class="hdr-ttl">💴 経費・人件費 申請<small id="hdrSub">阪口商店</small></div>
+    <span class="who" id="who"></span>
+    <button class="btn sm" onclick="logout()">切替</button>
+  </div>
+  <div class="tabs" id="tabs"></div>
+
+  <!-- 申請フォーム -->
+  <div class="wrap" id="v-form">
+    <div class="card">
+      <h2 id="formTitle">あたらしい申請</h2>
+      <div id="rejectBox"></div>
+      <label class="f">種類<span class="en">Type</span></label>
+      <div class="seg">
+        <button id="tExpense" onclick="setType('expense')">🧾 経費<small>お金を払った</small></button>
+        <button id="tLabor" onclick="setType('labor')">👥 人件費<small>パート給与の追加</small></button>
+      </div>
+
+      <div class="row2">
+        <div><label class="f">月度<span class="en">Month</span></label><select id="fMonth"></select></div>
+        <div><label class="f">店舗<span class="en">Store</span></label><select id="fStore"></select></div>
+      </div>
+
+      <div id="itemWrap">
+        <label class="f">科目（精算書の項目）<span class="en">Category</span><span class="req">必須</span></label>
+        <div class="chips" id="fItems"></div>
+      </div>
+
+      <!-- 経費 -->
+      <div id="expWrap">
+        <label class="f">払った日<span class="en">Date</span></label>
+        <input type="date" id="fDate">
+        <label class="f">内容<span class="en">What</span><span class="req">必須</span></label>
+        <input type="text" id="fContentE" placeholder="例：両替手数料／駐車場代／電話料">
+      </div>
+
+      <!-- 人件費 -->
+      <div id="labWrap">
+        <label class="f">内容<span class="en">Reason</span><span class="req">必須</span></label>
+        <div class="chips" id="fReasons"></div>
+        <input type="text" id="fContentL" placeholder="その他の内容を書く" style="margin-top:8px">
+        <label class="f">だれ<span class="en">Who</span></label>
+        <input type="text" id="fPerson" placeholder="例：メヌカ・ラジュ">
+        <label class="f">期間<span class="en">When</span></label>
+        <input type="text" id="fPeriod" placeholder="例：9/8〜9/15">
+        <div class="row2">
+          <div><label class="f">時間<span class="en">Hours</span></label><input type="number" id="fHours" inputmode="decimal" step="0.25" placeholder="例：16"></div>
+          <div><label class="f">時給<span class="en">Wage</span></label><input type="number" id="fRate" inputmode="numeric" placeholder="例：1,177"></div>
+        </div>
+        <p class="note">時間と時給を入れると金額が自動で入ります（あとで直せます）</p>
+      </div>
+
+      <label class="f">金額（円・税込）<span class="en">Amount (yen)</span><span class="req">必須</span></label>
+      <input type="number" id="fAmount" class="amount" inputmode="numeric" placeholder="0">
+
+      <label class="f">写真（領収書など・3枚まで）<span class="en">Photo</span></label>
+      <div class="photos" id="fPhotos"></div>
+      <input type="file" id="fFile" accept="image/*" multiple class="hidden" onchange="addPhotos(this)">
+
+      <label class="f">メモ<span class="en">Note</span></label>
+      <textarea id="fNote" placeholder="神田さんへの伝言など（なくてもOK）"></textarea>
+
+      <div style="height:16px"></div>
+      <button class="btn pri wide" id="sendBtn" onclick="send()">申請する / Send</button>
+      <button class="btn wide hidden" id="cancelEdit" style="margin-top:8px" onclick="resetForm()">修正をやめる</button>
+    </div>
+  </div>
+
+  <!-- 一覧 -->
+  <div class="wrap hidden" id="v-list">
+    <div class="filters">
+      <select id="lMonth" onchange="renderList()"></select>
+      <select id="lStore" onchange="renderList()"></select>
+      <select id="lStatus" onchange="renderList()">
+        <option value="">ぜんぶ</option><option value="pending">承認待ち</option>
+        <option value="rejected">差し戻し</option><option value="approved">承認済み</option>
+      </select>
+    </div>
+    <div class="sum" id="listSum"></div>
+    <div id="listBox" class="lists2"></div>
+  </div>
+
+  <!-- 承認待ち（管理者） -->
+  <div class="wrap hidden" id="v-review">
+    <div id="weakWarn"></div>
+    <div class="filters">
+      <select id="rMonth" onchange="renderReview()"></select>
+      <select id="rStore" onchange="renderReview()"></select>
+    </div>
+    <div class="sum" id="reviewSum"></div>
+    <div id="reviewBox" class="lists2"></div>
+  </div>
+
+  <!-- 月の集計（管理者） -->
+  <div class="wrap hidden" id="v-total">
+    <div class="filters">
+      <select id="tMonth" onchange="renderTotal()"></select>
+      <select id="tUnit" onchange="renderTotal()">
+        <option value="k">千円（Job'z入力用）</option><option value="y">円</option>
+      </select>
+    </div>
+    <div id="totalWarn"></div>
+    <div class="card">
+      <h2>承認済みの合計（店×科目）</h2>
+      <p class="note">承認済みだけを足しています。千円は店×科目ごとに四捨五入。</p>
+      <div class="tblwrap" id="totalBox"></div>
+      <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap">
+        <button class="btn" onclick="copyTotal()">📋 表をコピー</button>
+        <button class="btn" onclick="downloadCsv()">⬇ 明細をCSVで保存</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="bottombar" id="bottombar"></div>
+</div>
+
+<!-- 詳細 -->
+<div class="modal" id="modal" onclick="if(event.target===this)closeModal()">
+  <div class="sheet" id="sheet"></div>
+</div>
+<div class="viewer" id="viewer" onclick="closeViewer()"><img id="viewerImg" alt=""><button>とじる ✕</button></div>
+<div class="toast" id="toast"></div>
+
+<script>
+const GAS_URL = 'https://script.google.com/macros/s/AKfycbwjxZd_jD80cS4r5k0c41vP1o5DJqTWHVhAoicR-Jq308UwM3_aqVg6cNjeQ9Y3GUL7Xg/exec';
+const LS_USER = 'keihi_user', LS_CACHE = 'keihi_cache';
+
+// GASに届く前でもログイン画面を出せるように、名前と科目は控えを持っておく（正本はGAS）
+let CONF = {
+  stores:[['五月東'],['垂水三'],['豊里六'],['池田市'],['服部三'],['原田南'],['大道南'],['吹警察'],['江坂南'],['東淀川'],['江坂東'],['豊津中'],['南金田'],['上新田'],['青山台'],['利倉東'],['元町一'],['朝日町'],['豊里五'],['白島二']],
+  items:[], laborReasons:[],
+  members:['神田','ビスワス','ダハル','フィ','スラズ','髙橋','五島','レサム','トゥアン','ゴレ','ラジト','ズン','ナレス','ヘムラジ','ビカス','ジティシュ','マノズ','三國','ネパリ','マヘンドラ','プラディプ','ビシャル','レグミ','カマル'].map(n=>({name:n}))
+};
+let user = null, pass = '', DATA = [], view = 'form';
+let form = { id:'', type:'expense', itemId:'', reason:'', keep:[], images:[] };
+
+const $ = id => document.getElementById(id);
+const esc = s => String(s==null?'':s).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const yen = n => (Number(n)||0).toLocaleString('ja-JP');
+function lsGet(k){ try{ return JSON.parse(localStorage.getItem(k)||'null'); }catch(e){ return null; } }
+function lsSet(k,v){ try{ localStorage.setItem(k, JSON.stringify(v)); }catch(e){} }
+function toast(msg, ms){ const t=$('toast'); t.textContent=msg; t.style.display='block'; clearTimeout(t._h); t._h=setTimeout(()=>t.style.display='none', ms||2500); }
+
+async function gasGet(params){
+  const q = new URLSearchParams(params).toString();
+  const r = await fetch(GAS_URL+'?'+q, {redirect:'follow'});
+  const j = await r.json(); if(!j.success) throw new Error(j.error||'error'); return j;
+}
+async function gasPost(body){
+  const r = await fetch(GAS_URL, {method:'POST', headers:{'Content-Type':'text/plain;charset=utf-8'}, body:JSON.stringify(body), redirect:'follow'});
+  const j = await r.json(); if(!j.success) throw new Error(j.error||'error'); return j;
+}
+
+/* ══ 月度 ══ */
+function ym(d){ return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0'); }
+function monthsAround(back, fwd){
+  const out=[], now=new Date();
+  for(let i=fwd;i>=-back;i--){ out.push(ym(new Date(now.getFullYear(), now.getMonth()+i, 1))); }
+  return out;
+}
+const mLabel = m => { const p=String(m).split('-'); return p.length<2?m:(Number(p[0])%100)+'年'+Number(p[1])+'月度'; };
+
+/* ══ 起動 ══ */
+async function init(){
+  if(!GAS_URL){ document.body.insertAdjacentHTML('afterbegin','<div class="warn" style="margin:8px">GAS_URLが未設定です（準備中）</div>'); }
+  fillLoginNames();
+  const saved = lsGet(LS_USER);
+  if(saved && saved.name && saved.pass){ pass=saved.pass; user=saved.user||{name:saved.name}; startApp(true); }
+  else $('loginView').classList.remove('hidden');
+  if(GAS_URL){
+    try{
+      const j = await gasGet({action:'ping'});
+      CONF = { stores:j.stores, items:j.items, laborReasons:j.laborReasons, members:j.members };
+      lsSet('keihi_conf', CONF);
+      fillLoginNames();
+      if(user) { buildForm(); }
+    }catch(e){ const c=lsGet('keihi_conf'); if(c){ CONF=c; fillLoginNames(); if(user) buildForm(); } }
+  }
+}
+function fillLoginNames(){
+  const cur = $('lgName').value;
+  const roleOrder = {admin:2, sc:1, mgr:0};
+  $('lgName').innerHTML = '<option value="">えらぶ / Select</option>' +
+    CONF.members.slice().sort((a,b)=>(roleOrder[a.role]||0)-(roleOrder[b.role]||0)).map(m=>`<option>${esc(m.name)}</option>`).join('');
+  if(cur) $('lgName').value = cur;
+}
+async function doLogin(){
+  const name=$('lgName').value, p=$('lgPass').value.trim();
+  if(!name||!p){ $('lgMsg').textContent='名前とパスコードを入れてください'; return; }
+  $('lgBtn').disabled=true; $('lgMsg').textContent='';
+  try{
+    const j = await gasPost({action:'login', name, pass:p});
+    user=j.user; pass=p; lsSet(LS_USER, {name, pass:p, user});
+    $('loginView').classList.add('hidden'); startApp(false);
+  }catch(e){ $('lgMsg').textContent = e.message.indexOf('パスコード')>=0||e.message.indexOf('名前')>=0 ? e.message : '通信できませんでした：'+e.message; }
+  $('lgBtn').disabled=false;
+}
+function logout(){ try{ localStorage.removeItem(LS_USER); localStorage.removeItem(LS_CACHE); }catch(e){} location.reload(); }
+
+function startApp(fromSaved){
+  $('appView').classList.remove('hidden');
+  $('who').textContent = user.name + (user.role==='admin'?'（承認）':user.role==='sc'?'（SC）':'（店長）');
+  const tabs = user.role==='admin'
+    ? [['review','承認待ち'],['list','一覧'],['total','月の集計'],['form','申請する']]
+    : [['form','申請する'],['list','わたしの申請']];
+  $('tabs').innerHTML = tabs.map(t=>`<button class="tab" data-v="${t[0]}" onclick="go('${t[0]}')">${t[1]}<span class="cnt hidden"></span></button>`).join('');
+  buildForm();
+  const months = monthsAround(12, 1);
+  ['lMonth','rMonth','tMonth'].forEach(id=>{
+    $(id).innerHTML = (id==='tMonth'?'':'<option value="">すべての月</option>') + months.map(m=>`<option value="${m}">${mLabel(m)}</option>`).join('');
+  });
+  $('tMonth').value = ym(new Date(new Date().getFullYear(), new Date().getMonth()-1, 1));
+  const storeOpts = '<option value="">すべての店</option>' + (user.stores||[]).map(s=>`<option>${esc(s)}</option>`).join('');
+  $('lStore').innerHTML = storeOpts; $('rStore').innerHTML = storeOpts;
+  const c = lsGet(LS_CACHE); if(c && c.user===user.name){ DATA=c.data||[]; }
+  go(user.role==='admin' ? 'review' : 'form');
+  refresh();
+}
+
+async function refresh(){
+  if(!GAS_URL) return;
+  try{
+    const j = await gasGet({action:'list', name:user.name, pass});
+    DATA = j.data || []; user = Object.assign(user, j.user);
+    lsSet(LS_CACHE, {user:user.name, data:DATA});
+    renderAll();
+  }catch(e){
+    if(/パスコード|名前/.test(e.message)){ toast('もう一度ログインしてください'); setTimeout(logout, 1500); }
+    else toast('通信できませんでした（前回のデータを表示中）', 3500);
+  }
+}
+
+function go(v){
+  view = v;
+  ['form','list','review','total'].forEach(x=>$('v-'+x).classList.toggle('hidden', x!==v));
+  document.querySelectorAll('.tab').forEach(b=>b.classList.toggle('on', b.dataset.v===v));
+  renderAll(); window.scrollTo(0,0);
+}
+function renderAll(){
+  const pend = DATA.filter(r=>r.status==='pending').length;
+  const rej  = DATA.filter(r=>r.status==='rejected' && r.applicant===user.name).length;
+  document.querySelectorAll('.tab').forEach(b=>{
+    const c=b.querySelector('.cnt'); let n=0;
+    if(b.dataset.v==='review') n=pend;
+    if(b.dataset.v==='list' && user.role!=='admin') n=rej;
+    c.textContent=n; c.classList.toggle('hidden', !n);
+  });
+  if(view==='list') renderList();
+  if(view==='review') renderReview();
+  if(view==='total') renderTotal();
+  renderBottom();
+}
+function renderBottom(){
+  const b=$('bottombar');
+  if(view==='review' && user.role==='admin'){
+    b.innerHTML = `<button class="btn" onclick="checkAll()">全部えらぶ</button><button class="btn ok" onclick="bulkApprove()">えらんだ分を承認</button>`;
+    b.classList.remove('hidden');
+  } else if(view==='list'){
+    b.innerHTML = `<button class="btn" onclick="refresh()">🔄 最新にする</button>` + (user.role!=='admin'?`<button class="btn pri" onclick="resetForm();go('form')">＋ あたらしい申請</button>`:'');
+    b.classList.remove('hidden');
+  } else b.classList.add('hidden');
+}
+
+/* ══ フォーム ══ */
+function buildForm(){
+  const months = monthsAround(3, 1);
+  const curM = $('fMonth').value;
+  $('fMonth').innerHTML = months.map(m=>`<option value="${m}">${mLabel(m)}</option>`).join('');
+  $('fMonth').value = curM || ym(new Date());
+  const curS = $('fStore').value;
+  const st = user.stores && user.stores.length ? user.stores : CONF.stores.map(s=>s[0]);
+  $('fStore').innerHTML = (st.length>1?'<option value="">えらぶ</option>':'') + st.map(s=>`<option>${esc(s)}</option>`).join('');
+  if(curS) $('fStore').value = curS;
+  $('fReasons').innerHTML = (CONF.laborReasons||[]).map(r=>`<button class="chip" data-r="${esc(r)}" onclick="setReason('${esc(r)}')">${esc(r)}</button>`).join('');
+  setType(form.type, true);
+  renderPhotos();
+}
+function setType(t, keep){
+  form.type = t;
+  $('tExpense').classList.toggle('on', t==='expense'); $('tLabor').classList.toggle('on', t==='labor');
+  $('expWrap').classList.toggle('hidden', t!=='expense'); $('labWrap').classList.toggle('hidden', t!=='labor');
+  const items = (CONF.items||[]).filter(i=>i.type===t);
+  if(t==='labor'){ form.itemId = items[0] ? items[0].id : 'part'; }
+  else if(!keep || !items.some(i=>i.id===form.itemId)) form.itemId = '';
+  $('itemWrap').classList.toggle('hidden', t==='labor');
+  $('fItems').innerHTML = items.map(i=>`<button class="chip ${i.id===form.itemId?'on':''}" onclick="setItem('${i.id}')">${esc(i.name)}<small>${esc(i.hint||'')}</small></button>`).join('');
+}
+function setItem(id){ form.itemId=id; setType(form.type, true); }
+function setReason(r){
+  form.reason = form.reason===r ? '' : r;
+  document.querySelectorAll('#fReasons .chip').forEach(c=>c.classList.toggle('on', c.dataset.r===form.reason));
+}
+['fHours','fRate'].forEach(id=>document.addEventListener('input', e=>{
+  if(e.target.id!==id) return;
+  const h=parseFloat($('fHours').value), r=parseFloat($('fRate').value);
+  if(h>0 && r>0) $('fAmount').value = Math.round(h*r);
+}));
+
+function renderPhotos(){
+  const all = form.keep.map((u,i)=>({src:u, k:'keep', i})).concat(form.images.map((u,i)=>({src:u, k:'img', i})));
+  $('fPhotos').innerHTML = all.map(p=>`<div class="ph"><img src="${esc(p.src)}" onclick="openViewer('${esc(p.src)}')" alt=""><button onclick="rmPhoto('${p.k}',${p.i})" aria-label="削除">✕</button></div>`).join('')
+    + (all.length<3 ? `<button class="addph" onclick="$('fFile').click()">📷<br>写真を<br>追加</button>` : '');
+}
+function rmPhoto(k,i){ (k==='keep'?form.keep:form.images).splice(i,1); renderPhotos(); }
+async function addPhotos(inp){
+  const files = Array.from(inp.files||[]);
+  for(const f of files){
+    if(form.keep.length+form.images.length>=3) break;
+    try{ form.images.push(await shrink(f)); }catch(e){ toast('写真を読み込めませんでした'); }
+  }
+  inp.value=''; renderPhotos();
+}
+function shrink(file){
+  return new Promise((res,rej)=>{
+    const img=new Image(), url=URL.createObjectURL(file);
+    img.onload=()=>{
+      const max=1400, s=Math.min(1, max/Math.max(img.width,img.height));
+      const c=document.createElement('canvas'); c.width=Math.round(img.width*s); c.height=Math.round(img.height*s);
+      c.getContext('2d').drawImage(img,0,0,c.width,c.height);
+      URL.revokeObjectURL(url); res(c.toDataURL('image/jpeg',0.75));
+    };
+    img.onerror=()=>{ URL.revokeObjectURL(url); rej(); };
+    img.src=url;
+  });
+}
+
+function resetForm(){
+  form = { id:'', type:form.type, itemId:'', reason:'', keep:[], images:[] };
+  ['fDate','fContentE','fContentL','fPerson','fPeriod','fHours','fRate','fAmount','fNote'].forEach(id=>$(id).value='');
+  $('formTitle').textContent='あたらしい申請'; $('rejectBox').innerHTML=''; $('cancelEdit').classList.add('hidden');
+  $('sendBtn').textContent='申請する / Send';
+  buildForm(); setReason('');
+}
+function editRequest(id){
+  const r = DATA.find(x=>x.id===id); if(!r) return;
+  closeModal(); go('form');
+  form = { id:r.id, type:r.type, itemId:r.itemId, reason:'', keep:(r.photoUrls||[]).slice(), images:[] };
+  buildForm();
+  $('fMonth').value=r.month; $('fStore').value=r.store;
+  $('fAmount').value=r.amount; $('fNote').value=r.note||'';
+  if(r.type==='expense'){ $('fDate').value=r.date||''; $('fContentE').value=r.content||''; }
+  else{
+    const reasons = CONF.laborReasons||[];
+    if(reasons.indexOf(r.content)>=0){ setReason(r.content); $('fContentL').value=''; } else { setReason(''); $('fContentL').value=r.content||''; }
+    $('fPerson').value=r.person||''; $('fPeriod').value=r.period||''; $('fHours').value=r.hours||''; $('fRate').value=r.rate||'';
+  }
+  $('formTitle').textContent = r.status==='rejected' ? '差し戻しを直して再申請' : '申請を直す';
+  $('rejectBox').innerHTML = r.status==='rejected' && r.adminComment ? `<div class="cmt">神田さんから：${esc(r.adminComment)}</div>` : '';
+  $('sendBtn').textContent = r.status==='rejected' ? '再申請する / Send again' : '直して送る / Update';
+  $('cancelEdit').classList.remove('hidden');
+}
+
+async function send(){
+  const content = form.type==='expense' ? $('fContentE').value.trim()
+                 : [form.reason, $('fContentL').value.trim()].filter(Boolean).join('：');
+  const req = {
+    id:form.id, itemId:form.itemId, month:$('fMonth').value, store:$('fStore').value,
+    date:$('fDate').value, content, amount:$('fAmount').value,
+    person:$('fPerson').value.trim(), period:$('fPeriod').value.trim(), hours:$('fHours').value, rate:$('fRate').value,
+    note:$('fNote').value.trim(), keepPhotos:form.keep, images:form.images
+  };
+  if(form.type==='labor'){ req.date=''; } else { req.person=req.period=req.hours=req.rate=''; }
+  const miss = !req.store?'店舗':!req.itemId?'科目':!content?'内容':!(Number(req.amount))?'金額':'';
+  if(miss){ toast(miss+'を入れてください'); return; }
+  if(!GAS_URL){ toast('準備中です（GAS未設定）'); return; }
+  $('sendBtn').disabled=true; $('sendBtn').textContent='送信中…';
+  try{
+    const j = await gasPost({action:'submit', name:user.name, pass, request:req});
+    const i = DATA.findIndex(x=>x.id===j.data.id); if(i>=0) DATA[i]=j.data; else DATA.unshift(j.data);
+    lsSet(LS_CACHE, {user:user.name, data:DATA});
+    toast(form.id?'直して送りました ✅':'申請しました ✅（神田さんの承認を待ちます）', 3500);
+    resetForm(); go(user.role==='admin'?'review':'list');
+  }catch(e){ toast('送れませんでした：'+e.message, 5000); }
+  $('sendBtn').disabled=false; if($('sendBtn').textContent==='送信中…') $('sendBtn').textContent='申請する / Send';
+}
+
+/* ══ 一覧 ══ */
+const ST = {pending:'承認待ち', approved:'承認済み', rejected:'差し戻し'};
+function card(r, check){
+  return `<div class="item" onclick="openDetail('${r.id}')">
+    ${check?`<input type="checkbox" class="ck" value="${r.id}" onclick="event.stopPropagation()">`:''}
+    <div class="main">
+      <div class="t1"><span class="badge b-${r.status}">${ST[r.status]||r.status}</span><span class="badge b-${r.type}">${r.type==='labor'?'人件費':'経費'}</span>${esc(r.store)}・${esc(r.itemName)}</div>
+      <div class="t2">${esc(mLabel(r.month))}｜${esc(r.content)}${r.person?'（'+esc(r.person)+'）':''}</div>
+      <div class="t2">申請：${esc(r.applicant)}　${esc(String(r.createdAt||'').slice(5,16).replace('T',' '))}${(r.photoUrls||[]).length?'　📷'+r.photoUrls.length:''}</div>
+    </div>
+    <div class="amt">${yen(r.amount)}<small style="font-size:11px">円</small></div>
+  </div>`;
+}
+function sortRows(rows){ return rows.slice().sort((a,b)=>String(b.updatedAt).localeCompare(String(a.updatedAt))); }
+function sumBox(rows){
+  const s = k => rows.filter(r=>r.status===k).reduce((a,r)=>a+r.amount,0);
+  const n = k => rows.filter(r=>r.status===k).length;
+  return `<div><div class="l">承認待ち ${n('pending')}件</div><div class="v">${yen(s('pending'))}</div></div>
+          <div><div class="l">差し戻し ${n('rejected')}件</div><div class="v">${yen(s('rejected'))}</div></div>
+          <div><div class="l">承認済み ${n('approved')}件</div><div class="v">${yen(s('approved'))}</div></div>`;
+}
+function renderList(){
+  const m=$('lMonth').value, s=$('lStore').value, st=$('lStatus').value;
+  const rows = sortRows(DATA.filter(r=>(!m||r.month===m)&&(!s||r.store===s)&&(!st||r.status===st)));
+  $('listSum').innerHTML = sumBox(rows);
+  $('listBox').innerHTML = rows.length ? rows.map(r=>card(r,false)).join('') : '<div class="empty">申請はまだありません</div>';
+}
+function renderReview(){
+  $('weakWarn').innerHTML = user.weakAdminPass ? '<div class="warn">⚠ 承認のパスコードが店長と同じ（Lawson3963）です。GASのスクリプトプロパティ ADMIN_PASS に神田さんだけのパスコードを入れてください。</div>' : '';
+  const m=$('rMonth').value, s=$('rStore').value;
+  const rows = DATA.filter(r=>r.status==='pending'&&(!m||r.month===m)&&(!s||r.store===s))
+                   .sort((a,b)=>String(a.createdAt).localeCompare(String(b.createdAt)));
+  const tot = rows.reduce((a,r)=>a+r.amount,0);
+  $('reviewSum').innerHTML = `<div><div class="l">承認待ち</div><div class="v">${rows.length}件</div></div><div><div class="l">合計</div><div class="v">${yen(tot)}円</div></div>`;
+  $('reviewBox').innerHTML = rows.length ? rows.map(r=>card(r,true)).join('') : '<div class="empty">承認待ちはありません 🎉</div>';
+}
+function checkAll(){ const cks=[...document.querySelectorAll('.ck')]; const on=cks.some(c=>!c.checked); cks.forEach(c=>c.checked=on); }
+async function bulkApprove(){
+  const ids=[...document.querySelectorAll('.ck:checked')].map(c=>c.value);
+  if(!ids.length){ toast('承認する申請にチェックを入れてください'); return; }
+  await review(ids,'approve','');
+}
+async function review(ids, act, comment){
+  try{
+    const j = await gasPost({action:'review', name:user.name, pass, ids, act, comment});
+    toast({approve:'承認しました ✅',reject:'差し戻しました',reopen:'承認待ちに戻しました'}[act]+'（'+j.count+'件）');
+    closeModal(); await refresh();
+  }catch(e){ toast('できませんでした：'+e.message, 5000); }
+}
+
+/* ══ 詳細 ══ */
+function openDetail(id){
+  const r = DATA.find(x=>x.id===id); if(!r) return;
+  const mine = r.applicant===user.name || (user.stores||[]).indexOf(r.store)>=0;
+  const canEdit = user.role==='admin' || (mine && r.status!=='approved');
+  const kv = [
+    ['月度', mLabel(r.month)], ['店舗', r.store], ['科目', r.itemName], ['内容', r.content],
+    r.type==='labor' ? ['だれ', r.person] : ['払った日', r.date],
+    r.type==='labor' ? ['期間', r.period] : null,
+    r.type==='labor' && (r.hours||r.rate) ? ['計算', (r.hours||'-')+'時間 × '+(r.rate?yen(r.rate):'-')+'円'] : null,
+    ['金額', yen(r.amount)+'円'], ['申請', r.applicant], r.note ? ['メモ', r.note] : null,
+    r.status==='approved' ? ['承認', (r.approvedBy||'')+'　'+String(r.approvedAt||'').slice(0,16).replace('T',' ')] : null
+  ].filter(Boolean);
+  let btns = '';
+  if(user.role==='admin'){
+    if(r.status==='pending') btns = `<button class="btn ok wide" onclick="review(['${r.id}'],'approve','')">✅ 承認する</button>
+      <label class="f">差し戻しの理由</label><textarea id="rjCmt" placeholder="例：領収書の写真をつけてください"></textarea>
+      <button class="btn ng wide" style="margin-top:8px" onclick="rejectOne('${r.id}')">↩ 差し戻す</button>`;
+    else if(r.status==='approved') btns = `<button class="btn wide" onclick="review(['${r.id}'],'reopen','')">承認を取り消して承認待ちに戻す</button>`;
+    else btns = `<button class="btn ok wide" onclick="review(['${r.id}'],'approve','')">✅ このまま承認する</button>`;
+  }
+  if(canEdit) btns += `<div style="display:flex;gap:8px;margin-top:8px"><button class="btn" style="flex:1" onclick="editRequest('${r.id}')">✏ 直す</button><button class="btn ng" style="flex:1" onclick="withdraw('${r.id}')">取り下げ（削除）</button></div>`;
+  $('sheet').innerHTML = `
+    <div style="display:flex;align-items:center;gap:8px"><h2 style="flex:1;margin:0"><span class="badge b-${r.status}">${ST[r.status]}</span>${esc(r.store)}・${esc(r.itemName)}</h2><button class="btn sm" onclick="closeModal()">とじる</button></div>
+    ${r.adminComment ? `<div class="cmt">神田さんから：${esc(r.adminComment)}</div>` : ''}
+    <dl class="kv">${kv.map(x=>`<dt>${x[0]}</dt><dd>${esc(x[1])}</dd>`).join('')}</dl>
+    ${(r.photoUrls||[]).length ? `<div class="photos">${r.photoUrls.map(u=>`<div class="ph"><img src="${esc(u)}" onclick="openViewer('${esc(u)}')" alt=""></div>`).join('')}</div>` : '<p class="note">写真なし</p>'}
+    <div style="height:12px"></div>${btns}
+    <div class="hist">${(r.history||[]).map(h=>`${esc(String(h.at).slice(5,16).replace('T',' '))} ${esc(h.by)}：${esc(h.act)}${h.comment?'「'+esc(h.comment)+'」':''}`).join('<br>')}</div>`;
+  $('modal').classList.add('on');
+}
+function rejectOne(id){
+  const c = ($('rjCmt').value||'').trim();
+  if(!c){ toast('差し戻しの理由を書いてください'); $('rjCmt').focus(); return; }
+  review([id],'reject',c);
+}
+async function withdraw(id){
+  const ok = await confirmBox('この申請を取り下げて削除します。よろしいですか？');
+  if(!ok) return;
+  try{
+    await gasPost({action:'withdraw', name:user.name, pass, id});
+    DATA = DATA.filter(x=>x.id!==id); lsSet(LS_CACHE, {user:user.name, data:DATA});
+    closeModal(); toast('取り下げました'); renderAll();
+  }catch(e){ toast('できませんでした：'+e.message, 5000); }
+}
+function confirmBox(msg){
+  return new Promise(res=>{
+    $('sheet').insertAdjacentHTML('beforeend', `<div id="cfm" class="warn" style="margin-top:12px">${esc(msg)}<div style="display:flex;gap:8px;margin-top:8px"><button class="btn" style="flex:1" id="cfmN">やめる</button><button class="btn ng" style="flex:1" id="cfmY">削除する</button></div></div>`);
+    $('cfm').scrollIntoView({behavior:'smooth'});
+    $('cfmN').onclick=()=>{ $('cfm').remove(); res(false); };
+    $('cfmY').onclick=()=>{ $('cfm').remove(); res(true); };
+  });
+}
+function closeModal(){ $('modal').classList.remove('on'); }
+function openViewer(src){ $('viewerImg').src=src; $('viewer').classList.add('on'); }
+function closeViewer(){ $('viewer').classList.remove('on'); }
+
+/* ══ 月の集計 ══ */
+function totalMatrix(){
+  const m=$('tMonth').value;
+  const rows = DATA.filter(r=>r.month===m && r.status==='approved');
+  const items = (CONF.items||[]).map(i=>i.name).filter(n=>rows.some(r=>r.itemName===n));
+  const stores = CONF.stores.map(s=>s[0]).filter(s=>rows.some(r=>r.store===s));
+  rows.forEach(r=>{ if(stores.indexOf(r.store)<0) stores.push(r.store); if(items.indexOf(r.itemName)<0) items.push(r.itemName); });
+  const cell = {};
+  rows.forEach(r=>{ const k=r.store+'|'+r.itemName; cell[k]=(cell[k]||0)+r.amount; });
+  return {m, rows, items, stores, cell};
+}
+function renderTotal(){
+  const {m, rows, items, stores, cell} = totalMatrix();
+  const k = $('tUnit').value==='k';
+  const f = v => !v ? '' : k ? yen(Math.round(v/1000)) : yen(v);
+  const pend = DATA.filter(r=>r.month===m && r.status!=='approved');
+  $('totalWarn').innerHTML = pend.length ? `<div class="warn">⚠ ${mLabel(m)}にまだ承認していない申請が${pend.length}件あります（集計に入っていません）</div>` : '';
+  if(!rows.length){ $('totalBox').innerHTML='<div class="empty">承認済みの申請はありません</div>'; return; }
+  const colT = items.map(it=>stores.reduce((a,s)=>a+(cell[s+'|'+it]||0),0));
+  $('totalBox').innerHTML = `<table><tr><th>店舗</th>${items.map(i=>`<th>${esc(i)}</th>`).join('')}<th>合計</th></tr>
+    ${stores.map(s=>{ const t=items.reduce((a,it)=>a+(cell[s+'|'+it]||0),0);
+      return `<tr><td>${esc(s)}</td>${items.map(it=>`<td>${f(cell[s+'|'+it])}</td>`).join('')}<td><b>${f(t)}</b></td></tr>`; }).join('')}
+    <tr class="tot"><td>合計</td>${colT.map(v=>`<td>${f(v)}</td>`).join('')}<td>${f(colT.reduce((a,b)=>a+b,0))}</td></tr></table>
+    <p class="note" style="margin-top:6px">${k?'単位：千円':'単位：円'}／${rows.length}件</p>`;
+}
+function copyTotal(){
+  const {stores, items, cell} = totalMatrix();
+  const k = $('tUnit').value==='k';
+  const f = v => !v ? '' : k ? Math.round(v/1000) : v;
+  const tsv = [['店舗'].concat(items).join('\t')].concat(stores.map(s=>[s].concat(items.map(it=>f(cell[s+'|'+it]))).join('\t'))).join('\n');
+  (navigator.clipboard ? navigator.clipboard.writeText(tsv) : Promise.reject()).then(()=>toast('コピーしました（Excelに貼れます）'), ()=>toast('コピーできませんでした'));
+}
+function downloadCsv(){
+  const m=$('tMonth').value;
+  const rows = DATA.filter(r=>r.month===m);
+  const head = ['状態','月度','店舗','種類','科目','日付','内容','だれ','期間','時間','時給','金額','申請者','承認者','承認日時','メモ','写真'];
+  const q = v => '"'+String(v==null?'':v).replace(/"/g,'""')+'"';
+  const body = rows.map(r=>[ST[r.status],r.month,r.store,r.type==='labor'?'人件費':'経費',r.itemName,r.date,r.content,r.person,r.period,r.hours,r.rate,r.amount,r.applicant,r.approvedBy,r.approvedAt,r.note,(r.photoUrls||[]).join(' ')].map(q).join(','));
+  const blob = new Blob(['﻿'+[head.map(q).join(',')].concat(body).join('\r\n')], {type:'text/csv'});
+  const a = document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='経費人件費申請_'+m+'.csv'; a.click();
+}
+
+init();
+</script>
+</body>
+</html>
