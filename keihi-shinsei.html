@@ -260,7 +260,7 @@ const LS_USER = 'keihi_user', LS_CACHE = 'keihi_cache';
 let CONF = {
   stores:[['五月東'],['垂水三'],['豊里六'],['池田市'],['服部三'],['原田南'],['大道南'],['吹警察'],['江坂南'],['東淀川'],['江坂東'],['豊津中'],['南金田'],['上新田'],['青山台'],['利倉東'],['元町一'],['朝日町'],['豊里五'],['白島二']],
   items:[], laborReasons:[],
-  members:['神田','ビスワス','ダハル','フィ','スラズ','髙橋','五島','レサム','トゥアン','ゴレ','ラジト','ズン','ナレス','ヘムラジ','ビカス','ジティシュ','マノズ','三國','ネパリ','マヘンドラ','プラディプ','ビシャル','レグミ','カマル'].map(n=>({name:n}))
+  members:['神田','髙橋','五島','ビスワス','ダハル','フィ','スラズ','レサム','トゥアン'].map(n=>({name:n}))
 };
 let user = null, pass = '', DATA = [], view = 'form';
 let form = { id:'', type:'expense', itemId:'', reason:'', keep:[], images:[] };
@@ -310,9 +310,8 @@ async function init(){
 }
 function fillLoginNames(){
   const cur = $('lgName').value;
-  const roleOrder = {admin:2, sc:1, mgr:0};
   $('lgName').innerHTML = '<option value="">えらぶ / Select</option>' +
-    CONF.members.slice().sort((a,b)=>(roleOrder[a.role]||0)-(roleOrder[b.role]||0)).map(m=>`<option>${esc(m.name)}</option>`).join('');
+    CONF.members.map(m=>`<option value="${esc(m.name)}">${esc(m.name)}${m.title&&m.role!=='admin'?'（'+esc(m.title)+'）':''}</option>`).join('');
   if(cur) $('lgName').value = cur;
 }
 async function doLogin(){
@@ -330,7 +329,7 @@ function logout(){ try{ localStorage.removeItem(LS_USER); localStorage.removeIte
 
 function startApp(fromSaved){
   $('appView').classList.remove('hidden');
-  $('who').textContent = user.name + (user.role==='admin'?'（承認）':user.role==='sc'?'（SC）':'（店長）');
+  $('who').textContent = user.name + '（' + (user.title || (user.role==='admin'?'承認':'SC')) + '）';
   const tabs = user.role==='admin'
     ? [['review','承認待ち'],['list','一覧'],['total','月の集計'],['form','申請する']]
     : [['form','申請する'],['list','わたしの申請']];
@@ -533,7 +532,7 @@ function renderList(){
   $('listBox').innerHTML = rows.length ? rows.map(r=>card(r,false)).join('') : '<div class="empty">申請はまだありません</div>';
 }
 function renderReview(){
-  $('weakWarn').innerHTML = user.weakAdminPass ? '<div class="warn">⚠ 承認のパスコードが店長と同じ（Lawson3963）です。GASのスクリプトプロパティ ADMIN_PASS に神田さんだけのパスコードを入れてください。</div>' : '';
+  $('weakWarn').innerHTML = user.weakAdminPass ? '<div class="warn">⚠ 承認のパスコードがSC・MOTRと同じ（Lawson3963）です。GASのスクリプトプロパティ ADMIN_PASS に神田さんだけのパスコードを入れてください。</div>' : '';
   const m=$('rMonth').value, s=$('rStore').value;
   const rows = DATA.filter(r=>r.status==='pending'&&(!m||r.month===m)&&(!s||r.store===s))
                    .sort((a,b)=>String(a.createdAt).localeCompare(String(b.createdAt)));
