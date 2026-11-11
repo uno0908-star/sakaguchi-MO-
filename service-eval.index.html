@@ -650,9 +650,10 @@ const Storage=(()=>{
     if(!v||v==='null')return[];
     try{const p=JSON.parse(v);return Array.isArray(p)?p:[]}catch(e){return[]}
   }
+  function _normId(v){return String(v).replace(/[０-９]/g,function(c){return String.fromCharCode(c.charCodeAt(0)-0xFEE0)}).replace(/[\s\u3000\u200b\ufeff]/g,'')}
   function _normalizeEmp(e){
     return{...e,
-      id:e.id!=null?String(e.id):e.id,  // 数値IDを文字列に統一
+      id:e.id!=null?_normId(e.id):e.id,  // 数値IDを文字列に統一＋空白・全角数字を除去（2026-11-11 山本有紀美の行が増え続けた原因）
       crewRoles:_parseArr(e.crewRoles),
       certifications:_parseArr(e.certifications)
     };
