@@ -61,7 +61,7 @@ input[type=time]{font-size:16px;padding:10px;border:1.5px solid var(--border);bo
 .calcbox table{width:100%;border-collapse:collapse}
 .calcbox table td{padding:4px 0;border:0;background:transparent;position:static;text-align:left;white-space:normal;font-size:14px}
 .calcbox table td:last-child{text-align:right;font-weight:700;white-space:nowrap}
-.calcbox table tr.sum td{border-top:1px solid #E5C060;font-size:16px;font-weight:800;padding-top:6px}
+.calcbox table tr.ctot td{border-top:1px solid #E5C060;font-size:16px;font-weight:800;padding-top:6px}
 .phnote-strong{display:block;background:#FFF3F3;border:1px solid #F5C2C2;color:#B42318;border-radius:10px;padding:8px 10px;font-weight:700;font-size:13px;margin-top:4px}
 .photos{display:flex;gap:8px;flex-wrap:wrap}
 .ph{position:relative;width:88px;height:88px;border-radius:10px;overflow:hidden;border:1px solid var(--border);background:var(--bg)}
@@ -475,7 +475,7 @@ function laborCalc(){
 }
 function calcHtml(c){
   return `<table>${c.lines.filter(l=>l.h>0).map(l=>`<tr><td>${l.name}<br><span class="note">${l.h}時間 × ${yen(l.rate)}円</span></td><td>${yen(l.amt)}円</td></tr>`).join('')}
-    <tr class="sum"><td>合計</td><td>${yen(c.total)}円</td></tr></table>`;
+    <tr class="ctot"><td>合計</td><td>${yen(c.total)}円</td></tr></table>`;
 }
 function recalcLabor(){
   const c = laborCalc();
