@@ -53,6 +53,15 @@ textarea{min-height:70px}
 .chip.on small{color:#dbeafe}
 .row2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
 .amount{font-size:22px !important;font-weight:800;text-align:right}
+input[type=time]{font-size:16px;padding:10px;border:1.5px solid var(--border);border-radius:10px;background:#fff;color:var(--text);width:100%;min-height:44px}
+.tbox{margin-top:12px;border:1.5px dashed var(--blue);border-radius:12px;padding:4px 12px 10px;background:#F7FAFE}
+.tbox summary{min-height:44px;display:flex;align-items:center;font-weight:800;color:var(--blue);cursor:pointer}
+.calcbox{margin-top:12px;border-radius:12px;background:#FFF8E6;border:1.5px solid #F2C94C;padding:10px 12px;font-size:14px;line-height:1.7}
+.calcbox:empty{display:none}
+.calcbox table{width:100%;border-collapse:collapse}
+.calcbox td{padding:2px 0}.calcbox td:last-child{text-align:right;font-weight:700}
+.calcbox tr.sum td{border-top:1px solid #E5C060;font-size:16px;font-weight:800;padding-top:4px}
+.phnote-strong{display:block;background:#FFF3F3;border:1px solid #F5C2C2;color:#B42318;border-radius:10px;padding:8px 10px;font-weight:700;font-size:13px;margin-top:4px}
 .photos{display:flex;gap:8px;flex-wrap:wrap}
 .ph{position:relative;width:88px;height:88px;border-radius:10px;overflow:hidden;border:1px solid var(--border);background:var(--bg)}
 .ph img{width:100%;height:100%;object-fit:cover;cursor:zoom-in}
@@ -159,7 +168,7 @@ tr.tot td{font-weight:800;border-top:2px solid var(--text)}
 
       <!-- 経費 -->
       <div id="expWrap">
-        <label class="f">払った日<span class="en">Date</span></label>
+        <label class="f">店舗で費用出金した日<span class="en">Date</span></label>
         <input type="date" id="fDate">
         <label class="f">内容<span class="en">What</span><span class="req">必須</span></label>
         <input type="text" id="fContentE" placeholder="例：両替手数料／駐車場代／電話料">
@@ -174,17 +183,40 @@ tr.tot td{font-weight:800;border-top:2px solid var(--text)}
         <input type="text" id="fPerson" placeholder="例：メヌカ・ラジュ">
         <label class="f">期間<span class="en">When</span></label>
         <input type="text" id="fPeriod" placeholder="例：9/8〜9/15">
+        <label class="f">基本時給（円）<span class="en">Base wage</span><span class="req">必須</span></label>
+        <input type="number" id="fRate" inputmode="numeric" placeholder="例：1177">
+
+        <details class="tbox" id="timeHelp">
+          <summary>⏰ 出勤・退勤の時刻から自動で分ける（おすすめ）</summary>
+          <div class="row2">
+            <div><label class="f">出勤<span class="en">Start</span></label><input type="time" id="tIn" step="900"></div>
+            <div><label class="f">退勤<span class="en">End</span></label><input type="time" id="tOut" step="900"></div>
+          </div>
+          <div class="row2">
+            <div><label class="f">休憩（分）<span class="en">Break</span></label><input type="number" id="tBrk" inputmode="numeric" placeholder="例：60"></div>
+            <div><label class="f">日数<span class="en">Days</span></label><input type="number" id="tDays" inputmode="numeric" placeholder="例：1" value="1"></div>
+          </div>
+          <p class="note">同じ時間で働いた日数を入れてください。下の「時間」に自動で入ります。休憩はふつうの時間から引きます。</p>
+        </details>
+
+        <label class="f">時間（合計）<span class="en">Total hours</span><span class="req">必須</span></label>
+        <input type="number" id="fHours" inputmode="decimal" step="0.25" placeholder="例：16">
         <div class="row2">
-          <div><label class="f">時間<span class="en">Hours</span></label><input type="number" id="fHours" inputmode="decimal" step="0.25" placeholder="例：16"></div>
-          <div><label class="f">時給<span class="en">Wage</span></label><input type="number" id="fRate" inputmode="numeric" placeholder="例：1,177"></div>
+          <div><label class="f">うち 5:00〜9:00<span class="en">Early ×1.1</span></label><input type="number" id="fH1" inputmode="decimal" step="0.25" placeholder="0"></div>
+          <div><label class="f">うち 22:00〜5:00<span class="en">Night ×1.25</span></label><input type="number" id="fH2" inputmode="decimal" step="0.25" placeholder="0"></div>
         </div>
-        <p class="note">時間と時給を入れると金額が自動で入ります（あとで直せます）</p>
+        <label class="f">うち 1日8時間を超えた時間（残業）<span class="en">Overtime ×1.25</span></label>
+        <input type="number" id="fOT" inputmode="decimal" step="0.25" placeholder="0">
+
+        <div class="calcbox" id="calcBox"></div>
+        <p class="note">時給と時間を入れると、下の金額が自動で入ります（あとで直せます）。<br>特別時給1＝5:00〜9:00は基本時給×1.1／特別時給2＝22:00〜5:00は×1.25／残業＝8時間を超えた分は×1.25（深夜と重なると×1.5）</p>
       </div>
 
       <label class="f">金額（円・税込）<span class="en">Amount (yen)</span><span class="req">必須</span></label>
       <input type="number" id="fAmount" class="amount" inputmode="numeric" placeholder="0">
 
-      <label class="f">写真（領収書など・3枚まで）<span class="en">Photo</span></label>
+      <label class="f" id="phLabel">写真（領収書など・3枚まで）<span class="en">Photo</span></label>
+      <p class="note" id="phNote"></p>
       <div class="photos" id="fPhotos"></div>
       <input type="file" id="fFile" accept="image/*" multiple class="hidden" onchange="addPhotos(this)">
 
@@ -262,6 +294,8 @@ let CONF = {
   items:[], laborReasons:[],
   members:['神田','髙橋','五島','ビスワス','ダハル','フィ','スラズ','レサム','トゥアン'].map(n=>({name:n}))
 };
+// 使わない科目（GASが古いままでも画面に出さない）2026-11-11
+const HIDE_ITEMS = ['housou','shuzen','iji','saiyou'];
 let user = null, pass = '', DATA = [], view = 'form';
 let form = { id:'', type:'expense', itemId:'', reason:'', keep:[], images:[] };
 
@@ -409,10 +443,13 @@ function setType(t, keep){
   form.type = t;
   $('tExpense').classList.toggle('on', t==='expense'); $('tLabor').classList.toggle('on', t==='labor');
   $('expWrap').classList.toggle('hidden', t!=='expense'); $('labWrap').classList.toggle('hidden', t!=='labor');
-  const items = (CONF.items||[]).filter(i=>i.type===t);
+  const items = (CONF.items||[]).filter(i=>i.type===t && HIDE_ITEMS.indexOf(i.id)<0);
   if(t==='labor'){ form.itemId = items[0] ? items[0].id : 'part'; }
   else if(!keep || !items.some(i=>i.id===form.itemId)) form.itemId = '';
   $('itemWrap').classList.toggle('hidden', t==='labor');
+  $('phLabel').firstChild.textContent = t==='labor' ? '写真（なくてもOK・3枚まで）' : '領収書の写真（3枚まで）';
+  $('phNote').innerHTML = t==='labor' ? '人件費は写真はいりません。何かあればつけてください。'
+    : '<span class="phnote-strong">📎 領収書が3枚以上ある時は、何枚かのレシートを並べて1枚の写真にまとめ、1〜3枚以内で撮ってください。</span>';
   $('fItems').innerHTML = items.map(i=>`<button class="chip ${i.id===form.itemId?'on':''}" onclick="setItem('${i.id}')">${esc(i.name)}<small>${esc(i.hint||'')}</small></button>`).join('');
 }
 function setItem(id){ form.itemId=id; setType(form.type, true); }
@@ -420,11 +457,54 @@ function setReason(r){
   form.reason = form.reason===r ? '' : r;
   document.querySelectorAll('#fReasons .chip').forEach(c=>c.classList.toggle('on', c.dataset.r===form.reason));
 }
-['fHours','fRate'].forEach(id=>document.addEventListener('input', e=>{
-  if(e.target.id!==id) return;
-  const h=parseFloat($('fHours').value), r=parseFloat($('fRate').value);
-  if(h>0 && r>0) $('fAmount').value = Math.round(h*r);
-}));
+/* ══ 人件費の自動計算（特別時給1：5-9時×1.1／特別時給2：22-5時×1.25／残業：1日8h超×1.25） ══ */
+const num = id => Math.max(0, parseFloat($(id).value)||0);
+const hr = n => Math.round(n*100)/100;
+function laborCalc(){
+  const base=num('fRate'), H=num('fHours'), h1=num('fH1'), h2=num('fH2'), ot=num('fOT');
+  if(!(base>0 && H>0)) return null;
+  const nrm = hr(H-h1-h2);
+  const lines = [
+    ['通常', nrm, base],
+    ['特別時給1（5:00〜9:00）', h1, base*1.1],
+    ['特別時給2（22:00〜5:00）', h2, base*1.25],
+    ['残業の上乗せ（8時間超）', ot, base*0.25]
+  ].map(l=>({name:l[0], h:l[1], rate:Math.round(l[2]*100)/100, amt:Math.round(l[1]*l[2])}));
+  return { base, H, h1, h2, ot, lines, total:lines.reduce((s,l)=>s+l.amt,0), bad:nrm<0, otBad:ot>H };
+}
+function calcHtml(c){
+  return `<table>${c.lines.filter(l=>l.h>0).map(l=>`<tr><td>${l.name}<br><span class="note">${l.h}時間 × ${yen(l.rate)}円</span></td><td>${yen(l.amt)}円</td></tr>`).join('')}
+    <tr class="sum"><td>合計</td><td>${yen(c.total)}円</td></tr></table>`;
+}
+function recalcLabor(){
+  const c = laborCalc();
+  if(!c){ $('calcBox').innerHTML=''; return; }
+  $('calcBox').innerHTML = (c.bad?'<div class="phnote-strong">「5:00〜9:00」と「22:00〜5:00」の合計が、合計時間より多いです</div>':'')
+    + (c.otBad?'<div class="phnote-strong">残業の時間が、合計時間より多いです</div>':'') + calcHtml(c);
+  $('fAmount').value = c.total;
+}
+// 出勤・退勤の時刻 → 合計／5-9時／22-5時／残業 に分ける
+function splitByTime(){
+  const a=$('tIn').value, b=$('tOut').value; if(!a||!b) return;
+  const toM = s => { const p=s.split(':'); return (+p[0])*60+(+p[1]); };
+  let s=toM(a), e=toM(b); if(e<=s) e+=1440;
+  let nrm=0, early=0, night=0;
+  for(let m=s;m<e;m++){ const t=m%1440; if(t>=300&&t<540) early++; else if(t>=1320||t<300) night++; else nrm++; }
+  let brk=num('tBrk');
+  const take = v => { const x=Math.min(v,brk); brk-=x; return v-x; };
+  nrm=take(nrm); night=take(night); early=take(early);
+  const work=nrm+early+night, days=Math.max(1, Math.round(num('tDays'))||1);
+  $('fHours').value = hr(work/60*days);
+  $('fH1').value = early ? hr(early/60*days) : '';
+  $('fH2').value = night ? hr(night/60*days) : '';
+  $('fOT').value = work>480 ? hr((work-480)/60*days) : '';
+  recalcLabor();
+}
+document.addEventListener('input', e=>{
+  const id=e.target.id;
+  if(['tIn','tOut','tBrk','tDays'].includes(id)) splitByTime();
+  else if(['fRate','fHours','fH1','fH2','fOT'].includes(id)) recalcLabor();
+});
 
 function renderPhotos(){
   const all = form.keep.map((u,i)=>({src:u, k:'keep', i})).concat(form.images.map((u,i)=>({src:u, k:'img', i})));
@@ -456,7 +536,8 @@ function shrink(file){
 
 function resetForm(){
   form = { id:'', type:form.type, itemId:'', reason:'', keep:[], images:[] };
-  ['fDate','fContentE','fContentL','fPerson','fPeriod','fHours','fRate','fAmount','fNote'].forEach(id=>$(id).value='');
+  ['fDate','fContentE','fContentL','fPerson','fPeriod','fHours','fRate','fH1','fH2','fOT','tIn','tOut','tBrk','fAmount','fNote'].forEach(id=>$(id).value='');
+  $('tDays').value='1'; $('calcBox').innerHTML=''; $('timeHelp').open=false;
   $('formTitle').textContent='あたらしい申請'; $('rejectBox').innerHTML=''; $('cancelEdit').classList.add('hidden');
   $('sendBtn').textContent='申請する / Send';
   buildForm(); setReason('');
@@ -473,6 +554,8 @@ function editRequest(id){
     const reasons = CONF.laborReasons||[];
     if(reasons.indexOf(r.content)>=0){ setReason(r.content); $('fContentL').value=''; } else { setReason(''); $('fContentL').value=r.content||''; }
     $('fPerson').value=r.person||''; $('fPeriod').value=r.period||''; $('fHours').value=r.hours||''; $('fRate').value=r.rate||'';
+    const c=parseCalc(r); $('fH1').value=c.h1||''; $('fH2').value=c.h2||''; $('fOT').value=c.ot||'';
+    recalcLabor(); $('fAmount').value=r.amount;
   }
   $('formTitle').textContent = r.status==='rejected' ? '差し戻しを直して再申請' : '申請を直す';
   $('rejectBox').innerHTML = r.status==='rejected' && r.adminComment ? `<div class="cmt">神田さんから：${esc(r.adminComment)}</div>` : '';
@@ -487,11 +570,17 @@ async function send(){
     id:form.id, itemId:form.itemId, month:$('fMonth').value, store:$('fStore').value,
     date:$('fDate').value, content, amount:$('fAmount').value,
     person:$('fPerson').value.trim(), period:$('fPeriod').value.trim(), hours:$('fHours').value, rate:$('fRate').value,
-    note:$('fNote').value.trim(), keepPhotos:form.keep, images:form.images
+    note:$('fNote').value.trim(), keepPhotos:form.keep, images:form.images,
+    calc: form.type==='labor' ? JSON.stringify({h1:num('fH1'), h2:num('fH2'), ot:num('fOT')}) : ''
   };
   if(form.type==='labor'){ req.date=''; } else { req.person=req.period=req.hours=req.rate=''; }
   const miss = !req.store?'店舗':!req.itemId?'科目':!content?'内容':!(Number(req.amount))?'金額':'';
   if(miss){ toast(miss+'を入れてください'); return; }
+  if(form.type==='labor'){
+    const c=laborCalc();
+    if(!c){ toast('基本時給と時間を入れてください'); return; }
+    if(c.bad||c.otBad){ toast('時間の内訳を見直してください'); return; }
+  }
   if(!GAS_URL){ toast('準備中です（GAS未設定）'); return; }
   $('sendBtn').disabled=true; $('sendBtn').textContent='送信中…';
   try{
@@ -555,15 +644,24 @@ async function review(ids, act, comment){
 }
 
 /* ══ 詳細 ══ */
+function parseCalc(r){ try{ return JSON.parse(r.calc||'{}')||{}; }catch(e){ return {}; } }
+function detailCalc(r){
+  if(r.type!=='labor' || !r.rate || !r.hours) return '';
+  const c=parseCalc(r), base=Number(r.rate), H=Number(r.hours), h1=+c.h1||0, h2=+c.h2||0, ot=+c.ot||0;
+  const lines=[['通常',hr(H-h1-h2),base],['特別時給1（5:00〜9:00）',h1,base*1.1],['特別時給2（22:00〜5:00）',h2,base*1.25],['残業の上乗せ（8時間超）',ot,base*0.25]]
+    .map(l=>({name:l[0],h:l[1],rate:Math.round(l[2]*100)/100,amt:Math.round(l[1]*l[2])}));
+  const total=lines.reduce((s,l)=>s+l.amt,0);
+  return `<div class="calcbox">${calcHtml({lines,total})}${total!==Number(r.amount)?'<p class="note">※申請の金額は手で直されています</p>':''}</div>`;
+}
 function openDetail(id){
   const r = DATA.find(x=>x.id===id); if(!r) return;
   const mine = r.applicant===user.name || (user.stores||[]).indexOf(r.store)>=0;
   const canEdit = user.role==='admin' || (mine && r.status!=='approved');
   const kv = [
     ['月度', mLabel(r.month)], ['店舗', r.store], ['科目', r.itemName], ['内容', r.content],
-    r.type==='labor' ? ['だれ', r.person] : ['払った日', r.date],
+    r.type==='labor' ? ['だれ', r.person] : ['費用出金日', r.date],
     r.type==='labor' ? ['期間', r.period] : null,
-    r.type==='labor' && (r.hours||r.rate) ? ['計算', (r.hours||'-')+'時間 × '+(r.rate?yen(r.rate):'-')+'円'] : null,
+    r.type==='labor' && (r.hours||r.rate) ? ['計算', '基本時給 '+(r.rate?yen(r.rate):'-')+'円／合計 '+(r.hours||'-')+'時間'] : null,
     ['金額', yen(r.amount)+'円'], ['申請', r.applicant], r.note ? ['メモ', r.note] : null,
     r.status==='approved' ? ['承認', (r.approvedBy||'')+'　'+String(r.approvedAt||'').slice(0,16).replace('T',' ')] : null
   ].filter(Boolean);
@@ -580,6 +678,7 @@ function openDetail(id){
     <div style="display:flex;align-items:center;gap:8px"><h2 style="flex:1;margin:0"><span class="badge b-${r.status}">${ST[r.status]}</span>${esc(r.store)}・${esc(r.itemName)}</h2><button class="btn sm" onclick="closeModal()">とじる</button></div>
     ${r.adminComment ? `<div class="cmt">神田さんから：${esc(r.adminComment)}</div>` : ''}
     <dl class="kv">${kv.map(x=>`<dt>${x[0]}</dt><dd>${esc(x[1])}</dd>`).join('')}</dl>
+    ${detailCalc(r)}
     ${(r.photoUrls||[]).length ? `<div class="photos">${r.photoUrls.map(u=>`<div class="ph"><img src="${esc(u)}" onclick="openViewer('${esc(u)}')" alt=""></div>`).join('')}</div>` : '<p class="note">写真なし</p>'}
     <div style="height:12px"></div>${btns}
     <div class="hist">${(r.history||[]).map(h=>`${esc(String(h.at).slice(5,16).replace('T',' '))} ${esc(h.by)}：${esc(h.act)}${h.comment?'「'+esc(h.comment)+'」':''}`).join('<br>')}</div>`;
@@ -646,9 +745,9 @@ function copyTotal(){
 function downloadCsv(){
   const m=$('tMonth').value;
   const rows = DATA.filter(r=>r.month===m);
-  const head = ['状態','月度','店舗','種類','科目','日付','内容','だれ','期間','時間','時給','金額','申請者','承認者','承認日時','メモ','写真'];
+  const head = ['状態','月度','店舗','種類','科目','費用出金日','内容','だれ','期間','時間','5-9時','22-5時','残業','時給','金額','申請者','承認者','承認日時','メモ','写真'];
   const q = v => '"'+String(v==null?'':v).replace(/"/g,'""')+'"';
-  const body = rows.map(r=>[ST[r.status],r.month,r.store,r.type==='labor'?'人件費':'経費',r.itemName,r.date,r.content,r.person,r.period,r.hours,r.rate,r.amount,r.applicant,r.approvedBy,r.approvedAt,r.note,(r.photoUrls||[]).join(' ')].map(q).join(','));
+  const body = rows.map(r=>[ST[r.status],r.month,r.store,r.type==='labor'?'人件費':'経費',r.itemName,r.date,r.content,r.person,r.period,r.hours,parseCalc(r).h1||'',parseCalc(r).h2||'',parseCalc(r).ot||'',r.rate,r.amount,r.applicant,r.approvedBy,r.approvedAt,r.note,(r.photoUrls||[]).join(' ')].map(q).join(','));
   const blob = new Blob(['﻿'+[head.map(q).join(',')].concat(body).join('\r\n')], {type:'text/csv'});
   const a = document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='経費人件費申請_'+m+'.csv'; a.click();
 }
