@@ -316,7 +316,13 @@ function render(fromCache){
   compliance.filter(r=>normMonth(r['対象年月'])===month)
             .forEach(r=>{ map[String(r['従業員番号'])]=r; });
 
-  const active = employees.filter(e=>e.status==='在籍中');
+  // 名簿に同じ人が何行も入っていても1人として数える（番号＋店舗。掛け持ちは店ごとに別）2026-11-11
+  const seen={};
+  const active = employees.filter(e=>{
+    if(e.status!=='在籍中') return false;
+    const k=String(e.id)+'|'+(e.store||'');
+    if(seen[k]) return false; seen[k]=1; return true;
+  });
   const stores={}; const gSub=[],gNot=[],gNeed=[];
   active.forEach(e=>{
     const s=e.store||'(店舗未設定)';
