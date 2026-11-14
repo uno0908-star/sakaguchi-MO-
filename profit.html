@@ -2791,9 +2791,9 @@ function nwPath() {
   const out = [];
   M.forEach((x, i) => {
     if (i > ci) return;
-    const a = i === ci ? land : (x.act != null ? x.act : (histOf(x.lab) != null ? histOf(x.lab) : x.bud));
+    const a = x.act != null ? x.act : (i === ci ? land : (histOf(x.lab) != null ? histOf(x.lab) : x.bud));   // 確定した実績があればそれを使う
     sa += a; sb += x.bud;
-    out.push({m: x.m, need: x.bud - PLAN.surplus, bud: x.bud, base: a, plan: a, kind: i === ci ? 'now' : 'done'});
+    out.push({m: x.m, need: x.bud - PLAN.surplus, bud: x.bud, base: a, plan: a, kind: (i === ci && x.act == null) ? 'now' : 'done'});
   });
   const ach = sb ? sa / sb : 1;
   const cur = M[ci];
