@@ -3285,14 +3285,15 @@ function renderKpi() {
 
 function kpStoreText(r) {
   let t = `【${r.name}】KPI（${KPI.week}の週）\n達成率 ${kpP(r.rate)}（${r.pass}／${r.den}）${r.need ? `　80%まで あと${r.need}つ` : '　クリア'}\n`;
-  if (!r.ng.length) return t + '全部○です。今のままでお願いします。';
+  const dl = kpDeptLine(r.name);
+  if (!r.ng.length) return (t + (dl ? 'KPIは全部○です。\n' + dl : '全部○です。今のままでお願いします。')).trim();
   r.ng.forEach((i, n) => { const it = KPI.items[i], d = it.n === KP_DRV ? kpDrv(r.name) : null;
-    t += d && !d.go ? `${n + 1}. ${it.n}　今は上げない\n   ${d.why}\n${kpDeptLine(r.name)}` : `${n + 1}. ${it.n}　今 ${r.s.v[i] || '×'} → 基準 ${it.th}\n   ${KP_DO[it.n] || ''}${d ? '\n   ' + d.why : ''}\n`; });
-  return t.trim();
+    t += d && !d.go ? `${n + 1}. ${it.n}　今は上げない\n   ${d.why}\n` : `${n + 1}. ${it.n}　今 ${r.s.v[i] || '×'} → 基準 ${it.th}\n   ${KP_DO[it.n] || ''}${d ? '\n   ' + d.why : ''}\n`; });
+  return (t + dl).trim();
 }
 function kpDeptLine(name) {
   const c = kpDept(name);
-  return c && c.down.length ? `   ドライバを下げるカテゴリ：${c.down.map(x => `${x.k} ${x.rate.toFixed(1)}%`).join('・')}\n` : '';
+  return c && c.down.length ? `★AICOの廃棄が上限より上（${nwPct('B', c.d.rate)}／上限 ${nwPct('B', c.cap)}）\n   ドライバを下げるカテゴリ：${c.down.map(x => `${x.k} ${x.rate.toFixed(1)}%`).join('・')}\n` : '';
 }
 function kpStorePopup(name) {
   const s = KPI.stores.find(x => x.name === name); if (!s) return;
