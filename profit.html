@@ -3147,7 +3147,7 @@ const KP_DO = {
   '棚の段数': 'AI.COの最適モジュールどおりの棚の段数にする',
   '品揃えの採用': 'AI.COがすすめる品揃えを、90%以上 採用する',
   '週次発注': 'AI.COの週次発注を、毎週かならず入れる',
-  'ドライバの上方修正': 'AI.COのドライバ設定を、処方箋より ＋1.0以上 上げる（「なし」は上げていない状態）',
+  'ドライバの上方修正': 'AI.COのドライバ設定を、処方箋より ＋1.0以上 上げる。AICOの廃棄が上限内で、売上が足りない店だけ取り組む',
   '値引SKU': '値引の対象商品のうち、80%以上で値引をする',
   '値引の回数（おにぎり）': 'おにぎりの値引を、1日3回以上する',
   '稼働率': 'デリバリーを止めない。営業時間中は受付を開けたままにする',
@@ -3157,6 +3157,22 @@ const KP_DO = {
   'セルフレジの稼働': 'セルフレジを毎日動かす（稼働した日が85%以上）'
 };
 const kpP = v => v == null ? '─' : Math.round(v * 100) + '%';
+// ドライバを上げるかどうかは店ごとに決める（神田さん 11/15）：
+//   AICOの廃棄が上限内 で、かつ 売上が予算に足りていない店だけ取り組む。それ以外は今は上げない。
+const KP_DRV = 'ドライバの上方修正';
+function kpDrv(name) {
+  const p = PROFIT.find(s => s.name === name);
+  if (!p) return null;
+  const r = nwRow(p);
+  if (!r.S.B) return null;
+  const aicoOk = r.O.B * 1000 < 50, short = p.yoy < p.yoyBudget;
+  return {aicoOk, short, go: aicoOk && short, rate: r.R.B, cap: nwCap('B'), yoy: p.yoy, yb: p.yoyBudget,
+          why: !aicoOk ? `AICOの廃棄が上限より上（${nwPct('B', r.R.B)}／上限 ${nwPct('B', nwCap('B'))}）。先に廃棄を下げる`
+             : !short ? `売上は予算に足りている（前年比 ${p.yoy.toFixed(1)}%／予算 ${p.yoyBudget.toFixed(1)}%）。上げなくてよい`
+             : `AICOの廃棄は上限内（${nwPct('B', r.R.B)}）で、売上が足りない（前年比 ${p.yoy.toFixed(1)}%／予算 ${p.yoyBudget.toFixed(1)}%）`};
+}
+// その店がこの項目に取り組むか（ドライバだけ店ごとに判断。ほかは×なら取り組む）
+function kpGo(name, i) { if (KPI.items[i].n !== KP_DRV) return true; const d = kpDrv(name); return !d || d.go; }
 function kpRow(s) {
   const den = s.f.filter(x => x != null).length, pass = s.f.filter(x => x === 1).length;
   const need = Math.max(0, Math.ceil(den * KPI.target - 1e-9) - pass);
@@ -3170,7 +3186,7 @@ function kpAgg(rows) {
           f: KPI.items.map((_, i) => { const t = rows.filter(r => r.s.f[i] != null); return t.length ? t.filter(r => r.s.f[i] === 1).length / t.length : null; })};
 }
 function kpItemStat(rows) {   // 項目ごと：×の店、これだけ直せば80%になる店
-  return KPI.items.map((it, i) => ({i, it, ng: rows.filter(r => r.s.f[i] === 0), win: rows.filter(r => r.need === 1 && r.s.f[i] === 0)}));
+  return KPI.items.map((it, i) => { const ng = rows.filter(r => r.s.f[i] === 0), go = ng.filter(r => kpGo(r.name, i)); return {i, it, ng, go, win: go.filter(r => r.need === 1)}; });
 }
 
 function renderKpi() {
@@ -3190,12 +3206,12 @@ function renderKpi() {
     <div class="nw-sub">${one.map(r => r.name).join('・') || 'なし'}</div></div></div>`;
 
   // まず直すこと
-  const st = kpItemStat(rows).filter(x => x.ng.length).sort((a, b) => b.win.length - a.win.length || b.ng.length - a.ng.length);
+  const st = kpItemStat(rows).filter(x => x.go.length).sort((a, b) => b.win.length - a.win.length || b.go.length - a.go.length);
   if (st.length) {
-    h += `<div class="nw-h">まず直すこと <small>直すと80%に届く店が多い順。押すと店の名前</small></div><div class="kp-top">`;
+    h += `<div class="nw-h">まず直すこと <small>取り組む店の数。直すと80%に届く店が多い順。押すと店の名前</small></div><div class="kp-top">`;
     st.slice(0, 3).forEach(x => {
-      h += `<div class="nw-do" onclick="kpItemPopup(${x.i})"><div class="nw-do-t"><span><span class="kp-tag">${x.it.g}</span>${x.it.n}</span><b>×${x.ng.length}店</b></div>
-        <div class="nw-do-s">${KP_DO[x.it.n] || ''}${x.win.length ? `<br><b class="nw-good">これだけで ＋${x.win.length}店が80%以上に</b>` : ''}</div></div>`;
+      h += `<div class="nw-do" onclick="kpItemPopup(${x.i})"><div class="nw-do-t"><span><span class="kp-tag">${x.it.g}</span>${x.it.n}</span><b>${x.go.length}店</b></div>
+        <div class="nw-do-s">${KP_DO[x.it.n] || ''}${x.go.length < x.ng.length ? `<br>×は${x.ng.length}店。うち <b>${x.ng.length - x.go.length}店は今は上げない</b>（AICOの廃棄が上限より上、または売上が足りている）` : ''}${x.win.length ? `<br><b class="nw-good">これだけで ＋${x.win.length}店が80%以上に</b>` : ''}</div></div>`;
     });
     h += `</div>`;
   }
@@ -3218,7 +3234,7 @@ function renderKpi() {
   h += `<div class="nw-h">17の項目 <small>○の店の割合。赤いほど弱い。押すと×の店</small></div><div class="table-wrap"><table class="nw-heat kp-it"><thead><tr><th>項目<small>基準</small></th><th>${isAll ? '阪口MO' : who}</th><th>×の店</th><th>下野MO</th><th>木下MO</th><th>MO店の全体<small>${KPI.all.n}店</small></th></tr></thead><tbody>`;
   kpItemStat(rows).forEach(x => {
     const v = A.f[x.i];
-    h += `<tr onclick="kpItemPopup(${x.i})"><td><span class="kp-tag">${x.it.g}</span>${x.it.n}<br><small style="font-weight:500;color:#6b7280">${x.it.th}</small></td><td class="${ic(v)}">${kpP(v)}</td><td class="${x.ng.length ? 'tb' : 'tg'}">${x.ng.length ? x.ng.length + '店' : '✓'}</td>
+    h += `<tr onclick="kpItemPopup(${x.i})"><td><span class="kp-tag">${x.it.g}</span>${x.it.n}<br><small style="font-weight:500;color:#6b7280">${x.it.th}</small></td><td class="${ic(v)}">${kpP(v)}</td><td class="${x.ng.length ? 'tb' : 'tg'}">${x.ng.length ? x.ng.length + '店' : '✓'}${x.go.length < x.ng.length ? `<br><small style="font-weight:600;color:#6b7280">取り組む ${x.go.length}店</small>` : ''}</td>
       <td class="${ic(sm.f[x.i])}">${kpP(sm.f[x.i])}</td><td class="${ic(km.f[x.i])}">${kpP(km.f[x.i])}</td><td class="${ic(KPI.all.f[x.i])}">${kpP(KPI.all.f[x.i])}</td></tr>`;
   });
   h += `</tbody></table></div>`;
@@ -3230,19 +3246,20 @@ function renderKpi() {
     h += `<div class="nw-sc ${lv}" onclick="kpStorePopup('${r.name}')"><div class="nw-sc-top"><div class="nw-sc-name">${r.name}<small>${r.sc}</small></div>
       <div class="nw-badge ${r.need ? 'bad' : 'good'}">${r.need ? `あと${r.need}つ` : 'クリア'}<small>${r.pass}／${r.den}</small></div></div>
       <div class="nw-sc-mid">達成率 <b class="${r.need ? 'nw-bad' : 'nw-good'}">${kpP(r.rate)}</b>${p != null ? `<span>前回 ${kpP(p)}</span>` : ''}</div>
-      <div class="nw-pills">${r.ng.map(i => `<span class="nw-p x">${KPI.items[i].n}</span>`).join('') || '<span class="nw-p">×なし</span>'}</div></div>`;
+      <div class="nw-pills">${r.ng.map(i => kpGo(r.name, i) ? `<span class="nw-p x">${KPI.items[i].n}</span>` : `<span class="nw-p">${KPI.items[i].n}（今は上げない）</span>`).join('') || '<span class="nw-p">×なし</span>'}</div></div>`;
   });
   h += `</div><details class="nw-old"><summary>📋 店 × 17項目の表を見る</summary><div class="table-wrap"><table class="nw-heat kp-mx"><thead><tr><th>店</th><th>達成率</th>${KPI.items.map(it => `<th>${it.n}</th>`).join('')}</tr></thead><tbody>`;
   rows.forEach(r => { h += `<tr onclick="kpStorePopup('${r.name}')"><td>${r.name}</td><td class="${r.need ? 'tb' : 'tg'}">${kpP(r.rate)}</td>${r.s.f.map(x => x == null ? '<td class="na">─</td>' : x ? '<td class="g">○</td>' : '<td class="r">×</td>').join('')}</tr>`; });
   h += `</tbody></table></div></details>
-    <details class="nw-more"><summary>この画面の見方</summary><div>本部が毎週出す「全力チャレンジ実行プラン」の集計です（${KPI.week}の週。デリバリーなど一部は1週前）。<br>達成率＝17項目のうち○の数÷対象の数。80%以上の店が「クリア」。─ は対象外です。○×は本部の判定をそのまま使っています（数字は四捨五入で判定）。<br>順位は、MOごとの「80%以上の店の割合」で並べています（同じなら平均の達成率が高い方が上）。<br>「やること」の文は目安です。くわしいやり方は担当SCに聞いてください。</div></details>`;
+    <details class="nw-more"><summary>この画面の見方</summary><div>本部が毎週出す「全力チャレンジ実行プラン」の集計です（${KPI.week}の週。デリバリーなど一部は1週前）。<br>達成率＝17項目のうち○の数÷対象の数。80%以上の店が「クリア」。─ は対象外です。○×は本部の判定をそのまま使っています（数字は四捨五入で判定）。<br>順位は、MOごとの「80%以上の店の割合」で並べています（同じなら平均の達成率が高い方が上）。<br>「ドライバの上方修正」は店ごとに決めます。AICOの廃棄が上限内で、売上が予算に足りていない店だけ取り組みます（店利益のデータと合わせて判定）。<br>「やること」の文は目安です。くわしいやり方は担当SCに聞いてください。</div></details>`;
   el.innerHTML = h;
 }
 
 function kpStoreText(r) {
   let t = `【${r.name}】KPI（${KPI.week}の週）\n達成率 ${kpP(r.rate)}（${r.pass}／${r.den}）${r.need ? `　80%まで あと${r.need}つ` : '　クリア'}\n`;
   if (!r.ng.length) return t + '全部○です。今のままでお願いします。';
-  r.ng.forEach((i, n) => { const it = KPI.items[i]; t += `${n + 1}. ${it.n}　今 ${r.s.v[i] || '×'} → 基準 ${it.th}\n   ${KP_DO[it.n] || ''}\n`; });
+  r.ng.forEach((i, n) => { const it = KPI.items[i], d = it.n === KP_DRV ? kpDrv(r.name) : null;
+    t += d && !d.go ? `${n + 1}. ${it.n}　今は上げない\n   ${d.why}\n` : `${n + 1}. ${it.n}　今 ${r.s.v[i] || '×'} → 基準 ${it.th}\n   ${KP_DO[it.n] || ''}${d ? '\n   ' + d.why : ''}\n`; });
   return t.trim();
 }
 function kpStorePopup(name) {
@@ -3253,9 +3270,11 @@ function kpStorePopup(name) {
     <div><div class="k">${p != null ? '前回' : '80%まで'}</div><div class="v">${p != null ? kpP(p) : r.need ? 'あと' + r.need + 'つ' : 'クリア'}</div></div></div>`;
   h += `<div class="nw-pp-h">やること ${r.need ? `<span class="nw-bad">あと${r.need}つ ○にすれば80%</span>` : r.ng.length ? '<span class="nw-good">80%はクリア。残りも直す</span>' : ''}</div>`;
   if (!r.ng.length) h += `<div class="nw-okbox">✓ 全部○です。今のまま続ける</div>`;
-  r.ng.forEach(i => { const it = KPI.items[i];
-    h += `<div class="nw-do"><div class="nw-do-t"><span><span class="kp-tag">${it.g}</span>${it.n}</span><b>${s.v[i] || '×'}</b></div>
-      <div class="nw-do-s">基準：${it.th}<br>${KP_DO[it.n] || ''}</div></div>`; });
+  r.ng.forEach(i => { const it = KPI.items[i], d = it.n === KP_DRV ? kpDrv(name) : null;
+    if (d && !d.go) h += `<div class="nw-do" style="background:#f4f6fa;border-color:#d8dee8"><div class="nw-do-t"><span><span class="kp-tag">${it.g}</span>${it.n}</span><b style="color:#6b7280">今は上げない</b></div>
+      <div class="nw-do-s">${d.why}</div></div>`;
+    else h += `<div class="nw-do"><div class="nw-do-t"><span><span class="kp-tag">${it.g}</span>${it.n}</span><b>${s.v[i] || '×'}</b></div>
+      <div class="nw-do-s">基準：${it.th}<br>${KP_DO[it.n] || ''}${d ? '<br><b class="nw-good">取り組む：</b>' + d.why : ''}</div></div>`; });
   const okI = s.f.map((x, i) => x === 1 ? i : -1).filter(i => i >= 0), na = s.f.map((x, i) => x == null ? i : -1).filter(i => i >= 0);
   h += `<div class="nw-pp-h">できている項目</div><div class="nw-pills">${okI.map(i => `<span class="nw-p" style="background:#e7f5ea;color:#1b5e20">${KPI.items[i].n}</span>`).join('')}${na.map(i => `<span class="nw-p">${KPI.items[i].n}（対象外）</span>`).join('')}</div>`;
   h += `<button class="nw-btn line" onclick="kpCopy('${name}', this)">LINE用にコピー</button>`;
@@ -3271,9 +3290,10 @@ function kpItemPopup(i) {
   const it = KPI.items[i], rows = kpRows().filter(r => r.s.f[i] != null).sort((a, b) => a.s.f[i] - b.s.f[i] || a.rate - b.rate);
   const ng = rows.filter(r => r.s.f[i] === 0);
   let h = `<div class="nw-sub" style="margin-bottom:10px">基準 <b>${it.th}</b>　×は <b class="${ng.length ? 'nw-bad' : 'nw-good'}">${ng.length}店</b>／${rows.length}店<br>${KP_DO[it.n] || ''}</div>`;
-  rows.forEach(r => { const x = r.s.f[i] === 0;
-    h += `<div class="nw-cause nw-tap" style="grid-template-columns:1fr 9.5em" onclick="kpStorePopup('${r.name}')"><div style="font-weight:700">${x ? '×' : '○'} ${r.name}${x && r.need === 1 ? ' <span class="nw-chip good">直せば80%</span>' : ''}</div>
-      <div class="val ${x ? 'nw-bad' : 'nw-good'}" style="font-size:13.5px">${r.s.v[i] || ''}</div></div>`; });
+  if (it.n === KP_DRV) h += `<div class="nw-sub" style="margin-bottom:10px;background:#f4f6fa;border-radius:10px;padding:8px 10px">取り組むのは <b>AICOの廃棄が上限内</b> で <b>売上が予算に足りていない店</b> だけ。それ以外は今は上げない</div>`;
+  rows.forEach(r => { const x = r.s.f[i] === 0, d = x && it.n === KP_DRV ? kpDrv(r.name) : null, go = !d || d.go;
+    h += `<div class="nw-cause nw-tap" style="grid-template-columns:1fr 9.5em" onclick="kpStorePopup('${r.name}')"><div style="font-weight:700">${x ? '×' : '○'} ${r.name}${d ? ` <span class="nw-chip ${go ? 'bad' : ''}"${go ? '' : ' style="background:#eef2f6;color:#6b7280"'}>${go ? '取り組む' : '今は上げない'}</span>` : ''}${x && go && r.need === 1 ? ' <span class="nw-chip good">直せば80%</span>' : ''}${d ? `<br><small style="font-weight:500;color:#6b7280">${d.why}</small>` : ''}</div>
+      <div class="val ${x && go ? 'nw-bad' : x ? '' : 'nw-good'}" style="font-size:13.5px">${r.s.v[i] || ''}</div></div>`; });
   nwOpen(it.n + '：店ごと', h);
 }
 
