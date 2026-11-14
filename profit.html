@@ -2954,7 +2954,7 @@ function nwStoreText(r) {
   if (!ks.length) return t + '全部 上限内です。今のままでお願いします。';
   t += `1日 ${nwYen(r.o).toLocaleString()}円 減らします（売価）\n`;
   ks.forEach((k, i) => { t += `${i + 1}. ${NW_LAB[k]} ${nwPct(k, r.R[k])} → ${nwPct(k, nwCap(k))}（1日 −${nwYen(r.O[k]).toLocaleString()}円）\n   ${NW_DO[k]}\n`; });
-  return t.trim();
+  return (t + kpDeptLine(r.name)).trim();
 }
 
 function nwStorePopup(name) {
