@@ -2771,6 +2771,7 @@ function nwRow(p) {
   const fjd = p.fjIncome - p.fjBudget, mkx = p.markdownActual - p.markdownBudget;
   return {p, name: p.name, sc: SC_MAP[p.name] || '', S, V, R, O, E, keep, v, o, e, vc,
           rate: v / p.nisshu * 100, after: (v - o) / p.nisshu * 100, fjd, mkx, sup: p.diff - fjd + mkx,
+          bud: (p.sales && vc) ? p.markdownBudget / p.sales * 100 * v / vc : 0,   // その店の見切予算（原価）を売価に直した率
           nOver: NW_KEYS.filter(k => O[k] * 1000 >= 50).length};
 }
 function nwOverAt(r, k, cap) { return Math.max(0, r.R[k] - cap) / 100 * r.S[k]; }
@@ -2783,7 +2784,8 @@ function nwPath() {
   if (ci < 0) ci = M.findIndex(x => x.act == null);
   if (ci < 0) ci = M.length - 1;
   const land = PROFIT.reduce((a, s) => a + s.landing, 0);
-  const si = Math.max(M.findIndex(x => x.lab === PLAN.start), ci + 1);
+  let si = M.findIndex(x => x.lab === PLAN.start);   // 上限を下げ始める月（月が進んでも動かさない）
+  if (si < 0) si = 0;
   const histOf = lab => { const h = HISTORY.filter(x => x.month === lab).pop(); return h ? Object.values(h.stores).reduce((a, s) => a + (s.landing || 0), 0) : null; };
   let sa = 0, sb = 0;
   const out = [];
@@ -2880,7 +2882,7 @@ function renderNow() {
     h += `<div class="nw-sc ${lv}" onclick="nwStorePopup('${r.name}')">
       <div class="nw-sc-top"><div class="nw-sc-name">${r.name}<small>${r.sc}・${r.p.type}</small></div>
         <div class="nw-badge ${r.p.diff < 0 ? 'bad' : 'good'}"><small>予算との差</small>${nwSg(r.p.diff / 10)}万</div></div>
-      <div class="nw-sc-mid">売変率 <b class="${r.rate > budRate ? 'nw-bad' : 'nw-good'}">${r.rate.toFixed(1)}%</b> → ${r.after.toFixed(1)}%</div>
+      <div class="nw-sc-mid">売変率 <b class="${r.rate > r.bud ? 'nw-bad' : 'nw-good'}">${r.rate.toFixed(1)}%</b> → ${r.after.toFixed(1)}%</div>
       <div class="nw-pills">${NW_KEYS.filter(k => r.S[k]).map(k => `<span class="nw-p ${r.O[k] * 1000 >= 50 ? 'x' : ''}">${NW_LAB[k]} ${nwPct(k, r.R[k])}</span>`).join('')}</div>
       <div class="nw-sc-do">${r.o * 1000 >= 50 ? `<b class="nw-bad">1日 −${nwYen(r.o).toLocaleString()}円</b><span>まず ${NW_LAB[top]}</span>` : `<b class="nw-good">✓ 全部 上限内</b><span>今のまま</span>`}</div></div>`;
   });
@@ -3060,9 +3062,9 @@ function renderWsNew() {
     const c = !over ? 'g' : x <= 1.25 ? 'y' : x <= 1.6 ? 'o' : 'r';
     return `<td class="${c}">${nwWsMode === 'rate' ? nwPct(k, r.R[k]) : over ? '−' + nwYen(r.O[k]).toLocaleString() : '✓'}</td>`;
   };
-  h += `<div class="table-wrap"><table class="nw-heat"><thead><tr><th>店</th><th>売変率<small>合計</small></th>${NW_KEYS.map(k => `<th>${NW_LAB[k]}<small>上限 ${nwPct(k, nwCap(k))}</small></th>`).join('')}<th>1日<small>減らす額</small></th></tr></thead><tbody>`;
+  h += `<div class="table-wrap"><table class="nw-heat"><thead><tr><th>店</th><th>売変率<small>赤＝店の予算より上</small></th>${NW_KEYS.map(k => `<th>${NW_LAB[k]}<small>上限 ${nwPct(k, nwCap(k))}</small></th>`).join('')}<th>1日<small>減らす額</small></th></tr></thead><tbody>`;
   rows.forEach(r => {
-    h += `<tr onclick="nwStorePopup('${r.name}')"><td>${r.name}</td><td class="${r.rate > budRate ? 'tb' : 'tg'}">${r.rate.toFixed(1)}%</td>${NW_KEYS.map(k => cell(r, k)).join('')}<td class="${r.o * 1000 >= 50 ? 'tb' : 'tg'}">${r.o * 1000 >= 50 ? '−' + nwYen(r.o).toLocaleString() + '円' : '✓'}</td></tr>`;
+    h += `<tr onclick="nwStorePopup('${r.name}')"><td>${r.name}</td><td class="${r.rate > r.bud ? 'tb' : 'tg'}">${r.rate.toFixed(1)}%</td>${NW_KEYS.map(k => cell(r, k)).join('')}<td class="${r.o * 1000 >= 50 ? 'tb' : 'tg'}">${r.o * 1000 >= 50 ? '−' + nwYen(r.o).toLocaleString() + '円' : '✓'}</td></tr>`;
   });
   h += `<tr class="tot"><td>${currentSC === 'all' ? '全社' : currentSC}</td><td>${rate.toFixed(1)}%</td>${NW_KEYS.map(k => { const s = sum(r => r.S[k]); return `<td>${nwWsMode === 'rate' ? (s ? nwPct(k, sum(r => r.V[k]) / s * 100) : '─') : '−' + nwYen(sum(r => r.O[k])).toLocaleString()}</td>`; }).join('')}<td>−${nwYen(O).toLocaleString()}円</td></tr>`;
   h += `</tbody></table></div><div class="nw-leg" style="margin:10px 2px 0"><span><i style="background:#dff3e2"></i>上限内</span><span><i style="background:#fff1b8"></i>少し超え</span><span><i style="background:#ffc078"></i>超え</span><span><i style="background:#ef5350"></i>大きく超え</span></div>`;
