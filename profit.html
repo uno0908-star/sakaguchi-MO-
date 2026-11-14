@@ -369,6 +369,44 @@ table.dlv thead th:first-child{background:#003087}
   .nw-h{font-size:22px}.nw-big{font-size:46px}.nw-tl{font-size:16px}.nw-sub{font-size:15px}
   .nw-ic-v{font-size:32px}
 }
+/* ===== タブの作り直し（2026-11-14）===== */
+.nw-box{background:#fff;border-radius:16px;padding:12px 16px;box-shadow:0 1px 5px rgba(0,0,0,.09)}
+.nw-box .nw-cause{padding:7px 0;margin:0;border-bottom:1px solid #eef1f5}
+.nw-box .nw-cause:last-child{border-bottom:none}
+.nw-tap{cursor:pointer;min-height:44px}
+.nw-tap:hover{background:#f4f7fc}
+.nw-strow{grid-template-columns:minmax(9.5em,16em) 1fr 6em !important;font-size:15px !important}
+.nw-chip{display:inline-block;border-radius:8px;padding:2px 8px;font-size:12.5px;font-weight:700;margin-top:2px}
+.nw-chip.bad{background:#fdecec;color:#c62828}.nw-chip.good{background:#e7f5ea;color:#2e7d32}
+.nw-two{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+table.nw-heat{min-width:640px;font-size:15px;background:#fff;border-radius:14px;overflow:hidden;box-shadow:0 1px 5px rgba(0,0,0,.09)}
+table.nw-heat thead th{text-align:center !important;font-size:14px;padding:9px 6px;line-height:1.3}
+table.nw-heat thead th small{display:block;font-size:11.5px;font-weight:500;opacity:.85}
+table.nw-heat tbody td{text-align:center !important;font-size:15px;font-weight:700;padding:10px 6px;border-bottom:2px solid #fff;border-right:2px solid #fff}
+table.nw-heat tbody td:first-child{text-align:left !important;font-size:14.5px;position:sticky;left:0;background:#fff;z-index:1;white-space:normal;min-width:8.5em;line-height:1.3}
+table.nw-heat tbody tr:nth-child(even){background:#fff}
+table.nw-heat td.g{background:#dff3e2;color:#1b5e20;font-weight:600}
+table.nw-heat td.y{background:#fff1b8;color:#7a5a00}
+table.nw-heat td.o{background:#ffc078;color:#7a3300}
+table.nw-heat td.r{background:#ef5350;color:#fff}
+table.nw-heat td.na{color:#b0b7c3;font-weight:400}
+table.nw-heat td.tb{color:#c62828}table.nw-heat td.tg{color:#2e7d32}
+table.nw-heat tr.tot td{background:#e8ecf3 !important;color:#0b1f4d;font-weight:800}
+details.nw-old{margin-top:22px}
+details.nw-old>summary{cursor:pointer;min-height:48px;display:flex;align-items:center;font-size:15px;font-weight:700;color:#003087;background:#fff;border-radius:12px;padding:0 16px;box-shadow:0 1px 4px rgba(0,0,0,.08);margin-bottom:12px}
+/* 前からある画面：小さすぎる字を底上げ */
+.content [style*="font-size:9px"],.content [style*="font-size:10"],.content [style*="font-size:11"],.popup [style*="font-size:10"],.popup [style*="font-size:11"]{font-size:12.5px !important}
+.section-title{font-size:16px}
+.note{font-size:13px}
+.card-label,.card-sub,.card-unit{font-size:12.5px}
+.donut-label{font-size:13px}.donut-sub{font-size:12px}
+table{font-size:13.5px}tbody td{font-size:13.5px}thead th{font-size:12.5px}
+table.kcp,table.dlv{font-size:14px}
+.kcp-sub{font-size:12px}.kcp-h{font-size:14px}.kcp-s{font-size:12.5px}.kcp-how{font-size:14px}
+.kcp-wait,.kcp-fut,.kcp-ng{font-size:12px}
+.popup h2{font-size:18px}.popup-section h3{font-size:14px}.popup-kv .k{font-size:12px}.popup-kv .v{font-size:16px}
+.popup table{font-size:13px !important}
+@media(max-width:700px){.nw-two{grid-template-columns:1fr}.nw-strow{grid-template-columns:minmax(8.5em,11em) 1fr 5em !important}}
 </style>
 </head>
 <body>
@@ -377,12 +415,11 @@ table.dlv thead th:first-child{background:#003087}
   <h1>店利益ダッシュボード　<span style="font-size:13px;opacity:.85">26年11月度・11/8時点</span></h1>
   <div class="tab-row">
     <button class="tab-btn active" onclick="switchTab('now')">🧭 現在地・やること</button>
-    <button class="tab-btn" onclick="switchTab('profit')">📊 着地のくわしい数字</button>
-    <button class="tab-btn" onclick="switchTab('waste')">♻️ 廃棄検証</button>
-    <button class="tab-btn" onclick="switchTab('nebiki')">🏷️ 値引・廃棄 対策</button>
-    <button class="tab-btn" onclick="switchTab('kitchen')">🍳 厨房支援</button>
-    <button class="tab-btn" onclick="switchTab('delivery')">🛵 デリバリー</button>
+    <button class="tab-btn" onclick="switchTab('profit')">💰 店利益</button>
+    <button class="tab-btn" onclick="switchTab('waste')">🏷️ 値引・廃棄</button>
     <button class="tab-btn" onclick="switchTab('trend')">📈 前週対比</button>
+    <button class="tab-btn" onclick="switchTab('kitchen')">🍳 厨房</button>
+    <button class="tab-btn" onclick="switchTab('delivery')">🛵 デリバリー</button>
   </div>
   <div class="sc-row">
     <span class="sc-label">担当SC：</span>
@@ -397,6 +434,8 @@ table.dlv thead th:first-child{background:#003087}
 
 <!-- =========== TAB 1: 店利益着地 =========== -->
 <div class="tab-panel" id="panel-profit">
+  <div id="pfNew"></div>
+  <details class="nw-old"><summary>📋 くわしい表を見る（支援・雑益・荒利など全部の数字）</summary>
   <div class="card-grid" id="profitCards"></div>
   <div class="section">
     <div class="section-title">SC別 店利益 着地率（着地÷予算）</div>
@@ -433,10 +472,13 @@ table.dlv thead th:first-child{background:#003087}
       </tr>
     </thead><tbody id="profitBody"></tbody></table></div>
   </div>
+  </details>
 </div>
 
 <!-- =========== TAB 2: 廃棄検証 =========== -->
 <div class="tab-panel" id="panel-waste">
+  <div id="wsNew"></div>
+  <details class="nw-old"><summary>📋 カテゴリ別の基準と実績を見る（前の「廃棄検証」）</summary>
   <div class="note">
     <strong>廃棄指標（売上PSA/D比）：</strong>
     AICO(米飯・調理パン・麺・デリカ・デザート・ベーカリー・生鮮)×<strong>段階基準</strong>（通常10% → 10月：支援あり7%・なし5% → 11月：全店5% → 12月〜：全店4%）　／
@@ -479,10 +521,9 @@ table.dlv thead th:first-child{background:#003087}
       <tbody id="wasteBody"></tbody>
     </table></div>
   </div>
-</div>
-
-<!-- =========== TAB 3: 値引・AICO対策 =========== -->
-<div class="tab-panel" id="panel-nebiki">
+  </details>
+  <details class="nw-old"><summary>🏢 AICO本部支援・前の行動計画を見る（前の「値引・廃棄 対策」）</summary>
+<div id="panel-nebiki">
   <div id="nbConclusion"></div>
   <div class="nb-scen" id="nbScen"></div>
   <div class="card-grid" id="nbCards"></div>
@@ -511,6 +552,8 @@ table.dlv thead th:first-child{background:#003087}
     </div>
   </details>
 </div>
+  </details>
+</div>
 
 <!-- =========== TAB 4: 前週対比 =========== -->
 <!-- =========== TAB: 厨房チャレンジ 本部支援 =========== -->
@@ -534,6 +577,8 @@ table.dlv thead th:first-child{background:#003087}
 </div>
 
 <div class="tab-panel" id="panel-trend">
+  <div id="trNew"></div>
+  <details class="nw-old"><summary>📋 店利益（着地）の前週対比・週ごとのグラフを見る</summary>
   <div id="trendWarn"></div>
   <div class="card-grid" id="trendCards"></div>
   <div class="section">
@@ -560,6 +605,7 @@ table.dlv thead th:first-child{background:#003087}
     </thead><tbody id="trendBody"></tbody></table></div>
     <div class="trend-note" id="trendNote"></div>
   </div>
+  </details>
 </div>
 
 </div><!-- /content -->
@@ -1213,8 +1259,9 @@ function filterSC(sc) {
   renderAll();
 }
 function switchTab(tab) {
+  if (tab === 'nebiki') tab = 'waste';   // 値引・廃棄は1つのタブにまとめた（2026-11-14）
   currentTab = tab;
-  document.querySelectorAll('.tab-btn').forEach((b,i)=>b.classList.toggle('active',['now','profit','waste','nebiki','kitchen','delivery','trend'][i]===tab));
+  document.querySelectorAll('.tab-btn').forEach((b,i)=>b.classList.toggle('active',['now','profit','waste','trend','kitchen','delivery'][i]===tab));
   document.querySelectorAll('.tab-panel').forEach(p=>p.classList.toggle('active',p.id==='panel-'+tab));
   renderAll();
 }
@@ -2939,9 +2986,130 @@ function nwIndPopup(k) {
   });
   nwOpen(NW_LAB[k] + '：店ごとの今と上限', h);
 }
+// ===================================================================
+// タブの作り直し（2026-11-14）：店利益／値引・廃棄／前週対比 の最初に出す画面
+// ===================================================================
+let nwWsMode = 'rate';
+function nwRows() { const all = PROFIT.map(nwRow); return currentSC === 'all' ? all : all.filter(r => r.sc === currentSC); }
+function nwDiv(v, mx, h = 18) {     // 真ん中が0の棒
+  const w = Math.min(50, Math.abs(v) / (mx || 1) * 50);
+  return `<div class="bar" style="height:${h}px"><i style="${v < 0 ? `right:50%;width:${w}%;background:#e53935` : `left:50%;width:${w}%;background:#2e7d32`}"></i><i style="left:50%;width:1px;background:#6b7280"></i></div>`;
+}
+function nwMainCause(r) {
+  const cs = [['売上・粗利', r.fjd], ['見切・廃棄', -r.mkx], ['本部支援ほか', r.sup]];
+  const c = r.p.diff < 0 ? cs.slice().sort((a, b) => a[1] - b[1])[0] : cs.slice().sort((a, b) => b[1] - a[1])[0];
+  return `<span class="nw-chip ${c[1] < 0 ? 'bad' : 'good'}">${c[0]} ${nwSg(c[1] / 10)}万</span>`;
+}
+
+// ── 店利益 ──
+function renderPfNew() {
+  const el = document.getElementById('pfNew');
+  if (!el) return;
+  const rows = nwRows(), isAll = currentSC === 'all';
+  const sum = f => rows.reduce((a, r) => a + f(r), 0);
+  const land = sum(r => r.p.landing), bud = sum(r => r.p.budget), diff = land - bud;
+  const ok = rows.filter(r => r.p.diff >= 0).length;
+  let h = `<div class="nw-h">今月の店利益 <small>${CUR_LABEL.month}・${CUR_LABEL.date}・${isAll ? '全社' : currentSC}（${rows.length}店）</small></div><div class="nw-hero">`;
+  h += `<div class="nw-tile ${diff < 0 ? 'bad' : 'good'}"><div class="nw-tl">着地の見込み</div><div class="nw-big ${diff < 0 ? 'nw-bad' : 'nw-good'}">${nwMan(land)}<span>万円</span></div><div class="nw-sub">予算 ${nwMan(bud)}万円（${(land / bud * 100).toFixed(0)}%）</div></div>`;
+  h += `<div class="nw-tile ${diff < 0 ? 'bad' : 'good'}"><div class="nw-tl">予算との差</div><div class="nw-big ${diff < 0 ? 'nw-bad' : 'nw-good'}">${nwSg(diff / 10)}<span>万円</span></div><div class="nw-sub">${isAll ? `必要ライン（予算−50万円）まで <b class="${diff + PLAN.surplus < 0 ? 'nw-bad' : 'nw-good'}">${nwSg((diff + PLAN.surplus) / 10)}万円</b>` : '&nbsp;'}</div></div>`;
+  h += `<div class="nw-tile ${ok < rows.length / 2 ? 'warn' : 'good'}"><div class="nw-tl">予算に届いている店</div><div class="nw-big">${ok}<span>／${rows.length}店</span></div>
+    <div class="nw-ic-b" style="height:14px;margin-top:12px"><i style="width:${ok / rows.length * 100}%;background:#2e7d32"></i></div></div></div>`;
+
+  // なぜこの差か
+  const cs = [['売上・粗利（FC収入）', sum(r => r.fjd)], ['見切・廃棄', -sum(r => r.mkx)], ['本部支援ほか', sum(r => r.sup)]];
+  const cmx = Math.max(...cs.map(c => Math.abs(c[1])), 1);
+  h += `<div class="nw-h">なぜこの差か <small>予算との差を3つに分けると（万円）</small></div><div class="nw-box">`
+    + cs.map(([l, v]) => `<div class="nw-cause" style="grid-template-columns:minmax(8em,13em) 1fr 6em;font-size:15px"><div style="font-weight:700">${l}</div>${nwDiv(v, cmx, 22)}<div class="val ${v < 0 ? 'nw-bad' : 'nw-good'}" style="font-size:18px">${nwSg(v / 10)}万</div></div>`).join('') + `</div>`;
+
+  // SC別
+  if (isAll) {
+    const scs = SC_LIST.map(sc => { const rs = rows.filter(r => r.sc === sc); return {sc, n: rs.length, d: rs.reduce((a, r) => a + r.p.diff, 0), l: rs.reduce((a, r) => a + r.p.landing, 0), b: rs.reduce((a, r) => a + r.p.budget, 0)}; }).filter(x => x.n).sort((a, b) => a.d - b.d);
+    const smx = Math.max(...scs.map(x => Math.abs(x.d)), 1);
+    h += `<div class="nw-h">SCごと <small>予算との差（万円）。押すとそのSCの店だけになります</small></div><div class="nw-box">`
+      + scs.map(x => `<div class="nw-cause nw-tap" style="grid-template-columns:minmax(7.5em,13em) 1fr 6em;font-size:15px" onclick="filterSC('${x.sc}')"><div style="font-weight:700">${x.sc}<small style="font-weight:500;color:#6b7280">　${x.n}店・${x.b ? (x.l / x.b * 100).toFixed(0) : '—'}%</small></div>${nwDiv(x.d, smx, 22)}<div class="val ${x.d < 0 ? 'nw-bad' : 'nw-good'}" style="font-size:18px">${nwSg(x.d / 10)}万</div></div>`).join('') + `</div>`;
+  }
+
+  // 店別
+  const st = rows.slice().sort((a, b) => a.p.diff - b.p.diff);
+  const mx = Math.max(...st.map(r => Math.abs(r.p.diff)), 1);
+  h += `<div class="nw-h">店ごと <small>予算に遠い順。札＝いちばん大きい原因。押すと「やること」</small></div><div class="nw-box">`
+    + st.map(r => `<div class="nw-cause nw-tap nw-strow" onclick="nwStorePopup('${r.name}')"><div><b>${r.name}</b><br>${nwMainCause(r)}</div>${nwDiv(r.p.diff, mx, 22)}<div class="val ${r.p.diff < 0 ? 'nw-bad' : 'nw-good'}" style="font-size:18px">${nwSg(r.p.diff / 10)}万</div></div>`).join('') + `</div>`;
+  el.innerHTML = h;
+}
+
+// ── 値引・廃棄 ──
+function renderWsNew() {
+  const el = document.getElementById('wsNew');
+  if (!el) return;
+  const rows = nwRows().sort((a, b) => b.o - a.o);
+  const sum = f => rows.reduce((a, r) => a + f(r), 0);
+  const N = sum(r => r.p.nisshu), V = sum(r => r.v), O = sum(r => r.o), VC = sum(r => r.vc);
+  const rate = V / N * 100, after = (V - O) / N * 100;
+  const budRate = sum(r => r.p.markdownBudget) / sum(r => r.p.sales) * 100 * V / VC;
+  const nOver = rows.filter(r => r.nOver).length;
+  let h = `<div class="nw-h">値引・廃棄 <small>${CUR_LABEL.date}・${currentSC === 'all' ? '全社' : currentSC}・売価</small></div><div class="nw-hero">`;
+  h += `<div class="nw-tile ${rate > budRate ? 'bad' : 'good'}"><div class="nw-tl">売変率（値引＋廃棄の合計）</div><div class="nw-big ${rate > budRate ? 'nw-bad' : 'nw-good'}">${rate.toFixed(1)}<span>%</span></div>${nwGauge(rate, after, budRate, Math.max(8, rate * 1.15))}</div>`;
+  h += `<div class="nw-tile ${O > 0.05 ? 'bad' : 'good'}"><div class="nw-tl">上限まで、1日いくら減らすか</div><div class="nw-big ${O > 0.05 ? 'nw-bad' : 'nw-good'}">−${nwMan(O, 1)}<span>万円／日</span></div><div class="nw-sub">今 1日 ${nwMan(V, 1)}万円（値引 ${nwMan(sum(r => r.V.A), 1)}万・廃棄 ${nwMan(V - sum(r => r.V.A), 1)}万）</div></div>`;
+  h += `<div class="nw-tile ${nOver ? 'warn' : 'good'}"><div class="nw-tl">上限を超えている店</div><div class="nw-big">${nOver}<span>／${rows.length}店</span></div><div class="nw-sub">6つのうち1つでも超えている店</div></div></div>`;
+
+  h += `<div class="nw-h">店 × 6つの指標 <small>色が濃いほど上限から遠い。押すと「やること」</small></div>
+    <div class="nw-sort">${[['rate', '率（%）で見る'], ['yen', '減らす額（円/日）で見る']].map(([k, t]) => `<button class="${nwWsMode === k ? 'on' : ''}" onclick="nwWsMode='${k}';renderWsNew()">${t}</button>`).join('')}</div>`;
+  const cell = (r, k) => {
+    if (!r.S[k]) return `<td class="na">─</td>`;
+    const x = r.R[k] / nwCap(k), over = r.O[k] * 1000 >= 50;
+    const c = !over ? 'g' : x <= 1.25 ? 'y' : x <= 1.6 ? 'o' : 'r';
+    return `<td class="${c}">${nwWsMode === 'rate' ? nwPct(k, r.R[k]) : over ? '−' + nwYen(r.O[k]).toLocaleString() : '✓'}</td>`;
+  };
+  h += `<div class="table-wrap"><table class="nw-heat"><thead><tr><th>店</th><th>売変率<small>合計</small></th>${NW_KEYS.map(k => `<th>${NW_LAB[k]}<small>上限 ${nwPct(k, nwCap(k))}</small></th>`).join('')}<th>1日<small>減らす額</small></th></tr></thead><tbody>`;
+  rows.forEach(r => {
+    h += `<tr onclick="nwStorePopup('${r.name}')"><td>${r.name}</td><td class="${r.rate > budRate ? 'tb' : 'tg'}">${r.rate.toFixed(1)}%</td>${NW_KEYS.map(k => cell(r, k)).join('')}<td class="${r.o * 1000 >= 50 ? 'tb' : 'tg'}">${r.o * 1000 >= 50 ? '−' + nwYen(r.o).toLocaleString() + '円' : '✓'}</td></tr>`;
+  });
+  h += `<tr class="tot"><td>${currentSC === 'all' ? '全社' : currentSC}</td><td>${rate.toFixed(1)}%</td>${NW_KEYS.map(k => { const s = sum(r => r.S[k]); return `<td>${nwWsMode === 'rate' ? (s ? nwPct(k, sum(r => r.V[k]) / s * 100) : '─') : '−' + nwYen(sum(r => r.O[k])).toLocaleString()}</td>`; }).join('')}<td>−${nwYen(O).toLocaleString()}円</td></tr>`;
+  h += `</tbody></table></div><div class="nw-leg" style="margin:10px 2px 0"><span><i style="background:#dff3e2"></i>上限内</span><span><i style="background:#fff1b8"></i>少し超え</span><span><i style="background:#ffc078"></i>超え</span><span><i style="background:#ef5350"></i>大きく超え</span></div>`;
+  el.innerHTML = h;
+}
+
+// ── 前週対比 ──
+function renderTrNew() {
+  const el = document.getElementById('trNew');
+  if (!el) return;
+  const p = prevSnapshot();
+  if (!p) { el.innerHTML = ''; return; }
+  const prev = p.snap;
+  const rows = nwRows().map(r => {
+    const q = prev.stores[r.name] || {};
+    const has = q.wact != null && q.nebiki != null && q.nisshu;
+    return {r, q, has, dN: has ? r.V.A - q.nebiki : null, dW: has ? (r.v - r.V.A) - q.wact : null,
+            pr: has ? (q.wact + q.nebiki) / q.nisshu * 100 : null, dL: q.landing != null ? r.p.landing - q.landing : null};
+  });
+  const ok = rows.filter(x => x.has);
+  if (!ok.length) { el.innerHTML = ''; return; }
+  const s = f => ok.reduce((a, x) => a + f(x), 0);
+  const pRate = s(x => x.q.wact + x.q.nebiki) / s(x => x.q.nisshu) * 100, nRate = s(x => x.r.v) / s(x => x.r.p.nisshu) * 100;
+  const dN = s(x => x.dN), dW = s(x => x.dW);
+  const tile = (t, v, unit, sub, good) => `<div class="nw-tile ${good ? 'good' : 'bad'}"><div class="nw-tl">${t}</div><div class="nw-big ${good ? 'nw-good' : 'nw-bad'}">${v}<span>${unit}</span></div><div class="nw-sub">${sub}</div></div>`;
+  let h = `<div class="nw-h">値引・廃棄の前週比 <small>${prev.date} → ${CUR_LABEL.date}・${currentSC === 'all' ? '全社' : currentSC}・1日あたり・売価</small></div><div class="nw-hero">`;
+  h += tile('売変率（値引＋廃棄）', `${pRate.toFixed(1)}→${nRate.toFixed(1)}`, '%', nRate <= pRate ? '下がった（良い）' : '上がった（悪い）', nRate <= pRate);
+  h += tile('値引（1日）', nwSg(nwYen(dN)), '円', dN <= 0 ? '減った（良い）' : '増えた（悪い）', dN <= 0);
+  h += tile('廃棄（1日）', nwSg(nwYen(dW)), '円', dW <= 0 ? '減った（良い）' : '増えた（悪い）', dW <= 0);
+  h += `</div>`;
+  const by = ok.slice().sort((a, b) => (b.dN + b.dW) - (a.dN + a.dW));
+  const item = x => { const d = x.dN + x.dW; return `<div class="nw-cause nw-tap" style="grid-template-columns:1fr 8.5em;font-size:15px" onclick="nwStorePopup('${x.r.name}')"><div><b>${x.r.name}</b><br><small style="color:#6b7280">値引 ${nwSg(nwYen(x.dN))}円・廃棄 ${nwSg(nwYen(x.dW))}円</small></div><div class="val ${d > 0 ? 'nw-bad' : 'nw-good'}" style="font-size:18px">${nwSg(nwYen(d))}円</div></div>`; };
+  const worse = by.filter(x => x.dN + x.dW > 0.05).slice(0, 5), better = by.filter(x => x.dN + x.dW < -0.05).reverse().slice(0, 5);
+  h += `<div class="nw-two"><div><div class="nw-h" style="color:#c62828">▲ 増えた店</div><div class="nw-box">${worse.map(item).join('') || '<div class="nw-sub">なし</div>'}</div></div>
+    <div><div class="nw-h" style="color:#2e7d32">▼ 減った店</div><div class="nw-box">${better.map(item).join('') || '<div class="nw-sub">なし</div>'}</div></div></div>`;
+  h += `<div class="nw-h">店ごと <small>売変率の前回 → 今回。増えた順</small></div><div class="table-wrap"><table class="nw-heat"><thead><tr><th>店</th><th>売変率<small>前回 → 今回</small></th><th>値引<small>1日の差</small></th><th>廃棄<small>1日の差</small></th><th>店利益<small>着地の差${p.sameMonth ? '' : '（月が違う・参考）'}</small></th></tr></thead><tbody>`;
+  by.forEach(x => {
+    const up = x.r.rate > x.pr + 0.05, dn = x.r.rate < x.pr - 0.05;
+    const c = v => v > 0.05 ? 'tb' : v < -0.05 ? 'tg' : '';
+    h += `<tr onclick="nwStorePopup('${x.r.name}')"><td>${x.r.name}</td><td class="${up ? 'tb' : dn ? 'tg' : ''}">${x.pr.toFixed(1)}% → ${x.r.rate.toFixed(1)}% ${up ? '▲' : dn ? '▼' : ''}</td><td class="${c(x.dN)}">${nwSg(nwYen(x.dN))}円</td><td class="${c(x.dW)}">${nwSg(nwYen(x.dW))}円</td><td class="${x.dL == null ? '' : x.dL < 0 ? 'tb' : 'tg'}">${x.dL == null ? '─' : nwSg(x.dL / 10) + '万'}</td></tr>`;
+  });
+  h += `</tbody></table></div>`;
+  el.innerHTML = h;
+}
 
 function renderAll() {
-  try { renderNow(); } catch (e) { console.error('renderNow', e); }
+  [renderNow, renderPfNew, renderWsNew, renderTrNew].forEach(f => { try { f(); } catch (e) { console.error(f.name, e); } });
   renderProfit();
   renderWaste();
   renderNebiki();
@@ -2951,7 +3119,7 @@ function renderAll() {
   renderTrend();
 }
 
-if (location.hash === '#profit') switchTab('profit'); else if (location.hash === '#nebiki') switchTab('nebiki'); else if (location.hash === '#kitchen') switchTab('kitchen'); else if (location.hash === '#delivery') switchTab('delivery'); else renderAll();
+if (location.hash === '#profit') switchTab('profit'); else if (location.hash === '#waste') switchTab('waste'); else if (location.hash === '#trend') switchTab('trend'); else if (location.hash === '#nebiki') switchTab('nebiki'); else if (location.hash === '#kitchen') switchTab('kitchen'); else if (location.hash === '#delivery') switchTab('delivery'); else renderAll();
 </script>
 <!-- 上へ戻るボタン（スマホでヘッダーを固定しないため） -->
 <button id="toTop" onclick="window.scrollTo({top:0,behavior:'smooth'})" aria-label="上へ"
