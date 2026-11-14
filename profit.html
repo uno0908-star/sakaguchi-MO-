@@ -407,6 +407,20 @@ table.kcp,table.dlv{font-size:14px}
 .popup h2{font-size:18px}.popup-section h3{font-size:14px}.popup-kv .k{font-size:12px}.popup-kv .v{font-size:16px}
 .popup table{font-size:13px !important}
 @media(max-width:700px){.nw-two{grid-template-columns:1fr}.nw-strow{grid-template-columns:minmax(8.5em,11em) 1fr 5em !important}}
+/* ===== KPI（全力チャレンジ実行プラン）2026-11-15 ===== */
+.kp-bars{display:flex;align-items:flex-end;gap:2px;height:170px;position:relative;border-bottom:2px solid #9aa4b5;margin:26px 18px 34px}
+.kp-bars>i{flex:1;background:#c9d1de;border-radius:3px 3px 0 0;min-height:3px;position:relative}
+.kp-bars>i.me{background:#003087}.kp-bars>i.c1{background:#2e7d32}.kp-bars>i.c2{background:#f59e0b}
+.kp-bars>i b{position:absolute;left:50%;transform:translateX(-50%);font-size:12.5px;font-weight:800;white-space:nowrap;font-style:normal;line-height:1.25;text-align:center}
+.kp-bars>i b.up{bottom:calc(100% + 3px)}.kp-bars>i b.dn{top:calc(100% + 5px)}
+.kp-bars>em{position:absolute;left:0;right:0;border-top:2px dashed #e53935;font-style:normal}
+.kp-bars>em span{position:absolute;right:0;top:-18px;font-size:12px;font-weight:700;color:#c62828;background:#fff;padding:0 3px}
+.kp-top{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.kp-top .nw-do{margin:0;cursor:pointer}
+.kp-tag{display:inline-block;font-size:11.5px;font-weight:700;color:#4b5563;background:#eef2f6;border-radius:6px;padding:1px 6px;margin-right:6px;vertical-align:1px}
+table.kp-it tbody td:first-child{min-width:11em}
+table.kp-mx{min-width:1100px}table.kp-mx thead th{font-size:12px;padding:6px 3px}table.kp-mx tbody td{padding:7px 3px;font-size:14px}
+@media(max-width:700px){.kp-top{grid-template-columns:1fr}.kp-bars{height:140px;margin:26px 8px 34px}}
 </style>
 </head>
 <body>
@@ -418,6 +432,7 @@ table.kcp,table.dlv{font-size:14px}
     <button class="tab-btn" onclick="switchTab('profit')">💰 店利益</button>
     <button class="tab-btn" onclick="switchTab('waste')">🏷️ 値引・廃棄</button>
     <button class="tab-btn" onclick="switchTab('trend')">📈 前週対比</button>
+    <button class="tab-btn" onclick="switchTab('kpi')">🎯 KPI</button>
     <button class="tab-btn" onclick="switchTab('kitchen')">🍳 厨房</button>
     <button class="tab-btn" onclick="switchTab('delivery')">🛵 デリバリー</button>
   </div>
@@ -431,6 +446,9 @@ table.kcp,table.dlv{font-size:14px}
 
 <!-- =========== TAB 0: 現在地・やること =========== -->
 <div class="tab-panel active" id="panel-now"><div id="nowBody"></div></div>
+
+<!-- =========== TAB: KPI（全力チャレンジ実行プラン） =========== -->
+<div class="tab-panel" id="panel-kpi"><div id="kpiBody"></div></div>
 
 <!-- =========== TAB 1: 店利益着地 =========== -->
 <div class="tab-panel" id="panel-profit">
@@ -1261,7 +1279,7 @@ function filterSC(sc) {
 function switchTab(tab) {
   if (tab === 'nebiki') tab = 'waste';   // 値引・廃棄は1つのタブにまとめた（2026-11-14）
   currentTab = tab;
-  document.querySelectorAll('.tab-btn').forEach((b,i)=>b.classList.toggle('active',['now','profit','waste','trend','kitchen','delivery'][i]===tab));
+  document.querySelectorAll('.tab-btn').forEach((b,i)=>b.classList.toggle('active',['now','profit','waste','trend','kpi','kitchen','delivery'][i]===tab));
   document.querySelectorAll('.tab-panel').forEach(p=>p.classList.toggle('active',p.id==='panel-'+tab));
   renderAll();
 }
@@ -3110,8 +3128,157 @@ function renderTrNew() {
   el.innerHTML = h;
 }
 
+// KPI_DATA_START
+const KPI = {"week":"11/3〜11/9","target":0.8,"items":[{"g":"売場","n":"一括発注","th":"○"},{"g":"売場","n":"基準在庫の下方修正","th":"10%以下"},{"g":"FF","n":"ホットFF 10品","th":"毎日そろえる"},{"g":"FF","n":"常温FF 7品","th":"毎日そろえる"},{"g":"FF","n":"ホットFFの作成数","th":"客数の前年比より上"},{"g":"FF","n":"常温FFの作成数","th":"客数の前年比より上"},{"g":"AI.CO","n":"棚の段数","th":"○"},{"g":"AI.CO","n":"品揃えの採用","th":"90%以上"},{"g":"AI.CO","n":"週次発注","th":"○"},{"g":"AI.CO","n":"ドライバの上方修正","th":"＋0.5以上"},{"g":"AI.CO","n":"値引SKU","th":"80%以上"},{"g":"AI.CO","n":"値引の回数（おにぎり）","th":"3回以上"},{"g":"デリバリー","n":"稼働率","th":"100%"},{"g":"デリバリー","n":"店都合のキャンセル","th":"0件"},{"g":"デリバリー","n":"FFの欠品","th":"2個以下"},{"g":"WS・レジ","n":"ワークスケジュール","th":"80%以上"},{"g":"WS・レジ","n":"セルフレジの稼働","th":"85%以上"}],"stores":[{"name":"五月ケ丘東","rate":0.6471,"clear":0,"f":[0,1,1,0,0,0,1,1,1,0,1,1,1,1,1,0,1],"v":["△","6.3%","○","×","64%（客数 94%）","43%（客数 94%）","○","97%","○","なし","94%","3.0回","100%","0件","0個","75%","100%"]},{"name":"吹田垂水三丁目","rate":0.5882,"clear":0,"f":[1,1,1,1,0,0,1,0,1,0,1,1,0,0,0,1,1],"v":["○","5.7%","○","○","99%（客数 95%）","54%（客数 95%）","○","89%","○","なし","100%","3.7回","99%","1件","15個","100%","100%"]},{"name":"豊里六丁目","rate":0.7647,"clear":0,"f":[1,1,1,1,1,1,1,1,1,0,0,1,1,0,0,1,1],"v":["○","10.2%","○","○","104%（客数 101%）","125%（客数 101%）","○","97%","○","なし","77%","3.9回","100%","1件","8個","100%","100%"]},{"name":"池田市役所前","rate":0.7647,"clear":0,"f":[1,1,0,1,0,0,1,1,1,0,1,1,1,1,1,1,1],"v":["○","10.4%","×","○","84%（客数 98%）","93%（客数 98%）","○","90%","○","なし","100%","3.1回","100%","0件","0個","81%","100%"]},{"name":"豊中服部西町三丁目","rate":0.7647,"clear":0,"f":[1,0,1,1,0,0,1,1,1,0,1,1,1,1,1,1,1],"v":["○","14.6%","○","○","80%（客数 95%）","82%（客数 95%）","○","100%","○","なし","90%","3.6回","100%","0件","0個","95%","100%"]},{"name":"豊中原田南一丁目","rate":0.8824,"clear":1,"f":[1,1,1,1,0,1,1,1,1,0,1,1,1,1,1,1,1],"v":["○","8.2%","○","○","98%（客数 97%）","102%（客数 97%）","○","100%","○","なし","100%","3.0回","100%","0件","0個","100%","100%"]},{"name":"大道南一丁目","rate":0.7647,"clear":0,"f":[0,1,1,1,0,1,1,1,1,0,1,1,1,0,1,1,1],"v":["△","7.5%","○","○","96%（客数 96%）","120%（客数 96%）","○","93%","○","なし","95%","4.7回","100%","1件","0個","96%","100%"]},{"name":"吹田警察署前","rate":0.8824,"clear":1,"f":[0,1,1,1,1,1,1,1,1,0,1,1,1,1,1,1,1],"v":["△","5.9%","○","○","101%（客数 97%）","195%（客数 97%）","○","98%","○","なし","100%","3.6回","100%","0件","0個","98%","100%"]},{"name":"江坂駅南口","rate":0.8125,"clear":1,"f":[1,1,1,1,0,0,null,1,1,0,1,1,1,1,1,1,1],"v":["○","9.6%","○","○","98%（客数 96%）","85%（客数 96%）","除外","98%","○","なし","99%","4.3回","100%","0件","0個","99%","100%"]},{"name":"東淀川大道南","rate":1,"clear":1,"f":[1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],"v":["○","9.3%","○","○","126%（客数 111%）","129%（客数 111%）","○","97%","○","+1.8","100%","4.9回","100%","0件","0個","100%","100%"]},{"name":"江坂東","rate":0.8235,"clear":1,"f":[1,1,1,1,1,1,1,0,1,0,1,1,1,1,0,1,1],"v":["○","7.3%","○","○","105%（客数 96%）","106%（客数 96%）","○","89%","○","なし","94%","4.1回","100%","0件","6個","100%","100%"]},{"name":"吹田豊津中学校前","rate":0.8235,"clear":1,"f":[0,1,1,1,1,1,1,0,1,0,1,1,1,1,1,1,1],"v":["△","7.4%","○","○","111%（客数 99%）","102%（客数 99%）","○","89%","○","なし","98%","3.1回","100%","0件","1個","100%","100%"]},{"name":"南金田二丁目","rate":0.9412,"clear":1,"f":[1,1,1,1,0,1,1,1,1,1,1,1,1,1,1,1,1],"v":["○","9.1%","○","○","96%（客数 106%）","144%（客数 106%）","○","98%","○","+1.3","94%","3.7回","100%","0件","1個","96%","100%"]},{"name":"新御堂筋上新田","rate":0.8824,"clear":1,"f":[1,1,0,1,1,1,1,1,1,0,1,1,1,1,1,1,1],"v":["○","10.3%","×","○","105%（客数 105%）","160%（客数 105%）","○","99%","○","なし","100%","4.7回","100%","0件","0個","99%","100%"]},{"name":"吹田青山台三丁目","rate":1,"clear":1,"f":[1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],"v":["○","8.7%","○","○","110%（客数 106%）","228%（客数 106%）","○","99%","○","+1.0","99%","3.3回","100%","0件","2個","100%","100%"]},{"name":"豊中利倉東一丁目","rate":0.9412,"clear":1,"f":[1,1,1,1,1,1,1,1,1,0,1,1,1,1,1,1,1],"v":["○","9.3%","○","○","214%（客数 104%）","154%（客数 104%）","○","100%","○","なし","100%","3.0回","100%","0件","1個","99%","100%"]},{"name":"豊中服部元町一丁目","rate":0.75,"clear":0,"f":[1,0,1,1,1,1,null,0,0,0,1,1,1,1,1,1,1],"v":["○","16.1%","○","○","165%（客数 103%）","120%（客数 103%）","除外","82%","×","なし","97%","3.1回","100%","0件","0個","99%","100%"]},{"name":"吹田朝日町","rate":0.9412,"clear":1,"f":[1,1,1,1,1,1,1,1,1,0,1,1,1,1,1,1,1],"v":["○","7.5%","○","○","125%（客数 105%）","139%（客数 105%）","○","96%","○","なし","91%","3.1回","100%","0件","0個","93%","100%"]},{"name":"東淀川豊里五丁目","rate":0.8235,"clear":1,"f":[1,0,1,1,1,1,1,1,1,0,1,1,1,1,0,1,1],"v":["○","11.1%","○","○","111%（客数 103%）","137%（客数 103%）","○","100%","○","なし","99%","3.3回","100%","0件","3個","100%","100%"]},{"name":"箕面白島二丁目","rate":0.8235,"clear":1,"f":[0,1,1,1,1,1,1,1,1,1,1,1,1,0,0,1,1],"v":["△","3.5%","○","○","109%（客数 127%）","138%（客数 127%）","○","99%","○","+1.1","91%","3.0回","100%","1件","3個","97%","100%"]}],"mos":[{"n":12,"ok":12,"clr":1.0,"avg":0.954,"rank":1},{"n":26,"ok":26,"clr":1.0,"avg":0.951,"rank":2},{"n":14,"ok":14,"clr":1.0,"avg":0.937,"rank":3},{"n":8,"ok":8,"clr":1.0,"avg":0.926,"rank":4},{"n":14,"ok":14,"clr":1.0,"avg":0.902,"rank":5},{"n":7,"ok":7,"clr":1.0,"avg":0.891,"rank":6},{"n":17,"ok":16,"clr":0.941,"avg":0.897,"rank":7},{"n":15,"ok":14,"clr":0.933,"avg":0.945,"rank":8},{"n":15,"ok":14,"clr":0.933,"avg":0.908,"rank":9},{"n":13,"ok":12,"clr":0.923,"avg":0.929,"rank":10},{"n":10,"ok":9,"clr":0.9,"avg":0.865,"rank":11},{"n":8,"ok":7,"clr":0.875,"avg":0.927,"rank":12},{"n":20,"ok":17,"clr":0.85,"avg":0.849,"rank":13},{"n":17,"ok":14,"clr":0.824,"avg":0.852,"rank":14},{"n":11,"ok":9,"clr":0.818,"avg":0.881,"rank":15},{"n":11,"ok":9,"clr":0.818,"avg":0.879,"name":"下野MO","f":[0.8,0.7,0.909,0.909,0.909,0.909,1.0,1.0,0.9,1.0,0.9,0.9,0.9,0.9,0.8,0.909,1.0],"rank":16},{"n":16,"ok":13,"clr":0.812,"avg":0.883,"rank":17},{"n":10,"ok":8,"clr":0.8,"avg":0.856,"rank":18},{"n":9,"ok":7,"clr":0.778,"avg":0.841,"rank":19},{"n":13,"ok":10,"clr":0.769,"avg":0.887,"rank":20},{"n":12,"ok":9,"clr":0.75,"avg":0.906,"rank":21},{"n":12,"ok":9,"clr":0.75,"avg":0.838,"rank":22},{"n":26,"ok":19,"clr":0.731,"avg":0.835,"rank":23},{"n":16,"ok":11,"clr":0.688,"avg":0.827,"rank":24},{"n":15,"ok":10,"clr":0.667,"avg":0.812,"rank":25},{"n":20,"ok":13,"clr":0.65,"avg":0.831,"name":"阪口MO","f":[0.75,0.85,0.9,0.95,0.6,0.75,1.0,0.8,0.95,0.2,0.95,1.0,0.95,0.8,0.75,0.95,1.0],"rank":26},{"n":27,"ok":17,"clr":0.63,"avg":0.8,"rank":27},{"n":8,"ok":5,"clr":0.625,"avg":0.856,"rank":28},{"n":13,"ok":8,"clr":0.615,"avg":0.851,"rank":29},{"n":38,"ok":23,"clr":0.605,"avg":0.819,"rank":30},{"n":21,"ok":12,"clr":0.571,"avg":0.792,"rank":31},{"n":40,"ok":22,"clr":0.55,"avg":0.802,"rank":32},{"n":53,"ok":29,"clr":0.547,"avg":0.805,"rank":33},{"n":38,"ok":19,"clr":0.5,"avg":0.76,"rank":34},{"n":9,"ok":4,"clr":0.444,"avg":0.762,"rank":35},{"n":25,"ok":0,"clr":0.0,"avg":0.654,"name":"木下MO","f":[0.84,0.36,0.68,0.84,0.381,0.571,1.0,1.0,0.04,0.04,1.0,0.92,0.913,0.652,0.87,0.0,1.0],"rank":36}],"all":{"n":639,"ok":450,"clr":0.704,"avg":0.842,"f":[0.813,0.804,0.912,0.935,0.756,0.779,0.99,0.925,0.796,0.659,0.955,0.918,0.897,0.706,0.778,0.768,0.951],"name":"MO店の全体"},"branch":{"n":56,"ok":22,"clr":0.393,"avg":0.761,"f":[0.8,0.6,0.804,0.893,0.577,0.712,1.0,0.927,0.527,0.286,0.964,0.945,0.925,0.755,0.811,0.518,1.0],"name":"吹田支店のMO店"}};
+// KPI_DATA_END
+
+// ===================================================================
+// KPI（全力チャレンジ実行プラン）2026-11-15
+//   データは const KPI（開発・コード\build_kpi_zenryoku.py が本部の週次Excelから書き換える）。
+//   達成率＝17項目のうち○の数÷対象の数。80%以上でクリア。「やること」の文は KP_DO を直す。
+// ===================================================================
+const KP_DO = {
+  '一括発注': '一括発注を、期限までに全部入れる（△は一部だけ入れた状態）',
+  '基準在庫の下方修正': '基準在庫を下げた商品を、全体の10%以下にする。下げすぎた商品を元にもどす',
+  'ホットFF 10品': 'ホットFFの決まった10品を、毎日そろえる（1日でも欠けると×）',
+  '常温FF 7品': '常温FFの決まった7品を、毎日そろえる（1日でも欠けると×）',
+  'ホットFFの作成数': 'ホットFFを作る数をふやす。去年とくらべた伸びを、客数の伸びより上にする',
+  '常温FFの作成数': '常温FFを作る数をふやす。去年とくらべた伸びを、客数の伸びより上にする',
+  '棚の段数': 'AI.COの最適モジュールどおりの棚の段数にする',
+  '品揃えの採用': 'AI.COがすすめる品揃えを、90%以上 採用する',
+  '週次発注': 'AI.COの週次発注を、毎週かならず入れる',
+  'ドライバの上方修正': 'AI.COのドライバ設定を、処方箋より ＋0.5以上 上げる（「なし」は上げていない状態）',
+  '値引SKU': '値引の対象商品のうち、80%以上で値引をする',
+  '値引の回数（おにぎり）': 'おにぎりの値引を、1日3回以上する',
+  '稼働率': 'デリバリーを止めない。営業時間中は受付を開けたままにする',
+  '店都合のキャンセル': '店の都合のキャンセルを0件にする。無い商品は先にアプリで止める',
+  'FFの欠品': 'デリバリーでFFの欠品を2個以下にする。FFを切らさない',
+  'ワークスケジュール': 'ワークスケジュールの完了チェックを、80%以上つける',
+  'セルフレジの稼働': 'セルフレジを毎日動かす（稼働した日が85%以上）'
+};
+const kpP = v => v == null ? '─' : Math.round(v * 100) + '%';
+function kpRow(s) {
+  const den = s.f.filter(x => x != null).length, pass = s.f.filter(x => x === 1).length;
+  const need = Math.max(0, Math.ceil(den * KPI.target - 1e-9) - pass);
+  return {s, name: s.name, sc: SC_MAP[s.name] || '', den, pass, need, rate: den ? pass / den : 0,
+          ng: s.f.map((x, i) => x === 0 ? i : -1).filter(i => i >= 0)};
+}
+function kpRows() { const all = KPI.stores.map(kpRow); return currentSC === 'all' ? all : all.filter(r => r.sc === currentSC); }
+function kpAgg(rows) {
+  const n = rows.length, ok = rows.filter(r => !r.need).length;
+  return {n, ok, clr: n ? ok / n : 0, avg: n ? rows.reduce((a, r) => a + r.rate, 0) / n : 0,
+          f: KPI.items.map((_, i) => { const t = rows.filter(r => r.s.f[i] != null); return t.length ? t.filter(r => r.s.f[i] === 1).length / t.length : null; })};
+}
+function kpItemStat(rows) {   // 項目ごと：×の店、これだけ直せば80%になる店
+  return KPI.items.map((it, i) => ({i, it, ng: rows.filter(r => r.s.f[i] === 0), win: rows.filter(r => r.need === 1 && r.s.f[i] === 0)}));
+}
+
+function renderKpi() {
+  const el = document.getElementById('kpiBody');
+  if (!el || typeof KPI === 'undefined' || !KPI.stores) return;
+  const rows = kpRows().sort((a, b) => a.rate - b.rate), isAll = currentSC === 'all', who = isAll ? '全社' : currentSC;
+  const A = kpAgg(rows), all = kpAgg(KPI.stores.map(kpRow));
+  const me = KPI.mos.find(m => m.name === '阪口MO') || {}, T = KPI.target;
+  const goal = Math.ceil(A.n * T - 1e-9), one = rows.filter(r => r.need === 1);
+  const pv = KPI.prev;
+  let h = `<div class="nw-h">KPI（全力チャレンジ実行プラン） <small>${KPI.week}の週・${who}（${A.n}店）・本部の集計</small></div><div class="nw-hero">`;
+  h += `<div class="nw-tile ${A.clr >= T ? 'good' : 'bad'}"><div class="nw-tl">達成率80%以上の店</div><div class="nw-big ${A.clr >= T ? 'nw-good' : 'nw-bad'}">${A.ok}<span>／${A.n}店（${kpP(A.clr)}）</span></div>
+    <div class="nw-g"><i style="width:${A.clr * 100}%;background:${A.clr >= T ? '#2e7d32' : '#e53935'}"></i><em style="left:${T * 100}%"><b class="up">目標 ${kpP(T)}</b></em></div><div class="nw-sub">目標は ${goal}店（${kpP(T)}）。${A.ok >= goal ? '届いています' : `あと <b>${goal - A.ok}店</b>`}${isAll && pv && pv.ok != null ? `<br>前回（${pv.week}）は ${pv.ok}店` : ''}</div></div>`;
+  h += `<div class="nw-tile ${me.rank <= KPI.mos.length / 2 ? 'good' : 'warn'}"><div class="nw-tl">組織の順位（全社）</div><div class="nw-big">${me.rank}<span>位／${KPI.mos.length}MO</span></div>
+    <div class="nw-sub">80%以上の店の割合で比べた順位${pv && pv.rank ? `（前回 ${pv.rank}位）` : ''}<br>平均の達成率は <b>${(all.avg * 100).toFixed(1)}%</b></div></div>`;
+  h += `<div class="nw-tile ${one.length ? 'warn' : 'good'}"><div class="nw-tl">あと1つで80%になる店</div><div class="nw-big">${one.length}<span>店</span></div>
+    <div class="nw-sub">${one.map(r => r.name).join('・') || 'なし'}</div></div></div>`;
+
+  // まず直すこと
+  const st = kpItemStat(rows).filter(x => x.ng.length).sort((a, b) => b.win.length - a.win.length || b.ng.length - a.ng.length);
+  if (st.length) {
+    h += `<div class="nw-h">まず直すこと <small>直すと80%に届く店が多い順。押すと店の名前</small></div><div class="kp-top">`;
+    st.slice(0, 3).forEach(x => {
+      h += `<div class="nw-do" onclick="kpItemPopup(${x.i})"><div class="nw-do-t"><span><span class="kp-tag">${x.it.g}</span>${x.it.n}</span><b>×${x.ng.length}店</b></div>
+        <div class="nw-do-s">${KP_DO[x.it.n] || ''}${x.win.length ? `<br><b class="nw-good">これだけで ＋${x.win.length}店が80%以上に</b>` : ''}</div></div>`;
+    });
+    h += `</div>`;
+  }
+
+  // 組織の位置
+  const cls = m => m.name === '阪口MO' ? 'me' : m.name === '下野MO' ? 'c1' : m.name === '木下MO' ? 'c2' : '';
+  h += `<div class="nw-h">組織の位置 <small>${KPI.mos.length}のMOを、80%以上の店の割合が高い順に並べた（名前を出すのは3つだけ）</small></div><div class="nw-box">
+    <div class="kp-bars"><em style="bottom:${T * 100}%"><span>目標 ${kpP(T)}</span></em>${KPI.mos.map(m => `<i class="${cls(m)}" style="height:${m.clr * 100}%">${m.name ? `<b class="${m.clr > 0.86 ? 'dn' : 'up'}">${m.name.replace('MO', '')}<br>${kpP(m.clr)}</b>` : ''}</i>`).join('')}</div>
+    <div class="nw-leg"><span><i style="background:#003087"></i>阪口MO</span><span><i style="background:#2e7d32"></i>下野MO</span><span><i style="background:#f59e0b"></i>木下MO</span><span><i style="background:#c9d1de"></i>ほかのMO</span></div></div>`;
+  const cmp = [...['阪口MO', '下野MO', '木下MO'].map(n => KPI.mos.find(m => m.name === n)).filter(Boolean), KPI.branch, KPI.all];
+  const cc = v => v >= T ? 'g' : v >= 0.65 ? 'y' : v >= 0.5 ? 'o' : 'r';
+  h += `<div class="table-wrap" style="margin-top:12px"><table class="nw-heat"><thead><tr><th>くらべる相手</th><th>店の数</th><th>80%以上の店</th><th>割合<small>目標 ${kpP(T)}</small></th><th>平均の達成率</th><th>順位<small>${KPI.mos.length}MO中</small></th></tr></thead><tbody>`;
+  cmp.forEach(m => { h += `<tr${m.name === '阪口MO' ? ' class="tot"' : ''}><td>${m.name}</td><td>${m.n}店</td><td>${m.ok}店</td><td class="${m.name === '阪口MO' ? '' : cc(m.clr)}">${kpP(m.clr)}</td><td>${(m.avg * 100).toFixed(1)}%</td><td>${m.rank ? m.rank + '位' : '─'}</td></tr>`; });
+  if (isAll) SC_LIST.forEach(sc => { const a = kpAgg(KPI.stores.map(kpRow).filter(r => r.sc === sc)); if (a.n) h += `<tr><td>└ ${sc}</td><td>${a.n}店</td><td>${a.ok}店</td><td class="${cc(a.clr)}">${kpP(a.clr)}</td><td>${(a.avg * 100).toFixed(1)}%</td><td>─</td></tr>`; });
+  h += `</tbody></table></div>`;
+
+  // 17項目
+  const ic = v => v == null ? 'na' : v >= 0.9 ? 'g' : v >= 0.8 ? 'y' : v >= 0.6 ? 'o' : 'r';
+  const sm = KPI.mos.find(m => m.name === '下野MO') || {f: []}, km = KPI.mos.find(m => m.name === '木下MO') || {f: []};
+  h += `<div class="nw-h">17の項目 <small>○の店の割合。赤いほど弱い。押すと×の店</small></div><div class="table-wrap"><table class="nw-heat kp-it"><thead><tr><th>項目<small>基準</small></th><th>${isAll ? '阪口MO' : who}</th><th>×の店</th><th>下野MO</th><th>木下MO</th><th>MO店の全体<small>${KPI.all.n}店</small></th></tr></thead><tbody>`;
+  kpItemStat(rows).forEach(x => {
+    const v = A.f[x.i];
+    h += `<tr onclick="kpItemPopup(${x.i})"><td><span class="kp-tag">${x.it.g}</span>${x.it.n}<br><small style="font-weight:500;color:#6b7280">${x.it.th}</small></td><td class="${ic(v)}">${kpP(v)}</td><td class="${x.ng.length ? 'tb' : 'tg'}">${x.ng.length ? x.ng.length + '店' : '✓'}</td>
+      <td class="${ic(sm.f[x.i])}">${kpP(sm.f[x.i])}</td><td class="${ic(km.f[x.i])}">${kpP(km.f[x.i])}</td><td class="${ic(KPI.all.f[x.i])}">${kpP(KPI.all.f[x.i])}</td></tr>`;
+  });
+  h += `</tbody></table></div>`;
+
+  // 店ごと
+  h += `<div class="nw-h">店ごと <small>達成率が低い順。押すと「やること」</small></div><div class="nw-stores">`;
+  rows.forEach(r => {
+    const lv = !r.need ? '' : r.need === 1 ? 'l2' : 'l3', p = pv && pv.rate && pv.rate[r.name];
+    h += `<div class="nw-sc ${lv}" onclick="kpStorePopup('${r.name}')"><div class="nw-sc-top"><div class="nw-sc-name">${r.name}<small>${r.sc}</small></div>
+      <div class="nw-badge ${r.need ? 'bad' : 'good'}">${r.need ? `あと${r.need}つ` : 'クリア'}<small>${r.pass}／${r.den}</small></div></div>
+      <div class="nw-sc-mid">達成率 <b class="${r.need ? 'nw-bad' : 'nw-good'}">${kpP(r.rate)}</b>${p != null ? `<span>前回 ${kpP(p)}</span>` : ''}</div>
+      <div class="nw-pills">${r.ng.map(i => `<span class="nw-p x">${KPI.items[i].n}</span>`).join('') || '<span class="nw-p">×なし</span>'}</div></div>`;
+  });
+  h += `</div><details class="nw-old"><summary>📋 店 × 17項目の表を見る</summary><div class="table-wrap"><table class="nw-heat kp-mx"><thead><tr><th>店</th><th>達成率</th>${KPI.items.map(it => `<th>${it.n}</th>`).join('')}</tr></thead><tbody>`;
+  rows.forEach(r => { h += `<tr onclick="kpStorePopup('${r.name}')"><td>${r.name}</td><td class="${r.need ? 'tb' : 'tg'}">${kpP(r.rate)}</td>${r.s.f.map(x => x == null ? '<td class="na">─</td>' : x ? '<td class="g">○</td>' : '<td class="r">×</td>').join('')}</tr>`; });
+  h += `</tbody></table></div></details>
+    <details class="nw-more"><summary>この画面の見方</summary><div>本部が毎週出す「全力チャレンジ実行プラン」の集計です（${KPI.week}の週。デリバリーなど一部は1週前）。<br>達成率＝17項目のうち○の数÷対象の数。80%以上の店が「クリア」。─ は対象外です。<br>順位は、MOごとの「80%以上の店の割合」で並べています（同じなら平均の達成率が高い方が上）。<br>「やること」の文は目安です。くわしいやり方は担当SCに聞いてください。</div></details>`;
+  el.innerHTML = h;
+}
+
+function kpStoreText(r) {
+  let t = `【${r.name}】KPI（${KPI.week}の週）\n達成率 ${kpP(r.rate)}（${r.pass}／${r.den}）${r.need ? `　80%まで あと${r.need}つ` : '　クリア'}\n`;
+  if (!r.ng.length) return t + '全部○です。今のままでお願いします。';
+  r.ng.forEach((i, n) => { const it = KPI.items[i]; t += `${n + 1}. ${it.n}　今 ${r.s.v[i] || '×'} → 基準 ${it.th}\n   ${KP_DO[it.n] || ''}\n`; });
+  return t.trim();
+}
+function kpStorePopup(name) {
+  const s = KPI.stores.find(x => x.name === name); if (!s) return;
+  const r = kpRow(s), p = KPI.prev && KPI.prev.rate && KPI.prev.rate[name];
+  let h = `<div class="nw-pp-kv"><div><div class="k">達成率</div><div class="v ${r.need ? 'nw-bad' : 'nw-good'}">${kpP(r.rate)}</div></div>
+    <div><div class="k">○の数</div><div class="v">${r.pass}／${r.den}</div></div>
+    <div><div class="k">${p != null ? '前回' : '80%まで'}</div><div class="v">${p != null ? kpP(p) : r.need ? 'あと' + r.need + 'つ' : 'クリア'}</div></div></div>`;
+  h += `<div class="nw-pp-h">やること ${r.need ? `<span class="nw-bad">あと${r.need}つ ○にすれば80%</span>` : r.ng.length ? '<span class="nw-good">80%はクリア。残りも直す</span>' : ''}</div>`;
+  if (!r.ng.length) h += `<div class="nw-okbox">✓ 全部○です。今のまま続ける</div>`;
+  r.ng.forEach(i => { const it = KPI.items[i];
+    h += `<div class="nw-do"><div class="nw-do-t"><span><span class="kp-tag">${it.g}</span>${it.n}</span><b>${s.v[i] || '×'}</b></div>
+      <div class="nw-do-s">基準：${it.th}<br>${KP_DO[it.n] || ''}</div></div>`; });
+  const okI = s.f.map((x, i) => x === 1 ? i : -1).filter(i => i >= 0), na = s.f.map((x, i) => x == null ? i : -1).filter(i => i >= 0);
+  h += `<div class="nw-pp-h">できている項目</div><div class="nw-pills">${okI.map(i => `<span class="nw-p" style="background:#e7f5ea;color:#1b5e20">${KPI.items[i].n}</span>`).join('')}${na.map(i => `<span class="nw-p">${KPI.items[i].n}（対象外）</span>`).join('')}</div>`;
+  h += `<button class="nw-btn line" onclick="kpCopy('${name}', this)">LINE用にコピー</button>`;
+  nwOpen(name + '（' + r.sc + '）', h);
+}
+function kpCopy(name, btn) {
+  const t = kpStoreText(kpRow(KPI.stores.find(x => x.name === name)));
+  const done = () => { btn.textContent = 'コピーしました'; setTimeout(() => { btn.textContent = 'LINE用にコピー'; }, 1500); };
+  if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(t).then(done, () => {});
+  else { const ta = document.createElement('textarea'); ta.value = t; document.body.appendChild(ta); ta.select(); try { document.execCommand('copy'); done(); } catch (e) {} ta.remove(); }
+}
+function kpItemPopup(i) {
+  const it = KPI.items[i], rows = kpRows().filter(r => r.s.f[i] != null).sort((a, b) => a.s.f[i] - b.s.f[i] || a.rate - b.rate);
+  const ng = rows.filter(r => r.s.f[i] === 0);
+  let h = `<div class="nw-sub" style="margin-bottom:10px">基準 <b>${it.th}</b>　×は <b class="${ng.length ? 'nw-bad' : 'nw-good'}">${ng.length}店</b>／${rows.length}店<br>${KP_DO[it.n] || ''}</div>`;
+  rows.forEach(r => { const x = r.s.f[i] === 0;
+    h += `<div class="nw-cause nw-tap" style="grid-template-columns:1fr 9.5em" onclick="kpStorePopup('${r.name}')"><div style="font-weight:700">${x ? '×' : '○'} ${r.name}${x && r.need === 1 ? ' <span class="nw-chip good">直せば80%</span>' : ''}</div>
+      <div class="val ${x ? 'nw-bad' : 'nw-good'}" style="font-size:13.5px">${r.s.v[i] || ''}</div></div>`; });
+  nwOpen(it.n + '：店ごと', h);
+}
+
 function renderAll() {
-  [renderNow, renderPfNew, renderWsNew, renderTrNew].forEach(f => { try { f(); } catch (e) { console.error(f.name, e); } });
+  [renderNow, renderPfNew, renderWsNew, renderTrNew, renderKpi].forEach(f => { try { f(); } catch (e) { console.error(f.name, e); } });
   renderProfit();
   renderWaste();
   renderNebiki();
@@ -3121,7 +3288,7 @@ function renderAll() {
   renderTrend();
 }
 
-if (location.hash === '#profit') switchTab('profit'); else if (location.hash === '#waste') switchTab('waste'); else if (location.hash === '#trend') switchTab('trend'); else if (location.hash === '#nebiki') switchTab('nebiki'); else if (location.hash === '#kitchen') switchTab('kitchen'); else if (location.hash === '#delivery') switchTab('delivery'); else renderAll();
+if (location.hash === '#profit') switchTab('profit'); else if (location.hash === '#waste') switchTab('waste'); else if (location.hash === '#trend') switchTab('trend'); else if (location.hash === '#nebiki') switchTab('nebiki'); else if (location.hash === '#kpi') switchTab('kpi'); else if (location.hash === '#kitchen') switchTab('kitchen'); else if (location.hash === '#delivery') switchTab('delivery'); else renderAll();
 </script>
 <!-- 上へ戻るボタン（スマホでヘッダーを固定しないため） -->
 <button id="toTop" onclick="window.scrollTo({top:0,behavior:'smooth'})" aria-label="上へ"
