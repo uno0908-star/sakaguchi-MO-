@@ -219,7 +219,8 @@ function login() {
 }
 function logout() { S.authed = false; lsSet('cc_authed', false); S.view = 'home'; render(); }
 function setTab(t) { S.tab = t; render(); loadAll(false); }
-function setDate(d) { if (d && d <= today()) { S.date = d; render(); } }
+const minDate = () => addDays(today(), -60);   // さかのぼれるのは 60日前まで（読みこむ 範囲＝62日 の内がわ）
+function setDate(d) { if (d && d <= today() && d >= minDate()) { S.date = d; render(); } }
 function goHome() { S.view = 'home'; render(); window.scrollTo(0, 0); loadAll(false); }
 function openStore(i) { S.store = STORES[i]; S.view = 'store'; render(); window.scrollTo(0, 0); loadAll(false); }
 
@@ -229,7 +230,7 @@ function storeStat(store, date) {
   return {total: st.length, n, x};
 }
 function dateBar() {
-  return `<div class="card"><div class="datebar"><button class="btn" onclick="setDate(addDays(S.date,-1))">◀ 前の日</button>
+  return `<div class="card"><div class="datebar"><button class="btn" ${S.date <= minDate() ? 'disabled style="opacity:.35"' : ''} onclick="setDate(addDays(S.date,-1))">◀ 前の日</button>
     <div class="daylabel">${dayLabel(S.date)}${S.date === today() ? ' <span class="badge g">きょう</span>' : ''}</div>
     <button class="btn" ${S.date >= today() ? 'disabled style="opacity:.35"' : ''} onclick="setDate(addDays(S.date,1))">次の日 ▶</button></div>
     <div class="sub" style="margin-top:6px;text-align:center">カメラで 見た 日を えらぶ</div></div>`;

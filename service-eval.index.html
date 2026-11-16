@@ -1796,13 +1796,14 @@ const App={
       const d=new Date(Date.now()-30*864e5),from=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
       const res=await fetch(`${GAS_URL}?action=getCameraCheck&from=${from}`,{redirect:'follow'});
       const j=await res.json();
-      this._camRows=j.ok?(j.rows||[]):[];this._camMissing=!j.ok;this._camLoaded=true;
+      this._camRows=j.ok?(j.rows||[]):[];this._camMissing=!j.ok;this._camLoaded=true;this._camAt=Date.now();
       if(this._view==='store-karte'&&!this._kEditing)this.renderStoreKartePage();   // カルテの 入力中は 画面を 作り直さない
-    }catch(e){}finally{this._camLoading=false}
+    }catch(e){this._camAt=Date.now()}finally{this._camLoading=false}
   },
   _camCardHtml(store){
     if(!this._camCanSee())return'';
-    if(!this._camLoaded){this._camLoad();return''}
+    if(!this._camLoaded||Date.now()-(this._camAt||0)>60000)this._camLoad();   // 1分より 古ければ 読み直す（ほかの人が つけた分を 取りこむ）
+    if(!this._camLoaded)return'';
     if(this._camMissing)return'';
     const esc=t=>String(t==null?'':t).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
     const rows=(this._camRows||[]).filter(r=>r.store===store&&this._camItems.some(([k])=>r[k]==='o'||r[k]==='x'));
