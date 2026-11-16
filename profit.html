@@ -3160,11 +3160,15 @@ const bdDecl = (name, week) => BD.rows.filter(r => r.store === name && r.weekSta
 async function bdLoad(force) {
   if (BD.loading || (BD.loaded && !force)) return;
   BD.loading = true; BD.tried = true;
+  const t0 = Date.now();
   try {
     const r = await fetch(`${BD_GAS}?action=getBaihenDecl&from=${bdAdd(bdYmd(new Date()), -120)}`, {redirect: 'follow'});
     const d = await r.json();
     if (!d.ok) throw new Error(d.error || '読みこめません');
-    BD.rows = d.rows || []; BD.err = ''; BD.loaded = true;
+    // 読みこみ中に 保存が おわった 宣言は、古い 読みこみ結果で 消さない
+    const kept = BD.rows.filter(x => x.savedAt && x.savedAt >= t0);
+    const key = x => x.weekStart + '|' + x.store;
+    BD.rows = (d.rows || []).filter(x => !kept.some(k => key(k) === key(x))).concat(kept); BD.err = ''; BD.loaded = true;
   } catch (e) { BD.err = /不明なアクション/.test(e.message) ? 'サーバーの準備がまだです' : '宣言を読みこめません（電波）'; }
   finally { BD.loading = false; }
   renderWsNew();
@@ -3252,7 +3256,7 @@ async function bdSave(name) {
       body: JSON.stringify({action: 'setBaihenDecl', user: who, record: {weekStart: week, store: name, amount: amt, who, memo}})});
     const d = await r.json();
     if (!d.ok) throw new Error(d.error || '保存できません');
-    BD.rows = BD.rows.filter(x => !(x.store === name && x.weekStart === week)).concat([{weekStart: week, store: name, amount: d.amount, who, memo, at: d.at}]);
+    BD.rows = BD.rows.filter(x => !(x.store === name && x.weekStart === week)).concat([{weekStart: week, store: name, amount: d.amount, who, memo, at: d.at, savedAt: Date.now()}]);
     renderWsNew();
     // 同じ 画面が 開いたままで、そのあと 何も 入力していない ときだけ 開き直す（ほかの 店の 画面や 入力中の 内容は こわさない）
     const same = BD.ticket === ticket && BD.openName === name && !BD.dirty && document.getElementById('bdSave') === btn && document.getElementById('overlay').classList.contains('show');
