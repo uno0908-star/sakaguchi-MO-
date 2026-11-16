@@ -3101,7 +3101,7 @@ function renderPfNew() {
 //   宣言＝店ごと・週（月〜日）ごとに「1日 いくらまでに おさえる」。保存先は接客評価DBのGAS（BaihenDecl シート）
 // ===================================================================
 const BD_GAS = 'https://script.google.com/macros/s/AKfycbyHEBH5Q8VBcZFBzfH5tYQm46RCa_fYw3PDlKp1qA5E9EWmR44OQ8UA1JTXFa-stnbG8g/exec';
-const BD = {rows: [], loaded: false, loading: false, err: ''};
+const BD = {rows: [], loaded: false, loading: false, tried: false, err: ''};   // tried＝1回読みにいった（失敗しても 自動では 読み直さない）
 const bdPad = n => String(n).padStart(2, '0');
 const bdYmd = d => `${d.getFullYear()}-${bdPad(d.getMonth() + 1)}-${bdPad(d.getDate())}`;
 const bdFrom = s => { const [y, m, d] = s.split('-').map(Number); return new Date(y, m - 1, d); };
@@ -3159,7 +3159,7 @@ function bdWeeks() {
 const bdDecl = (name, week) => BD.rows.filter(r => r.store === name && r.weekStart === week).pop() || null;
 async function bdLoad(force) {
   if (BD.loading || (BD.loaded && !force)) return;
-  BD.loading = true;
+  BD.loading = true; BD.tried = true;
   try {
     const r = await fetch(`${BD_GAS}?action=getBaihenDecl&from=${bdAdd(bdYmd(new Date()), -120)}`, {redirect: 'follow'});
     const d = await r.json();
@@ -3171,11 +3171,11 @@ async function bdLoad(force) {
 }
 // 値引・廃棄タブに出す表
 function bdSectionHtml(rows) {
-  if (!BD.loaded && !BD.loading) bdLoad();
+  if (!BD.loaded && !BD.loading && !BD.tried) bdLoad();
   const n = bdNow(), W = bdWeeks();
   const sum = f => rows.reduce((a, r) => a + f(r), 0);
   let h = `<div class="nw-h">売変の予算と宣言 <small>値引＋廃棄（売価）・1日あたり・${CUR_LABEL.date}・のこり${n.rem}日。店を押すと 宣言を 入力</small></div>`;
-  if (BD.err) h += `<div class="nw-sub" style="color:#c62828;font-weight:700;margin-bottom:6px">${BD.err}</div>`;
+  if (BD.err) h += `<div class="nw-sub" style="color:#c62828;font-weight:700;margin-bottom:6px">${BD.err}　<button class="nw-btn" style="display:inline-block;width:auto;min-height:44px;margin:4px 0 0;padding:0 14px" onclick="bdLoad(true)">もう一度 読みこむ</button></div>`;
   h += `<div class="table-wrap"><table class="nw-heat"><thead><tr><th>店</th><th>今月の実績<small>1日あたり</small></th><th>予算<small>1日あたり</small></th><th>のこり${n.rem}日<small>1日いくらまで</small></th><th>今週の宣言<small>${bdWeekLab(W.thisMon)}</small></th><th>先週の結果<small>${bdWeekLab(W.resWeek)}</small></th></tr></thead><tbody>`;
   let nDecl = 0, nRes = 0, nOk = 0;
   rows.forEach(r => {
