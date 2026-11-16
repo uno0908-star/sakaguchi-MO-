@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex,nofollow">
+<title>カメラチェック</title>
+<script src="ls-guard.js?v=20261024"></script>
+<style>
+:root{--blue:#003087;--blue2:#005BAC;--green:#1f9d55;--red:#d93025;--amber:#e8940c;--ink:#1c2430;--ink2:#5b6b7c;--line:#d9e0e8;--bg:#f2f5f9}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{margin:0;font-family:"Meiryo UI","Hiragino Sans","Yu Gothic UI",sans-serif;background:var(--bg);color:var(--ink);font-size:16px;line-height:1.5}
+header{background:var(--blue);color:#fff;padding:10px 14px;position:sticky;top:0;z-index:20;display:flex;align-items:center;gap:10px}
+header h1{font-size:18px;margin:0;flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+header button{background:rgba(255,255,255,.18);color:#fff;border:0;border-radius:10px;min-height:44px;padding:0 14px;font-size:15px;font-weight:700}
+main{max-width:860px;margin:0 auto;padding:12px 12px 90px}
+.card{background:#fff;border-radius:14px;padding:14px;margin-bottom:12px;box-shadow:0 1px 4px rgba(0,0,0,.08)}
+.btn{display:inline-flex;align-items:center;justify-content:center;min-height:48px;padding:0 16px;border-radius:12px;border:1px solid var(--line);background:#fff;font-size:16px;font-weight:700;color:var(--ink);cursor:pointer}
+.btn.pri{background:var(--blue2);color:#fff;border-color:var(--blue2)}
+.btn.full{width:100%}
+.sub{color:var(--ink2);font-size:13px}
+.err{background:#fdecea;color:#b3261e;border-radius:10px;padding:10px 12px;font-size:14px;font-weight:700;margin-bottom:10px}
+.ok{color:var(--green);font-weight:700}.ng{color:var(--red);font-weight:700}
+/* ログイン */
+.who{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:10px 0}
+.who button{min-height:60px;font-size:17px}
+.who button.on{background:var(--blue2);color:#fff;border-color:var(--blue2)}
+input[type=password],input[type=date],input[type=text]{width:100%;min-height:48px;font-size:17px;border:1px solid var(--line);border-radius:12px;padding:0 12px;font-family:inherit;background:#fff}
+/* 日付 */
+.datebar{display:grid;grid-template-columns:auto 1fr auto;gap:8px;align-items:center}
+.datebar .btn{padding:0 12px}
+.daylabel{text-align:center;font-size:20px;font-weight:800}
+.tabs{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px}
+.tabs button.on{background:var(--blue);color:#fff;border-color:var(--blue)}
+/* 店タイル */
+.stores{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+@media(min-width:700px){.stores{grid-template-columns:1fr 1fr 1fr}}
+.store{background:#fff;border-radius:14px;padding:12px;border:2px solid var(--line);min-height:92px;cursor:pointer;text-align:left;font-family:inherit;font-size:16px;color:var(--ink)}
+.store b{display:block;font-size:17px;line-height:1.3}
+.store .n{font-size:13px;color:var(--ink2);margin-top:4px}
+.store.done{border-color:var(--green);background:#f1faf4}
+.store.part{border-color:var(--amber);background:#fff9ee}
+.store.bad{border-color:var(--red);background:#fff4f3}
+.badge{display:inline-block;border-radius:999px;padding:1px 9px;font-size:12px;font-weight:800;color:#fff;margin-left:4px;vertical-align:1px}
+.badge.r{background:var(--red)}.badge.g{background:var(--green)}.badge.a{background:var(--amber)}
+/* 人のカード */
+.grp{font-size:15px;font-weight:800;color:var(--blue);margin:16px 2px 8px;display:flex;align-items:center;gap:8px}
+.grp span{font-size:12px;color:var(--ink2);font-weight:600}
+.person{background:#fff;border-radius:14px;padding:12px;margin-bottom:10px;border-left:6px solid #c9d2de;box-shadow:0 1px 4px rgba(0,0,0,.07)}
+.person.has-x{border-left-color:var(--red)}.person.all-o{border-left-color:var(--green)}.person.some{border-left-color:var(--amber)}
+.pname{font-size:18px;font-weight:800;line-height:1.3}
+.pname small{font-size:12px;font-weight:600;color:var(--ink2);margin-left:6px}
+.items{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px}
+.item{background:#f6f8fb;border-radius:12px;padding:8px}
+.item .lab{font-size:13px;font-weight:700;margin-bottom:6px;line-height:1.3}
+.ox{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.ox button{min-height:48px;border-radius:10px;border:2px solid var(--line);background:#fff;font-size:22px;font-weight:900;color:#9aa6b2;cursor:pointer;font-family:inherit}
+.ox button.o.on{background:var(--green);border-color:var(--green);color:#fff}
+.ox button.x.on{background:var(--red);border-color:var(--red);color:#fff}
+.memo{margin-top:8px}
+.memo input{min-height:44px;font-size:15px}
+.savebar{position:fixed;left:0;right:0;bottom:0;background:#fff;border-top:1px solid var(--line);padding:8px 12px calc(8px + env(safe-area-inset-bottom));display:flex;gap:10px;align-items:center;z-index:30;font-size:14px}
+.savebar .st{flex:1;font-weight:700}
+/* 結果 */
+.tw{overflow-x:auto}
+table{border-collapse:collapse;width:100%;font-size:14px;min-width:520px}
+th,td{border-bottom:1px solid var(--line);padding:8px 6px;text-align:center;white-space:nowrap}
+th{background:#eef2f7;color:var(--blue);font-size:12.5px}
+td:first-child,th:first-child{text-align:left;position:sticky;left:0;background:#fff;font-weight:700}
+th:first-child{background:#eef2f7}
+.xrow{border-bottom:1px solid var(--line);padding:9px 2px;font-size:15px}
+.seg{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:10px}
+.seg button{min-height:44px;font-size:14px;padding:0 4px}
+.seg button.on{background:var(--blue2);color:#fff;border-color:var(--blue2)}
+</style>
+</head>
+<body>
+<header><button id="hBack" style="display:none" onclick="goHome()">← もどる</button><h1 id="hTitle">カメラチェック</h1><button id="hOut" style="display:none" onclick="logout()">出る</button></header>
+<main id="app"></main>
+<div class="savebar" id="savebar" style="display:none"><div class="st" id="saveSt"></div><button class="btn" id="saveRetry" style="display:none" onclick="flush(true)">もう一度 送る</button></div>
+
+<script>
+// ============================================================
+//  カメラチェック（オーナー・MOTR用）2026-11-16
+//  店のカメラを見て、人ごとに ①原材料確認（15時・24時）②指差し確認 ③声出し確認 を ○× でつける。
+//  名簿＝個店カルテ（接客評価DB）の従業員マスタ。記録＝同じGASの CameraCheck シート。個店カルテにも出る。
+// ============================================================
+const GAS_URL = 'https://script.google.com/macros/s/AKfycbyHEBH5Q8VBcZFBzfH5tYQm46RCa_fYw3PDlKp1qA5E9EWmR44OQ8UA1JTXFa-stnbG8g/exec';
+const PASS = 'Lawson3963';
+const USERS = ['阪口 清治', '阪口 憲治', '神田', '髙橋（MOTR）', '五島（MOTR）'];
+const STORES = ['五月ケ丘東', '江坂駅南口', '池田市役所前', '吹田朝日町', '豊中服部元町一丁目', '吹田青山台三丁目', '吹田豊津中学校前', '新御堂筋上新田',
+  '南金田二丁目', '豊中原田南一丁目', '箕面白島二丁目', '豊中利倉東一丁目', '江坂東', '吹田警察署前', '大道南一丁目', '東淀川豊里五丁目',
+  '吹田垂水三丁目', '豊里六丁目', '豊中服部西町三丁目', '東淀川大道南'];
+// 店長（従業員番号）。名簿に「店長」の印が無いので、ここで持つ。体制が変わったら直す（2026-09-16体制＋10/15の交代）
+const MANAGERS = {'6087766': 1, '7158383': 1, '7179705': 1, '8114662': 1, '6023885': 1, '8339082': 1, '4133375': 1, '5125663': 1, '6143082': 1, '8017657': 1,
+  '6152603': 1, '6132000': 1, '4180081': 1, '6119821': 1, '9304509': 1, '6117167': 1, '8152620': 1, '8067662': 1};
+const ITEMS = [['g15', '① 原材料確認', '15時までに'], ['g24', '① 原材料確認', '24時までに'], ['yubi', '② 指差し確認', ''], ['koe', '③ 声出し確認', '']];
+const GROUPS = [['mgr', '店長'], ['emp', '一般社員'], ['con', '契約社員'], ['crew', 'クルー']];
+
+const $ = id => document.getElementById(id);
+const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'}[c]));
+const lsGet = (k, d) => { try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : d; } catch (e) { return d; } };
+const lsSet = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} };
+const pad = n => String(n).padStart(2, '0');
+const ymd = d => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+const fromYmd = s => { const [y, m, d] = s.split('-').map(Number); return new Date(y, m - 1, d); };
+const addDays = (s, n) => { const d = fromYmd(s); d.setDate(d.getDate() + n); return ymd(d); };
+const WD = ['日', '月', '火', '水', '木', '金', '土'];
+const dayLabel = s => { const d = fromYmd(s); return `${d.getMonth() + 1}/${d.getDate()}（${WD[d.getDay()]}）`; };
+const today = () => ymd(new Date());
+
+const S = {user: lsGet('cc_user', ''), authed: !!lsGet('cc_authed', false), view: 'home', tab: 'check', date: today(), store: '', period: 'week',
+  emps: lsGet('cc_emps', []), checks: lsGet('cc_checks', {}), pending: lsGet('cc_pending', {}), loadedAt: 0, serverMissing: false, loadErr: ''};
+let pickUser = S.user;
+
+// ---------- 名簿 ----------
+function kindOf(e) { return MANAGERS[String(e.id)] ? 'mgr' : e.type === 'FullTimeEmployee' ? 'emp' : e.type === 'ContractEmployee' ? 'con' : 'crew'; }
+function staffOf(store) {
+  const seen = new Set();
+  return S.emps.filter(e => e.store === store && e.status === '在籍中' && !seen.has(String(e.id)) && seen.add(String(e.id)))
+    .map(e => ({id: String(e.id), name: e.name, kind: kindOf(e), role: roleText(e)}))
+    .sort((a, b) => a.name.localeCompare(b.name, 'ja'));
+}
+function roleText(e) {
+  let r = e.crewRoles; if (typeof r === 'string') { try { r = JSON.parse(r); } catch (x) { r = []; } }
+  return (r || []).join('・').replace('ルーキー（新人）', 'ルーキー');
+}
+const key = (date, store, id) => `${date}|${store}|${id}`;
+function rec(date, store, id) { return Object.assign({}, S.checks[key(date, store, id)] || {}, S.pending[key(date, store, id)] || {}); }
+function seen(r) { return ITEMS.some(([k]) => r[k] === 'o' || r[k] === 'x'); }
+function hasX(r) { return ITEMS.some(([k]) => r[k] === 'x'); }
+
+// ---------- 通信 ----------
+async function loadAll(force) {
+  if (!force && Date.now() - S.loadedAt < 60000) return;
+  S.loadErr = '';
+  try {
+    const from = addDays(today(), -62);
+    const [a, b] = await Promise.all([
+      fetch(`${GAS_URL}?action=getEmployees`, {redirect: 'follow'}).then(r => r.json()),
+      fetch(`${GAS_URL}?action=getCameraCheck&from=${from}`, {redirect: 'follow'}).then(r => r.json())]);
+    if (a && a.ok && Array.isArray(a.employees) && a.employees.length) { S.emps = a.employees; lsSet('cc_emps', S.emps); }
+    if (b && b.ok) { const m = {}; (b.rows || []).forEach(r => { m[key(r.date, r.store, r.employeeId)] = r; }); S.checks = m; lsSet('cc_checks', m); S.serverMissing = false; }
+    else if (b && /不明なアクション/.test(b.error || '')) S.serverMissing = true;
+    S.loadedAt = Date.now();
+  } catch (e) { S.loadErr = '電波が 弱いので、前に 読みこんだ データを 出しています。'; }
+  render();
+}
+let flushTimer = null, flushing = false;
+function queue(date, store, p, patch) {
+  const k = key(date, store, p.id);
+  S.pending[k] = Object.assign({date, store, employeeId: p.id, name: p.name, empType: (GROUPS.find(g => g[0] === p.kind) || [])[1] || ''}, S.pending[k] || {}, patch);
+  lsSet('cc_pending', S.pending);
+  setSave('送っています…');
+  clearTimeout(flushTimer); flushTimer = setTimeout(() => flush(false), 900);
+}
+async function flush(manual) {
+  if (flushing) return; const keys = Object.keys(S.pending); if (!keys.length) { setSave(''); return; }
+  flushing = true; setSave('送っています…');
+  const sending = keys.map(k => S.pending[k]);
+  try {
+    const res = await fetch(GAS_URL, {method: 'POST', headers: {'Content-Type': 'text/plain;charset=utf-8'}, redirect: 'follow',
+      body: JSON.stringify({action: 'setCameraCheck', user: S.user, records: sending})});
+    const d = await res.json();
+    if (!d.ok) throw new Error(d.error || '保存できません');
+    keys.forEach((k, i) => { S.checks[k] = Object.assign({}, S.checks[k] || {}, sending[i], {by: S.user, at: d.at});
+      if (S.pending[k] === sending[i]) delete S.pending[k]; });       // 送っている間に また 押された分は 残す
+    lsSet('cc_checks', S.checks); lsSet('cc_pending', S.pending);
+    setSave(Object.keys(S.pending).length ? '送っています…' : '✓ 保存しました', true);
+    if (Object.keys(S.pending).length) { flushing = false; return flush(false); }
+  } catch (e) {
+    setSave(/不明なアクション/.test(e.message) ? '⚠ サーバーの 準備が まだです（神田さんに 連絡）' : '⚠ まだ 送れていません（電波）。この端末には 残っています', false, true);
+  } finally { flushing = false; }
+}
+function setSave(t, good, retry) {
+  $('savebar').style.display = t ? 'flex' : 'none'; $('saveSt').textContent = t; $('saveSt').className = 'st ' + (good ? 'ok' : retry ? 'ng' : '');
+  $('saveRetry').style.display = retry ? '' : 'none';
+  if (good) setTimeout(() => { if ($('saveSt').textContent === t) $('savebar').style.display = 'none'; }, 2500);
+}
+
+// ---------- 画面 ----------
+function render() {
+  $('hOut').style.display = S.authed ? '' : 'none';
+  if (!S.authed) return renderLogin();
+  if (S.view === 'store') return renderStore();
+  $('hBack').style.display = 'none'; $('hTitle').textContent = 'カメラチェック';
+  const tabs = `<div class="tabs"><button class="btn ${S.tab === 'check' ? 'on' : ''}" onclick="setTab('check')">📹 チェックする</button><button class="btn ${S.tab === 'result' ? 'on' : ''}" onclick="setTab('result')">📊 結果を見る</button></div>`;
+  $('app').innerHTML = banner() + tabs + (S.tab === 'check' ? homeHtml() : resultHtml());
+}
+function banner() {
+  return (S.serverMissing ? '<div class="err">サーバーの 準備が まだです。つけた ○× は この端末に 残りますが、ほかの人には まだ 見えません。</div>' : '')
+    + (S.loadErr ? `<div class="err">${S.loadErr}</div>` : '');
+}
+function renderLogin() {
+  $('hBack').style.display = 'none'; $('hTitle').textContent = 'カメラチェック';
+  $('app').innerHTML = `<div class="card"><b style="font-size:18px">だれが 見ますか</b>
+    <div class="who">${USERS.map(u => `<button class="btn ${pickUser === u ? 'on' : ''}" onclick="pick('${u}')">${u}</button>`).join('')}</div>
+    <div class="sub" style="margin:8px 0 4px">パスワード</div><input type="password" id="pw" autocomplete="current-password" onkeydown="if(event.key==='Enter')login()">
+    <div id="lerr" class="ng" style="min-height:22px;font-size:14px;margin-top:4px"></div>
+    <button class="btn pri full" onclick="login()">はじめる</button></div>`;
+}
+function pick(u) { pickUser = u; const pw = $('pw') ? $('pw').value : ''; renderLogin(); $('pw').value = pw; }
+function login() {
+  if (!pickUser) { $('lerr').textContent = '名前を えらんでください'; return; }
+  if ($('pw').value !== PASS) { $('lerr').textContent = 'パスワードが ちがいます'; return; }
+  S.user = pickUser; S.authed = true; lsSet('cc_user', S.user); lsSet('cc_authed', true); render(); loadAll(true); flush(false);
+}
+function logout() { S.authed = false; lsSet('cc_authed', false); S.view = 'home'; render(); }
+function setTab(t) { S.tab = t; render(); }
+function setDate(d) { if (d && d <= today()) { S.date = d; render(); } }
+function goHome() { S.view = 'home'; render(); window.scrollTo(0, 0); }
+function openStore(i) { S.store = STORES[i]; S.view = 'store'; render(); window.scrollTo(0, 0); }
+
+function storeStat(store, date) {
+  const st = staffOf(store); let n = 0, x = 0;
+  st.forEach(p => { const r = rec(date, store, p.id); if (seen(r)) n++; if (hasX(r)) x++; });
+  return {total: st.length, n, x};
+}
+function dateBar() {
+  return `<div class="card"><div class="datebar"><button class="btn" onclick="setDate(addDays(S.date,-1))">◀ 前の日</button>
+    <div class="daylabel">${dayLabel(S.date)}${S.date === today() ? ' <span class="badge g">きょう</span>' : ''}</div>
+    <button class="btn" ${S.date >= today() ? 'disabled style="opacity:.35"' : ''} onclick="setDate(addDays(S.date,1))">次の日 ▶</button></div>
+    <div class="sub" style="margin-top:6px;text-align:center">カメラで 見た 日を えらぶ</div></div>`;
+}
+function homeHtml() {
+  let seenStores = 0, xs = 0;
+  const tiles = STORES.map((s, i) => { const t = storeStat(s, S.date); if (t.n) seenStores++; xs += t.x;
+    const cls = t.x ? 'bad' : t.n && t.n >= t.total ? 'done' : t.n ? 'part' : '';
+    return `<button class="store ${cls}" onclick="openStore(${i})"><b>${esc(s)}</b><div class="n">見た ${t.n}／${t.total}人${t.x ? `<span class="badge r">× ${t.x}人</span>` : t.n ? '<span class="badge g">○</span>' : ''}</div></button>`; }).join('');
+  return dateBar() + `<div class="sub" style="margin:0 2px 8px">店を 押す → 人ごとに ○× を つける。　見た店 <b>${seenStores}／${STORES.length}</b>${xs ? `　<span class="ng">× ${xs}人</span>` : ''}</div><div class="stores">${tiles}</div>`;
+}
+function renderStore() {
+  $('hBack').style.display = ''; $('hTitle').textContent = S.store;
+  const st = staffOf(S.store), t = storeStat(S.store, S.date);
+  let h = banner() + dateBar() + `<div class="sub" style="margin:0 2px">見た <b>${t.n}／${t.total}人</b>${t.x ? `　<span class="ng">× ${t.x}人</span>` : ''}　○か × を 押す。もう一度 押すと 消える。カメラに 映っていない 人は 何も 押さない。</div>`;
+  if (!st.length) h += '<div class="card">この店の 名簿が 読めていません。電波の よい 所で 開き直してください。</div>';
+  GROUPS.forEach(([g, label]) => { const ps = st.filter(p => p.kind === g); if (!ps.length) return;
+    h += `<div class="grp">${label}<span>${ps.length}人</span></div>` + ps.map(personHtml).join(''); });
+  $('app').innerHTML = h + '<button class="btn full" onclick="goHome()" style="margin-top:8px">← 店の 一覧へ もどる</button>';
+}
+function personHtml(p) {
+  const r = rec(S.date, S.store, p.id), x = hasX(r), n = ITEMS.filter(([k]) => r[k] === 'o' || r[k] === 'x').length;
+  const cls = x ? 'has-x' : n === ITEMS.length ? 'all-o' : n ? 'some' : '';
+  return `<div class="person ${cls}" id="p-${p.id}"><div class="pname">${esc(p.name)}${p.role ? `<small>${esc(p.role)}</small>` : ''}</div>
+    <div class="items">${ITEMS.map(([k, a, b]) => `<div class="item"><div class="lab">${a}${b ? `<br><span style="color:var(--blue2)">${b}</span>` : ''}</div>
+      <div class="ox"><button class="o ${r[k] === 'o' ? 'on' : ''}" aria-label="できている" onclick="tap('${p.id}','${k}','o')">○</button><button class="x ${r[k] === 'x' ? 'on' : ''}" aria-label="できていない" onclick="tap('${p.id}','${k}','x')">×</button></div></div>`).join('')}</div>
+    ${n || r.memo ? `<div class="memo"><input type="text" placeholder="メモ（何時ごろ・何が できていないか）" value="${esc(r.memo || '')}" maxlength="120" onchange="memo('${p.id}',this.value)"></div>` : ''}</div>`;
+}
+function tap(id, k, v) {
+  const p = staffOf(S.store).find(q => q.id === id); if (!p) return;
+  const cur = rec(S.date, S.store, id)[k] || '';
+  queue(S.date, S.store, p, {[k]: cur === v ? '' : v});
+  const el = $('p-' + id); if (el) el.outerHTML = personHtml(p);
+}
+function memo(id, v) { const p = staffOf(S.store).find(q => q.id === id); if (p) queue(S.date, S.store, p, {memo: v.trim()}); }
+
+// ---------- 結果 ----------
+function periodRange() {
+  const t = today(), d = fromYmd(t), dow = (d.getDay() + 6) % 7, mon = addDays(t, -dow);
+  if (S.period === 'week') return [mon, t, '今週'];
+  if (S.period === 'last') return [addDays(mon, -7), addDays(mon, -1), '先週'];
+  if (S.period === 'month') return [`${d.getFullYear()}-${pad(d.getMonth() + 1)}-01`, t, '今月'];
+  return [addDays(t, -29), t, '30日'];
+}
+function allRecs(from, to) {
+  const m = {}; Object.keys(S.checks).concat(Object.keys(S.pending)).forEach(k => { m[k] = 1; });
+  return Object.keys(m).map(k => { const [date, store, id] = k.split('|'); return Object.assign({date, store, employeeId: id}, rec(date, store, id)); })
+    .filter(r => r.date >= from && r.date <= to && seen(r));
+}
+function resultHtml() {
+  const [from, to, label] = periodRange(), rs = allRecs(from, to);
+  const seg = `<div class="seg">${[['week', '今週'], ['last', '先週'], ['month', '今月'], ['d30', '30日']].map(([k, t]) => `<button class="btn ${S.period === k ? 'on' : ''}" onclick="S.period='${k}';render()">${t}</button>`).join('')}</div>`;
+  const cell = (rows, k) => { const o = rows.filter(r => r[k] === 'o').length, x = rows.filter(r => r[k] === 'x').length; return o + x ? `<td class="${x ? 'ng' : 'ok'}">${Math.round(o / (o + x) * 100)}%<br><span class="sub">${x ? '× ' + x : '○ ' + o}</span></td>` : '<td class="sub">─</td>'; };
+  const rowsHtml = STORES.map(s => { const r = rs.filter(q => q.store === s), days = new Set(r.map(q => q.date)).size, ppl = new Set(r.map(q => q.employeeId)).size;
+    return `<tr><td>${esc(s)}</td><td>${days ? days + '日' : '<span class="sub">まだ</span>'}</td><td>${ppl ? ppl + '／' + staffOf(s).length + '人' : '─'}</td>${ITEMS.map(([k]) => cell(r, k)).join('')}</tr>`; }).join('');
+  const xs = rs.filter(hasX).sort((a, b) => b.date.localeCompare(a.date) || a.store.localeCompare(b.store, 'ja'));
+  const xl = xs.map(r => `<div class="xrow"><b>${dayLabel(r.date)}　${esc(r.store)}</b><br>${esc(r.name || r.employeeId)}　<span class="ng">${ITEMS.filter(([k]) => r[k] === 'x').map(([, a, b]) => a.replace(/^[①②③] /, '') + (b ? '(' + b.replace('までに', '') + ')' : '')).join('・')}</span>${r.memo ? `<br><span class="sub">メモ：${esc(r.memo)}</span>` : ''}${r.by ? `<span class="sub">　（${esc(r.by)}）</span>` : ''}</div>`).join('');
+  const seenStores = new Set(rs.map(r => r.store)).size;
+  return `<div class="card">${seg}<div class="sub">${label}（${dayLabel(from)}〜${dayLabel(to)}）　見た店 <b>${seenStores}／${STORES.length}</b>　× が ついた のべ人数 <b class="${xs.length ? 'ng' : 'ok'}">${xs.length}</b></div></div>
+    <div class="card"><b>店ごと</b><div class="sub" style="margin-bottom:6px">％＝○の 割合。横に 動かせます</div><div class="tw"><table><thead><tr><th>店</th><th>見た日</th><th>見た人</th><th>原材料<br>15時</th><th>原材料<br>24時</th><th>指差し</th><th>声出し</th></tr></thead><tbody>${rowsHtml}</tbody></table></div></div>
+    <div class="card"><b>× が ついた 人</b>${xs.length ? `<button class="btn full" style="margin:8px 0" onclick="copyX(this)">LINE用に コピー</button>` + xl : '<div class="ok" style="margin-top:6px">✓ × は ありません</div>'}</div>`;
+}
+function copyX(btn) {
+  const [from, to, label] = periodRange(), xs = allRecs(from, to).filter(hasX).sort((a, b) => a.store.localeCompare(b.store, 'ja') || b.date.localeCompare(a.date));
+  let t = `【カメラチェック】${label}（${dayLabel(from)}〜${dayLabel(to)}）\n× が ついた ところ\n`, cur = '';
+  xs.forEach(r => { if (r.store !== cur) { cur = r.store; t += `\n■ ${cur}\n`; }
+    t += `${dayLabel(r.date)} ${r.name || ''}：${ITEMS.filter(([k]) => r[k] === 'x').map(([, a, b]) => a.replace(/^[①②③] /, '') + (b ? '(' + b.replace('までに', '') + ')' : '')).join('・')}${r.memo ? '（' + r.memo + '）' : ''}\n`; });
+  const done = () => { btn.textContent = 'コピーしました'; setTimeout(() => { btn.textContent = 'LINE用に コピー'; }, 1500); };
+  if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(t).then(done, () => {});
+  else { const ta = document.createElement('textarea'); ta.value = t; document.body.appendChild(ta); ta.select(); try { document.execCommand('copy'); done(); } catch (e) {} ta.remove(); }
+}
+
+render();
+if (S.authed) { loadAll(true); flush(false); }
+window.addEventListener('online', () => flush(false));
+</script>
+</body>
+</html>

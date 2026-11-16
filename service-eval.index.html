@@ -1765,6 +1765,7 @@ const App={
         ${isSM?`<div style="font-size:12px;opacity:.9;margin-top:4px">責任者：${me.name}</div>`:''}
       </div>
       ${this._kStoreCardHtml(store)}
+      ${this._camCardHtml(store)}
       <div class="stats-grid">
         <div class="stat-card"><div class="stat-num">${emps.length}</div><div class="stat-label">在籍クルー数</div></div>
         <div class="stat-card"><div class="stat-num" style="color:var(--green)">${rate}%</div><div class="stat-label">評価完了率</div></div>
@@ -1784,6 +1785,39 @@ const App={
       ${listHtml}
       ${excluded?`<div class="text-sub" style="font-size:11px;margin-top:6px">※ 評価対象外：${excluded}名（クルー一覧から確認できます）</div>`:''}
       ${isTop?'<button class="btn btn-secondary btn-full" onclick="App.logout()" style="margin-top:12px">ログアウト</button>':`<button class="btn btn-secondary btn-full" onclick="App.navTo('dashboard')" style="margin-top:12px;min-height:44px">🏢 組織カルテへ戻る</button>`}`;
+  },
+
+  /* ===== カメラチェック（オーナー・MOTR が camera-check.html でつけた ○×）。見られるのは 管理者・MOTR・SC だけ ===== */
+  _camItems:[['g15','原材料 15時'],['g24','原材料 24時'],['yubi','指差し'],['koe','声出し']],
+  _camCanSee(){const r=DB.user()?.role;return r==='管理者'||r==='SI'||r==='SC'},
+  async _camLoad(){
+    if(this._camLoading)return;this._camLoading=true;
+    try{
+      const d=new Date(Date.now()-30*864e5),from=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+      const res=await fetch(`${GAS_URL}?action=getCameraCheck&from=${from}`,{redirect:'follow'});
+      const j=await res.json();
+      this._camRows=j.ok?(j.rows||[]):[];this._camMissing=!j.ok;this._camLoaded=true;
+      if(this._view==='store-karte')this.renderStoreKartePage();
+    }catch(e){}finally{this._camLoading=false}
+  },
+  _camCardHtml(store){
+    if(!this._camCanSee())return'';
+    if(!this._camLoaded){this._camLoad();return''}
+    if(this._camMissing)return'';
+    const esc=t=>String(t==null?'':t).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+    const rows=(this._camRows||[]).filter(r=>r.store===store&&this._camItems.some(([k])=>r[k]==='o'||r[k]==='x'));
+    const link=`<a href="camera-check.html" style="display:block;text-align:center;margin-top:10px;min-height:44px;line-height:44px;border:1px solid var(--border);border-radius:8px;font-weight:700;color:var(--blue);text-decoration:none">📹 カメラチェックを開く</a>`;
+    if(!rows.length)return`<div class="card"><div class="section-title">📹 カメラチェック（この30日）</div><div class="text-sub">まだ 記録が ありません。</div>${link}</div>`;
+    const days=new Set(rows.map(r=>r.date)).size;
+    const stat=this._camItems.map(([k,label])=>{const o=rows.filter(r=>r[k]==='o').length,x=rows.filter(r=>r[k]==='x').length;
+      return`<div class="stat-card" style="flex:1;min-width:0"><div class="stat-num" style="font-size:20px;color:${x?'var(--red)':'var(--green)'}">${o+x?Math.round(o/(o+x)*100)+'%':'─'}</div><div class="stat-label">${label}${x?`<br><b style="color:var(--red)">× ${x}</b>`:''}</div></div>`}).join('');
+    const xs=rows.filter(r=>this._camItems.some(([k])=>r[k]==='x')).sort((a,b)=>String(b.date).localeCompare(String(a.date))).slice(0,8);
+    const xl=xs.map(r=>`<div style="padding:6px 0;border-top:1px solid var(--border);font-size:13px"><b>${esc(String(r.date).slice(5).replace('-','/'))}　${esc(r.name||r.employeeId)}</b>　<span style="color:var(--red);font-weight:700">× ${this._camItems.filter(([k])=>r[k]==='x').map(([,l])=>l).join('・')}</span>${r.memo?`<div class="text-sub" style="font-size:12px">${esc(r.memo)}</div>`:''}</div>`).join('');
+    return`<div class="card"><div class="section-title">📹 カメラチェック（この30日・${days}日分）</div>
+      <div class="text-sub" style="font-size:11px;margin-bottom:6px">オーナー・MOTR が カメラで 見た 結果。％＝○の 割合</div>
+      <div style="display:flex;gap:6px">${stat}</div>
+      ${xl?`<div style="margin-top:8px;font-weight:700;font-size:13px">× が ついた 人（新しい順）</div>${xl}`:'<div style="margin-top:8px;color:var(--green);font-weight:700;font-size:13px">✓ × は ありません</div>'}
+      ${link}</div>`;
   },
 
   /* ===== 個人カルテ・個店カルテの様式項目（Excel「個人カルテ」様式と同じ並び） ===== */
@@ -2169,17 +2203,17 @@ const App={
     const id=this._currentEmpId;const e=DB.employees().find(x=>x.id===id);if(!e)return;
     const evals=DB.evaluations();
     const cur={};SERVICE_ITEMS.forEach(item=>{cur[item.key]={sm:this._getLatestEval(evals,id,'店舗責任者',item.key),sc:this._getLatestEval(evals,id,'SC',item.key),si:this._getLatestEval(evals,id,'SI',item.key)}});
-    const roles=[{role:'店舗責任者',key:'sm',label:'店舗責任者評価'},{role:'SC',key:'sc',label:'SC評価'},{role:'SI',key:'si',label:'SI評価'}];
+    const roles=[{role:'SI',key:'si',label:'MOTR評価'}];   // 店長・SCの欄と項目ごとのコメント欄は廃止（2026-11-16）。過去の記録は残る
     const items=SERVICE_ITEMS.map(item=>{
       const sections=roles.map(r=>{
         const cur2=cur[item.key][r.key];const dis=!this._canEditRole(r.role);
         const btns=RANKS.map(rank=>`<button class="rank-btn ${cur2&&cur2.rank===rank?'selected-'+rank:''}" data-item="${item.key}" data-role="${r.key}" ontouchend="event.preventDefault();App.selectRank(this,'${item.key}','${r.key}','${rank}')" onclick="App.selectRank(this,'${item.key}','${r.key}','${rank}')" ${dis?'disabled style="opacity:0.4"':''}>${rank}</button>`).join('');
-        return`<div class="eval-section" style="${dis?'pointer-events:none;user-select:none;opacity:0.5':''}"><div class="eval-role-label">${r.label}${dis?' 🔒':''}</div><div class="rank-row">${btns}</div><textarea class="eval-comment" data-item="${item.key}" data-role="${r.key}" rows="2" placeholder="コメント（任意）" style="width:100%;padding:8px;border:1px solid var(--border);border-radius:6px;margin-top:4px;resize:vertical;${dis?'background:var(--gray-light)':''}" ${dis?'disabled':''}>${cur2?cur2.comment:''}</textarea></div>`;
+        return`<div class="eval-section" style="${dis?'pointer-events:none;user-select:none;opacity:0.5':''}"><div class="eval-role-label">${r.label}${dis?' 🔒':''}</div><div class="rank-row">${btns}</div></div>`;
       }).join('');
       return`<div class="eval-item"><div class="eval-item-header"><h3>${item.label} ${item.title}</h3><button style="background:rgba(255,255,255,0.2);border:none;color:#fff;padding:4px 8px;border-radius:6px;font-size:11px;cursor:pointer" onclick="App.showStandards('${item.key}')">評価基準を見る</button></div><div class="eval-item-body">${sections}</div></div>`;
     }).join('');
     const defaultMonth=new Date().toISOString().slice(0,7);
-    document.getElementById('evaluation-content').innerHTML=`<div style="background:#fff;border-radius:var(--radius);padding:12px 14px;margin-bottom:10px;box-shadow:0 1px 3px rgba(0,0,0,0.08)"><div style="font-weight:700;font-size:15px">${e.name}</div><div class="text-sub">${e.store}</div><div style="margin-top:10px"><label style="display:block;font-size:12px;color:var(--text-sub);margin-bottom:4px;font-weight:600">評価月</label><input type="month" id="eval-month" value="${defaultMonth}" style="width:100%;padding:10px 12px;border:1px solid var(--border);border-radius:8px;background:#fff;font-size:15px;font-weight:700;color:var(--blue)"></div></div>${items}<div style="padding:8px 0"><div class="form-group"><label>指導メモ（任意）</label><textarea id="eval-guidance" rows="3" placeholder="指導内容・申し送り事項など"></textarea></div><button class="btn btn-primary btn-full" onclick="App.saveEvaluation('${id}')">保存する</button></div>`;
+    document.getElementById('evaluation-content').innerHTML=`<div style="background:#fff;border-radius:var(--radius);padding:12px 14px;margin-bottom:10px;box-shadow:0 1px 3px rgba(0,0,0,0.08)"><div style="font-weight:700;font-size:15px">${e.name}</div><div class="text-sub">${e.store}</div><div style="margin-top:10px"><label style="display:block;font-size:12px;color:var(--text-sub);margin-bottom:4px;font-weight:600">評価月</label><input type="month" id="eval-month" value="${defaultMonth}" style="width:100%;padding:10px 12px;border:1px solid var(--border);border-radius:8px;background:#fff;font-size:15px;font-weight:700;color:var(--blue)"></div></div>${items}<div style="padding:8px 0"><div class="form-group"><label>指導メモ（任意）</label><textarea id="eval-guidance" rows="3" placeholder="指導内容・申し送り事項など"></textarea></div>${this._canEditRole('SI')?`<button class="btn btn-primary btn-full" onclick="App.saveEvaluation('${id}')">保存する</button>`:'<div class="text-sub" style="text-align:center;padding:8px 0">評価は MOTR が つけます（見るだけ）</div>'}</div>`;
   },
 
   selectRank(btn,itemKey,roleKey,rank){
@@ -2201,7 +2235,8 @@ const App={
       SERVICE_ITEMS.forEach(item=>{
         const btn=[...document.querySelectorAll(`.rank-btn[data-item="${item.key}"][data-role="${roleKey}"]`)].find(b=>RANKS.some(r=>b.classList.contains('selected-'+r)));
         const rank=btn?RANKS.find(r=>btn.classList.contains('selected-'+r))||'':'';
-        const comment=document.querySelector(`textarea.eval-comment[data-item="${item.key}"][data-role="${roleKey}"]`)?.value||'';
+        const cEl=document.querySelector(`textarea.eval-comment[data-item="${item.key}"][data-role="${roleKey}"]`);
+        const comment=cEl?cEl.value||'':((this._getLatestEval(existingEvals,empId,roleMap[roleKey],item.key)||{}).comment||'');
         items[item.key]={rank,comment};if(rank)hasAny=true;
       });
       // 今回ランクなし＆このロールの過去評価もなければスキップ
