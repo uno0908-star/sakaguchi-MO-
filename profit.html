@@ -358,6 +358,11 @@ table.dlv thead th:first-child{background:#003087}
 .nw-okbox{border-radius:12px;background:#e7f5ea;color:#1b5e20;padding:12px;font-size:15px;font-weight:800;text-align:center}
 .nw-btn{display:block;width:100%;min-height:48px;border-radius:12px;border:2px solid #003087;background:#fff;color:#003087;font-size:15px;font-weight:800;cursor:pointer;margin-top:10px}
 .nw-btn.line{border-color:#06c755;color:#06c755}
+.bd-form label{display:block;font-size:13px;font-weight:700;color:#374151;margin:10px 0 4px}
+.bd-form input,.bd-form select{width:100%;min-height:48px;font-size:17px;border:1px solid #c9d2de;border-radius:10px;padding:0 10px;font-family:inherit;background:#fff}
+.bd-yen{display:flex;align-items:center;gap:6px}.bd-yen input{flex:1}.bd-yen span{font-weight:800}
+.bd-msg{min-height:22px;font-size:14px;font-weight:700;margin-top:6px}
+.bd-hist{border-top:1px solid #e5e7eb;padding:8px 2px;font-size:14px}
 @media(max-width:1100px){.nw-ind{grid-template-columns:repeat(3,1fr)}}
 @media(max-width:700px){
   .nw-hero{grid-template-columns:1fr}
@@ -3089,6 +3094,165 @@ function renderPfNew() {
 }
 
 // ── 値引・廃棄 ──
+// ===================================================================
+// 売変（値引＋廃棄・売価）の 1日あたり・残りの日の予算・宣言と結果（2026-11-16）
+//   実績＝営業速報の売変Ⅲ（baihen3・千円/日）。過去の週は HISTORY の 廃棄(wact)＋値引(nebiki) から出す（足すと売変Ⅲになる）
+//   予算＝見切・処分の予算（原価）を店の原価率で売価に直したもの（mdU と同じ）
+//   宣言＝店ごと・週（月〜日）ごとに「1日 いくらまでに おさえる」。保存先は接客評価DBのGAS（BaihenDecl シート）
+// ===================================================================
+const BD_GAS = 'https://script.google.com/macros/s/AKfycbyHEBH5Q8VBcZFBzfH5tYQm46RCa_fYw3PDlKp1qA5E9EWmR44OQ8UA1JTXFa-stnbG8g/exec';
+const BD = {rows: [], loaded: false, loading: false, err: ''};
+const bdPad = n => String(n).padStart(2, '0');
+const bdYmd = d => `${d.getFullYear()}-${bdPad(d.getMonth() + 1)}-${bdPad(d.getDate())}`;
+const bdFrom = s => { const [y, m, d] = s.split('-').map(Number); return new Date(y, m - 1, d); };
+const bdAdd = (s, n) => { const d = bdFrom(s); d.setDate(d.getDate() + n); return bdYmd(d); };
+const bdMon = s => { const d = bdFrom(s); return bdAdd(s, -((d.getDay() + 6) % 7)); };
+const bdMd = s => { const d = bdFrom(s); return `${d.getMonth() + 1}/${d.getDate()}`; };
+const bdWeekLab = w => `${bdMd(w)}〜${bdMd(bdAdd(w, 6))}`;
+const bdEsc = t => String(t == null ? '' : t).replace(/[&<>"']/g, c => ({'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'}[c]));
+const bdYen = k => Math.round(k * 1000).toLocaleString() + '円';      // 千円 → 円
+// いまのデータの日付（月度・何日まで・月の日数）
+function bdNow() {
+  const m = CUR_LABEL.month.match(/(\d+)年(\d+)月度/), d = CUR_LABEL.date.match(/(\d+)\/(\d+)/);
+  const y = 2000 + Number(m[1]), mo = Number(m[2]), dm = Number(d[1]), dd = Number(d[2]);
+  const yy = dm < mo - 6 ? y + 1 : y;
+  const mdays = new Date(y, mo, 0).getDate(), elapsed = dm === mo ? dd : mdays;
+  return {date: `${yy}-${bdPad(dm)}-${bdPad(dd)}`, mdays, elapsed, rem: Math.max(0, mdays - elapsed)};
+}
+// 店の売変：今月の実績/日・予算/日・残りの日の1日あたり（すべて千円/日・売価）
+function bdPlan(p) {
+  const n = bdNow(), md = mdU(p);
+  const act = p.baihen3 || 0, used = act * n.elapsed;
+  return {act, bgtDay: md.bgt / n.mdays, bgtMonth: md.bgt, used, rem: n.rem,
+          allow: n.rem ? (md.bgt - used) / n.rem : null, rate: p.nisshu ? act / p.nisshu * 100 : 0};
+}
+// 週ごとの実績：HISTORY（各週の時点）と 今のデータ から、その週（月〜日）の 売変/日 を出す
+function bdSnaps() {
+  const out = [], toDate = (month, date) => {
+    const m = month.match(/(\d+)年(\d+)月度/), d = date.match(/(\d+)\/(\d+)/); if (!m || !d) return null;
+    const y = 2000 + Number(m[1]), mo = Number(m[2]), dm = Number(d[1]);
+    return {ym: `${y}-${mo}`, date: `${dm < mo - 6 ? y + 1 : y}-${bdPad(dm)}-${bdPad(Number(d[2]))}`, day: dm === mo ? Number(d[2]) : new Date(y, mo, 0).getDate()};
+  };
+  HISTORY.forEach(h => { const t = toDate(h.month, h.date); if (!t) return;
+    const v = {}; Object.entries(h.stores || {}).forEach(([n, x]) => { if (x.wact != null && x.nebiki != null) v[n] = x.wact + x.nebiki; });
+    out.push(Object.assign(t, {v})); });
+  const t = toDate(CUR_LABEL.month, CUR_LABEL.date);
+  if (t) { const v = {}; PROFIT.forEach(p => { v[p.name] = p.baihen3 || 0; }); out.push(Object.assign(t, {v})); }
+  return out;
+}
+function bdWeekActual(name, week) {
+  const sn = bdSnaps(), end = bdAdd(week, 6), prev = bdAdd(week, -1);
+  const E = sn.filter(x => x.date === end).pop();
+  if (!E || E.v[name] == null) return null;
+  const S = sn.filter(x => x.date === prev && x.ym === E.ym).pop();
+  if (S && S.v[name] != null && E.day > S.day) return {v: (E.v[name] * E.day - S.v[name] * S.day) / (E.day - S.day), part: false};
+  if (E.day <= 7) return {v: E.v[name], part: true};             // 月をまたぐ週は、新しい月の分だけ
+  return null;
+}
+// 結果を出せる一番新しい週（月曜）と、今週・来週（月曜）
+function bdWeeks() {
+  const n = bdNow(), today = bdYmd(new Date());
+  const resWeek = bdAdd(bdMon(bdAdd(n.date, 1)), -7);            // データの日付までに おわっている 一番新しい週
+  const thisMon = bdMon(today);
+  return {resWeek, thisMon, nextMon: bdAdd(thisMon, 7), today};
+}
+const bdDecl = (name, week) => BD.rows.filter(r => r.store === name && r.weekStart === week).pop() || null;
+async function bdLoad(force) {
+  if (BD.loading || (BD.loaded && !force)) return;
+  BD.loading = true;
+  try {
+    const r = await fetch(`${BD_GAS}?action=getBaihenDecl&from=${bdAdd(bdYmd(new Date()), -120)}`, {redirect: 'follow'});
+    const d = await r.json();
+    if (!d.ok) throw new Error(d.error || '読みこめません');
+    BD.rows = d.rows || []; BD.err = ''; BD.loaded = true;
+  } catch (e) { BD.err = /不明なアクション/.test(e.message) ? 'サーバーの準備がまだです' : '宣言を読みこめません（電波）'; }
+  finally { BD.loading = false; }
+  if (!document.getElementById('overlay').classList.contains('show')) renderWsNew();
+}
+// 値引・廃棄タブに出す表
+function bdSectionHtml(rows) {
+  if (!BD.loaded && !BD.loading) bdLoad();
+  const n = bdNow(), W = bdWeeks();
+  const sum = f => rows.reduce((a, r) => a + f(r), 0);
+  let h = `<div class="nw-h">売変の予算と宣言 <small>値引＋廃棄（売価）・1日あたり・${CUR_LABEL.date}・のこり${n.rem}日。店を押すと 宣言を 入力</small></div>`;
+  if (BD.err) h += `<div class="nw-sub" style="color:#c62828;font-weight:700;margin-bottom:6px">${BD.err}</div>`;
+  h += `<div class="table-wrap"><table class="nw-heat"><thead><tr><th>店</th><th>今月の実績<small>1日あたり</small></th><th>予算<small>1日あたり</small></th><th>のこり${n.rem}日<small>1日いくらまで</small></th><th>今週の宣言<small>${bdWeekLab(W.thisMon)}</small></th><th>先週の結果<small>${bdWeekLab(W.resWeek)}</small></th></tr></thead><tbody>`;
+  let nDecl = 0, nRes = 0, nOk = 0;
+  rows.forEach(r => {
+    const b = bdPlan(r.p), d = bdDecl(r.name, W.thisMon), pd = bdDecl(r.name, W.resWeek), pa = pd ? bdWeekActual(r.name, W.resWeek) : null;
+    if (d) nDecl++;
+    let res = '<td class="na">宣言なし</td>';
+    if (pd) { if (!pa) res = `<td class="na">宣言 ${bdYen(pd.amount / 1000)}<br><small>データ待ち</small></td>`;
+      else { const ok = pa.v * 1000 <= pd.amount; nRes++; if (ok) nOk++;
+        res = `<td class="${ok ? 'g' : 'r'}">${ok ? '○ 達成' : '× 未達'}<br><small>実績 ${bdYen(pa.v)}／宣言 ${bdYen(pd.amount / 1000)}</small></td>`; } }
+    const al = b.allow;
+    h += `<tr onclick="bdOpen('${r.name}')" style="cursor:pointer"><td>${r.name}</td><td class="${b.act > b.bgtDay ? 'tb' : 'tg'}">${bdYen(b.act)}</td><td>${bdYen(b.bgtDay)}</td>
+      <td class="${al == null ? 'na' : al <= 0 ? 'r' : al < b.act ? 'y' : 'g'}">${al == null ? '─' : al <= 0 ? '予算オーバー' : bdYen(al)}</td>
+      <td class="${d ? '' : 'na'}">${d ? `<b>${bdYen(d.amount / 1000)}</b>${d.who ? `<br><small>${bdEsc(d.who)}</small>` : ''}` : '未入力'}</td>${res}</tr>`;
+  });
+  const A = sum(r => bdPlan(r.p).act), B = sum(r => bdPlan(r.p).bgtDay), AL = rows.some(r => bdPlan(r.p).allow == null) ? null : sum(r => bdPlan(r.p).allow);
+  h += `<tr class="tot"><td>${currentSC === 'all' ? '全社' : currentSC}</td><td>${bdYen(A)}</td><td>${bdYen(B)}</td><td>${AL == null ? '─' : AL <= 0 ? '予算オーバー' : bdYen(AL)}</td><td>宣言 ${nDecl}／${rows.length}店</td><td>${nRes ? `達成 ${nOk}／${nRes}店` : '─'}</td></tr>`;
+  h += `</tbody></table></div><div class="nw-sub" style="font-size:12.5px;margin:6px 2px 0">「のこり${n.rem}日」＝今月の売変予算から ここまでの実績を引いて、のこりの日数で割った 1日あたりの金額。これより多く出すと 今月の予算を こえる。赤＝もう予算を こえている／黄＝今の ペースより 下げる必要あり。<br>宣言は 週（月〜日）ごと。結果は その週の 実績（1日あたり）と くらべる（月曜の データ更新で 出る）。</div>`;
+  return h;
+}
+function bdOpen(name) {
+  const p = PROFIT.find(x => x.name === name); if (!p) return;
+  const b = bdPlan(p), W = bdWeeks(), n = bdNow();
+  const def = new Date().getDay() === 1 ? W.thisMon : W.nextMon;     // 月曜は 今週、それ以外は 来週
+  const cur = bdDecl(name, def);
+  let who = ''; try { who = localStorage.getItem('bd_who') || ''; } catch (e) {}
+  const sug = b.allow != null && b.allow > 0 ? Math.min(b.allow, b.act) : b.bgtDay;
+  let h = `<div class="nw-pp-kv"><div><div class="k">今月の実績</div><div class="v ${b.act > b.bgtDay ? 'nw-bad' : 'nw-good'}" style="font-size:17px">${bdYen(b.act)}</div><div class="k">1日あたり</div></div>
+    <div><div class="k">予算</div><div class="v" style="font-size:17px">${bdYen(b.bgtDay)}</div><div class="k">1日あたり</div></div>
+    <div><div class="k">のこり${n.rem}日</div><div class="v ${b.allow != null && b.allow < b.act ? 'nw-bad' : 'nw-good'}" style="font-size:17px">${b.allow == null ? '─' : b.allow <= 0 ? 'オーバー' : bdYen(b.allow)}</div><div class="k">1日いくらまで</div></div></div>
+    <div class="nw-sub">今月の売変予算 ${bdYen(b.bgtMonth)}　ここまで ${bdYen(b.used)}（${n.elapsed}日分）　売上に対して ${b.rate.toFixed(1)}%</div>
+    <div class="nw-pp-h">宣言する</div>
+    <div class="bd-form">
+      <label>どの週</label><select id="bdWeek" onchange="bdFill('${name}')">
+        <option value="${W.thisMon}" ${def === W.thisMon ? 'selected' : ''}>今週（${bdWeekLab(W.thisMon)}）</option>
+        <option value="${W.nextMon}" ${def === W.nextMon ? 'selected' : ''}>来週（${bdWeekLab(W.nextMon)}）</option></select>
+      <label>売変（値引＋廃棄）を 1日 いくらまでに おさえるか</label>
+      <div class="bd-yen"><input id="bdAmt" type="number" inputmode="numeric" min="1000" step="500" value="${cur ? cur.amount : ''}" placeholder="${Math.round(sug * 1000 / 500) * 500}"><span>円／日</span></div>
+      <div class="nw-sub" style="margin-top:4px">めやす：のこりの日の予算どおりなら 1日 ${b.allow != null && b.allow > 0 ? bdYen(b.allow) : '─'}（今の実績は ${bdYen(b.act)}）</div>
+      <label>やること（ひとこと）</label><input id="bdMemo" type="text" maxlength="100" value="${cur ? bdEsc(cur.memo) : ''}" placeholder="例：夜の値引を1回にする・サンドの発注を2個へらす">
+      <label>宣言する人</label><input id="bdWho" type="text" maxlength="30" value="${bdEsc(cur && cur.who ? cur.who : who)}" placeholder="名前">
+      <button class="nw-btn" id="bdSave" onclick="bdSave('${name}')">宣言を保存する</button><div class="bd-msg" id="bdMsg"></div>
+    </div>`;
+  const hist = BD.rows.filter(r => r.store === name).sort((a, b2) => b2.weekStart.localeCompare(a.weekStart));
+  h += `<div class="nw-pp-h">これまでの宣言と結果</div>`;
+  if (!hist.length) h += `<div class="nw-sub">まだ 宣言は ありません。</div>`;
+  hist.forEach(r => { const a = bdWeekActual(name, r.weekStart), ok = a ? a.v * 1000 <= r.amount : null;
+    h += `<div class="bd-hist"><b>${bdWeekLab(r.weekStart)}</b>　宣言 <b>${bdYen(r.amount / 1000)}</b>／日　${a ? `実績 <b>${bdYen(a.v)}</b>　<b class="${ok ? 'nw-good' : 'nw-bad'}">${ok ? '○ 達成' : '× 未達'}（${ok ? '' : '+'}${Math.round(a.v * 1000 - r.amount).toLocaleString()}円）</b>${a.part ? '<small>（月をまたぐ週は 月はじめからの分）</small>' : ''}` : r.weekStart > W.resWeek ? '<span class="nw-sub">結果は 週が おわった後の 月曜に 出る</span>' : '<span class="nw-sub">データ待ち</span>'}
+      ${r.memo ? `<div class="nw-sub">${bdEsc(r.memo)}</div>` : ''}<div class="nw-sub" style="font-size:12px">${bdEsc(r.who || '')}</div></div>`; });
+  nwOpen(name + '：売変の宣言', h);
+}
+function bdFill(name) {
+  const w = document.getElementById('bdWeek').value, c = bdDecl(name, w);
+  document.getElementById('bdAmt').value = c ? c.amount : '';
+  document.getElementById('bdMemo').value = c ? c.memo || '' : '';
+}
+async function bdSave(name) {
+  const msg = document.getElementById('bdMsg'), btn = document.getElementById('bdSave');
+  const week = document.getElementById('bdWeek').value, amt = Math.round(Number(document.getElementById('bdAmt').value));
+  const who = document.getElementById('bdWho').value.trim(), memo = document.getElementById('bdMemo').value.trim();
+  if (!(amt >= 1000)) { msg.className = 'bd-msg nw-bad'; msg.textContent = '金額を 円で 入れてください（1日あたり）'; return; }
+  if (!who) { msg.className = 'bd-msg nw-bad'; msg.textContent = '宣言する人の 名前を 入れてください'; return; }
+  try { localStorage.setItem('bd_who', who); } catch (e) {}
+  btn.disabled = true; msg.className = 'bd-msg'; msg.textContent = '保存しています…';
+  try {
+    const r = await fetch(BD_GAS, {method: 'POST', headers: {'Content-Type': 'text/plain;charset=utf-8'}, redirect: 'follow',
+      body: JSON.stringify({action: 'setBaihenDecl', user: who, record: {weekStart: week, store: name, amount: amt, who, memo}})});
+    const d = await r.json();
+    if (!d.ok) throw new Error(d.error || '保存できません');
+    BD.rows = BD.rows.filter(x => !(x.store === name && x.weekStart === week)).concat([{weekStart: week, store: name, amount: d.amount, who, memo, at: d.at}]);
+    renderWsNew(); bdOpen(name);
+    const m2 = document.getElementById('bdMsg'); if (m2) { m2.className = 'bd-msg nw-good'; m2.textContent = '✓ 保存しました'; }
+  } catch (e) {
+    msg.className = 'bd-msg nw-bad'; msg.textContent = '保存できませんでした（' + e.message + '）。電波の よい 所で もう一度';
+    btn.disabled = false;
+  }
+}
+
 function renderWsNew() {
   const el = document.getElementById('wsNew');
   if (!el) return;
@@ -3103,6 +3267,7 @@ function renderWsNew() {
   h += `<div class="nw-tile ${O > 0.05 ? 'bad' : 'good'}"><div class="nw-tl">上限まで、1日いくら減らすか</div><div class="nw-big ${O > 0.05 ? 'nw-bad' : 'nw-good'}">−${nwMan(O, 1)}<span>万円／日</span></div><div class="nw-sub">今 1日 ${nwMan(V, 1)}万円（値引 ${nwMan(sum(r => r.V.A), 1)}万・廃棄 ${nwMan(V - sum(r => r.V.A), 1)}万）</div></div>`;
   h += `<div class="nw-tile ${nOver ? 'warn' : 'good'}"><div class="nw-tl">上限を超えている店</div><div class="nw-big">${nOver}<span>／${rows.length}店</span></div><div class="nw-sub">6つのうち1つでも超えている店</div></div></div>`;
 
+  h += bdSectionHtml(rows);
   h += `<div class="nw-h">店 × 6つの指標 <small>色が濃いほど上限から遠い。押すと「やること」</small></div>
     <div class="nw-sort">${[['rate', '率（%）で見る'], ['yen', '減らす額（円/日）で見る']].map(([k, t]) => `<button class="${nwWsMode === k ? 'on' : ''}" onclick="nwWsMode='${k}';renderWsNew()">${t}</button>`).join('')}</div>`;
   const cell = (r, k) => {
