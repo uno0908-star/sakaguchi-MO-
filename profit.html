@@ -3247,7 +3247,7 @@ function acList(names) {   // 店をまとめてクラスごとに集計。上�
   const cap = nwCap('B') / 100;
   return AC.cls.map(([dept, k], i) => {
     const t = [0, 0, 0, 0, 0, 0, 0]; let over = 0, nOver = 0;   // over は店ごとに「上限より多い分」を出してから足す（上限内の店と打ち消さない）
-    names.forEach(n => { const a = AC.stores[n] && AC.stores[n][i]; if (a) { a.forEach((v, j) => { t[j] += v; }); const o = Math.max(0, a[1] - a[0] * cap); over += o; if (o >= 50) nOver++; } });
+    names.forEach(n => { const a = AC.stores[n] && AC.stores[n][i]; if (a) { a.forEach((v, j) => { t[j] += v; }); const o = Math.max(0, a[1] - a[0] * cap); over += o; if (o > 0) nOver++; } });
     return {i, dept, k, s: t[0], w: t[1], g: t[2], rate: t[0] ? t[1] / t[0] * 100 : t[1] ? Infinity : 0, gr: t[0] ? t[2] / t[0] * 100 : null,
             r7: t[3] ? t[4] / t[3] * 100 : null, rp: AC.meta.pw && t[5] ? t[6] / t[5] * 100 : null, over, nOver};
   }).filter(x => x.s > 0 || x.w > 0).sort((a, b) => b.over - a.over || b.rate - a.rate);
