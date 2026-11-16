@@ -134,19 +134,24 @@ function hasX(r) { return ITEMS.some(([k]) => r[k] === 'x'); }
 async function loadAll(force) {
   if (!force && Date.now() - S.loadedAt < 60000) return;
   S.loadErr = '';
+  const t0 = Date.now();
   try {
     const from = addDays(today(), -62);
     const [a, b] = await Promise.all([
       fetch(`${GAS_URL}?action=getEmployees`, {redirect: 'follow'}).then(r => r.json()),
       fetch(`${GAS_URL}?action=getCameraCheck&from=${from}`, {redirect: 'follow'}).then(r => r.json())]);
     if (a && a.ok && Array.isArray(a.employees) && a.employees.length) { S.emps = a.employees; lsSet('cc_emps', S.emps); }
-    if (b && b.ok) { const m = {}; (b.rows || []).forEach(r => { m[key(r.date, r.store, r.employeeId)] = r; }); S.checks = m; lsSet('cc_checks', m); S.serverMissing = false; }
+    if (b && b.ok) { const m = {}; (b.rows || []).forEach(r => { m[key(r.date, r.store, r.employeeId)] = r; });
+      // 読みこみ中に 保存が おわった分は、古い 読みこみ結果で 消さない（手元の 新しい方を 残す）
+      Object.keys(ackedAt).forEach(k => { if (ackedAt[k] >= t0 && S.checks[k]) m[k] = S.checks[k]; });
+      S.checks = m; lsSet('cc_checks', m); S.serverMissing = false; }
     else if (b && /不明なアクション/.test(b.error || '')) S.serverMissing = true;
     S.loadedAt = Date.now();
   } catch (e) { S.loadErr = '電波が 弱いので、前に 読みこんだ データを 出しています。'; }
   render();
 }
 let flushTimer = null, flushing = false;
+const ackedAt = {};   // key → 保存が おわった 時刻
 function queue(date, store, p, patch) {
   const k = key(date, store, p.id);
   S.pending[k] = Object.assign({date, store, employeeId: p.id, name: p.name, empType: (GROUPS.find(g => g[0] === p.kind) || [])[1] || ''}, S.pending[k] || {}, patch);
@@ -163,7 +168,7 @@ async function flush(manual) {
       body: JSON.stringify({action: 'setCameraCheck', user: S.user, records: sending})});
     const d = await res.json();
     if (!d.ok) throw new Error(d.error || '保存できません');
-    keys.forEach((k, i) => { S.checks[k] = Object.assign({}, S.checks[k] || {}, sending[i], {by: S.user, at: d.at});
+    keys.forEach((k, i) => { S.checks[k] = Object.assign({}, S.checks[k] || {}, sending[i], {by: S.user, at: d.at}); ackedAt[k] = Date.now();
       if (S.pending[k] === sending[i]) delete S.pending[k]; });       // 送っている間に また 押された分は 残す
     lsSet('cc_checks', S.checks); lsSet('cc_pending', S.pending);
     setSave(Object.keys(S.pending).length ? '送っています…' : '✓ 保存しました', true);
