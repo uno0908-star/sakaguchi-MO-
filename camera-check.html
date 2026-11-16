@@ -148,7 +148,8 @@ async function loadAll(force) {
     else if (b && /不明なアクション/.test(b.error || '')) S.serverMissing = true;
     S.loadedAt = Date.now();
   } catch (e) { S.loadErr = '電波が 弱いので、前に 読みこんだ データを 出しています。'; }
-  render();
+  const ae = document.activeElement;
+  if (!(ae && ae.tagName === 'INPUT' && ae.type === 'text')) render();
 }
 let flushTimer = null, flushing = false;
 const ackedAt = {};   // key → 保存が おわった 時刻
@@ -160,19 +161,24 @@ function queue(date, store, p, patch) {
   clearTimeout(flushTimer); flushTimer = setTimeout(() => flush(false), 900);
 }
 async function flush(manual) {
-  if (flushing) return; const keys = Object.keys(S.pending); if (!keys.length) { setSave(''); return; }
-  flushing = true; setSave('送っています…');
-  const sending = keys.map(k => S.pending[k]);
+  if (flushing) return;                       // 送っている間に 押された分は、下の くり返しが 続けて 送る（同時に 2つ 送らない）
+  flushing = true;
+  let sent = false;
   try {
-    const res = await fetch(GAS_URL, {method: 'POST', headers: {'Content-Type': 'text/plain;charset=utf-8'}, redirect: 'follow',
-      body: JSON.stringify({action: 'setCameraCheck', user: S.user, records: sending})});
-    const d = await res.json();
-    if (!d.ok) throw new Error(d.error || '保存できません');
-    keys.forEach((k, i) => { S.checks[k] = Object.assign({}, S.checks[k] || {}, sending[i], {by: S.user, at: d.at}); ackedAt[k] = Date.now();
-      if (S.pending[k] === sending[i]) delete S.pending[k]; });       // 送っている間に また 押された分は 残す
-    lsSet('cc_checks', S.checks); lsSet('cc_pending', S.pending);
-    setSave(Object.keys(S.pending).length ? '送っています…' : '✓ 保存しました', true);
-    if (Object.keys(S.pending).length) { flushing = false; return flush(false); }
+    while (true) {
+      const keys = Object.keys(S.pending); if (!keys.length) break;
+      setSave('送っています…');
+      const sending = keys.map(k => S.pending[k]);
+      const res = await fetch(GAS_URL, {method: 'POST', headers: {'Content-Type': 'text/plain;charset=utf-8'}, redirect: 'follow',
+        body: JSON.stringify({action: 'setCameraCheck', user: S.user, records: sending})});
+      const d = await res.json();
+      if (!d.ok) throw new Error(d.error || '保存できません');
+      keys.forEach((k, i) => { S.checks[k] = Object.assign({}, S.checks[k] || {}, sending[i], {by: S.user, at: d.at}); ackedAt[k] = Date.now();
+        if (S.pending[k] === sending[i]) delete S.pending[k]; });       // 送っている間に また 押された分は 残す
+      lsSet('cc_checks', S.checks); lsSet('cc_pending', S.pending);
+      sent = true;
+    }
+    setSave(sent ? '✓ 保存しました' : '', sent);
   } catch (e) {
     setSave(/不明なアクション/.test(e.message) ? '⚠ サーバーの 準備が まだです（神田さんに 連絡）' : '⚠ まだ 送れていません（電波）。この端末には 残っています', false, true);
   } finally { flushing = false; }
@@ -211,10 +217,10 @@ function login() {
   S.user = pickUser; S.authed = true; lsSet('cc_user', S.user); lsSet('cc_authed', true); render(); loadAll(true); flush(false);
 }
 function logout() { S.authed = false; lsSet('cc_authed', false); S.view = 'home'; render(); }
-function setTab(t) { S.tab = t; render(); }
+function setTab(t) { S.tab = t; render(); loadAll(false); }
 function setDate(d) { if (d && d <= today()) { S.date = d; render(); } }
-function goHome() { S.view = 'home'; render(); window.scrollTo(0, 0); }
-function openStore(i) { S.store = STORES[i]; S.view = 'store'; render(); window.scrollTo(0, 0); }
+function goHome() { S.view = 'home'; render(); window.scrollTo(0, 0); loadAll(false); }
+function openStore(i) { S.store = STORES[i]; S.view = 'store'; render(); window.scrollTo(0, 0); loadAll(false); }
 
 function storeStat(store, date) {
   const st = staffOf(store); let n = 0, x = 0;
@@ -297,7 +303,8 @@ function copyX(btn) {
 
 render();
 if (S.authed) { loadAll(true); flush(false); }
-window.addEventListener('online', () => flush(false));
+window.addEventListener('online', () => { flush(false); if (S.authed) loadAll(false); });
+document.addEventListener('visibilitychange', () => { if (!document.hidden && S.authed) { flush(false); loadAll(false); } });
 </script>
 </body>
 </html>
