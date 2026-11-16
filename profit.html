@@ -3214,10 +3214,10 @@ function acList(names) {   // 店をまとめてクラスごとに集計。上�
   if (!AC) return [];
   const cap = nwCap('B') / 100;
   return AC.cls.map(([dept, k], i) => {
-    const t = [0, 0, 0, 0, 0, 0, 0];
-    names.forEach(n => { const a = AC.stores[n] && AC.stores[n][i]; if (a) a.forEach((v, j) => { t[j] += v; }); });
+    const t = [0, 0, 0, 0, 0, 0, 0]; let over = 0;   // over は店ごとに「上限より多い分」を出してから足す（上限内の店と打ち消さない）
+    names.forEach(n => { const a = AC.stores[n] && AC.stores[n][i]; if (a) { a.forEach((v, j) => { t[j] += v; }); over += Math.max(0, a[1] - a[0] * cap); } });
     return {i, dept, k, s: t[0], w: t[1], g: t[2], rate: t[0] ? t[1] / t[0] * 100 : t[1] ? Infinity : 0, gr: t[0] ? t[2] / t[0] * 100 : null,
-            r7: t[3] ? t[4] / t[3] * 100 : null, rp: AC.meta.pw && t[5] ? t[6] / t[5] * 100 : null, over: Math.max(0, t[1] - t[0] * cap)};
+            r7: t[3] ? t[4] / t[3] * 100 : null, rp: AC.meta.pw && t[5] ? t[6] / t[5] * 100 : null, over};
   }).filter(x => x.s > 0 || x.w > 0).sort((a, b) => b.over - a.over || b.rate - a.rate);
 }
 // names が1店なら「上限より多いクラス」だけ、2店以上なら全クラス（押すと店ごと）
@@ -3235,7 +3235,7 @@ function acTableHtml(names) {
   L.forEach(x => { const d = x.r7 != null && x.rp != null ? x.r7 - x.rp : null;
     h += `<tr${one ? '' : ` onclick="acClassPopup(${x.i})"`}><td>${x.k}<br><small style="font-weight:500;color:#6b7280">${x.dept}</small></td><td class="${rc(x.rate)}">${acRate(x.rate)}</td><td class="${x.over >= 50 ? 'tb' : 'tg'}">${x.over >= 50 ? '−' + acYen(x.over) : '✓'}</td><td>${acYen(x.s)}</td><td class="${x.gr != null && x.gr < 15 ? 'tb' : ''}">${x.gr == null ? '─' : x.gr.toFixed(1) + '%'}</td>${m.pw ? `<td class="${d == null ? 'na' : d > 0.5 ? 'tb' : d < -0.5 ? 'tg' : ''}">${d == null ? '─' : `${x.rp.toFixed(1)} → ${x.r7.toFixed(1)}%`}</td>` : ''}</tr>`; });
   if (!one) h += `<tr class="tot"><td>合計</td><td>${S ? (W / S * 100).toFixed(1) : '─'}%</td><td>−${acYen(O)}</td><td>${acYen(S)}</td><td>${S ? (all.reduce((a, x) => a + x.g, 0) / S * 100).toFixed(1) + '%' : '─'}</td>${m.pw ? '<td>─</td>' : ''}</tr>`;
-  return h + `</tbody></table></div><div class="nw-sub" style="font-size:12.5px;margin-top:6px">廃棄率＝廃棄÷売上。「上限より多い」は、上限 ${nwPct('B', cap)} まで下げると1日に減らせる廃棄（クラスごとに見た額）。荒利率は本部データの荒利（廃棄を引いた後）÷売上。値引はクラス別のデータが無いので入っていません。</div>`;
+  return h + `</tbody></table></div><div class="nw-sub" style="font-size:12.5px;margin-top:6px">廃棄率＝廃棄÷売上。「上限より多い」は、上限 ${nwPct('B', cap)} まで下げると1日に減らせる廃棄（店ごと・クラスごとに出して足した額）。荒利率は本部データの荒利（廃棄を引いた後）÷売上。値引はクラス別のデータが無いので入っていません。</div>`;
 }
 function acClassPopup(i) {
   if (!AC) return;
