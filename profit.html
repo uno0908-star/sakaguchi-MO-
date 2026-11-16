@@ -3167,7 +3167,10 @@ async function bdLoad(force) {
     BD.rows = d.rows || []; BD.err = ''; BD.loaded = true;
   } catch (e) { BD.err = /不明なアクション/.test(e.message) ? 'サーバーの準備がまだです' : '宣言を読みこめません（電波）'; }
   finally { BD.loading = false; }
-  if (!document.getElementById('overlay').classList.contains('show')) renderWsNew();
+  renderWsNew();
+  // 宣言の画面が開いていて、まだ何も入力していなければ、読みこんだ内容で開き直す
+  if (BD.openName && document.getElementById('overlay').classList.contains('show') && document.getElementById('bdWeek') && !BD.dirty)
+    bdOpen(BD.openName, document.getElementById('bdWeek').value);
 }
 // 値引・廃棄タブに出す表
 function bdSectionHtml(rows) {
@@ -3195,10 +3198,11 @@ function bdSectionHtml(rows) {
   h += `</tbody></table></div><div class="nw-sub" style="font-size:12.5px;margin:6px 2px 0">「のこり${n.rem}日」＝今月の売変予算から ここまでの実績を引いて、のこりの日数で割った 1日あたりの金額。これより多く出すと 今月の予算を こえる。赤＝もう予算を こえている／黄＝今の ペースより 下げる必要あり。<br>宣言は 週（月〜日）ごと。結果は その週の 実績（1日あたり）と くらべる（月曜の データ更新で 出る）。</div>`;
   return h;
 }
-function bdOpen(name) {
+function bdOpen(name, week) {
   const p = PROFIT.find(x => x.name === name); if (!p) return;
   const b = bdPlan(p), W = bdWeeks(), n = bdNow();
-  const def = new Date().getDay() === 1 ? W.thisMon : W.nextMon;     // 月曜は 今週、それ以外は 来週
+  BD.openName = name; BD.dirty = false;
+  const def = week === W.thisMon || week === W.nextMon ? week : new Date().getDay() === 1 ? W.thisMon : W.nextMon;     // 月曜は 今週、それ以外は 来週
   const cur = bdDecl(name, def);
   let who = ''; try { who = localStorage.getItem('bd_who') || ''; } catch (e) {}
   const sug = b.allow != null && b.allow > 0 ? Math.min(b.allow, b.act) : b.bgtDay;
@@ -3207,7 +3211,7 @@ function bdOpen(name) {
     <div><div class="k">のこり${n.rem}日</div><div class="v ${b.allow != null && b.allow < b.act ? 'nw-bad' : 'nw-good'}" style="font-size:17px">${b.allow == null ? '─' : b.allow <= 0 ? 'オーバー' : bdYen(b.allow)}</div><div class="k">1日いくらまで</div></div></div>
     <div class="nw-sub">今月の売変予算 ${bdYen(b.bgtMonth)}　ここまで ${bdYen(b.used)}（${n.elapsed}日分）　売上に対して ${b.rate.toFixed(1)}%</div>
     <div class="nw-pp-h">宣言する</div>
-    <div class="bd-form">
+    <div class="bd-form" oninput="BD.dirty=true">
       <label>どの週</label><select id="bdWeek" onchange="bdFill('${name}')">
         <option value="${W.thisMon}" ${def === W.thisMon ? 'selected' : ''}>今週（${bdWeekLab(W.thisMon)}）</option>
         <option value="${W.nextMon}" ${def === W.nextMon ? 'selected' : ''}>来週（${bdWeekLab(W.nextMon)}）</option></select>
@@ -3245,7 +3249,7 @@ async function bdSave(name) {
     const d = await r.json();
     if (!d.ok) throw new Error(d.error || '保存できません');
     BD.rows = BD.rows.filter(x => !(x.store === name && x.weekStart === week)).concat([{weekStart: week, store: name, amount: d.amount, who, memo, at: d.at}]);
-    renderWsNew(); bdOpen(name);
+    renderWsNew(); bdOpen(name, week);
     const m2 = document.getElementById('bdMsg'); if (m2) { m2.className = 'bd-msg nw-good'; m2.textContent = '✓ 保存しました'; }
   } catch (e) {
     msg.className = 'bd-msg nw-bad'; msg.textContent = '保存できませんでした（' + e.message + '）。電波の よい 所で もう一度';
