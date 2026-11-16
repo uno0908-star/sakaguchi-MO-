@@ -196,6 +196,14 @@ table.mtx tbody th{
 .c-redo{background:var(--red);color:#fff}
 .c-excluded{background:#e3e7ec;color:#9aa4ae}
 
+table.mtx tr.r-ng>th,table.mtx tr.r-ng>td{background:#fff4d6}
+table.mtx tr.r-ng>th{color:#8a5a00}
+table.mtx td.rt{font-weight:800}
+table.mtx tr.r-ng td.rt{color:#c62828}
+table.mtx tr.r-ok td.rt{color:#1f9d55}
+.mtx-sum{font-size:12.5px;font-weight:700;margin:0 0 8px;line-height:1.7}
+.mtx-sum b.ng{color:#c62828}.mtx-sum b.ok{color:#1f9d55}
+.mtx-sum i{display:inline-block;width:12px;height:12px;border-radius:3px;background:#fff4d6;border:1px solid #e0b84a;vertical-align:-1px;margin-right:3px}
 table.mtx td.td-ph{cursor:pointer}
 table.mtx td.td-ph:hover{background:var(--blue-l)}
 table.mtx td.td-ph:active{background:#d8e9f9}
@@ -1452,6 +1460,13 @@ function openCell(storeId, itemId) {
   `);
 }
 
+/* 店ごとの完了数・完了率（除外は分母から外す） */
+function storeRate(sid, items) {
+  const tg = items.filter(it => statusOf(sid, it.id) !== 'excluded').length;
+  const dn = items.filter(it => statusOf(sid, it.id) === 'done').length;
+  return { tg, dn, pct: tg ? Math.round(dn / tg * 100) : 100, ok: dn >= tg };
+}
+
 function renderProgress() {
   const items = openItems();
   const k = stats();
@@ -1478,10 +1493,12 @@ function renderProgress() {
   // 店舗×項目マトリクス
   html += `<div class="card">
     <h2>📋 店舗別 進捗マトリクス<span class="n">横にスクロールできます</span></h2>
+    ${(() => { const rs = STORES.map(s => storeRate(s.id, items)), okN = rs.filter(r => r.ok).length;
+      return `<div class="mtx-sum">ぜんぶ完了した店 <b class="ok">${okN}／${STORES.length}店（${Math.round(okN / STORES.length * 100)}%）</b>　まだの店 <b class="ng">${STORES.length - okN}店</b><br><i></i>黄色の行＝まだ完了していない店</div>`; })()}
     <div class="mtx-wrap"><table class="mtx" id="mtx">
       <thead><tr><th style="text-align:left">店舗</th>
         ${items.map(it => `<th title="${esc(it.cat)}">${esc(it.no || '·')}</th>`).join('')}
-        <th>完了</th></tr></thead>
+        <th>完了</th><th>完了率</th></tr></thead>
       <tbody>${STORES.map(s => {
         const cells = items.map(it => {
           const st = statusOf(s.id, it.id);
@@ -1498,9 +1515,8 @@ function renderProgress() {
             ? `<td class="td-ph" onclick="openCell('${s.id}','${it.id}')" title="${tip}"><span class="cell ${cls}">${ch}</span></td>`
             : `<td><span class="cell ${cls}" title="${tip}">${ch}</span></td>`;
         }).join('');
-        const tg = items.filter(it => statusOf(s.id, it.id) !== 'excluded').length;
-        const dn = items.filter(it => statusOf(s.id, it.id) === 'done').length;
-        return `<tr><th>${esc(s.short)}</th>${cells}<td><b>${dn}/${tg}</b></td></tr>`;
+        const sr = storeRate(s.id, items);
+        return `<tr class="${sr.ok ? 'r-ok' : 'r-ng'}"><th>${esc(s.short)}</th>${cells}<td><b>${sr.dn}/${sr.tg}</b></td><td class="rt">${sr.pct}%</td></tr>`;
       }).join('')}</tbody>
     </table></div>
     <div class="legend">
@@ -1613,7 +1629,8 @@ function exportPng() {
   const items = openItems();
   const k = stats();
   const cw = 40, rh = 30, lw = 132, top = 96, pad = 18;
-  const W = pad * 2 + lw + cw * (items.length + 1);
+  const rw = 56;   // 完了率の列
+  const W = pad * 2 + lw + cw * (items.length + 1) + rw;
   const H = top + rh * (STORES.length + 1) + 78;
   const c = document.createElement('canvas');
   const sc = 2; c.width = W * sc; c.height = H * sc;
@@ -1635,11 +1652,14 @@ function exportPng() {
     x.fillText(it.no || '·', pad + lw + cw * i + cw / 2, top - 8);
   });
   x.fillStyle = '#5b6b7c'; x.fillText('完了', pad + lw + cw * items.length + cw / 2, top - 8);
+  x.fillText('完了率', pad + lw + cw * (items.length + 1) + rw / 2, top - 8);
 
   STORES.forEach((s, r) => {
     const y = top + rh * r;
-    if (r % 2) { x.fillStyle = '#f7f9fb'; x.fillRect(pad, y, lw + cw * (items.length + 1), rh); }
-    x.textAlign = 'left'; x.fillStyle = '#1f2d3d'; x.font = '700 12px sans-serif';
+    const sr = storeRate(s.id, items);
+    if (!sr.ok) { x.fillStyle = '#fff4d6'; x.fillRect(pad, y, lw + cw * (items.length + 1) + rw, rh); }   // まだの店は黄色
+    else if (r % 2) { x.fillStyle = '#f7f9fb'; x.fillRect(pad, y, lw + cw * (items.length + 1) + rw, rh); }
+    x.textAlign = 'left'; x.fillStyle = sr.ok ? '#1f2d3d' : '#8a5a00'; x.font = '700 12px sans-serif';
     x.fillText(s.short, pad + 4, y + 20);
     x.textAlign = 'center';
     items.forEach((it, i) => {
@@ -1653,16 +1673,16 @@ function exportPng() {
       x.fillStyle = m[1]; x.font = '800 12px sans-serif';
       x.fillText(m[2], pad + lw + cw * i + cw / 2, y + 20);
     });
-    const tg = items.filter(it => statusOf(s.id, it.id) !== 'excluded').length;
-    const dn = items.filter(it => statusOf(s.id, it.id) === 'done').length;
-    x.fillStyle = dn === tg ? '#1f9d55' : '#1f2d3d'; x.font = '800 12px sans-serif';
-    x.fillText(dn + '/' + tg, pad + lw + cw * items.length + cw / 2, y + 20);
+    x.fillStyle = sr.ok ? '#1f9d55' : '#1f2d3d'; x.font = '800 12px sans-serif';
+    x.fillText(sr.dn + '/' + sr.tg, pad + lw + cw * items.length + cw / 2, y + 20);
+    x.fillStyle = sr.ok ? '#1f9d55' : '#c62828';
+    x.fillText(sr.pct + '%', pad + lw + cw * (items.length + 1) + rw / 2, y + 20);
   });
 
   // 凡例＋項目名
   x.textAlign = 'left'; x.fillStyle = '#5b6b7c'; x.font = '400 11px sans-serif';
   const legendY = top + rh * STORES.length + 20;
-  x.fillText('✓完了 ／ 神=神田確認待ち ／ 待=SC確認待ち ／ !=要修正 ／ 空欄=未提出 ／ —=進捗除外', pad, legendY);
+  x.fillText('✓完了 ／ 神=神田確認待ち ／ 待=SC確認待ち ／ !=要修正 ／ 空欄=未提出 ／ —=進捗除外 ／ 黄色の行=まだ完了していない店', pad, legendY);
   const names = items.map(it => (it.no || '·') + '=' + it.cat).join('　');
   wrapText(x, names, pad, legendY + 18, W - pad * 2, 15);
 
