@@ -155,7 +155,7 @@ let flushTimer = null, flushing = false;
 const ackedAt = {};   // key → 保存が おわった 時刻
 function queue(date, store, p, patch) {
   const k = key(date, store, p.id);
-  S.pending[k] = Object.assign({date, store, employeeId: p.id, name: p.name, empType: (GROUPS.find(g => g[0] === p.kind) || [])[1] || ''}, S.pending[k] || {}, patch);
+  S.pending[k] = Object.assign({date, store, employeeId: p.id, name: p.name, empType: (GROUPS.find(g => g[0] === p.kind) || [])[1] || ''}, S.pending[k] || {}, patch, {who: S.user});   // who＝つけた人（あとで 別の人が ログインしても 変えない）
   lsSet('cc_pending', S.pending);
   setSave('送っています…');
   clearTimeout(flushTimer); flushTimer = setTimeout(() => flush(false), 900);
@@ -166,14 +166,15 @@ async function flush(manual) {
   let sent = false;
   try {
     while (true) {
-      const keys = Object.keys(S.pending); if (!keys.length) break;
+      const allKeys = Object.keys(S.pending); if (!allKeys.length) break;
+      const who = S.pending[allKeys[0]].who || S.user, keys = allKeys.filter(k => (S.pending[k].who || S.user) === who);   // つけた人ごとに 分けて 送る
       setSave('送っています…');
       const sending = keys.map(k => S.pending[k]);
       const res = await fetch(GAS_URL, {method: 'POST', headers: {'Content-Type': 'text/plain;charset=utf-8'}, redirect: 'follow',
-        body: JSON.stringify({action: 'setCameraCheck', user: S.user, records: sending})});
+        body: JSON.stringify({action: 'setCameraCheck', user: who, records: sending})});
       const d = await res.json();
       if (!d.ok) throw new Error(d.error || '保存できません');
-      keys.forEach((k, i) => { S.checks[k] = Object.assign({}, S.checks[k] || {}, sending[i], {by: S.user, at: d.at}); ackedAt[k] = Date.now();
+      keys.forEach((k, i) => { S.checks[k] = Object.assign({}, S.checks[k] || {}, sending[i], {by: who, at: d.at}); ackedAt[k] = Date.now();
         if (S.pending[k] === sending[i]) delete S.pending[k]; });       // 送っている間に また 押された分は 残す
       lsSet('cc_checks', S.checks); lsSet('cc_pending', S.pending);
       sent = true;

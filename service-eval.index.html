@@ -1797,7 +1797,7 @@ const App={
       const res=await fetch(`${GAS_URL}?action=getCameraCheck&from=${from}`,{redirect:'follow'});
       const j=await res.json();
       this._camRows=j.ok?(j.rows||[]):[];this._camMissing=!j.ok;this._camLoaded=true;
-      if(this._view==='store-karte')this.renderStoreKartePage();
+      if(this._view==='store-karte'&&!this._kEditing)this.renderStoreKartePage();   // カルテの 入力中は 画面を 作り直さない
     }catch(e){}finally{this._camLoading=false}
   },
   _camCardHtml(store){
