@@ -3234,6 +3234,8 @@ function bdFill(name) {
   const w = document.getElementById('bdWeek').value, c = bdDecl(name, w);
   document.getElementById('bdAmt').value = c ? c.amount : '';
   document.getElementById('bdMemo').value = c ? c.memo || '' : '';
+  let who = ''; try { who = localStorage.getItem('bd_who') || ''; } catch (e) {}
+  document.getElementById('bdWho').value = c && c.who ? c.who : who;   // その週の 宣言者（なければ この端末で 前に 入れた 名前）
 }
 async function bdSave(name) {
   const msg = document.getElementById('bdMsg'), btn = document.getElementById('bdSave');
