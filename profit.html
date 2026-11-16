@@ -3173,7 +3173,7 @@ async function bdLoad(force) {
   finally { BD.loading = false; }
   renderWsNew();
   // 宣言の画面が開いていて、まだ何も入力していなければ、読みこんだ内容で開き直す
-  if (BD.openName && document.getElementById('overlay').classList.contains('show') && document.getElementById('bdWeek') && !BD.dirty)
+  if (BD.openName && document.getElementById('overlay').classList.contains('show') && document.getElementById('bdWeek') && !BD.dirty && !BD.saving)
     bdOpen(BD.openName, document.getElementById('bdWeek').value);
 }
 // 値引・廃棄タブに出す表
@@ -3250,19 +3250,21 @@ async function bdSave(name) {
   try { localStorage.setItem('bd_who', who); } catch (e) {}
   btn.disabled = true; msg.className = 'bd-msg'; msg.textContent = '保存しています…';
   const ticket = BD.ticket = (BD.ticket || 0) + 1;   // この保存の 番号（おわった時に 同じ画面のままか 見るため）
-  BD.dirty = false;
+  BD.dirty = false; BD.saving = true;   // 保存中は 読みこみが おわっても 画面を 作り直さない
   try {
     const r = await fetch(BD_GAS, {method: 'POST', headers: {'Content-Type': 'text/plain;charset=utf-8'}, redirect: 'follow',
       body: JSON.stringify({action: 'setBaihenDecl', user: who, record: {weekStart: week, store: name, amount: amt, who, memo}})});
     const d = await r.json();
     if (!d.ok) throw new Error(d.error || '保存できません');
     BD.rows = BD.rows.filter(x => !(x.store === name && x.weekStart === week)).concat([{weekStart: week, store: name, amount: d.amount, who, memo, at: d.at, savedAt: Date.now()}]);
+    BD.saving = false;
     renderWsNew();
     // 同じ 画面が 開いたままで、そのあと 何も 入力していない ときだけ 開き直す（ほかの 店の 画面や 入力中の 内容は こわさない）
     const same = BD.ticket === ticket && BD.openName === name && !BD.dirty && document.getElementById('bdSave') === btn && document.getElementById('overlay').classList.contains('show');
     if (same) { bdOpen(name, week); const m2 = document.getElementById('bdMsg'); if (m2) { m2.className = 'bd-msg nw-good'; m2.textContent = '✓ 保存しました'; } }
     else if (document.getElementById('bdSave') === btn) { btn.disabled = false; msg.className = 'bd-msg nw-good'; msg.textContent = '✓ 保存しました（そのあと 変えた 所は まだ 保存していません）'; }
   } catch (e) {
+    BD.saving = false;
     if (document.getElementById('bdSave') === btn) { msg.className = 'bd-msg nw-bad'; msg.textContent = '保存できませんでした（' + e.message + '）。電波の よい 所で もう一度'; btn.disabled = false; }
   }
 }
