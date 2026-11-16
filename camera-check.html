@@ -22,8 +22,8 @@ main{max-width:860px;margin:0 auto;padding:12px 12px 90px}
 .err{background:#fdecea;color:#b3261e;border-radius:10px;padding:10px 12px;font-size:14px;font-weight:700;margin-bottom:10px}
 .ok{color:var(--green);font-weight:700}.ng{color:var(--red);font-weight:700}
 /* ログイン */
-.who{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:10px 0}
-.who button{min-height:60px;font-size:17px}
+.who{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:10px 0}
+.who button{min-height:56px;font-size:16px;padding:4px 6px;line-height:1.25;white-space:normal;word-break:keep-all;overflow-wrap:anywhere}
 .who button.on{background:var(--blue2);color:#fff;border-color:var(--blue2)}
 input[type=password],input[type=date],input[type=text]{width:100%;min-height:48px;font-size:17px;border:1px solid var(--line);border-radius:12px;padding:0 12px;font-family:inherit;background:#fff}
 /* 日付 */
@@ -33,7 +33,7 @@ input[type=password],input[type=date],input[type=text]{width:100%;min-height:48p
 .tabs{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px}
 .tabs button.on{background:var(--blue);color:#fff;border-color:var(--blue)}
 /* 店タイル */
-.stores{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.stores{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
 @media(min-width:700px){.stores{grid-template-columns:1fr 1fr 1fr}}
 .store{background:#fff;border-radius:14px;padding:12px;border:2px solid var(--line);min-height:92px;cursor:pointer;text-align:left;font-family:inherit;font-size:16px;color:var(--ink)}
 .store b{display:block;font-size:17px;line-height:1.3}
@@ -50,7 +50,7 @@ input[type=password],input[type=date],input[type=text]{width:100%;min-height:48p
 .person.has-x{border-left-color:var(--red)}.person.all-o{border-left-color:var(--green)}.person.some{border-left-color:var(--amber)}
 .pname{font-size:18px;font-weight:800;line-height:1.3}
 .pname small{font-size:12px;font-weight:600;color:var(--ink2);margin-left:6px}
-.items{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px}
+.items{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-top:10px}
 .item{background:#f6f8fb;border-radius:12px;padding:8px}
 .item .lab{font-size:13px;font-weight:700;margin-bottom:6px;line-height:1.3}
 .ox{display:grid;grid-template-columns:1fr 1fr;gap:6px}
@@ -81,13 +81,18 @@ th:first-child{background:#eef2f7}
 
 <script>
 // ============================================================
-//  カメラチェック（オーナー・MOTR用）2026-11-16
+//  カメラチェック（オーナー・MOTR・SC・ASC用）2026-11-16
 //  店のカメラを見て、人ごとに ①原材料確認（15時・24時）②指差し確認 ③声出し確認 を ○× でつける。
 //  名簿＝個店カルテ（接客評価DB）の従業員マスタ。記録＝同じGASの CameraCheck シート。個店カルテにも出る。
 // ============================================================
 const GAS_URL = 'https://script.google.com/macros/s/AKfycbyHEBH5Q8VBcZFBzfH5tYQm46RCa_fYw3PDlKp1qA5E9EWmR44OQ8UA1JTXFa-stnbG8g/exec';
 const PASS = 'Lawson3963';
-const USERS = ['阪口 清治', '阪口 憲治', '神田', '髙橋（MOTR）', '五島（MOTR）'];
+// 使う人。SC・ASC は 2026-11-16 に追加（todo-task.html の SC_LIST / ASC_LIST と同じ顔ぶれ）
+const USER_GROUPS = [['オーナー・管理', ['阪口 清治', '阪口 憲治', '神田']],
+  ['MOTR', ['髙橋（MOTR）', '五島（MOTR）']],
+  ['SC', ['ダハル（SC）', 'ビスワス（SC）', 'フィ（SC）', 'スラズ（SC）']],
+  ['ASC', ['レサム（ASC）', 'トゥアン（ASC）']]];
+const USERS = USER_GROUPS.flatMap(g => g[1]);
 const STORES = ['五月ケ丘東', '江坂駅南口', '池田市役所前', '吹田朝日町', '豊中服部元町一丁目', '吹田青山台三丁目', '吹田豊津中学校前', '新御堂筋上新田',
   '南金田二丁目', '豊中原田南一丁目', '箕面白島二丁目', '豊中利倉東一丁目', '江坂東', '吹田警察署前', '大道南一丁目', '東淀川豊里五丁目',
   '吹田垂水三丁目', '豊里六丁目', '豊中服部西町三丁目', '東淀川大道南'];
@@ -206,7 +211,7 @@ function banner() {
 function renderLogin() {
   $('hBack').style.display = 'none'; $('hTitle').textContent = 'カメラチェック';
   $('app').innerHTML = `<div class="card"><b style="font-size:18px">だれが 見ますか</b>
-    <div class="who">${USERS.map(u => `<button class="btn ${pickUser === u ? 'on' : ''}" onclick="pick('${u}')">${u}</button>`).join('')}</div>
+    ${USER_GROUPS.map(([g, us]) => `<div class="sub" style="margin-top:10px;font-weight:700">${g}</div><div class="who" style="margin-top:4px">${us.map(u => `<button class="btn ${pickUser === u ? 'on' : ''}" onclick="pick('${u}')">${u}</button>`).join('')}</div>`).join('')}
     <div class="sub" style="margin:8px 0 4px">パスワード</div><input type="password" id="pw" autocomplete="current-password" onkeydown="if(event.key==='Enter')login()">
     <div id="lerr" class="ng" style="min-height:22px;font-size:14px;margin-top:4px"></div>
     <button class="btn pri full" onclick="login()">はじめる</button></div>`;
