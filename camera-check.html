@@ -98,7 +98,7 @@ const USER_GROUPS = [['オーナー・管理', ['阪口 清治', '阪口 憲治'
   ['SC', ['ダハル（SC）', 'ビスワス（SC）', 'フィ（SC）', 'スラズ（SC）']],
   ['ASC', ['レサム（ASC）', 'トゥアン（ASC）']]];
 const USERS = USER_GROUPS.flatMap(g => g[1]);
-// 店長は 自分の 店の 結果を 見るだけ（○× は つけない）。パスワード＝店舗コード（頭の 0 は あっても なくても よい）
+// 店長は 自分の 店だけ（チェックの 入力も 結果を 見るのも できる）。パスワード＝店舗コード（頭の 0 は あっても なくても よい）
 const STORE_CODE = {'五月ケ丘東': '40070', '江坂駅南口': '171115', '池田市役所前': '87188', '豊中服部西町三丁目': '96550', '吹田垂水三丁目': '65554', '豊里六丁目': '86361',
   '東淀川大道南': '190348', '吹田青山台三丁目': '366280', '新御堂筋上新田': '234880', '豊中服部元町一丁目': '369053', '吹田豊津中学校前': '229234', '吹田朝日町': '376886',
   '吹田警察署前': '153005', '江坂東': '190489', '大道南一丁目': '121880', '東淀川豊里五丁目': '377058', '南金田二丁目': '229435', '豊中利倉東一丁目': '368993',
@@ -224,16 +224,15 @@ function render() {
   const tabs = `<div class="tabs"><button class="btn ${S.tab === 'check' ? 'on' : ''}" onclick="setTab('check')">📹 チェックする</button><button class="btn ${S.tab === 'result' ? 'on' : ''}" onclick="setTab('result')">📊 結果を見る</button></div>`;
   $('app').innerHTML = banner() + tabs + (S.tab === 'check' ? homeHtml() : resultHtml());
 }
-// 店長の 画面：自分の 店の その日の ○×（見るだけ）と、これまでの 結果
+// 店長の 画面：自分の 店だけ。チェックの 入力（ほかの人が つけた分は 見るだけ）と、これまでの 結果
 function renderMgr() {
   S.store = S.mgrStore; $('hBack').style.display = 'none'; $('hTitle').textContent = S.mgrStore + '（店長）';
-  const tabs = `<div class="tabs"><button class="btn ${S.tab === 'check' ? 'on' : ''}" onclick="setTab('check')">📹 この日の 結果</button><button class="btn ${S.tab === 'result' ? 'on' : ''}" onclick="setTab('result')">📊 これまでの 結果</button></div>`;
+  const tabs = `<div class="tabs"><button class="btn ${S.tab === 'check' ? 'on' : ''}" onclick="setTab('check')">📹 チェックする</button><button class="btn ${S.tab === 'result' ? 'on' : ''}" onclick="setTab('result')">📊 結果を見る</button></div>`;
   if (S.tab === 'result') { $('app').innerHTML = banner() + tabs + resultHtml(); return; }
   const st = staffOf(S.store), t = storeStat(S.store, S.date);
-  let h = banner() + tabs + dateBar() + `<div class="sub" style="margin:0 2px">オーナー・MOTR・SC が カメラで 見た 結果です。見た <b>${t.n}／${t.total}人</b>${t.x ? `　<span class="ng">× ${t.x}人</span>` : ''}。× の 人には その日の うちに 声を かけて なおす。</div>`;
+  let h = banner() + tabs + dateBar() + `<div class="sub" style="margin:0 2px">見た <b>${t.n}／${t.total}人</b>${t.x ? `　<span class="ng">× ${t.x}人</span>` : ''}　○か × を 押す。もう一度 押すと 消える。映っていない 人は 何も 押さない。ほかの人が つけた 記録は 変えられない。× の 人には その日の うちに 声を かけて なおす。</div>`;
   if (!st.length) h += '<div class="card">この店の 名簿が 読めていません。電波の よい 所で 開き直してください。</div>';
-  else if (!t.n) h += '<div class="card">この日は まだ だれも チェックしていません。</div>';
-  GROUPS.forEach(([g, label]) => { const ps = st.filter(p => p.kind === g && seen(rec(S.date, S.store, p.id))); if (!ps.length) return;
+  GROUPS.forEach(([g, label]) => { const ps = st.filter(p => p.kind === g); if (!ps.length) return;
     h += `<div class="grp">${label}<span>${ps.length}人</span></div>` + ps.map(personHtml).join(''); });
   $('app').innerHTML = h;
 }
@@ -263,7 +262,7 @@ function login() {
     if (!st) { $('lerr').textContent = '店を えらんでください'; return; }
     if (!pw || pw !== STORE_CODE[st]) { $('lerr').textContent = '店舗コードが ちがいます'; return; }
     S.mgrStore = st; S.user = st + ' 店長'; S.authed = true; S.view = 'store'; S.store = st;
-    lsSet('cc_mgr', st); lsSet('cc_user', S.user); lsSet('cc_authed', true); render(); loadAll(true);
+    lsSet('cc_mgr', st); lsSet('cc_user', S.user); lsSet('cc_authed', true); render(); loadAll(true); flush(false);
     return;
   }
   if (!pickUser) { $('lerr').textContent = '名前を えらんでください'; return; }
@@ -307,7 +306,7 @@ function renderStore() {
 }
 function personHtml(p) {
   const r = rec(S.date, S.store, p.id), x = hasX(r), n = ITEMS.filter(([k]) => r[k] === 'o' || r[k] === 'x').length;
-  const lk = isMgr() ? '' : lockedBy(S.date, S.store, p.id), ro = isMgr() || !!lk;   // ro＝見るだけ
+  const lk = lockedBy(S.date, S.store, p.id), ro = !!lk;   // ro＝見るだけ（ほかの人が つけた 記録）
   const cls = x ? 'has-x' : n === ITEMS.length ? 'all-o' : n ? 'some' : '';
   return `<div class="person ${cls}" id="p-${p.id}"><div class="pname">${esc(p.name)}${p.role ? `<small>${esc(p.role)}</small>` : ''}</div>
     <div class="items">${ITEMS.map(([k, a, b]) => `<div class="item"><div class="lab">${a}${b ? `<br><span style="color:var(--blue2)">${b}</span>` : ''}</div>
@@ -317,13 +316,13 @@ function personHtml(p) {
       : n || r.memo ? `<div class="memo"><input type="text" placeholder="メモ（何時ごろ・何が できていないか）" value="${esc(r.memo || '')}" maxlength="120" onchange="memo('${p.id}',this.value)"></div>` : ''}</div>`;
 }
 function tap(id, k, v) {
-  if (isMgr() || lockedBy(S.date, S.store, id)) return;   // 店長と、ほかの人が つけた 記録は 見るだけ
+  if (lockedBy(S.date, S.store, id)) return;   // ほかの人が つけた 記録は 見るだけ
   const p = staffOf(S.store).find(q => q.id === id); if (!p) return;
   const cur = rec(S.date, S.store, id)[k] || '';
   queue(S.date, S.store, p, {[k]: cur === v ? '' : v});
   const el = $('p-' + id); if (el) el.outerHTML = personHtml(p);
 }
-function memo(id, v) { if (isMgr() || lockedBy(S.date, S.store, id)) return; const p = staffOf(S.store).find(q => q.id === id); if (p) queue(S.date, S.store, p, {memo: v.trim()}); }
+function memo(id, v) { if (lockedBy(S.date, S.store, id)) return; const p = staffOf(S.store).find(q => q.id === id); if (p) queue(S.date, S.store, p, {memo: v.trim()}); }
 
 // ---------- 結果 ----------
 function periodRange() {
