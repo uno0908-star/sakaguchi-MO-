@@ -343,6 +343,7 @@ input,select,textarea,button{font-family:inherit;font-size:14px}
       <option value="Crew">クルー</option>
     </select>
   </div>
+  <div class="view-content" id="emp-csv-wrap" style="padding-bottom:0"></div>
   <div class="view-content" id="employee-list-content"></div>
   <button class="btn-fab" onclick="App.showView('employee-form')" title="新規登録">＋</button>
 </div>
@@ -2142,7 +2143,117 @@ const App={
   renderEmployeeList(){
     const user=DB.user();const storeEl=document.getElementById('emp-filter-store');
     if(storeEl){if(user.role==='店舗責任者'){storeEl.value=user.store;storeEl.disabled=true}else{storeEl.disabled=false}}
+    this._renderRosterCsvCard();
     this.filterEmployees();
+  },
+
+  /* ===== 在籍リスト（CSV）: 期間と店舗を選んで、その期間に在籍していた人を出す ===== */
+  _rosterCsvScope(){
+    const me=DB.user()||{};const role=me.role;
+    if(role==='管理者'||role==='SI'||role==='SC')return{all:true,store:''};
+    if(role==='店舗責任者'&&me.store)return{all:false,store:me.store};
+    return null;
+  },
+  // 日本の日付(YYYY-MM-DD)へ。UTCのISO文字列は+9時間して日本の日付にする
+  _rosterJpDate(v){
+    if(v==null||v==='')return'';
+    const s=String(v).trim();if(!s)return'';
+    if(/^\d{4}-\d{2}-\d{2}$/.test(s))return s;
+    if(/^\d{4}-\d{2}-\d{2}T/.test(s)){
+      if(!/(Z|[+-]\d{2}:?\d{2})$/i.test(s))return s.slice(0,10);
+      const d=new Date(s);if(isNaN(d))return'';
+      return new Date(d.getTime()+9*3600e3).toISOString().slice(0,10);
+    }
+    const m=s.match(/^(\d{4})[\/.-](\d{1,2})[\/.-](\d{1,2})/);
+    if(m)return m[1]+'-'+m[2].padStart(2,'0')+'-'+m[3].padStart(2,'0');
+    return'';
+  },
+  _rosterArr(v){
+    if(Array.isArray(v))return v;
+    if(!v||v==='null')return[];
+    try{const p=JSON.parse(v);return Array.isArray(p)?p:[]}catch(e){return[String(v)]}
+  },
+  _renderRosterCsvCard(){
+    const wrap=document.getElementById('emp-csv-wrap');if(!wrap)return;
+    const sc=this._rosterCsvScope();
+    if(!sc){wrap.innerHTML='';wrap.style.display='none';return}
+    wrap.style.display='';
+    if(wrap.dataset.scope===(sc.all?'*':sc.store)&&wrap.innerHTML)return; // 入力中の値を消さない
+    wrap.dataset.scope=sc.all?'*':sc.store;
+    const today=this._rosterJpDate(new Date().toISOString());
+    const first=today.slice(0,8)+'01';
+    const opts=sc.all?'<option value="">全店舗</option>'+STORES.map(s=>`<option value="${s}">${s}</option>`).join(''):`<option value="${sc.store}">${sc.store}</option>`;
+    const fld='width:100%;min-width:0;min-height:44px;box-sizing:border-box';
+    wrap.innerHTML=`<details class="card" style="padding:0;margin-bottom:0">
+      <summary style="cursor:pointer;padding:12px 14px;min-height:44px;box-sizing:border-box;font-weight:700;display:flex;align-items:center">⬇ 在籍リスト（CSV）</summary>
+      <div style="padding:0 14px 14px">
+        <div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px">
+          <div class="form-group" style="margin-bottom:8px;min-width:0"><label for="rc-from">いつから</label><input type="date" id="rc-from" value="${first}" style="${fld}" onchange="App._rosterCsvPreview()"></div>
+          <div class="form-group" style="margin-bottom:8px;min-width:0"><label for="rc-to">いつまで</label><input type="date" id="rc-to" value="${today}" style="${fld}" onchange="App._rosterCsvPreview()"></div>
+        </div>
+        <div class="form-group" style="margin-bottom:8px"><label for="rc-store">店舗</label><select id="rc-store" style="${fld}" ${sc.all?'':'disabled'} onchange="App._rosterCsvPreview()">${opts}</select></div>
+        <div style="font-size:11px;color:var(--text-sub);margin-bottom:8px">店舗は今の所属です（過去の異動の履歴は入っていません）</div>
+        <button class="btn btn-primary btn-full" style="min-height:44px" onclick="App.downloadRosterCsv()">CSVをダウンロード</button>
+        <div id="rc-count" style="font-size:13px;margin-top:8px"></div>
+        <div id="rc-error" style="font-size:13px;margin-top:4px;color:var(--red,#E53E3E);font-weight:600"></div>
+      </div>
+    </details>`;
+    this._rosterCsvPreview();
+  },
+  // 条件を読んで対象者の行を作る。エラー時は {error}
+  _rosterCsvBuild(){
+    const sc=this._rosterCsvScope();if(!sc)return{error:'この機能は使えません'};
+    const from=document.getElementById('rc-from')?.value||'';
+    const to=document.getElementById('rc-to')?.value||'';
+    let store=sc.all?(document.getElementById('rc-store')?.value||''):sc.store;
+    if(!from||!to)return{error:'「いつから」と「いつまで」を入れてください'};
+    if(from>to)return{error:'「いつから」が「いつまで」より後になっています'};
+    const typeOrder={FullTimeEmployee:0,ContractEmployee:1,Crew:2};
+    const storeIdx=s=>{const i=STORES.indexOf(s);return i<0?STORES.length:i};
+    const seen=new Set();const list=[];
+    (DB.employees()||[]).forEach(e=>{
+      if(!e)return;
+      if(store&&e.store!==store)return;
+      const join=this._rosterJpDate(e.joinDate);
+      if(join&&join>to)return;
+      const leave=this._rosterJpDate(e.leaveDate);
+      if(e.status==='退職'&&!(leave&&leave>=from))return;
+      const key=String(e.id)+'|'+(e.store||'');
+      if(seen.has(key))return;seen.add(key);
+      list.push({e,join,leave});
+    });
+    list.sort((a,b)=>storeIdx(a.e.store)-storeIdx(b.e.store)||String(a.e.store||'').localeCompare(String(b.e.store||''),'ja')
+      ||(typeOrder[a.e.type]??9)-(typeOrder[b.e.type]??9)||String(a.e.name||'').localeCompare(String(b.e.name||''),'ja'));
+    const rows=list.map(({e,join,leave})=>[e.store||'',e.id==null?'':String(e.id),e.name||'',this._typeName(e.type)||'',
+      this._rosterArr(e.crewRoles).join('・'),this._rosterArr(e.certifications).join('・'),e.status||'',join,leave,
+      this._rosterJpDate(e.transferDate),this._tenureText(e.id)]);
+    return{from,to,store,rows};
+  },
+  _rosterCsvPreview(){
+    const r=this._rosterCsvBuild();
+    const c=document.getElementById('rc-count'),er=document.getElementById('rc-error');
+    if(er)er.textContent=r.error||'';
+    if(c)c.textContent=r.error?'':`対象：${r.rows.length}人`;
+    return r;
+  },
+  downloadRosterCsv(){
+    const r=this._rosterCsvPreview();if(r.error)return;
+    const er=document.getElementById('rc-error');
+    if(!r.rows.length){if(er)er.textContent='この条件にあてはまる人がいません';return}
+    const cell=v=>{
+      if(typeof v==='number')return String(v);
+      let s=v==null?'':String(v);
+      if(/^[=+\-@]/.test(s))s="'"+s;
+      return/[",\r\n]/.test(s)?'"'+s.replace(/"/g,'""')+'"':s;
+    };
+    const head=['店舗','従業員番号','氏名','雇用区分','役割','資格','状態','入社日','退職日','異動日','在籍年数'];
+    const csv=[head,...r.rows].map(row=>row.map(cell).join(',')).join('\r\n')+'\r\n';
+    const blob=new Blob(['﻿'+csv],{type:'text/csv;charset=utf-8'});
+    const url=URL.createObjectURL(blob);
+    const a=document.createElement('a');a.href=url;a.download=`在籍リスト_${r.store||'全店舗'}_${r.from}_${r.to}.csv`;
+    document.body.appendChild(a);a.click();a.remove();
+    setTimeout(()=>{try{URL.revokeObjectURL(url)}catch(e){}},1000);
+    const c=document.getElementById('rc-count');if(c)c.textContent=`${r.rows.length}人をダウンロードしました`;
   },
 
   filterEmployees(){
