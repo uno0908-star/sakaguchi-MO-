@@ -651,7 +651,20 @@ const Storage=(()=>{
     if(!v||v==='null')return[];
     try{const p=JSON.parse(v);return Array.isArray(p)?p:[]}catch(e){return[]}
   }
-  function _normId(v){return String(v).replace(/[０-９]/g,function(c){return String.fromCharCode(c.charCodeAt(0)-0xFEE0)}).replace(/[\s\u3000\u200b\ufeff]/g,'')}
+  // 2026-11-17 GASの _normId と同じ決まり：英数字・_・- 以外は全部除去／数字だけなら先頭ゼロも除去（id 8201217 の行が増え続けた対策）
+  // 既存データへの影響なし：シートは数字の文字列を数値に直すので、サーバー側のID・employeeIdに先頭ゼロや記号は残らない（英数字IDは36進のみ）。
+  // 本番を読み取りで確認済み（従業員240・評価797・指導362・相談1 のうち、この正規化で値が変わるもの0件）。評価等の employeeId の付け替えは不要
+  function _normId(v){if(v==null)return'';var s=String(v).replace(/[０-９]/g,function(c){return String.fromCharCode(c.charCodeAt(0)-0xFEE0)}).replace(/[\s\u3000\u200b\ufeff]/g,'').replace(/[^0-9A-Za-z_\-]/g,'');if(/^[0-9]+$/.test(s)){s=s.replace(/^0+/,'');if(s==='')s='0'}return s}
+  // 評価・指導・気づき・目線の employeeId も従業員の id と同じ決まりで正規化（2026-11-17）。
+  // 端末内だけの未同期の記録が記号入り・先頭ゼロの employeeId のまま残ると、正規化後の id で検索しても出てこないため。
+  // 読み出し時に正規化して返す（保存データは書き換えない）。空・null・正規化で空になるものはそのまま。値が変わらない行は同じオブジェクトを返す
+  function _normRec(r){
+    if(!r||r.employeeId==null||r.employeeId==='')return r;
+    var n=_normId(r.employeeId);
+    if(!n||n===r.employeeId)return r;
+    return{...r,employeeId:n};
+  }
+  function _normRecs(arr){return Array.isArray(arr)?arr.map(_normRec):arr}
   function _normalizeEmp(e){
     return{...e,
       id:e.id!=null?_normId(e.id):e.id,  // 数値IDを文字列に統一＋空白・全角数字を除去（2026-11-11 山本有紀美の行が増え続けた原因）
@@ -678,7 +691,14 @@ const Storage=(()=>{
     // 完全削除指定IDは、ローカル・リモートどちらにあっても結果に含めない（＝復活させない）
     var BLOCK=(typeof REMOVED_EMPLOYEE_IDS!=='undefined')?REMOVED_EMPLOYEE_IDS.map(String):[];
     function blocked(id){return BLOCK.indexOf(String(id))>=0}
-    remote.forEach(function(r){if(r&&r.id&&!blocked(r.id))map[String(r.id)]=r});
+    // 同じIDがサーバーに複数行あるときは updatedAt（無ければ createdAt）が新しい方を採用（同時刻なら先の行）。
+    // 以前は「最後の行」を採用していたため、古い行がサーバー値とみなされ、端末の古いデータで退職が巻き戻った（2026-11-17 id 8201217）
+    function _t(x){var v=x&&(x.updatedAt||x.createdAt);var t=v?Date.parse(v):NaN;return isNaN(t)?-Infinity:t}
+    remote.forEach(function(r){
+      if(!r||!r.id||blocked(r.id))return;
+      var k=String(r.id);
+      if(!map[k]||_t(r)>_t(map[k]))map[k]=r;
+    });
     var toResync=[];
     local.forEach(function(l){
       if(!l||!l.id||blocked(l.id))return;
@@ -687,9 +707,8 @@ const Storage=(()=>{
         // GASにない（未同期の新規）→ローカルを保持して再送
         map[key]=l;toResync.push(l);
       }else{
-        var localTime=l.updatedAt||l.createdAt||'';
-        var remoteTime=map[key].updatedAt||map[key].createdAt||'';
-        if(localTime>remoteTime){
+        // 時刻(ms)で比べる（文字列比較だと Z と +09:00 の書式違いで9時間ずれる）
+        if(_t(l)>_t(map[key])){
           // ローカルの方が新しい → GAS書き込みが失敗していた → 保持して再送
           map[key]=l;toResync.push(l);
         }else{
@@ -848,6 +867,8 @@ const Storage=(()=>{
       const res=await fetch(GAS_URL,{method:'POST',redirect:'follow',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify({action,...payload})});
       const d=await res.json();
       if(!d.ok)throw new Error(d.error||'保存エラー');
+      // サーバーの方が新しい内容だったので書かなかった（GAS 2026-11-17〜）。次の同期でサーバーの内容に戻る
+      if(d.stale){showToast('サーバーに新しい内容があるため保存しませんでした。「今すぐ同期」してからやり直してください','error');return}
       showToast('保存しました','success');
     }catch(e){showToast('保存できませんでした: '+e.message,'error')}
   }
@@ -892,6 +913,8 @@ const Storage=(()=>{
     if((emp.certifications||[]).includes('認定店長')){
       emp={...emp,crewRoles:(emp.crewRoles||[]).filter(r=>r!=='ルーキー（新人）')};
     }
+    // 手入力の氏名コード（全角・空白・記号入り）でも既存の人と一致させる。生のまま保存すると端末内に同じ人が2件残り再送の元になる（2026-11-17）
+    if(emp.id!=null&&_normId(emp.id))emp={...emp,id:_normId(emp.id)};
     const arr=getEmployees();const idx=arr.findIndex(e=>e.id===emp.id);const now=new Date().toISOString();let entry;
     if(idx>=0){entry={...arr[idx],...emp,updatedAt:now};arr[idx]=entry}else{entry={...emp,createdAt:now,updatedAt:now};arr.push(entry)}
     _write(STORAGE_KEYS.EMPLOYEES,arr);_postGas('upsertEmployee',{employee:entry});return true;
@@ -902,18 +925,18 @@ const Storage=(()=>{
   function reinstateEmployee(id){const e=getEmployee(id);if(!e)return false;return upsertEmployee({...e,status:'在籍中',leaveDate:'',reinstatedAt:new Date().toISOString().slice(0,10)})}
 
   /* 評価 */
-  function getEvaluations(){return _read(STORAGE_KEYS.EVALUATIONS,[])}
+  function getEvaluations(){return _normRecs(_read(STORAGE_KEYS.EVALUATIONS,[]))}
   function getEvalsByEmployee(id){return getEvaluations().filter(e=>e.employeeId===id)}
-  function addEvaluation(rec){const arr=getEvaluations();const entry={...rec,createdAt:new Date().toISOString()};arr.push(entry);_write(STORAGE_KEYS.EVALUATIONS,arr);_postGas('addEvaluation',{evaluation:entry});return true}
+  function addEvaluation(rec){const arr=getEvaluations();const entry=_normRec({...rec,createdAt:new Date().toISOString()});arr.push(entry);_write(STORAGE_KEYS.EVALUATIONS,arr);_postGas('addEvaluation',{evaluation:entry});return true}
 
   /* 気づきメモ */
-  function getObservations(){return _read(STORAGE_KEYS.OBSERVATIONS,[])}
-  function addObservation(rec){const arr=getObservations();const entry={...rec,id:_genId(),createdAt:new Date().toISOString()};arr.push(entry);_write(STORAGE_KEYS.OBSERVATIONS,arr);_postGas('addObservation',{observation:entry});return true}
+  function getObservations(){return _normRecs(_read(STORAGE_KEYS.OBSERVATIONS,[]))}
+  function addObservation(rec){const arr=getObservations();const entry=_normRec({...rec,id:_genId(),createdAt:new Date().toISOString()});arr.push(entry);_write(STORAGE_KEYS.OBSERVATIONS,arr);_postGas('addObservation',{observation:entry});return true}
 
   /* 指導メモ */
-  function getCoachings(){return _read(STORAGE_KEYS.COACHINGS,[])}
+  function getCoachings(){return _normRecs(_read(STORAGE_KEYS.COACHINGS,[]))}
   function getCoachingsByEmployee(id){return getCoachings().filter(c=>c.employeeId===id).sort((a,b)=>b.createdAt.localeCompare(a.createdAt))}
-  function addCoaching(rec){const arr=getCoachings();const entry={...rec,id:_genId(),createdAt:new Date().toISOString()};arr.push(entry);_write(STORAGE_KEYS.COACHINGS,arr);_postGas('addCoaching',{coaching:entry});return true}
+  function addCoaching(rec){const arr=getCoachings();const entry=_normRec({...rec,id:_genId(),createdAt:new Date().toISOString()});arr.push(entry);_write(STORAGE_KEYS.COACHINGS,arr);_postGas('addCoaching',{coaching:entry});return true}
 
   /* ユーザーマスタ */
   function getUsers(){return _read(STORAGE_KEYS.USERS,[])}
@@ -927,8 +950,9 @@ const Storage=(()=>{
   function clearUser(){localStorage.removeItem(STORAGE_KEYS.USER)}
 
   /* 目線合わせ */
-  function getDiscussions(){return _read(STORAGE_KEYS.DISCUSSIONS,[])}
+  function getDiscussions(){return _normRecs(_read(STORAGE_KEYS.DISCUSSIONS,[]))}
   function upsertDiscussion(disc){
+    disc=_normRec(disc);
     const arr=getDiscussions();const now=new Date().toISOString();
     const idx=arr.findIndex(d=>d.employeeId===disc.employeeId&&d.itemKey===disc.itemKey);let entry;
     if(idx>=0){entry={...arr[idx],...disc,updatedAt:now};arr[idx]=entry}else{entry={...disc,id:_genId(),createdAt:now,updatedAt:now};arr.push(entry)}
