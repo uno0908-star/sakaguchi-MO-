@@ -77,6 +77,12 @@ th:first-child{background:#eef2f7}
 .csvr{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
 .csvr label{font-size:13px;font-weight:700;color:var(--ink2)}
 .csvr input{margin-top:4px;font-size:16px;padding:0 8px}
+/* オーナーの 説明（2026-11-17） */
+.ob{width:100%;min-height:48px;border-radius:10px;border:2px solid var(--line);background:#fff;font-size:16px;font-weight:800;color:#7b8794;cursor:pointer;font-family:inherit}
+.ob.on{background:var(--green);border-color:var(--green);color:#fff}
+.oall{min-height:48px;height:100%;width:100%;padding:4px 8px;line-height:1.3;white-space:normal}
+.crown{display:inline-block;font-size:12.5px;font-weight:800;color:#8a5a00;background:#fff3d6;border:1px solid #f0d08a;border-radius:999px;padding:1px 9px;margin-left:6px;vertical-align:2px;line-height:1.5}
+.odate{font-size:14px;font-weight:800;color:var(--green);margin-top:2px}
 </style>
 </head>
 <body>
@@ -89,6 +95,8 @@ th:first-child{background:#eef2f7}
 //  カメラチェック（オーナー・MOTR・SC・ASC用）2026-11-16
 //  店のカメラを見て、人ごとに ①原材料確認（15時・24時）②指差し確認 ③声出し確認 を ○× でつける。
 //  名簿＝個店カルテ（接客評価DB）の従業員マスタ。記録＝同じGASの CameraCheck シート。個店カルテにも出る。
+//  ★オーナー（OWNERS）は 2026-11-17〜「説明して 回った 記録」だけを つける（1人1行・日付なし・○ だけ・track='owner'）。
+//    オーナーには ほかの人の ○× を 出さない。ほかの人には「👑 オーナー説明済み」の 印だけ 出す。
 // ============================================================
 const GAS_URL = 'https://script.google.com/macros/s/AKfycbyHEBH5Q8VBcZFBzfH5tYQm46RCa_fYw3PDlKp1qA5E9EWmR44OQ8UA1JTXFa-stnbG8g/exec';
 const PASS = 'Lawson3963';
@@ -98,6 +106,7 @@ const USER_GROUPS = [['オーナー・管理', ['阪口 清治', '阪口 憲治'
   ['SC', ['ダハル（SC）', 'ビスワス（SC）', 'フィ（SC）', 'スラズ（SC）']],
   ['ASC', ['レサム（ASC）', 'トゥアン（ASC）']]];
 const USERS = USER_GROUPS.flatMap(g => g[1]);
+const OWNERS = ['阪口 清治', '阪口 憲治'];   // 説明の 記録を つける 人（GAS の CAMERA_OWNERS_ と 同じ）
 // 店長は 自分の 店だけ（チェックの 入力も 結果を 見るのも できる）。パスワード＝店舗コード（頭の 0 は あっても なくても よい）
 const STORE_CODE = {'五月ケ丘東': '40070', '江坂駅南口': '171115', '池田市役所前': '87188', '豊中服部西町三丁目': '96550', '吹田垂水三丁目': '65554', '豊里六丁目': '86361',
   '東淀川大道南': '190348', '吹田青山台三丁目': '366280', '新御堂筋上新田': '234880', '豊中服部元町一丁目': '369053', '吹田豊津中学校前': '229234', '吹田朝日町': '376886',
@@ -126,9 +135,10 @@ const dayLabel = s => { const d = fromYmd(s); return `${d.getMonth() + 1}/${d.ge
 const today = () => ymd(new Date());
 
 const S = {user: lsGet('cc_user', ''), authed: !!lsGet('cc_authed', false), mgrStore: lsGet('cc_mgr', ''), view: 'home', tab: 'check', date: today(), store: '', period: 'week',
-  emps: lsGet('cc_emps', []), checks: lsGet('cc_checks', {}), pending: lsGet('cc_pending', {}), loadedAt: 0, serverMissing: false, loadErr: ''};
+  emps: lsGet('cc_emps', []), checks: lsGet('cc_checks', {}), owner: lsGet('cc_owner', {}), pending: lsGet('cc_pending', {}), loadedAt: 0, serverMissing: false, loadErr: ''};
 let pickUser = S.mgrStore ? '' : S.user, loginMode = S.mgrStore ? 'mgr' : 'staff', pickStore = S.mgrStore || '';
 const isMgr = () => !!S.mgrStore;
+const isOwner = () => !isMgr() && OWNERS.includes(S.user);
 if (isMgr() && S.authed) { S.view = 'store'; S.store = S.mgrStore; }
 
 // ---------- 名簿 ----------
@@ -149,6 +159,14 @@ function rec(date, store, id) { return Object.assign({}, S.checks[key(date, stor
 function lockedBy(date, store, id) { const sv = S.checks[key(date, store, id)]; return sv && (seen(sv) || sv.memo) && sv.by && sv.by !== S.user ? sv.by : ''; }
 function seen(r) { return ITEMS.some(([k]) => r[k] === 'o' || r[k] === 'x'); }
 function hasX(r) { return ITEMS.some(([k]) => r[k] === 'x'); }
+// オーナーの 説明の 記録：S.owner[店|番号]。送る前の 分は S.pending['owner|店|番号']
+const okey = (store, id) => `owner|${store}|${id}`;
+function orec(store, id) { return Object.assign({}, S.owner[`${store}|${id}`] || {}, S.pending[okey(store, id)] || {}); }
+const oN = r => ITEMS.filter(([k]) => r[k] === 'o').length;
+const md = s => /^\d{4}-\d{2}-\d{2}/.test(s || '') ? `${+s.slice(5, 7)}/${+s.slice(8, 10)}` : '';
+function ownerStat(store) { const st = staffOf(store); return {total: st.length, n: st.filter(p => oN(orec(store, p.id))).length}; }
+// ほかの人の 画面に 出す 印
+function ownerMark(store, id) { const r = orec(store, id), n = oN(r); return n ? `<span class="crown">👑 オーナー説明済み ${n}/${ITEMS.length}${md(r.date) ? `（${md(r.date)}）` : ''}</span>` : ''; }
 
 // ---------- 通信 ----------
 async function loadAll(force) {
@@ -161,10 +179,12 @@ async function loadAll(force) {
       fetch(`${GAS_URL}?action=getEmployees`, {redirect: 'follow'}).then(r => r.json()),
       fetch(`${GAS_URL}?action=getCameraCheck&from=${from}`, {redirect: 'follow'}).then(r => r.json())]);
     if (a && a.ok && Array.isArray(a.employees) && a.employees.length) { S.emps = a.employees; lsSet('cc_emps', S.emps); }
-    if (b && b.ok) { const m = {}; (b.rows || []).forEach(r => { m[key(r.date, r.store, r.employeeId)] = r; });
+    if (b && b.ok) { const m = {}, om = {};
+      (b.rows || []).forEach(r => { if (r.track === 'owner') om[`${r.store}|${r.employeeId}`] = r; else m[key(r.date, r.store, r.employeeId)] = r; });
       // 読みこみ中に 保存が おわった分は、古い 読みこみ結果で 消さない（手元の 新しい方を 残す）
-      Object.keys(ackedAt).forEach(k => { if (ackedAt[k] >= t0 && S.checks[k]) m[k] = S.checks[k]; });
-      S.checks = m; lsSet('cc_checks', m); S.serverMissing = false; }
+      Object.keys(ackedAt).forEach(k => { if (ackedAt[k] < t0) return;
+        if (k.startsWith('owner|')) { const ok = k.slice(6); if (S.owner[ok]) om[ok] = S.owner[ok]; } else if (S.checks[k]) m[k] = S.checks[k]; });
+      S.checks = m; S.owner = om; lsSet('cc_checks', m); lsSet('cc_owner', om); S.serverMissing = false; }
     else if (b && /不明なアクション/.test(b.error || '')) S.serverMissing = true;
     S.loadedAt = Date.now();
   } catch (e) { S.loadErr = '電波が 弱いので、前に 読みこんだ データを 出しています。'; }
@@ -173,9 +193,11 @@ async function loadAll(force) {
 }
 let flushTimer = null, flushing = false;
 const ackedAt = {};   // key → 保存が おわった 時刻
-function queue(date, store, p, patch) {
-  const k = key(date, store, p.id);
-  S.pending[k] = Object.assign({date, store, employeeId: p.id, name: p.name, empType: (GROUPS.find(g => g[0] === p.kind) || [])[1] || ''}, S.pending[k] || {}, patch, {who: S.user});   // who＝つけた人（あとで 別の人が ログインしても 変えない）
+function queue(date, store, p, patch) { enqueue(key(date, store, p.id), {date, store}, p, patch); }
+// オーナーの 説明：1人1行（キー owner|店|番号）。date＝つけた日（きょう）
+function oqueue(store, p, patch) { enqueue(okey(store, p.id), {track: 'owner', store}, p, Object.assign({}, patch, {date: today()})); }
+function enqueue(k, base, p, patch) {
+  S.pending[k] = Object.assign(base, {employeeId: p.id, name: p.name, empType: (GROUPS.find(g => g[0] === p.kind) || [])[1] || ''}, S.pending[k] || {}, patch, {who: S.user});   // who＝つけた人（あとで 別の人が ログインしても 変えない）
   lsSet('cc_pending', S.pending);
   setSave('送っています…');
   clearTimeout(flushTimer); flushTimer = setTimeout(() => flush(false), 900);
@@ -183,7 +205,7 @@ function queue(date, store, p, patch) {
 async function flush(manual) {
   if (flushing) return;                       // 送っている間に 押された分は、下の くり返しが 続けて 送る（同時に 2つ 送らない）
   flushing = true;
-  let sent = false, deniedN = 0;
+  let sent = false, deniedN = 0, deniedOwn = 0;
   try {
     while (true) {
       const allKeys = Object.keys(S.pending); if (!allKeys.length) break;
@@ -195,17 +217,19 @@ async function flush(manual) {
       const d = await res.json();
       if (!d.ok) throw new Error(d.error || '保存できません');
       const den = new Set((d.denied || []).map(x => x.key));
-      keys.forEach((k, i) => { if (den.has(k)) { delete S.pending[k]; return; }   // ほかの人の 記録だった → 送らない・表示も 戻す
-        S.checks[k] = Object.assign({}, S.checks[k] || {}, sending[i], {by: who, at: d.at}); ackedAt[k] = Date.now();
+      keys.forEach((k, i) => { if (den.has(k)) { delete S.pending[k]; if (k.startsWith('owner|')) deniedOwn++; else deniedN++; return; }   // ほかの人の 記録だった → 送らない・表示も 戻す
+        if (k.startsWith('owner|')) { const ok = k.slice(6); S.owner[ok] = Object.assign({}, S.owner[ok] || {}, sending[i], {by: who, at: d.at}); }   // オーナーの 説明
+        else S.checks[k] = Object.assign({}, S.checks[k] || {}, sending[i], {by: who, at: d.at});
+        ackedAt[k] = Date.now();
         if (S.pending[k] === sending[i]) delete S.pending[k]; });       // 送っている間に また 押された分は 残す
-      if (den.size) { deniedN += den.size; }
-      lsSet('cc_checks', S.checks); lsSet('cc_pending', S.pending);
+      lsSet('cc_checks', S.checks); lsSet('cc_owner', S.owner); lsSet('cc_pending', S.pending);
       sent = true;
     }
     if (deniedN) { setSave(`⚠ ${deniedN}人分は ほかの人が 先に チェックしていたので 保存していません`, false, false); lsSet('cc_pending', S.pending); loadAll(true); }
+    else if (deniedOwn) { setSave(`⚠ ${deniedOwn}人分は 保存していません（オーナーの 記録は オーナーだけ）`, false, false); render(); }
     else setSave(sent ? '✓ 保存しました' : '', sent);
   } catch (e) {
-    setSave(/不明なアクション/.test(e.message) ? '⚠ サーバーの 準備が まだです（神田さんに 連絡）' : '⚠ まだ 送れていません（電波）。この端末には 残っています', false, true);
+    setSave(/不明なアクション|initSheets/.test(e.message) ?'⚠ サーバーの 準備が まだです（神田さんに 連絡）' : '⚠ まだ 送れていません（電波）。この端末には 残っています', false, true);
   } finally { flushing = false; }
 }
 function setSave(t, good, retry) {
@@ -219,10 +243,11 @@ function render() {
   $('hOut').style.display = S.authed ? '' : 'none';
   if (!S.authed) return renderLogin();
   if (isMgr()) return renderMgr();
-  if (S.view === 'store') return renderStore();
-  $('hBack').style.display = 'none'; $('hTitle').textContent = 'カメラチェック';
-  const tabs = `<div class="tabs"><button class="btn ${S.tab === 'check' ? 'on' : ''}" onclick="setTab('check')">📹 チェックする</button><button class="btn ${S.tab === 'result' ? 'on' : ''}" onclick="setTab('result')">📊 結果を見る</button></div>`;
-  $('app').innerHTML = banner() + tabs + (S.tab === 'check' ? homeHtml() : resultHtml());
+  const own = isOwner();
+  if (S.view === 'store') return own ? renderOwnerStore() : renderStore();
+  $('hBack').style.display = 'none'; $('hTitle').textContent = own ? 'カメラチェック（オーナー）' : 'カメラチェック';
+  const tabs = `<div class="tabs"><button class="btn ${S.tab === 'check' ? 'on' : ''}" onclick="setTab('check')">${own ? '👑 説明を つける' : '📹 チェックする'}</button><button class="btn ${S.tab === 'result' ? 'on' : ''}" onclick="setTab('result')">📊 結果を見る</button></div>`;
+  $('app').innerHTML = banner() + tabs + (S.tab === 'check' ? (own ? ownerHomeHtml() : homeHtml()) : (own ? ownerResultHtml() : resultHtml()));
 }
 // 店長の 画面：自分の 店だけ。チェックの 入力（ほかの人が つけた分は 見るだけ）と、これまでの 結果
 function renderMgr() {
@@ -290,9 +315,9 @@ function dateBar() {
 }
 function homeHtml() {
   let seenStores = 0, xs = 0;
-  const tiles = STORES.map((s, i) => { const t = storeStat(s, S.date); if (t.n) seenStores++; xs += t.x;
+  const tiles = STORES.map((s, i) => { const t = storeStat(s, S.date), on = ownerStat(s).n; if (t.n) seenStores++; xs += t.x;
     const cls = t.x ? 'bad' : t.n && t.n >= t.total ? 'done' : t.n ? 'part' : '';
-    return `<button class="store ${cls}" onclick="openStore(${i})"><b>${esc(s)}</b><div class="n">見た ${t.n}／${t.total}人${t.x ? `<span class="badge r">× ${t.x}人</span>` : t.n ? '<span class="badge g">○</span>' : ''}</div></button>`; }).join('');
+    return `<button class="store ${cls}" onclick="openStore(${i})"><b>${esc(s)}</b><div class="n">見た ${t.n}／${t.total}人${t.x ? `<span class="badge r">× ${t.x}人</span>` : t.n ? '<span class="badge g">○</span>' : ''}</div>${on ? `<div class="n" style="color:#8a5a00;font-weight:700">👑 ${on}人</div>` : ''}</button>`; }).join('');
   return dateBar() + `<div class="sub" style="margin:0 2px 8px">店を 押す → 人ごとに ○× を つける。　見た店 <b>${seenStores}／${STORES.length}</b>${xs ? `　<span class="ng">× ${xs}人</span>` : ''}</div><div class="stores">${tiles}</div>`;
 }
 function renderStore() {
@@ -308,7 +333,7 @@ function personHtml(p) {
   const r = rec(S.date, S.store, p.id), x = hasX(r), n = ITEMS.filter(([k]) => r[k] === 'o' || r[k] === 'x').length;
   const lk = lockedBy(S.date, S.store, p.id), ro = !!lk;   // ro＝見るだけ（ほかの人が つけた 記録）
   const cls = x ? 'has-x' : n === ITEMS.length ? 'all-o' : n ? 'some' : '';
-  return `<div class="person ${cls}" id="p-${p.id}"><div class="pname">${esc(p.name)}${p.role ? `<small>${esc(p.role)}</small>` : ''}</div>
+  return `<div class="person ${cls}" id="p-${p.id}"><div class="pname">${esc(p.name)}${p.role ? `<small>${esc(p.role)}</small>` : ''}${ownerMark(S.store, p.id)}</div>
     <div class="items">${ITEMS.map(([k, a, b]) => `<div class="item"><div class="lab">${a}${b ? `<br><span style="color:var(--blue2)">${b}</span>` : ''}</div>
       ${ro ? `<div class="ox"><div class="mk ${r[k] === 'o' ? 'o' : r[k] === 'x' ? 'x' : ''}">${r[k] === 'o' ? '○' : r[k] === 'x' ? '×' : '─'}</div></div>`
         : `<div class="ox"><button class="o ${r[k] === 'o' ? 'on' : ''}" aria-label="できている" onclick="tap('${p.id}','${k}','o')">○</button><button class="x ${r[k] === 'x' ? 'on' : ''}" aria-label="できていない" onclick="tap('${p.id}','${k}','x')">×</button></div>`}</div>`).join('')}</div>
@@ -324,6 +349,65 @@ function tap(id, k, v) {
 }
 function memo(id, v) { if (lockedBy(S.date, S.store, id)) return; const p = staffOf(S.store).find(q => q.id === id); if (p) queue(S.date, S.store, p, {memo: v.trim()}); }
 
+// ---------- オーナーの 説明（2026-11-17）：ほかの人の ○× は 出さない・ロックなし・日付なし ----------
+function ownerHomeHtml() {
+  let ppl = 0, tot = 0, doneStores = 0;
+  const tiles = STORES.map((s, i) => { const t = ownerStat(s); ppl += t.n; tot += t.total;
+    const done = t.total && t.n >= t.total; if (done) doneStores++;
+    return `<button class="store ${done ? 'done' : t.n ? 'part' : ''}" onclick="openStore(${i})"><b>${esc(s)}</b><div class="n">説明した ${t.n}／${t.total}人${done ? '<span class="badge g">✓</span>' : ''}</div></button>`; }).join('');
+  return `<div class="card"><b style="font-size:17px">👑 説明して 回った 記録</b><div class="sub" style="margin-top:4px">店を 押す → 説明した 人に ○ を つける。</div>
+    <div style="margin-top:6px">説明した人 <b>${ppl}／${tot}人</b>　ぜんぶ 終わった店 <b>${doneStores}／${STORES.length}</b></div></div><div class="stores">${tiles}</div>`;
+}
+function renderOwnerStore() {
+  $('hBack').style.display = ''; $('hTitle').textContent = S.store;
+  const st = staffOf(S.store), t = ownerStat(S.store);
+  let h = banner() + `<div class="card"><div style="font-size:17px">説明した <b id="oCnt">${t.n}／${t.total}人</b></div><div class="sub" style="margin-top:4px">説明した ことに ○ を 押す。もう一度 押すと 消える。</div></div>`;
+  if (!st.length) h += '<div class="card">この店の 名簿が 読めていません。電波の よい 所で 開き直してください。</div>';
+  GROUPS.forEach(([g, label]) => { const ps = st.filter(p => p.kind === g); if (!ps.length) return;
+    h += `<div class="grp">${label}<span>${ps.length}人</span></div>` + ps.map(ownerPersonHtml).join(''); });
+  $('app').innerHTML = h + '<button class="btn full" onclick="goHome()" style="margin-top:8px">← 店の 一覧へ もどる</button>';
+}
+function ownerPersonHtml(p) {
+  const r = orec(S.store, p.id), n = oN(r), all = n === ITEMS.length;
+  return `<div class="person ${all ? 'all-o' : n ? 'some' : ''}" id="p-${p.id}"><div class="pname">${esc(p.name)}${p.role ? `<small>${esc(p.role)}</small>` : ''}</div>
+    ${n ? `<div class="odate">説明した日 ${md(r.date)}　（${n}/${ITEMS.length}）</div>` : ''}
+    <div class="items">${ITEMS.map(([k, a, b]) => `<div class="item"><div class="lab">${a}${b ? `<br><span style="color:var(--blue2)">${b}</span>` : ''}</div>
+      <button class="ob ${r[k] === 'o' ? 'on' : ''}" aria-pressed="${r[k] === 'o'}" onclick="otap('${p.id}','${k}')">${r[k] === 'o' ? '○ 説明した' : '説明した ○'}</button></div>`).join('')}
+      <button class="btn oall ${all ? '' : 'pri'}" ${all ? 'disabled' : ''} onclick="oall('${p.id}')">${all ? `✓ ${ITEMS.length}つ ぜんぶ 説明ずみ` : `${ITEMS.length}つ ぜんぶ 説明した`}</button></div></div>`;
+}
+function oPerson(id) { return staffOf(S.store).find(q => q.id === id); }
+function oRedraw(p) { const el = $('p-' + p.id); if (el) el.outerHTML = ownerPersonHtml(p); const t = ownerStat(S.store), c = $('oCnt'); if (c) c.textContent = `${t.n}／${t.total}人`; }
+function otap(id, k) {
+  if (!isOwner()) return;
+  const p = oPerson(id); if (!p) return;
+  oqueue(S.store, p, {[k]: orec(S.store, id)[k] === 'o' ? '' : 'o'});
+  oRedraw(p);
+}
+function oall(id) {
+  if (!isOwner()) return;
+  const p = oPerson(id); if (!p) return;
+  oqueue(S.store, p, Object.fromEntries(ITEMS.map(([k]) => [k, 'o'])));
+  oRedraw(p);
+}
+function ownerResultHtml() {
+  let ppl = 0, tot = 0;
+  const sumRow = (label, sts) => { let n = 0, t = 0; const per = ITEMS.map(() => 0);
+    sts.forEach(s => staffOf(s).forEach(p => { t++; const r = orec(s, p.id); if (oN(r)) n++; ITEMS.forEach(([k], j) => { if (r[k] === 'o') per[j]++; }); }));
+    return {n, t, html: `<tr><td>${esc(label)}</td><td>${n}／${t}人</td><td class="${t && n >= t ? 'ok' : ''}">${t ? Math.round(n / t * 100) + '%' : '─'}</td>${per.map(v => `<td>${v ? '○ ' + v : '<span class="sub">─</span>'}</td>`).join('')}</tr>`}; };
+  const rows = STORES.map(s => { const r = sumRow(s, [s]); ppl += r.n; tot += r.t; return r.html; }).join('');
+  const total = sumRow('全店', STORES).html.replace('<tr>', '<tr style="background:#f6f8fb;font-weight:800">');
+  return `<div class="card"><b>👑 説明して 回った 人</b><div style="margin-top:4px">全店 <b>${ppl}／${tot}人</b>（${tot ? Math.round(ppl / tot * 100) : 0}%）</div><div class="sub">いま 在籍している 人で 数えます</div></div>
+    <div class="card"><b>店ごと</b><div class="sub" style="margin-bottom:6px">○＝その ことを 説明した 人数。横に 動かせます</div><div class="tw"><table><thead><tr><th>店</th><th>説明した人</th><th>％</th><th>原材料<br>15時</th><th>原材料<br>24時</th><th>指差し</th><th>声出し</th><th>パッケージ</th></tr></thead><tbody>${rows}${total}</tbody></table></div></div>
+    <div class="card"><b>CSVで ダウンロード</b><div class="sub" style="margin:4px 0 8px">全店・人ごと（まだの 人も 入ります）。Excelで 開けます</div>
+      <button class="btn full" onclick="dlOwnerCsv()">⬇ 人ごとの 説明の 記録</button></div>`;
+}
+function dlOwnerCsv() {
+  const rows = [['店', '従業員番号', '氏名', '区分'].concat(ITEMS.map(itemName)).concat(['説明した数', '説明した日', 'つけた人'])];
+  STORES.forEach(s => GROUPS.forEach(([g, label]) => staffOf(s).filter(p => p.kind === g).forEach(p => { const r = orec(s, p.id), n = oN(r);
+    rows.push([s, p.id, p.name, label].concat(ITEMS.map(([k]) => r[k] === 'o' ? '○' : '')).concat([n, n ? r.date || '' : '', n ? r.by || r.who || '' : ''])); })));
+  saveCsv(rows, `カメラチェック_オーナー説明_${today()}.csv`);
+}
+
 // ---------- 結果 ----------
 function periodRange() {
   const t = today(), d = fromYmd(t), dow = (d.getDay() + 6) % 7, mon = addDays(t, -dow);
@@ -333,7 +417,7 @@ function periodRange() {
   return [addDays(t, -29), t, '30日'];
 }
 function allRecs(from, to) {   // 店長は 自分の 店の 分だけ
-  const m = {}; Object.keys(S.checks).concat(Object.keys(S.pending)).forEach(k => { m[k] = 1; });
+  const m = {}; Object.keys(S.checks).concat(Object.keys(S.pending)).forEach(k => { if (!k.startsWith('owner|')) m[k] = 1; });   // オーナーの 説明は 別
   return Object.keys(m).map(k => { const [date, store, id] = k.split('|'); return Object.assign({date, store, employeeId: id}, rec(date, store, id)); })
     .filter(r => r.date >= from && r.date <= to && seen(r) && (!isMgr() || r.store === S.mgrStore));
 }
@@ -343,12 +427,13 @@ function resultHtml() {
   const cell = (rows, k) => { const o = rows.filter(r => r[k] === 'o').length, x = rows.filter(r => r[k] === 'x').length; return o + x ? `<td class="${x ? 'ng' : 'ok'}">${Math.round(o / (o + x) * 100)}%<br><span class="sub">${x ? '× ' + x : '○ ' + o}</span></td>` : '<td class="sub">─</td>'; };
   const stores = isMgr() ? [S.mgrStore] : STORES;
   const rowsHtml = stores.map(s => { const r = rs.filter(q => q.store === s), days = new Set(r.map(q => q.date)).size, ppl = new Set(r.map(q => q.employeeId)).size;
-    return `<tr><td>${esc(s)}</td><td>${days ? days + '日' : '<span class="sub">まだ</span>'}</td><td>${ppl ? ppl + '／' + staffOf(s).length + '人' : '─'}</td>${ITEMS.map(([k]) => cell(r, k)).join('')}</tr>`; }).join('');
+    const on = ownerStat(s).n;
+    return `<tr><td>${esc(s)}</td><td>${days ? days + '日' : '<span class="sub">まだ</span>'}</td><td>${ppl ? ppl + '／' + staffOf(s).length + '人' : '─'}</td>${ITEMS.map(([k]) => cell(r, k)).join('')}<td>${on ? '👑 ' + on + '人' : '<span class="sub">─</span>'}</td></tr>`; }).join('');
   const xs = rs.filter(hasX).sort((a, b) => b.date.localeCompare(a.date) || a.store.localeCompare(b.store, 'ja'));
   const xl = xs.map(r => `<div class="xrow"><b>${dayLabel(r.date)}　${esc(r.store)}</b><br>${esc(r.name || r.employeeId)}　<span class="ng">${ITEMS.filter(([k]) => r[k] === 'x').map(([, a, b]) => a.replace(/^[①②③④] /, '') + (b ? '(' + b.replace('までに', '') + ')' : '')).join('・')}</span>${r.memo ? `<br><span class="sub">メモ：${esc(r.memo)}</span>` : ''}${r.by ? `<span class="sub">　（${esc(r.by)}）</span>` : ''}</div>`).join('');
   const seenStores = new Set(rs.map(r => r.store)).size;
   return `<div class="card">${seg}<div class="sub">${label}（${dayLabel(from)}〜${dayLabel(to)}）　${isMgr() ? '' : `見た店 <b>${seenStores}／${STORES.length}</b>　`}× が ついた のべ人数 <b class="${xs.length ? 'ng' : 'ok'}">${xs.length}</b></div></div>
-    <div class="card"><b>店ごと</b><div class="sub" style="margin-bottom:6px">％＝○の 割合。横に 動かせます</div><div class="tw"><table><thead><tr><th>店</th><th>見た日</th><th>見た人</th><th>原材料<br>15時</th><th>原材料<br>24時</th><th>指差し</th><th>声出し</th><th>パッケージ</th></tr></thead><tbody>${rowsHtml}</tbody></table></div></div>
+    <div class="card"><b>店ごと</b><div class="sub" style="margin-bottom:6px">％＝○の 割合。横に 動かせます</div><div class="tw"><table><thead><tr><th>店</th><th>見た日</th><th>見た人</th><th>原材料<br>15時</th><th>原材料<br>24時</th><th>指差し</th><th>声出し</th><th>パッケージ</th><th>オーナー<br>説明済み</th></tr></thead><tbody>${rowsHtml}</tbody></table></div></div>
     <div class="card"><b>CSVで ダウンロード</b><div class="sub" style="margin:4px 0 8px">期間を えらんで ダウンロード（60日前まで）。Excelで 開けます</div>
       <div class="csvr"><label>いつから<input type="date" id="csvFrom" value="${S.csvFrom || from}" min="${minDate()}" max="${today()}" onchange="S.csvFrom=this.value;csvMsg()"></label>
         <label>いつまで<input type="date" id="csvTo" value="${S.csvTo || to}" min="${minDate()}" max="${today()}" onchange="S.csvTo=this.value;csvMsg()"></label></div>
@@ -373,26 +458,29 @@ function dlCsv(kind) {
   const from = cr.from, to = cr.to, rs = allRecs(from, to);
   const stores = isMgr() ? [S.mgrStore] : STORES;
   const mark = v => v === 'o' ? '○' : v === 'x' ? '×' : '';
-  const itemName = ([, a, b]) => a.replace(/^[①②③④] /, '') + (b ? '（' + b + '）' : '');
   let rows;
   if (kind === 'sum') {
-    rows = [['店', '見た日数', '見た人数', '在籍人数'].concat(ITEMS.flatMap(it => [itemName(it) + ' ○', itemName(it) + ' ×', itemName(it) + ' ○の割合'])).concat(['×が ついた のべ人数'])];
+    rows = [['店', '見た日数', '見た人数', '在籍人数'].concat(ITEMS.flatMap(it => [itemName(it) + ' ○', itemName(it) + ' ×', itemName(it) + ' ○の割合'])).concat(['×が ついた のべ人数', 'オーナー説明済み人数'])];
     stores.forEach(st => { const r = rs.filter(q => q.store === st);
       rows.push([st, new Set(r.map(q => q.date)).size, new Set(r.map(q => q.employeeId)).size, staffOf(st).length]
         .concat(ITEMS.flatMap(([k]) => { const o = r.filter(q => q[k] === 'o').length, x = r.filter(q => q[k] === 'x').length; return [o, x, o + x ? Math.round(o / (o + x) * 100) + '%' : '']; }))
-        .concat([r.filter(hasX).length])); });
+        .concat([r.filter(hasX).length, ownerStat(st).n])); });
   } else {
     const kindName = id => { const e = S.emps.find(q => String(q.id) === String(id)); return e ? (GROUPS.find(g => g[0] === kindOf(e)) || [])[1] || '' : ''; };
     rows = [['日付', '店', '従業員番号', '氏名', '区分'].concat(ITEMS.map(itemName)).concat(['メモ', 'チェックした人'])];
     rs.slice().sort((a, b) => stores.indexOf(a.store) - stores.indexOf(b.store) || a.date.localeCompare(b.date) || String(a.name || '').localeCompare(String(b.name || ''), 'ja'))
       .forEach(r => rows.push([r.date, r.store, r.employeeId, r.name || '', r.empType || kindName(r.employeeId)].concat(ITEMS.map(([k]) => mark(r[k]))).concat([r.memo || '', r.by || r.who || ''])));
   }
+  saveCsv(rows, `カメラチェック_${kind === 'sum' ? '店ごと' : '明細'}_${isMgr() ? S.mgrStore + '_' : ''}${from}_${to}.csv`);
+}
+function itemName([, a, b]) { return a.replace(/^[①②③④] /, '') + (b ? '（' + b + '）' : ''); }
+function saveCsv(rows, name) {
   // = + - @ で はじまる 文字は Excel が 式と みなすので、頭に ' を つけて ただの 文字に する
   const q = v => { let t = String(v == null ? '' : v); if (typeof v === 'string' && /^[=+\-@\t\r]/.test(t)) t = "'" + t; return /[",\n]/.test(t) ? '"' + t.replace(/"/g, '""') + '"' : t; };
   const csv = '\ufeff' + rows.map(r => r.map(q).join(',')).join('\r\n');
   const a = document.createElement('a');
   a.href = URL.createObjectURL(new Blob([csv], {type: 'text/csv;charset=utf-8'}));
-  a.download = `カメラチェック_${kind === 'sum' ? '店ごと' : '明細'}_${isMgr() ? S.mgrStore + '_' : ''}${from}_${to}.csv`;
+  a.download = name;
   document.body.appendChild(a); a.click(); a.remove();
   setTimeout(() => URL.revokeObjectURL(a.href), 2000);
 }
