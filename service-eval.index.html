@@ -2226,7 +2226,7 @@ const App={
       ||(typeOrder[a.e.type]??9)-(typeOrder[b.e.type]??9)||String(a.e.name||'').localeCompare(String(b.e.name||''),'ja'));
     const rows=list.map(({e,join,leave})=>[e.store||'',e.id==null?'':String(e.id),e.name||'',this._typeName(e.type)||'',
       this._rosterArr(e.crewRoles).join('・'),this._rosterArr(e.certifications).join('・'),e.status||'',join,leave,
-      this._rosterJpDate(e.transferDate),this._tenureText(e.id)]);
+      this._rosterJpDate(e.transferDate),e.status==='退職'?'':this._tenureText(e.id)]);   // 退職した人の 在籍年数は 出さない（今日まで 数えてしまうため）
     return{from,to,store,rows};
   },
   _rosterCsvPreview(){
