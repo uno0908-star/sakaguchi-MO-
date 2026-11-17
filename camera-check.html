@@ -370,7 +370,8 @@ function dlCsv(kind) {
     rs.slice().sort((a, b) => stores.indexOf(a.store) - stores.indexOf(b.store) || a.date.localeCompare(b.date) || String(a.name || '').localeCompare(String(b.name || ''), 'ja'))
       .forEach(r => rows.push([r.date, r.store, r.employeeId, r.name || '', r.empType || kindName(r.employeeId)].concat(ITEMS.map(([k]) => mark(r[k]))).concat([r.memo || '', r.by || r.who || ''])));
   }
-  const q = v => { const t = String(v == null ? '' : v); return /[",\n]/.test(t) ? '"' + t.replace(/"/g, '""') + '"' : t; };
+  // = + - @ で はじまる 文字は Excel が 式と みなすので、頭に ' を つけて ただの 文字に する
+  const q = v => { let t = String(v == null ? '' : v); if (typeof v === 'string' && /^[=+\-@\t\r]/.test(t)) t = "'" + t; return /[",\n]/.test(t) ? '"' + t.replace(/"/g, '""') + '"' : t; };
   const csv = '\ufeff' + rows.map(r => r.map(q).join(',')).join('\r\n');
   const a = document.createElement('a');
   a.href = URL.createObjectURL(new Blob([csv], {type: 'text/csv;charset=utf-8'}));

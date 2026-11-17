@@ -1797,7 +1797,7 @@ const App={
       const res=await fetch(`${GAS_URL}?action=getCameraCheck&from=${from}`,{redirect:'follow'});
       const j=await res.json();
       this._camRows=j.ok?(j.rows||[]):[];this._camMissing=!j.ok;this._camLoaded=true;this._camAt=Date.now();
-      if(this._view==='store-karte'&&!this._kEditing)this.renderStoreKartePage();   // カルテの 入力中は 画面を 作り直さない
+      if(!this._kEditing){if(this._view==='store-karte')this.renderStoreKartePage();else if(this._view==='dashboard'&&DB.user()?.role==='店舗責任者')this.renderDashboard()}   // カルテの 入力中は 画面を 作り直さない（店長は トップが 自分の 店の カルテ）
     }catch(e){this._camAt=Date.now()}finally{this._camLoading=false}
   },
   _camCardHtml(store){
