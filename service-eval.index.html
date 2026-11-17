@@ -1807,7 +1807,7 @@ const App={
     if(!this._camLoaded)return'';
     if(this._camMissing)return'';
     const esc=t=>String(t==null?'':t).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-    const rows=(this._camRows||[]).filter(r=>r.store===store&&this._camItems.some(([k])=>r[k]==='o'||r[k]==='x'));
+    const rows=(this._camRows||[]).filter(r=>r.track!=='owner'&&r.store===store&&this._camItems.some(([k])=>r[k]==='o'||r[k]==='x'));
     const link=`<a href="camera-check.html" style="display:block;text-align:center;margin-top:10px;min-height:44px;line-height:44px;border:1px solid var(--border);border-radius:8px;font-weight:700;color:var(--blue);text-decoration:none">📹 カメラチェックを開く</a>`;
     if(!rows.length)return`<div class="card"><div class="section-title">📹 カメラチェック（この30日）</div><div class="text-sub">まだ 記録が ありません。</div>${link}</div>`;
     const days=new Set(rows.map(r=>r.date)).size;
