@@ -1788,8 +1788,8 @@ const App={
   },
 
   /* ===== カメラチェック（オーナー・MOTR が camera-check.html でつけた ○×）。見られるのは 管理者・MOTR・SC だけ ===== */
-  _camItems:[['g15','原材料 15時'],['g24','原材料 24時'],['yubi','指差し'],['koe','声出し']],
-  _camCanSee(){const r=DB.user()?.role;return r==='管理者'||r==='SI'||r==='SC'},
+  _camItems:[['g15','原材料 15時'],['g24','原材料 24時'],['yubi','指差し'],['koe','声出し'],['pkg','パッケージ']],
+  _camCanSee(){const r=DB.user()?.role;return r==='管理者'||r==='SI'||r==='SC'||r==='店舗責任者'},   // 店長は 自分の 店の 画面だけ 開ける
   async _camLoad(){
     if(this._camLoading)return;this._camLoading=true;
     try{
@@ -1816,7 +1816,7 @@ const App={
     const xl=xs.map(r=>`<div style="padding:6px 0;border-top:1px solid var(--border);font-size:13px"><b>${esc(String(r.date).slice(5).replace('-','/'))}　${esc(r.name||r.employeeId)}</b>　<span style="color:var(--red);font-weight:700">× ${this._camItems.filter(([k])=>r[k]==='x').map(([,l])=>l).join('・')}</span>${r.memo?`<div class="text-sub" style="font-size:12px">${esc(r.memo)}</div>`:''}</div>`).join('');
     return`<div class="card"><div class="section-title">📹 カメラチェック（この30日・${days}日分）</div>
       <div class="text-sub" style="font-size:11px;margin-bottom:6px">オーナー・MOTR が カメラで 見た 結果。％＝○の 割合</div>
-      <div style="display:flex;gap:6px">${stat}</div>
+      <div style="display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:4px">${stat}</div>
       ${xl?`<div style="margin-top:8px;font-weight:700;font-size:13px">× が ついた 人（新しい順）</div>${xl}`:'<div style="margin-top:8px;color:var(--green);font-weight:700;font-size:13px">✓ × は ありません</div>'}
       ${link}</div>`;
   },

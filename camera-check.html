@@ -57,6 +57,8 @@ input[type=password],input[type=date],input[type=text]{width:100%;min-height:48p
 .ox button{min-height:48px;border-radius:10px;border:2px solid var(--line);background:#fff;font-size:22px;font-weight:900;color:#9aa6b2;cursor:pointer;font-family:inherit}
 .ox button.o.on{background:var(--green);border-color:var(--green);color:#fff}
 .ox button.x.on{background:var(--red);border-color:var(--red);color:#fff}
+.ox .mk{grid-column:1/3;min-height:44px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:900;background:#eef1f5;color:#9aa6b2}
+.ox .mk.o{background:var(--green);color:#fff}.ox .mk.x{background:var(--red);color:#fff}
 .memo{margin-top:8px}
 .memo input{min-height:44px;font-size:15px}
 .savebar{position:fixed;left:0;right:0;bottom:0;background:#fff;border-top:1px solid var(--line);padding:8px 12px calc(8px + env(safe-area-inset-bottom));display:flex;gap:10px;align-items:center;z-index:30;font-size:14px}
@@ -93,13 +95,19 @@ const USER_GROUPS = [['オーナー・管理', ['阪口 清治', '阪口 憲治'
   ['SC', ['ダハル（SC）', 'ビスワス（SC）', 'フィ（SC）', 'スラズ（SC）']],
   ['ASC', ['レサム（ASC）', 'トゥアン（ASC）']]];
 const USERS = USER_GROUPS.flatMap(g => g[1]);
+// 店長は 自分の 店の 結果を 見るだけ（○× は つけない）。パスワード＝店舗コード（頭の 0 は あっても なくても よい）
+const STORE_CODE = {'五月ケ丘東': '40070', '江坂駅南口': '171115', '池田市役所前': '87188', '豊中服部西町三丁目': '96550', '吹田垂水三丁目': '65554', '豊里六丁目': '86361',
+  '東淀川大道南': '190348', '吹田青山台三丁目': '366280', '新御堂筋上新田': '234880', '豊中服部元町一丁目': '369053', '吹田豊津中学校前': '229234', '吹田朝日町': '376886',
+  '吹田警察署前': '153005', '江坂東': '190489', '大道南一丁目': '121880', '東淀川豊里五丁目': '377058', '南金田二丁目': '229435', '豊中利倉東一丁目': '368993',
+  '豊中原田南一丁目': '121420', '箕面白島二丁目': '378862'};
 const STORES = ['五月ケ丘東', '江坂駅南口', '池田市役所前', '吹田朝日町', '豊中服部元町一丁目', '吹田青山台三丁目', '吹田豊津中学校前', '新御堂筋上新田',
   '南金田二丁目', '豊中原田南一丁目', '箕面白島二丁目', '豊中利倉東一丁目', '江坂東', '吹田警察署前', '大道南一丁目', '東淀川豊里五丁目',
   '吹田垂水三丁目', '豊里六丁目', '豊中服部西町三丁目', '東淀川大道南'];
 // 店長（従業員番号）。名簿に「店長」の印が無いので、ここで持つ。体制が変わったら直す（2026-09-16体制＋10/15の交代）
 const MANAGERS = {'6087766': 1, '7158383': 1, '7179705': 1, '8114662': 1, '6023885': 1, '8339082': 1, '4133375': 1, '5125663': 1, '6143082': 1, '8017657': 1,
   '6152603': 1, '6132000': 1, '4180081': 1, '6119821': 1, '9304509': 1, '6117167': 1, '8152620': 1, '8067662': 1};
-const ITEMS = [['g15', '① 原材料確認', '15時までに'], ['g24', '① 原材料確認', '24時までに'], ['yubi', '② 指差し確認', ''], ['koe', '③ 声出し確認', '']];
+const ITEMS = [['g15', '① 原材料確認', '15時までに'], ['g24', '① 原材料確認', '24時までに'], ['yubi', '② 指差し確認', ''], ['koe', '③ 声出し確認', ''],
+  ['pkg', '④ パッケージ', '準備できているか']];   // ④は 2026-11-17 追加
 const GROUPS = [['mgr', '店長'], ['emp', '一般社員'], ['con', '契約社員'], ['crew', 'クルー']];
 
 const $ = id => document.getElementById(id);
@@ -114,9 +122,11 @@ const WD = ['日', '月', '火', '水', '木', '金', '土'];
 const dayLabel = s => { const d = fromYmd(s); return `${d.getMonth() + 1}/${d.getDate()}（${WD[d.getDay()]}）`; };
 const today = () => ymd(new Date());
 
-const S = {user: lsGet('cc_user', ''), authed: !!lsGet('cc_authed', false), view: 'home', tab: 'check', date: today(), store: '', period: 'week',
+const S = {user: lsGet('cc_user', ''), authed: !!lsGet('cc_authed', false), mgrStore: lsGet('cc_mgr', ''), view: 'home', tab: 'check', date: today(), store: '', period: 'week',
   emps: lsGet('cc_emps', []), checks: lsGet('cc_checks', {}), pending: lsGet('cc_pending', {}), loadedAt: 0, serverMissing: false, loadErr: ''};
-let pickUser = S.user;
+let pickUser = S.mgrStore ? '' : S.user, loginMode = S.mgrStore ? 'mgr' : 'staff', pickStore = S.mgrStore || '';
+const isMgr = () => !!S.mgrStore;
+if (isMgr() && S.authed) { S.view = 'store'; S.store = S.mgrStore; }
 
 // ---------- 名簿 ----------
 function kindOf(e) { return MANAGERS[String(e.id)] ? 'mgr' : e.type === 'FullTimeEmployee' ? 'emp' : e.type === 'ContractEmployee' ? 'con' : 'crew'; }
@@ -132,6 +142,8 @@ function roleText(e) {
 }
 const key = (date, store, id) => `${date}|${store}|${id}`;
 function rec(date, store, id) { return Object.assign({}, S.checks[key(date, store, id)] || {}, S.pending[key(date, store, id)] || {}); }
+// ほかの人が つけた 記録（○×か メモ が 入っている）は 変えられない（2026-11-17）
+function lockedBy(date, store, id) { const sv = S.checks[key(date, store, id)]; return sv && (seen(sv) || sv.memo) && sv.by && sv.by !== S.user ? sv.by : ''; }
 function seen(r) { return ITEMS.some(([k]) => r[k] === 'o' || r[k] === 'x'); }
 function hasX(r) { return ITEMS.some(([k]) => r[k] === 'x'); }
 
@@ -168,7 +180,7 @@ function queue(date, store, p, patch) {
 async function flush(manual) {
   if (flushing) return;                       // 送っている間に 押された分は、下の くり返しが 続けて 送る（同時に 2つ 送らない）
   flushing = true;
-  let sent = false;
+  let sent = false, deniedN = 0;
   try {
     while (true) {
       const allKeys = Object.keys(S.pending); if (!allKeys.length) break;
@@ -179,12 +191,16 @@ async function flush(manual) {
         body: JSON.stringify({action: 'setCameraCheck', user: who, records: sending})});
       const d = await res.json();
       if (!d.ok) throw new Error(d.error || '保存できません');
-      keys.forEach((k, i) => { S.checks[k] = Object.assign({}, S.checks[k] || {}, sending[i], {by: who, at: d.at}); ackedAt[k] = Date.now();
+      const den = new Set((d.denied || []).map(x => x.key));
+      keys.forEach((k, i) => { if (den.has(k)) { delete S.pending[k]; return; }   // ほかの人の 記録だった → 送らない・表示も 戻す
+        S.checks[k] = Object.assign({}, S.checks[k] || {}, sending[i], {by: who, at: d.at}); ackedAt[k] = Date.now();
         if (S.pending[k] === sending[i]) delete S.pending[k]; });       // 送っている間に また 押された分は 残す
+      if (den.size) { deniedN += den.size; }
       lsSet('cc_checks', S.checks); lsSet('cc_pending', S.pending);
       sent = true;
     }
-    setSave(sent ? '✓ 保存しました' : '', sent);
+    if (deniedN) { setSave(`⚠ ${deniedN}人分は ほかの人が 先に チェックしていたので 保存していません`, false, false); lsSet('cc_pending', S.pending); loadAll(true); }
+    else setSave(sent ? '✓ 保存しました' : '', sent);
   } catch (e) {
     setSave(/不明なアクション/.test(e.message) ? '⚠ サーバーの 準備が まだです（神田さんに 連絡）' : '⚠ まだ 送れていません（電波）。この端末には 残っています', false, true);
   } finally { flushing = false; }
@@ -199,10 +215,24 @@ function setSave(t, good, retry) {
 function render() {
   $('hOut').style.display = S.authed ? '' : 'none';
   if (!S.authed) return renderLogin();
+  if (isMgr()) return renderMgr();
   if (S.view === 'store') return renderStore();
   $('hBack').style.display = 'none'; $('hTitle').textContent = 'カメラチェック';
   const tabs = `<div class="tabs"><button class="btn ${S.tab === 'check' ? 'on' : ''}" onclick="setTab('check')">📹 チェックする</button><button class="btn ${S.tab === 'result' ? 'on' : ''}" onclick="setTab('result')">📊 結果を見る</button></div>`;
   $('app').innerHTML = banner() + tabs + (S.tab === 'check' ? homeHtml() : resultHtml());
+}
+// 店長の 画面：自分の 店の その日の ○×（見るだけ）と、これまでの 結果
+function renderMgr() {
+  S.store = S.mgrStore; $('hBack').style.display = 'none'; $('hTitle').textContent = S.mgrStore + '（店長）';
+  const tabs = `<div class="tabs"><button class="btn ${S.tab === 'check' ? 'on' : ''}" onclick="setTab('check')">📹 この日の 結果</button><button class="btn ${S.tab === 'result' ? 'on' : ''}" onclick="setTab('result')">📊 これまでの 結果</button></div>`;
+  if (S.tab === 'result') { $('app').innerHTML = banner() + tabs + resultHtml(); return; }
+  const st = staffOf(S.store), t = storeStat(S.store, S.date);
+  let h = banner() + tabs + dateBar() + `<div class="sub" style="margin:0 2px">オーナー・MOTR・SC が カメラで 見た 結果です。見た <b>${t.n}／${t.total}人</b>${t.x ? `　<span class="ng">× ${t.x}人</span>` : ''}。× の 人には その日の うちに 声を かけて なおす。</div>`;
+  if (!st.length) h += '<div class="card">この店の 名簿が 読めていません。電波の よい 所で 開き直してください。</div>';
+  else if (!t.n) h += '<div class="card">この日は まだ だれも チェックしていません。</div>';
+  GROUPS.forEach(([g, label]) => { const ps = st.filter(p => p.kind === g && seen(rec(S.date, S.store, p.id))); if (!ps.length) return;
+    h += `<div class="grp">${label}<span>${ps.length}人</span></div>` + ps.map(personHtml).join(''); });
+  $('app').innerHTML = h;
 }
 function banner() {
   return (S.serverMissing ? '<div class="err">サーバーの 準備が まだです。つけた ○× は この端末に 残りますが、ほかの人には まだ 見えません。</div>' : '')
@@ -210,16 +240,32 @@ function banner() {
 }
 function renderLogin() {
   $('hBack').style.display = 'none'; $('hTitle').textContent = 'カメラチェック';
-  $('app').innerHTML = `<div class="card"><b style="font-size:18px">だれが 見ますか</b>
-    ${USER_GROUPS.map(([g, us]) => `<div class="sub" style="margin-top:10px;font-weight:700">${g}</div><div class="who" style="margin-top:4px">${us.map(u => `<button class="btn ${pickUser === u ? 'on' : ''}" onclick="pick('${u}')">${u}</button>`).join('')}</div>`).join('')}
-    <div class="sub" style="margin:8px 0 4px">パスワード</div><input type="password" id="pw" autocomplete="current-password" onkeydown="if(event.key==='Enter')login()">
+  const modeBtns = `<div class="tabs" style="margin-top:10px"><button class="btn ${loginMode === 'staff' ? 'on' : ''}" onclick="setMode('staff')">オーナー・MOTR・SC</button><button class="btn ${loginMode === 'mgr' ? 'on' : ''}" onclick="setMode('mgr')">店長</button></div>`;
+  const body = loginMode === 'mgr'
+    ? `<div class="sub" style="margin-top:4px;font-weight:700">自分の 店を えらぶ</div><select id="mgrStore" onchange="pickStore=this.value" style="width:100%;min-height:48px;font-size:17px;border:1px solid var(--line);border-radius:12px;padding:0 10px;margin-top:4px;background:#fff">
+        <option value="">店を えらぶ</option>${STORES.map(st => `<option value="${esc(st)}" ${pickStore === st ? 'selected' : ''}>${esc(st)}</option>`).join('')}</select>
+      <div class="sub" style="margin:8px 0 4px">パスワード（店舗コード）</div>`
+    : USER_GROUPS.map(([g, us]) => `<div class="sub" style="margin-top:10px;font-weight:700">${g}</div><div class="who" style="margin-top:4px">${us.map(u => `<button class="btn ${pickUser === u ? 'on' : ''}" onclick="pick('${u}')">${u}</button>`).join('')}</div>`).join('')
+      + '<div class="sub" style="margin:8px 0 4px">パスワード</div>';
+  $('app').innerHTML = `<div class="card"><b style="font-size:18px">だれが 見ますか</b>${modeBtns}${body}
+    <input type="password" id="pw" ${loginMode === 'mgr' ? 'inputmode="numeric"' : ''} autocomplete="current-password" onkeydown="if(event.key==='Enter')login()">
     <div id="lerr" class="ng" style="min-height:22px;font-size:14px;margin-top:4px"></div>
     <button class="btn pri full" onclick="login()">はじめる</button></div>`;
 }
 function pick(u) { pickUser = u; const pw = $('pw') ? $('pw').value : ''; renderLogin(); $('pw').value = pw; }
+function setMode(m) { loginMode = m; renderLogin(); }
 function login() {
+  if (loginMode === 'mgr') {
+    const st = $('mgrStore').value, pw = $('pw').value.trim().replace(/^0+/, '');
+    if (!st) { $('lerr').textContent = '店を えらんでください'; return; }
+    if (!pw || pw !== STORE_CODE[st]) { $('lerr').textContent = '店舗コードが ちがいます'; return; }
+    S.mgrStore = st; S.user = st + ' 店長'; S.authed = true; S.view = 'store'; S.store = st;
+    lsSet('cc_mgr', st); lsSet('cc_user', S.user); lsSet('cc_authed', true); render(); loadAll(true);
+    return;
+  }
   if (!pickUser) { $('lerr').textContent = '名前を えらんでください'; return; }
   if ($('pw').value !== PASS) { $('lerr').textContent = 'パスワードが ちがいます'; return; }
+  S.mgrStore = ''; lsSet('cc_mgr', '');
   S.user = pickUser; S.authed = true; lsSet('cc_user', S.user); lsSet('cc_authed', true); render(); loadAll(true); flush(false);
 }
 function logout() { S.authed = false; lsSet('cc_authed', false); S.view = 'home'; render(); }
@@ -258,19 +304,23 @@ function renderStore() {
 }
 function personHtml(p) {
   const r = rec(S.date, S.store, p.id), x = hasX(r), n = ITEMS.filter(([k]) => r[k] === 'o' || r[k] === 'x').length;
+  const lk = isMgr() ? '' : lockedBy(S.date, S.store, p.id), ro = isMgr() || !!lk;   // ro＝見るだけ
   const cls = x ? 'has-x' : n === ITEMS.length ? 'all-o' : n ? 'some' : '';
   return `<div class="person ${cls}" id="p-${p.id}"><div class="pname">${esc(p.name)}${p.role ? `<small>${esc(p.role)}</small>` : ''}</div>
     <div class="items">${ITEMS.map(([k, a, b]) => `<div class="item"><div class="lab">${a}${b ? `<br><span style="color:var(--blue2)">${b}</span>` : ''}</div>
-      <div class="ox"><button class="o ${r[k] === 'o' ? 'on' : ''}" aria-label="できている" onclick="tap('${p.id}','${k}','o')">○</button><button class="x ${r[k] === 'x' ? 'on' : ''}" aria-label="できていない" onclick="tap('${p.id}','${k}','x')">×</button></div></div>`).join('')}</div>
-    ${n || r.memo ? `<div class="memo"><input type="text" placeholder="メモ（何時ごろ・何が できていないか）" value="${esc(r.memo || '')}" maxlength="120" onchange="memo('${p.id}',this.value)"></div>` : ''}</div>`;
+      ${ro ? `<div class="ox"><div class="mk ${r[k] === 'o' ? 'o' : r[k] === 'x' ? 'x' : ''}">${r[k] === 'o' ? '○' : r[k] === 'x' ? '×' : '─'}</div></div>`
+        : `<div class="ox"><button class="o ${r[k] === 'o' ? 'on' : ''}" aria-label="できている" onclick="tap('${p.id}','${k}','o')">○</button><button class="x ${r[k] === 'x' ? 'on' : ''}" aria-label="できていない" onclick="tap('${p.id}','${k}','x')">×</button></div>`}</div>`).join('')}</div>
+    ${ro ? (r.memo ? `<div class="sub" style="margin-top:8px">メモ：${esc(r.memo)}</div>` : '') + (r.by ? `<div class="sub" style="font-size:12px">（${esc(r.by)}${lk ? ' が チェック済み。ほかの人は 変えられません' : ''}）</div>` : '')
+      : n || r.memo ? `<div class="memo"><input type="text" placeholder="メモ（何時ごろ・何が できていないか）" value="${esc(r.memo || '')}" maxlength="120" onchange="memo('${p.id}',this.value)"></div>` : ''}</div>`;
 }
 function tap(id, k, v) {
+  if (isMgr() || lockedBy(S.date, S.store, id)) return;   // 店長と、ほかの人が つけた 記録は 見るだけ
   const p = staffOf(S.store).find(q => q.id === id); if (!p) return;
   const cur = rec(S.date, S.store, id)[k] || '';
   queue(S.date, S.store, p, {[k]: cur === v ? '' : v});
   const el = $('p-' + id); if (el) el.outerHTML = personHtml(p);
 }
-function memo(id, v) { const p = staffOf(S.store).find(q => q.id === id); if (p) queue(S.date, S.store, p, {memo: v.trim()}); }
+function memo(id, v) { if (isMgr() || lockedBy(S.date, S.store, id)) return; const p = staffOf(S.store).find(q => q.id === id); if (p) queue(S.date, S.store, p, {memo: v.trim()}); }
 
 // ---------- 結果 ----------
 function periodRange() {
@@ -280,29 +330,59 @@ function periodRange() {
   if (S.period === 'month') return [`${d.getFullYear()}-${pad(d.getMonth() + 1)}-01`, t, '今月'];
   return [addDays(t, -29), t, '30日'];
 }
-function allRecs(from, to) {
+function allRecs(from, to) {   // 店長は 自分の 店の 分だけ
   const m = {}; Object.keys(S.checks).concat(Object.keys(S.pending)).forEach(k => { m[k] = 1; });
   return Object.keys(m).map(k => { const [date, store, id] = k.split('|'); return Object.assign({date, store, employeeId: id}, rec(date, store, id)); })
-    .filter(r => r.date >= from && r.date <= to && seen(r));
+    .filter(r => r.date >= from && r.date <= to && seen(r) && (!isMgr() || r.store === S.mgrStore));
 }
 function resultHtml() {
   const [from, to, label] = periodRange(), rs = allRecs(from, to);
   const seg = `<div class="seg">${[['week', '今週'], ['last', '先週'], ['month', '今月'], ['d30', '30日']].map(([k, t]) => `<button class="btn ${S.period === k ? 'on' : ''}" onclick="S.period='${k}';render()">${t}</button>`).join('')}</div>`;
   const cell = (rows, k) => { const o = rows.filter(r => r[k] === 'o').length, x = rows.filter(r => r[k] === 'x').length; return o + x ? `<td class="${x ? 'ng' : 'ok'}">${Math.round(o / (o + x) * 100)}%<br><span class="sub">${x ? '× ' + x : '○ ' + o}</span></td>` : '<td class="sub">─</td>'; };
-  const rowsHtml = STORES.map(s => { const r = rs.filter(q => q.store === s), days = new Set(r.map(q => q.date)).size, ppl = new Set(r.map(q => q.employeeId)).size;
+  const stores = isMgr() ? [S.mgrStore] : STORES;
+  const rowsHtml = stores.map(s => { const r = rs.filter(q => q.store === s), days = new Set(r.map(q => q.date)).size, ppl = new Set(r.map(q => q.employeeId)).size;
     return `<tr><td>${esc(s)}</td><td>${days ? days + '日' : '<span class="sub">まだ</span>'}</td><td>${ppl ? ppl + '／' + staffOf(s).length + '人' : '─'}</td>${ITEMS.map(([k]) => cell(r, k)).join('')}</tr>`; }).join('');
   const xs = rs.filter(hasX).sort((a, b) => b.date.localeCompare(a.date) || a.store.localeCompare(b.store, 'ja'));
-  const xl = xs.map(r => `<div class="xrow"><b>${dayLabel(r.date)}　${esc(r.store)}</b><br>${esc(r.name || r.employeeId)}　<span class="ng">${ITEMS.filter(([k]) => r[k] === 'x').map(([, a, b]) => a.replace(/^[①②③] /, '') + (b ? '(' + b.replace('までに', '') + ')' : '')).join('・')}</span>${r.memo ? `<br><span class="sub">メモ：${esc(r.memo)}</span>` : ''}${r.by ? `<span class="sub">　（${esc(r.by)}）</span>` : ''}</div>`).join('');
+  const xl = xs.map(r => `<div class="xrow"><b>${dayLabel(r.date)}　${esc(r.store)}</b><br>${esc(r.name || r.employeeId)}　<span class="ng">${ITEMS.filter(([k]) => r[k] === 'x').map(([, a, b]) => a.replace(/^[①②③④] /, '') + (b ? '(' + b.replace('までに', '') + ')' : '')).join('・')}</span>${r.memo ? `<br><span class="sub">メモ：${esc(r.memo)}</span>` : ''}${r.by ? `<span class="sub">　（${esc(r.by)}）</span>` : ''}</div>`).join('');
   const seenStores = new Set(rs.map(r => r.store)).size;
-  return `<div class="card">${seg}<div class="sub">${label}（${dayLabel(from)}〜${dayLabel(to)}）　見た店 <b>${seenStores}／${STORES.length}</b>　× が ついた のべ人数 <b class="${xs.length ? 'ng' : 'ok'}">${xs.length}</b></div></div>
-    <div class="card"><b>店ごと</b><div class="sub" style="margin-bottom:6px">％＝○の 割合。横に 動かせます</div><div class="tw"><table><thead><tr><th>店</th><th>見た日</th><th>見た人</th><th>原材料<br>15時</th><th>原材料<br>24時</th><th>指差し</th><th>声出し</th></tr></thead><tbody>${rowsHtml}</tbody></table></div></div>
+  return `<div class="card">${seg}<div class="sub">${label}（${dayLabel(from)}〜${dayLabel(to)}）　${isMgr() ? '' : `見た店 <b>${seenStores}／${STORES.length}</b>　`}× が ついた のべ人数 <b class="${xs.length ? 'ng' : 'ok'}">${xs.length}</b></div></div>
+    <div class="card"><b>店ごと</b><div class="sub" style="margin-bottom:6px">％＝○の 割合。横に 動かせます</div><div class="tw"><table><thead><tr><th>店</th><th>見た日</th><th>見た人</th><th>原材料<br>15時</th><th>原材料<br>24時</th><th>指差し</th><th>声出し</th><th>パッケージ</th></tr></thead><tbody>${rowsHtml}</tbody></table></div></div>
+    <div class="card"><b>CSVで ダウンロード</b><div class="sub" style="margin:4px 0 8px">${label}（${dayLabel(from)}〜${dayLabel(to)}）の分。Excelで 開けます</div>
+      <div class="tabs" style="margin:0"><button class="btn" onclick="dlCsv('sum')">⬇ 店ごとの まとめ</button><button class="btn" onclick="dlCsv('det')">⬇ 人ごとの 明細</button></div></div>
     <div class="card"><b>× が ついた 人</b>${xs.length ? `<button class="btn full" style="margin:8px 0" onclick="copyX(this)">LINE用に コピー</button>` + xl : '<div class="ok" style="margin-top:6px">✓ × は ありません</div>'}</div>`;
+}
+// CSV：店ごとの まとめ（見た日・見た人・項目ごとの ○×の数と ○の割合）／人ごとの 明細（日付・店・氏名・区分・項目・メモ・チェックした人）
+function dlCsv(kind) {
+  const [from, to] = periodRange(), rs = allRecs(from, to);
+  const stores = isMgr() ? [S.mgrStore] : STORES;
+  const mark = v => v === 'o' ? '○' : v === 'x' ? '×' : '';
+  const itemName = ([, a, b]) => a.replace(/^[①②③④] /, '') + (b ? '（' + b + '）' : '');
+  let rows;
+  if (kind === 'sum') {
+    rows = [['店', '見た日数', '見た人数', '在籍人数'].concat(ITEMS.flatMap(it => [itemName(it) + ' ○', itemName(it) + ' ×', itemName(it) + ' ○の割合'])).concat(['×が ついた のべ人数'])];
+    stores.forEach(st => { const r = rs.filter(q => q.store === st);
+      rows.push([st, new Set(r.map(q => q.date)).size, new Set(r.map(q => q.employeeId)).size, staffOf(st).length]
+        .concat(ITEMS.flatMap(([k]) => { const o = r.filter(q => q[k] === 'o').length, x = r.filter(q => q[k] === 'x').length; return [o, x, o + x ? Math.round(o / (o + x) * 100) + '%' : '']; }))
+        .concat([r.filter(hasX).length])); });
+  } else {
+    const kindName = id => { const e = S.emps.find(q => String(q.id) === String(id)); return e ? (GROUPS.find(g => g[0] === kindOf(e)) || [])[1] || '' : ''; };
+    rows = [['日付', '店', '従業員番号', '氏名', '区分'].concat(ITEMS.map(itemName)).concat(['メモ', 'チェックした人'])];
+    rs.slice().sort((a, b) => stores.indexOf(a.store) - stores.indexOf(b.store) || a.date.localeCompare(b.date) || String(a.name || '').localeCompare(String(b.name || ''), 'ja'))
+      .forEach(r => rows.push([r.date, r.store, r.employeeId, r.name || '', r.empType || kindName(r.employeeId)].concat(ITEMS.map(([k]) => mark(r[k]))).concat([r.memo || '', r.by || r.who || ''])));
+  }
+  const q = v => { const t = String(v == null ? '' : v); return /[",\n]/.test(t) ? '"' + t.replace(/"/g, '""') + '"' : t; };
+  const csv = '\ufeff' + rows.map(r => r.map(q).join(',')).join('\r\n');
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([csv], {type: 'text/csv;charset=utf-8'}));
+  a.download = `カメラチェック_${kind === 'sum' ? '店ごと' : '明細'}_${isMgr() ? S.mgrStore + '_' : ''}${from}_${to}.csv`;
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(a.href), 2000);
 }
 function copyX(btn) {
   const [from, to, label] = periodRange(), xs = allRecs(from, to).filter(hasX).sort((a, b) => a.store.localeCompare(b.store, 'ja') || b.date.localeCompare(a.date));
   let t = `【カメラチェック】${label}（${dayLabel(from)}〜${dayLabel(to)}）\n× が ついた ところ\n`, cur = '';
   xs.forEach(r => { if (r.store !== cur) { cur = r.store; t += `\n■ ${cur}\n`; }
-    t += `${dayLabel(r.date)} ${r.name || ''}：${ITEMS.filter(([k]) => r[k] === 'x').map(([, a, b]) => a.replace(/^[①②③] /, '') + (b ? '(' + b.replace('までに', '') + ')' : '')).join('・')}${r.memo ? '（' + r.memo + '）' : ''}\n`; });
+    t += `${dayLabel(r.date)} ${r.name || ''}：${ITEMS.filter(([k]) => r[k] === 'x').map(([, a, b]) => a.replace(/^[①②③④] /, '') + (b ? '(' + b.replace('までに', '') + ')' : '')).join('・')}${r.memo ? '（' + r.memo + '）' : ''}\n`; });
   const done = () => { btn.textContent = 'コピーしました'; setTimeout(() => { btn.textContent = 'LINE用に コピー'; }, 1500); };
   if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(t).then(done, () => {});
   else { const ta = document.createElement('textarea'); ta.value = t; document.body.appendChild(ta); ta.select(); try { document.execCommand('copy'); done(); } catch (e) {} ta.remove(); }

@@ -80,7 +80,7 @@
       <a class="app" href="philosophy.html"><span class="icon">🏛️</span><span class="name">企業理念・心得</span><span class="desc">理念・5宣言・10ヶ条（4言語）</span></a>
       <a class="app" href="philosophy-admin.html"><span class="icon">📈</span><span class="name">理念チェック 提出状況</span><span class="desc">オーナー用・未提出確認/CSV出力</span></a>
       <a class="app" href="service-eval.index.html"><span class="icon">🤝</span><span class="name">個店カルテ</span><span class="desc">組織→店舗→個人のカルテ・接客評価・トレーニング</span></a>
-      <a class="app" href="camera-check.html"><span class="icon">📹</span><span class="name">カメラチェック</span><span class="desc">オーナー・MOTR・SC・ASC用・原材料／指差し／声出し</span></a>
+      <a class="app" href="camera-check.html"><span class="icon">📹</span><span class="name">カメラチェック</span><span class="desc">オーナー・MOTR・SC用（店長は見るだけ）・原材料／指差し／声出し／パッケージ</span></a>
       <a class="app" href="compliance-survey.html"><span class="icon">📝</span><span class="name">コンプラ確認アンケート</span><span class="desc">全クルー用・月次の確認回答</span></a>
       <a class="app" href="compliance-status.html"><span class="icon">📊</span><span class="name">コンプラ提出状況</span><span class="desc">SC・管理者用・店舗別の提出率</span></a>
       <a class="app" href="compliance-test.html"><span class="icon">✅</span><span class="name">コンプラ理解度テスト</span><span class="desc">クーポン規程・全10問（4言語）</span></a>
@@ -154,7 +154,7 @@
 // アプリを更新して全端末へ確実に反映したい時は、下の APP_VERSION を
 // 新しい値に書き換える（例: '2026-07-08b' → '2026-07-08c'）。
 // リンクに ?v=バージョン が付き、バージョンが変わった時だけ再取得される。
-const APP_VERSION = '2026-11-16k';
+const APP_VERSION = '2026-11-17a';
 document.querySelectorAll('a.app').forEach(a => {
   const href = a.getAttribute('href');
   if (href && /\.html$/i.test(href) && !href.includes('?')) {
