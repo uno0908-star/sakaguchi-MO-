@@ -74,6 +74,9 @@ th:first-child{background:#eef2f7}
 .seg{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:10px}
 .seg button{min-height:44px;font-size:14px;padding:0 4px}
 .seg button.on{background:var(--blue2);color:#fff;border-color:var(--blue2)}
+.csvr{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.csvr label{font-size:13px;font-weight:700;color:var(--ink2)}
+.csvr input{margin-top:4px;font-size:16px;padding:0 8px}
 </style>
 </head>
 <body>
@@ -337,7 +340,7 @@ function allRecs(from, to) {   // 店長は 自分の 店の 分だけ
 }
 function resultHtml() {
   const [from, to, label] = periodRange(), rs = allRecs(from, to);
-  const seg = `<div class="seg">${[['week', '今週'], ['last', '先週'], ['month', '今月'], ['d30', '30日']].map(([k, t]) => `<button class="btn ${S.period === k ? 'on' : ''}" onclick="S.period='${k}';render()">${t}</button>`).join('')}</div>`;
+  const seg = `<div class="seg">${[['week', '今週'], ['last', '先週'], ['month', '今月'], ['d30', '30日']].map(([k, t]) => `<button class="btn ${S.period === k ? 'on' : ''}" onclick="S.period='${k}';S.csvFrom=S.csvTo='';render()">${t}</button>`).join('')}</div>`;
   const cell = (rows, k) => { const o = rows.filter(r => r[k] === 'o').length, x = rows.filter(r => r[k] === 'x').length; return o + x ? `<td class="${x ? 'ng' : 'ok'}">${Math.round(o / (o + x) * 100)}%<br><span class="sub">${x ? '× ' + x : '○ ' + o}</span></td>` : '<td class="sub">─</td>'; };
   const stores = isMgr() ? [S.mgrStore] : STORES;
   const rowsHtml = stores.map(s => { const r = rs.filter(q => q.store === s), days = new Set(r.map(q => q.date)).size, ppl = new Set(r.map(q => q.employeeId)).size;
@@ -347,13 +350,28 @@ function resultHtml() {
   const seenStores = new Set(rs.map(r => r.store)).size;
   return `<div class="card">${seg}<div class="sub">${label}（${dayLabel(from)}〜${dayLabel(to)}）　${isMgr() ? '' : `見た店 <b>${seenStores}／${STORES.length}</b>　`}× が ついた のべ人数 <b class="${xs.length ? 'ng' : 'ok'}">${xs.length}</b></div></div>
     <div class="card"><b>店ごと</b><div class="sub" style="margin-bottom:6px">％＝○の 割合。横に 動かせます</div><div class="tw"><table><thead><tr><th>店</th><th>見た日</th><th>見た人</th><th>原材料<br>15時</th><th>原材料<br>24時</th><th>指差し</th><th>声出し</th><th>パッケージ</th></tr></thead><tbody>${rowsHtml}</tbody></table></div></div>
-    <div class="card"><b>CSVで ダウンロード</b><div class="sub" style="margin:4px 0 8px">${label}（${dayLabel(from)}〜${dayLabel(to)}）の分。Excelで 開けます</div>
+    <div class="card"><b>CSVで ダウンロード</b><div class="sub" style="margin:4px 0 8px">期間を えらんで ダウンロード（60日前まで）。Excelで 開けます</div>
+      <div class="csvr"><label>いつから<input type="date" id="csvFrom" value="${S.csvFrom || from}" min="${minDate()}" max="${today()}" onchange="S.csvFrom=this.value;csvMsg()"></label>
+        <label>いつまで<input type="date" id="csvTo" value="${S.csvTo || to}" min="${minDate()}" max="${today()}" onchange="S.csvTo=this.value;csvMsg()"></label></div>
+      <div id="csvErr" class="ng" style="min-height:20px;font-size:14px;margin:2px 0 6px"></div>
       <div class="tabs" style="margin:0"><button class="btn" onclick="dlCsv('sum')">⬇ 店ごとの まとめ</button><button class="btn" onclick="dlCsv('det')">⬇ 人ごとの 明細</button></div></div>
     <div class="card"><b>× が ついた 人</b>${xs.length ? `<button class="btn full" style="margin:8px 0" onclick="copyX(this)">LINE用に コピー</button>` + xl : '<div class="ok" style="margin-top:6px">✓ × は ありません</div>'}</div>`;
 }
 // CSV：店ごとの まとめ（見た日・見た人・項目ごとの ○×の数と ○の割合）／人ごとの 明細（日付・店・氏名・区分・項目・メモ・チェックした人）
+// CSVの 期間：入力らんの 日付（空なら 画面で えらんだ 期間）。正しくない 時は null
+function csvRange() {
+  const [pf, pt] = periodRange(), f = ($('csvFrom') && $('csvFrom').value) || S.csvFrom || pf, t = ($('csvTo') && $('csvTo').value) || S.csvTo || pt;
+  const ok = v => /^\d{4}-\d{2}-\d{2}$/.test(v);
+  if (!ok(f) || !ok(t)) return {err: '日付を 入れてください'};
+  if (f > t) return {err: '「いつから」が「いつまで」より 後に なっています'};
+  if (f < minDate()) return {err: '60日より 前は えらべません'};
+  if (t > today()) return {err: 'きょうより 先は えらべません'};
+  return {from: f, to: t};
+}
+function csvMsg() { const r = csvRange(), e = $('csvErr'); if (e) e.textContent = r.err || ''; return r; }
 function dlCsv(kind) {
-  const [from, to] = periodRange(), rs = allRecs(from, to);
+  const cr = csvMsg(); if (cr.err) return;
+  const from = cr.from, to = cr.to, rs = allRecs(from, to);
   const stores = isMgr() ? [S.mgrStore] : STORES;
   const mark = v => v === 'o' ? '○' : v === 'x' ? '×' : '';
   const itemName = ([, a, b]) => a.replace(/^[①②③④] /, '') + (b ? '（' + b + '）' : '');
