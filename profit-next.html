@@ -1,0 +1,1383 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#000000">
+<title>店利益ダッシュボード</title>
+<link rel="icon" href="data:,">
+<!--
+  店利益ダッシュボード（新しい画面）2026-11-18
+  ・数字は持たない。同じ場所の profit.html を見えない iframe で読み、その中の定数と計算関数（nwRow / nwPath / bdPlan / kpRow など）を使う。
+  ・毎週の更新スクリプトは profit.html だけを書き換えればよい（このファイルは触らなくても最新になる）。
+  ・入力（売変の宣言）は作らない。profit.html の値引・廃棄タブへ飛ばす。GASへの書き込みはしない（読むだけ）。
+  ・?shot=1 で、動きなし・全部表示（スクリーンショット用）。
+-->
+<style>
+/* ================= tokens ================= */
+:root{
+  --font:-apple-system,BlinkMacSystemFont,"SF Pro Display","Hiragino Sans","Yu Gothic UI","Noto Sans JP","Segoe UI",sans-serif;
+  --ease:cubic-bezier(.22,1,.36,1);
+  --s-light:#ffffff; --s-alt:#f5f5f7; --s-dark:#000000;
+  --c-light:#f5f5f7; --c-alt:#ffffff; --c-dark:#1d1d1f;
+  --fg:#1d1d1f; --fg2:#6e6e73; --fg3:#86868b; --line:rgba(0,0,0,.09);
+  --accent:#0071e3; --good:#1a7f37; --warn:#b25000; --bad:#d70015;
+  --good-bg:#e7f6ea; --warn-bg:#fff2df; --bad-bg:#ffebee;
+  --h-g:#e3f4e6; --h-y:#fff1b8; --h-o:#ffd3a1; --h-r:#ffb0ad;
+  --ghost:rgba(0,0,0,.12);
+  color-scheme:light;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --s-light:#000000; --s-alt:#0e0e10; --s-dark:#161617;
+    --c-light:#1c1c1e; --c-alt:#1c1c1e; --c-dark:#232325;
+    --fg:#f5f5f7; --fg2:#a1a1a6; --fg3:#8e8e93; --line:rgba(255,255,255,.12);
+    --accent:#2997ff; --good:#30d158; --warn:#ff9f0a; --bad:#ff453a;
+    --good-bg:rgba(48,209,88,.16); --warn-bg:rgba(255,159,10,.16); --bad-bg:rgba(255,69,58,.18);
+    --h-g:rgba(48,209,88,.18); --h-y:rgba(255,214,10,.22); --h-o:rgba(255,159,10,.32); --h-r:rgba(255,69,58,.42);
+    --ghost:rgba(255,255,255,.16);
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --s-light:#000000; --s-alt:#0e0e10; --s-dark:#161617;
+  --c-light:#1c1c1e; --c-alt:#1c1c1e; --c-dark:#232325;
+  --fg:#f5f5f7; --fg2:#a1a1a6; --fg3:#8e8e93; --line:rgba(255,255,255,.12);
+  --accent:#2997ff; --good:#30d158; --warn:#ff9f0a; --bad:#ff453a;
+  --good-bg:rgba(48,209,88,.16); --warn-bg:rgba(255,159,10,.16); --bad-bg:rgba(255,69,58,.18);
+  --h-g:rgba(48,209,88,.18); --h-y:rgba(255,214,10,.22); --h-o:rgba(255,159,10,.32); --h-r:rgba(255,69,58,.42);
+  --ghost:rgba(255,255,255,.16);
+  color-scheme:dark;
+}
+/* 暗いセクション（ヒーローなど）はいつも暗い色 */
+.dark{
+  --fg:#f5f5f7; --fg2:#a1a1a6; --fg3:#8e8e93; --line:rgba(255,255,255,.13);
+  --accent:#2997ff; --good:#30d158; --warn:#ff9f0a; --bad:#ff453a;
+  --good-bg:rgba(48,209,88,.16); --warn-bg:rgba(255,159,10,.16); --bad-bg:rgba(255,69,58,.2);
+  --h-g:rgba(48,209,88,.18); --h-y:rgba(255,214,10,.22); --h-o:rgba(255,159,10,.32); --h-r:rgba(255,69,58,.42);
+  --ghost:rgba(255,255,255,.16);
+  --card:var(--c-dark);
+  background:var(--s-dark); color:var(--fg);
+}
+.light{--card:var(--c-light);background:var(--s-light);color:var(--fg)}
+.alt{--card:var(--c-alt);background:var(--s-alt);color:var(--fg)}
+
+/* ================= base ================= */
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{-webkit-text-size-adjust:100%;scroll-behavior:smooth;background:var(--s-light)}
+body{font-family:var(--font);font-size:17px;line-height:1.55;color:var(--fg);background:var(--s-light);
+  -webkit-font-smoothing:antialiased;overflow-x:hidden;overflow-x:clip;letter-spacing:.01em}
+button{font:inherit;color:inherit;background:none;border:0;cursor:pointer;-webkit-tap-highlight-color:transparent}
+a{color:var(--accent);text-decoration:none}
+.num,.tab{font-variant-numeric:tabular-nums}
+.wrap{max-width:1360px;margin:0 auto;padding:0 16px}
+@media (min-width:740px){.wrap{padding:0 28px}}
+@media (min-width:1100px){.wrap{padding:0 44px}}
+.good{color:var(--good)} .bad{color:var(--bad)} .warn{color:var(--warn)} .mut{color:var(--fg2)}
+.visually-hidden{position:absolute!important;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+
+/* ================= nav ================= */
+.gnav{position:fixed;inset:0 0 auto 0;z-index:50;color:#f5f5f7;
+  background:rgba(22,22,23,.72);-webkit-backdrop-filter:saturate(180%) blur(20px);backdrop-filter:saturate(180%) blur(20px);
+  border-bottom:1px solid rgba(255,255,255,.08);transition:background .4s var(--ease)}
+.gnav.small{background:rgba(22,22,23,.86)}
+.gnav-in{max-width:1360px;margin:0 auto;padding:0 8px 0 16px;display:grid;grid-template-columns:auto 1fr auto;align-items:center;
+  grid-template-areas:"brand . act" "pills pills pills";transition:padding .4s var(--ease)}
+.brand{grid-area:brand;font-weight:700;font-size:17px;letter-spacing:-.01em;height:48px;display:flex;align-items:center;gap:8px;white-space:nowrap;
+  transition:height .4s var(--ease)}
+.brand i{width:9px;height:9px;border-radius:50%;background:linear-gradient(135deg,#2997ff,#30d158);display:inline-block}
+.gnav.small .brand{height:40px}
+.nav-act{grid-area:act;display:flex;gap:6px;align-items:center}
+.nbtn{min-height:44px;padding:0 12px;border-radius:999px;font-size:14px;font-weight:600;color:#f5f5f7;display:inline-flex;align-items:center;gap:6px;white-space:nowrap}
+.nbtn.sc{background:rgba(255,255,255,.12)}
+.nbtn.sc:active{transform:scale(.97)}
+.nbtn.old{color:#2997ff}
+.pills{grid-area:pills;display:flex;gap:2px;overflow-x:auto;scrollbar-width:none;margin:0 -8px 0 -16px;padding:0 10px 4px;scroll-padding:0 24px}
+.pills::-webkit-scrollbar{display:none}
+.pills a{flex:0 0 auto;min-height:40px;padding:0 13px;border-radius:999px;display:flex;align-items:center;color:rgba(245,245,247,.72);
+  font-size:14px;font-weight:600;transition:color .3s,background .3s}
+.pills a.on{color:#000;background:#f5f5f7}
+@media (min-width:1100px){
+  .gnav-in{grid-template-areas:"brand pills act";grid-template-columns:auto 1fr auto;column-gap:16px;padding:0 20px}
+  .pills{margin:0;padding:0;justify-content:flex-start}
+  .pills a:first-child{margin-left:auto}.pills a:last-child{margin-right:auto}  /* 入る時は中央・あふれる時は左から（先頭が隠れない） */
+  .pills a{min-height:36px;font-size:13.5px;padding:0 12px}
+  .brand{height:56px}.gnav.small .brand{height:46px}
+}
+
+/* ================= sections ================= */
+.sec{position:relative;padding:88px 0 92px;scroll-margin-top:92px}
+@media (min-width:1100px){.sec{padding:128px 0 132px;scroll-margin-top:46px}}
+.eyebrow{font-size:15px;font-weight:700;color:var(--accent);letter-spacing:.02em;margin-bottom:10px}
+.h2{font-size:clamp(32px,6.6vw,64px);line-height:1.08;font-weight:700;letter-spacing:-.03em;margin-bottom:16px;text-wrap:balance}
+.lead{font-size:clamp(17px,2.1vw,22px);color:var(--fg2);max-width:46em;line-height:1.5;margin-bottom:36px;text-wrap:pretty}
+.lead b{color:var(--fg)}
+.lead b.bad{color:var(--bad)} .lead b.good{color:var(--good)}
+.h2,.lead,.h3{word-break:auto-phrase}
+.h3{font-size:clamp(21px,2.6vw,28px);font-weight:700;letter-spacing:-.02em;margin:48px 0 14px;line-height:1.25}
+.h3 small{display:block;font-size:14px;font-weight:500;color:var(--fg2);letter-spacing:0;margin-top:4px}
+.note{font-size:14px;color:var(--fg2);margin-top:14px;line-height:1.6}
+
+/* ================= hero ================= */
+.hero{min-height:100vh;min-height:100svh;display:flex;align-items:center;overflow:hidden;padding:150px 0 90px;isolation:isolate;background:#000}
+.aurora{position:absolute;inset:-20%;z-index:-1;pointer-events:none;filter:blur(70px) saturate(140%);opacity:.85}
+.aurora span{position:absolute;border-radius:50%;will-change:transform}
+.aurora .a1{width:60vmax;height:60vmax;left:-10%;top:-15%;background:radial-gradient(circle,rgba(41,151,255,.55),transparent 62%);animation:au1 22s ease-in-out infinite alternate}
+.aurora .a2{width:55vmax;height:55vmax;right:-15%;top:5%;background:radial-gradient(circle,rgba(191,90,242,.42),transparent 62%);animation:au2 26s ease-in-out infinite alternate}
+.aurora .a3{width:50vmax;height:50vmax;left:20%;bottom:-25%;background:radial-gradient(circle,rgba(48,209,88,.32),transparent 62%);animation:au3 30s ease-in-out infinite alternate}
+@keyframes au1{to{transform:translate3d(18%,12%,0) rotate(30deg) scale(1.15)}}
+@keyframes au2{to{transform:translate3d(-20%,18%,0) rotate(-25deg) scale(.9)}}
+@keyframes au3{to{transform:translate3d(10%,-22%,0) rotate(20deg) scale(1.2)}}
+.hero::after{content:"";position:absolute;inset:auto 0 0 0;height:140px;background:linear-gradient(transparent,#000);z-index:-1}
+.hero-in{width:100%;text-align:center;will-change:transform,opacity}
+.hero .eyebrow{color:#a1a1a6;font-weight:600;font-size:15px}
+.hero-k{font-size:clamp(20px,3vw,28px);font-weight:700;letter-spacing:-.01em;margin-bottom:6px}
+.hero-big{font-size:clamp(76px,22vw,216px);font-weight:700;letter-spacing:-.055em;line-height:.98;
+  background:linear-gradient(180deg,#fff 30%,rgba(255,255,255,.62));-webkit-background-clip:text;background-clip:text;color:transparent;
+  display:inline-flex;align-items:baseline;gap:.08em;padding:0 .04em}
+.hero-big small{font-size:.24em;letter-spacing:0;font-weight:700;-webkit-text-fill-color:#f5f5f7;color:#f5f5f7}
+.hero-sub{margin:18px auto 0;font-size:clamp(17px,2.2vw,22px);color:#d2d2d7;display:flex;flex-wrap:wrap;gap:8px 14px;justify-content:center;align-items:center}
+.chip{display:inline-flex;align-items:center;gap:6px;border-radius:999px;padding:6px 14px;font-weight:700;font-size:.92em;white-space:nowrap}
+.chip.good{background:var(--good-bg);color:var(--good)} .chip.bad{background:var(--bad-bg);color:var(--bad)} .chip.warn{background:var(--warn-bg);color:var(--warn)}
+.chip.mute{background:var(--ghost);color:var(--fg)}
+.hero-need{margin-top:10px;font-size:15px;color:#a1a1a6}
+.hero-need b{color:#f5f5f7}
+.seg-wrap{margin:40px auto 0;max-width:100%;display:flex;flex-direction:column;align-items:center;gap:10px}
+.seg-l{font-size:14px;color:#a1a1a6}
+.seg{position:relative;display:flex;max-width:100%;overflow-x:auto;scrollbar-width:none;background:rgba(255,255,255,.1);border-radius:999px;padding:4px;
+  -webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px)}
+.seg::-webkit-scrollbar{display:none}
+.seg-in{position:relative;display:flex}
+.seg button{position:relative;z-index:1;flex:0 0 auto;min-height:44px;padding:0 16px;border-radius:999px;font-size:15px;font-weight:600;color:#f5f5f7;white-space:nowrap;transition:color .35s var(--ease)}
+.seg button.on{color:#000}
+.seg .ind{position:absolute;z-index:0;top:0;bottom:0;left:0;border-radius:999px;background:#f5f5f7;transition:transform .5s var(--ease),width .5s var(--ease);box-shadow:0 4px 14px rgba(0,0,0,.25)}
+.cue{margin-top:44px;font-size:13px;color:#86868b;display:flex;flex-direction:column;align-items:center;gap:6px}
+.cue i{width:12px;height:12px;border-right:2px solid #86868b;border-bottom:2px solid #86868b;transform:rotate(45deg);animation:cue 2.2s var(--ease) infinite}
+@keyframes cue{0%,100%{transform:translateY(0) rotate(45deg);opacity:.5}50%{transform:translateY(6px) rotate(45deg);opacity:1}}
+
+/* ================= cards / bento ================= */
+.bento{display:grid;gap:14px;grid-template-columns:1fr}
+@media (min-width:740px){.bento{grid-template-columns:1fr 1fr;gap:18px}}
+@media (min-width:1100px){.bento.b4{grid-template-columns:repeat(4,1fr)}.bento .span2{grid-column:span 2}.bento.b3{grid-template-columns:repeat(3,1fr)}}
+.card{background:var(--card);border-radius:24px;padding:24px 22px;position:relative;overflow:hidden}
+@media (min-width:1100px){.card{padding:30px 28px;border-radius:28px}}
+.card .k{font-size:15px;font-weight:600;color:var(--fg2);margin-bottom:8px}
+.big{font-size:clamp(46px,8.5vw,76px);font-weight:700;letter-spacing:-.045em;line-height:1.02;font-variant-numeric:tabular-nums;white-space:nowrap}
+.big small{font-size:.36em;letter-spacing:0;margin-left:4px;font-weight:700}
+.big.m{font-size:clamp(38px,6vw,56px)}
+.card .s{font-size:15px;color:var(--fg2);margin-top:10px;line-height:1.6}
+.card .s b{color:var(--fg)}
+.card .s b.good{color:var(--good)} .card .s b.bad{color:var(--bad)}
+.tag{display:inline-flex;align-items:center;gap:6px;font-size:13px;font-weight:700;padding:4px 10px;border-radius:999px;margin-bottom:12px}
+.tag.good{background:var(--good-bg);color:var(--good)} .tag.bad{background:var(--bad-bg);color:var(--bad)} .tag.warn{background:var(--warn-bg);color:var(--warn)}
+.tag::before{content:"";width:7px;height:7px;border-radius:50%;background:currentColor}
+
+/* gauge */
+.gauge{position:relative;height:12px;border-radius:99px;background:var(--ghost);margin:22px 0 30px}
+.gauge i{position:absolute;left:0;top:0;bottom:0;border-radius:99px;transform-origin:left center}
+.gauge em{position:absolute;top:-5px;bottom:-5px;width:2px;background:var(--fg);border-radius:1px}
+.gauge em b{position:absolute;left:50%;transform:translateX(-50%);font-size:13px;font-weight:700;white-space:nowrap;font-style:normal}
+.gauge em b.up{bottom:calc(100% + 2px)} .gauge em b.dn{top:calc(100% + 2px)}
+.gauge em.tg{background:var(--good)} .gauge em.tg b{color:var(--good)}
+
+/* ring */
+.ring{display:flex;align-items:center;gap:18px}
+.ring svg{flex:0 0 auto}
+.ring circle.trk{stroke:var(--ghost)}
+.ring circle.val{transition:stroke-dashoffset 1.4s var(--ease)}
+
+/* stacked */
+.stack{display:flex;height:44px;border-radius:14px;overflow:hidden;gap:2px;margin:26px 0 14px;background:transparent}
+.stack i{display:flex;align-items:center;justify-content:center;font-style:normal;font-size:13px;font-weight:700;color:#fff;white-space:nowrap;overflow:hidden;transform-origin:left;min-width:3px}
+.legend{display:flex;flex-wrap:wrap;gap:8px 16px;font-size:14px;color:var(--fg2)}
+.legend span{display:inline-flex;align-items:center;gap:6px}
+.legend i{width:11px;height:11px;border-radius:3px;display:inline-block}
+.legend i.ln{height:3px;width:16px;border-radius:2px}
+
+/* indicators */
+.inds{display:grid;gap:14px;grid-template-columns:1fr;margin-top:18px}
+@media (min-width:600px){.inds{grid-template-columns:1fr 1fr}}
+@media (min-width:1100px){.inds{grid-template-columns:repeat(3,1fr);gap:18px}}
+.ind{text-align:left;width:100%;background:var(--card);border-radius:22px;padding:20px 20px 18px;transition:transform .45s var(--ease),box-shadow .45s var(--ease);display:block}
+.ind:hover{transform:translateY(-4px);box-shadow:0 18px 40px rgba(0,0,0,.35)}
+.ind:active{transform:scale(.98)}
+.ind-t{display:flex;justify-content:space-between;align-items:center;gap:10px;font-size:17px;font-weight:700}
+.ind-v{font-size:42px;font-weight:700;letter-spacing:-.04em;margin:6px 0 2px;font-variant-numeric:tabular-nums}
+.ind-v small{font-size:15px;font-weight:600;color:var(--fg2);letter-spacing:0;margin-left:8px}
+.bar1{position:relative;height:10px;border-radius:99px;background:var(--ghost);margin:14px 0 10px}
+.bar1 i{position:absolute;left:0;top:0;bottom:0;border-radius:99px;transform-origin:left}
+.bar1 em{position:absolute;top:-6px;bottom:-6px;width:2px;background:var(--fg);border-radius:1px}
+.ind-f{font-size:14.5px;font-weight:600;display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap}
+.ind-f .go{color:var(--accent)}
+
+/* sort / segmented small */
+.tabs{display:inline-flex;flex-wrap:wrap;gap:8px;margin:0 0 20px}
+.tabs button{min-height:44px;padding:0 16px;border-radius:999px;background:var(--card);font-size:15px;font-weight:600;color:var(--fg);border:1px solid var(--line);transition:background .3s,color .3s,transform .2s}
+.tabs button.on{background:var(--fg);color:var(--s-light);border-color:var(--fg)}
+.dark .tabs button.on{color:#000}
+.tabs button:active{transform:scale(.97)}
+
+/* store grid */
+.stores{display:grid;gap:14px;grid-template-columns:1fr}
+@media (min-width:600px){.stores{grid-template-columns:1fr 1fr}}
+@media (min-width:1000px){.stores{grid-template-columns:repeat(3,1fr)}}
+@media (min-width:1280px){.stores{grid-template-columns:repeat(4,1fr);gap:18px}}
+.st{position:relative;text-align:left;width:100%;background:var(--card);border-radius:22px;padding:18px 18px 16px;display:flex;flex-direction:column;gap:10px;
+  transition:transform .45s var(--ease),box-shadow .45s var(--ease);box-shadow:0 1px 0 var(--line)}
+.st::before{content:"";position:absolute;left:0;top:18px;bottom:18px;width:4px;border-radius:0 4px 4px 0;background:var(--lv,transparent)}
+.st.l2{--lv:var(--warn)} .st.l3{--lv:var(--bad)}
+.st:hover{transform:translateY(-4px);box-shadow:0 18px 40px rgba(0,0,0,.12)}
+.st:active{transform:scale(.98)}
+.st-top{display:flex;justify-content:space-between;gap:10px;align-items:flex-start}
+.st-n{font-size:18px;font-weight:700;line-height:1.3;letter-spacing:-.01em}
+.st-n small{display:block;font-size:13px;color:var(--fg2);font-weight:500;margin-top:2px}
+.badge{flex:0 0 auto;text-align:right;font-size:20px;font-weight:700;font-variant-numeric:tabular-nums;line-height:1.1;white-space:nowrap}
+.badge small{display:block;font-size:12.5px;font-weight:600;color:var(--fg2)}
+.st-m{font-size:15px;color:var(--fg2)}
+.st-m b{font-size:17px}
+.pl{display:flex;flex-wrap:wrap;gap:5px}
+.pl span{font-size:13px;font-weight:600;padding:3px 9px;border-radius:999px;background:var(--ghost);color:var(--fg2);white-space:nowrap}
+.pl span.x{background:var(--bad-bg);color:var(--bad)}
+.st-d{display:flex;justify-content:space-between;align-items:center;gap:8px;border-top:1px solid var(--line);padding-top:10px;font-size:15px}
+.st-d b{font-size:16.5px}
+.st-d span{font-size:14px;color:var(--fg2);white-space:nowrap}
+
+/* rows with diverging bars */
+.list{background:var(--card);border-radius:24px;padding:8px 18px}
+.row{display:grid;grid-template-columns:minmax(0,1fr) 5.6em;grid-template-areas:"l v" "b b";gap:6px 12px;align-items:center;padding:14px 0;border-bottom:1px solid var(--line);width:100%;text-align:left}
+.row:last-child{border-bottom:0}
+.row .l{grid-area:l;font-weight:700;font-size:16px;line-height:1.35;min-width:0}
+.row .l small{font-weight:500;color:var(--fg2);font-size:13.5px}
+.row .v{grid-area:v;text-align:right;font-weight:700;font-size:18px;font-variant-numeric:tabular-nums;white-space:nowrap}
+.row .b{grid-area:b}
+button.row{cursor:pointer;transition:background .3s}
+button.row:hover{background:rgba(127,127,127,.06)}
+@media (min-width:740px){.row{grid-template-columns:minmax(9em,15em) 1fr 6.5em;grid-template-areas:"l b v"}}
+.dv{position:relative;height:20px}
+.dv::after{content:"";position:absolute;left:50%;top:-3px;bottom:-3px;width:1px;background:var(--fg3)}
+.dv i{position:absolute;top:0;bottom:0;border-radius:4px}
+.dv i.p{left:50%;background:var(--good);transform-origin:left;border-radius:0 4px 4px 0}
+.dv i.n{right:50%;background:var(--bad);transform-origin:right;border-radius:4px 0 0 4px}
+.cchip{display:inline-block;font-size:12.5px;font-weight:700;padding:2px 8px;border-radius:999px;margin-top:4px}
+.cchip.bad{background:var(--bad-bg);color:var(--bad)} .cchip.good{background:var(--good-bg);color:var(--good)}
+
+/* two columns */
+.two{display:grid;gap:18px;grid-template-columns:1fr}
+@media (min-width:900px){.two{grid-template-columns:1fr 1fr}}
+
+/* tables */
+.tw{overflow-x:auto;-webkit-overflow-scrolling:touch;border-radius:22px;background:var(--card);border:1px solid var(--line);overscroll-behavior-x:contain}
+table.ht{border-collapse:separate;border-spacing:0;width:100%;min-width:760px;font-variant-numeric:tabular-nums}
+table.ht.sm{min-width:600px}
+.ht th,.ht td{padding:12px 10px;text-align:right;white-space:nowrap;border-bottom:1px solid var(--line);font-size:15px}
+.ht th{font-size:13px;font-weight:700;color:var(--fg2);vertical-align:bottom;line-height:1.35}
+.ht th small{display:block;font-weight:500;font-size:12px;color:var(--fg3)}
+.ht th:first-child,.ht td:first-child{position:sticky;left:0;z-index:2;background:var(--card);text-align:left;white-space:normal;min-width:7.4em;max-width:9.5em;
+  font-weight:700;box-shadow:inset -1px 0 0 var(--line);line-height:1.3}
+.ht th:first-child{z-index:3}
+.ht tbody tr{cursor:pointer}
+.ht tbody tr:hover td{filter:brightness(.97)}
+.ht td.g{background:var(--h-g)} .ht td.y{background:var(--h-y)} .ht td.o{background:var(--h-o)} .ht td.r{background:var(--h-r)}
+.ht td.na{color:var(--fg3)}
+.tdbtn{display:block;width:100%;min-height:44px;margin:-12px 0;padding:0;text-align:left;font-weight:700;font-size:15px;line-height:1.3;color:inherit;border-radius:6px}
+.tdbtn:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+button:focus-visible,a:focus-visible,summary:focus-visible{outline:3px solid var(--accent);outline-offset:3px}
+.ht td.tb{color:var(--bad);font-weight:700} .ht td.tg{color:var(--good);font-weight:700}
+.ht tr.tot td{font-weight:700;border-bottom:0;background:var(--card);border-top:2px solid var(--fg3)}
+.ht td small{display:block;font-size:12.5px;color:var(--fg2);font-weight:500}
+.scroll-hint{font-size:13px;color:var(--fg2);margin:8px 4px 0;display:flex;align-items:center;gap:6px}
+@media (min-width:1100px){.scroll-hint{display:none}}
+
+/* charts */
+.chart{background:var(--card);border-radius:24px;padding:18px 14px 14px}
+@media (min-width:740px){.chart{padding:26px 26px 20px}}
+.chart svg{display:block;width:100%;height:auto;overflow:visible}
+.chart text{font-family:var(--font);fill:var(--fg2)}
+.chart .lbl{fill:var(--fg);font-weight:700}
+.draw{stroke-dasharray:1;stroke-dashoffset:0}
+.cbar{transform-box:fill-box;transform-origin:50% 100%}
+.cbar.neg{transform-origin:50% 0}
+
+/* do list */
+.do{background:var(--card);border-radius:18px;padding:16px 18px;margin-top:10px;border:1px solid var(--line)}
+.do-t{display:flex;justify-content:space-between;gap:10px;font-weight:700;font-size:16px}
+.do-t b{color:var(--bad);white-space:nowrap}
+.do-s{font-size:15px;color:var(--fg2);margin-top:4px;line-height:1.6}
+.okbox{background:var(--good-bg);color:var(--good);font-weight:700;border-radius:16px;padding:14px 16px;margin-top:10px}
+.mini{display:grid;gap:12px;grid-template-columns:1fr}
+@media (min-width:600px){.mini{grid-template-columns:1fr 1fr}}
+@media (min-width:1100px){.mini{grid-template-columns:repeat(4,1fr)}}
+.mc{background:var(--card);border-radius:20px;padding:18px}
+.mc .k{font-size:14px;font-weight:600;color:var(--fg2)}
+.mc .n{font-size:30px;font-weight:700;letter-spacing:-.03em;margin:4px 0;font-variant-numeric:tabular-nums;line-height:1.2;overflow-wrap:anywhere}
+.mc .n.sm{font-size:21px;letter-spacing:-.01em}
+.mc .s{font-size:14px;color:var(--fg2);line-height:1.55}
+.more{display:inline-flex;align-items:center;gap:6px;min-height:44px;margin-top:22px;font-size:16px;font-weight:600;color:var(--accent)}
+.more::after{content:"";width:8px;height:8px;border-top:2px solid currentColor;border-right:2px solid currentColor;transform:rotate(45deg);transition:transform .3s var(--ease)}
+.more:hover::after{transform:translateX(3px) rotate(45deg)}
+.pbtn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:50px;padding:0 24px;border-radius:999px;background:var(--accent);color:#fff;font-weight:700;font-size:16px;transition:transform .2s,filter .3s}
+.pbtn:hover{filter:brightness(1.08)} .pbtn:active{transform:scale(.97)}
+.pbtn.sec2{background:var(--ghost);color:var(--fg)}
+.btns{display:flex;flex-wrap:wrap;gap:10px;margin-top:20px}
+.alertbox{border-radius:18px;padding:16px 18px;background:var(--warn-bg);color:var(--fg);font-size:15px;line-height:1.6;margin-bottom:18px}
+.alertbox b{color:var(--warn)}.alertbox small{display:block;margin-top:6px;font-size:13px;line-height:1.6}
+.fold summary{min-height:52px;list-style:none;display:inline-flex;align-items:center;gap:10px;padding:0 20px;border-radius:999px;background:var(--card);
+  font-weight:700;color:var(--accent);cursor:pointer;font-size:16px;border:1px solid var(--line)}
+.fold summary::-webkit-details-marker{display:none}
+.fold summary::after{content:"";width:8px;height:8px;border-right:2px solid currentColor;border-bottom:2px solid currentColor;transform:translateY(-2px) rotate(45deg);transition:transform .3s var(--ease)}
+.fold[open] summary::after{transform:translateY(2px) rotate(-135deg)}
+
+/* ================= sheet ================= */
+.back{position:fixed;inset:0;z-index:80;background:rgba(0,0,0,.45);opacity:0;pointer-events:none;transition:opacity .4s var(--ease);
+  -webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px)}
+.back.show{opacity:1;pointer-events:auto}
+.sheet{position:fixed;z-index:81;left:0;right:0;bottom:0;max-height:90vh;max-height:90dvh;background:var(--s-light);color:var(--fg);border-radius:26px 26px 0 0;
+  transform:translateY(105%);transition:transform .55s cubic-bezier(.32,.72,0,1),visibility 0s linear .55s;display:flex;flex-direction:column;box-shadow:0 -10px 40px rgba(0,0,0,.25);
+  --card:var(--c-light);visibility:hidden}
+.sheet.show{transform:translateY(0);visibility:visible;transition:transform .55s cubic-bezier(.32,.72,0,1),visibility 0s}
+.sheet-h{flex:0 0 auto;padding:10px 16px 10px 22px;display:flex;align-items:center;justify-content:space-between;gap:10px;border-bottom:1px solid var(--line)}
+.sheet-h::before{content:"";position:absolute;left:50%;top:7px;width:38px;height:5px;border-radius:3px;background:var(--fg3);opacity:.5;transform:translateX(-50%)}
+.sheet-h h3{font-size:21px;font-weight:700;letter-spacing:-.02em;line-height:1.3;padding-top:8px}
+.sheet-h h3 small{display:block;font-size:13.5px;font-weight:500;color:var(--fg2)}
+.xbtn{min-height:44px;min-width:44px;padding:0 14px;border-radius:999px;background:var(--ghost);font-weight:700;font-size:15px;flex:0 0 auto}
+.sheet-b{overflow-y:auto;padding:16px 20px calc(28px + env(safe-area-inset-bottom));-webkit-overflow-scrolling:touch;overscroll-behavior:contain}
+.kv{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:6px}
+.kv>div{background:var(--card);border-radius:16px;padding:12px 6px;text-align:center;display:flex;flex-direction:column;justify-content:flex-start;gap:4px;min-width:0}
+.kv .k{font-size:13px;color:var(--fg2);font-weight:600;white-space:nowrap;line-height:1.4}
+.kv .v{font-size:22px;font-weight:700;letter-spacing:-.02em;font-variant-numeric:tabular-nums;white-space:nowrap}
+.sh{font-size:17px;font-weight:700;margin:22px 0 8px;display:flex;flex-wrap:wrap;gap:4px 10px;align-items:baseline}
+.sh span{font-size:14px}
+.sheet .list{padding:4px 14px}
+.sheet .btns .pbtn{flex:1 1 220px}
+@media (min-width:900px){
+  .sheet{left:50%;right:auto;top:50%;bottom:auto;width:min(720px,92vw);max-height:86vh;border-radius:28px;
+    transform:translate(-50%,-46%) scale(.96);opacity:0;pointer-events:none;transition:transform .5s var(--ease),opacity .35s var(--ease),visibility 0s linear .5s}
+  .sheet.show{transform:translate(-50%,-50%) scale(1);opacity:1;pointer-events:auto;transition:transform .5s var(--ease),opacity .35s var(--ease),visibility 0s}
+  .sheet-h::before{display:none}
+  .sheet-h{padding:16px 18px 14px 28px}
+  .sheet-b{padding:20px 28px 30px}
+}
+.sc-list{display:grid;gap:8px}
+.sc-list button{min-height:52px;border-radius:16px;background:var(--card);text-align:left;padding:0 18px;font-size:17px;font-weight:600;display:flex;justify-content:space-between;align-items:center}
+.sc-list button.on{background:var(--accent);color:#fff}
+
+/* tooltip */
+#tip{position:fixed;z-index:90;pointer-events:none;background:rgba(29,29,31,.94);color:#f5f5f7;font-size:14px;line-height:1.5;padding:10px 12px;border-radius:12px;
+  max-width:260px;opacity:0;transform:translateY(4px);transition:opacity .2s,transform .2s;box-shadow:0 8px 24px rgba(0,0,0,.3);font-variant-numeric:tabular-nums}
+#tip.show{opacity:1;transform:none}
+
+/* footer */
+.foot{padding:60px 0 calc(60px + env(safe-area-inset-bottom));font-size:14px;color:var(--fg2)}
+.foot a{font-weight:600}
+
+/* toast */
+#toast{position:fixed;left:50%;bottom:calc(24px + env(safe-area-inset-bottom));z-index:95;transform:translate(-50%,20px);opacity:0;background:rgba(29,29,31,.94);color:#fff;
+  padding:12px 20px;border-radius:999px;font-weight:700;font-size:15px;transition:opacity .3s,transform .4s var(--ease);pointer-events:none}
+#toast.show{opacity:1;transform:translate(-50%,0)}
+
+/* ================= skeleton / error ================= */
+.sk{position:relative;overflow:hidden;background:rgba(255,255,255,.08);border-radius:14px}
+.light .sk,.alt .sk{background:rgba(127,127,127,.12)}
+.sk::after{content:"";position:absolute;inset:0;background:linear-gradient(90deg,transparent,rgba(255,255,255,.14),transparent);transform:translateX(-100%);animation:sh 1.4s infinite}
+@keyframes sh{to{transform:translateX(100%)}}
+.err{max-width:560px;margin:0 auto;text-align:center}
+.err h2{font-size:28px;margin-bottom:10px}
+.err p{color:#a1a1a6;margin-bottom:24px}
+
+/* ================= motion ================= */
+.anim .rv{opacity:0;transform:translate3d(0,28px,0);transition:opacity .9s var(--ease),transform 1s var(--ease);transition-delay:var(--d,0ms)}
+.anim .rv.in{opacity:1;transform:none}
+.anim .rv .grow{transform:scaleX(0);transition:transform 1.2s var(--ease);transition-delay:calc(var(--d,0ms) + 200ms)}
+.anim .rv.in .grow{transform:scaleX(1)}
+.anim .rv .growy{transform:scaleY(0);transition:transform 1s var(--ease);transition-delay:calc(var(--d,0ms) + var(--gd,0ms) + 150ms)}
+.anim .rv.in .growy{transform:scaleY(1)}
+.anim .rv .draw{stroke-dashoffset:1;transition:stroke-dashoffset 1.8s var(--ease) .3s}
+.anim .rv.in .draw{stroke-dashoffset:0}
+.anim .rv .fadein{opacity:0;transition:opacity .6s var(--ease) 1.4s}
+.anim .rv.in .fadein{opacity:1}
+.shot .aurora span,.shot .cue i{animation:none}
+.shot .hero{min-height:860px}
+.shot .gnav{position:absolute}
+@media (prefers-reduced-motion: reduce){
+  html{scroll-behavior:auto}
+  .aurora span,.cue i,.sk::after{animation:none}
+  *,*::before,*::after{transition-duration:.01ms!important;transition-delay:0ms!important}
+}
+@media print{.anim .rv{opacity:1;transform:none}.gnav{position:static}}
+</style>
+</head>
+<body>
+
+<nav class="gnav" id="gnav" aria-label="セクション">
+  <div class="gnav-in">
+    <div class="brand"><i></i>店利益</div>
+    <div class="pills" id="pills"></div>
+    <div class="nav-act">
+      <button class="nbtn sc" id="scBtn" type="button" aria-label="担当SCをえらぶ">担当：全社</button>
+      <a class="nbtn old" href="profit.html">今の画面</a>
+    </div>
+  </div>
+</nav>
+
+<main id="app">
+  <!-- 読み込み中（スケルトン） -->
+  <header class="sec hero dark" id="hero">
+    <div class="aurora" aria-hidden="true"><span class="a1"></span><span class="a2"></span><span class="a3"></span></div>
+    <div class="wrap hero-in" id="heroIn">
+      <div class="eyebrow">読み込んでいます…</div>
+      <div class="hero-k">今月の店利益</div>
+      <div class="sk" style="width:min(560px,80vw);height:clamp(80px,20vw,190px);margin:16px auto;border-radius:28px"></div>
+      <div class="sk" style="width:min(360px,70vw);height:28px;margin:18px auto 0"></div>
+    </div>
+  </header>
+  <section class="sec light"><div class="wrap">
+    <div class="sk" style="width:180px;height:18px;margin-bottom:16px"></div>
+    <div class="sk" style="width:min(520px,80%);height:52px;margin-bottom:36px"></div>
+    <div class="bento b4"><div class="sk span2" style="height:220px;border-radius:24px"></div><div class="sk" style="height:220px;border-radius:24px"></div><div class="sk" style="height:220px;border-radius:24px"></div></div>
+  </div></section>
+</main>
+
+<div class="back" id="back"></div>
+<div class="sheet" id="sheet" role="dialog" aria-modal="true" aria-labelledby="sheetTitle" aria-hidden="true">
+  <div class="sheet-h"><h3 id="sheetTitle"></h3><button class="xbtn" id="sheetX" type="button">閉じる</button></div>
+  <div class="sheet-b" id="sheetB"></div>
+</div>
+<div id="tip" role="tooltip"></div>
+<div id="toast" role="status" aria-live="polite"></div>
+
+<script>
+(() => {
+'use strict';
+// ===================================================================
+// 0. 設定
+// ===================================================================
+const Q = new URLSearchParams(location.search);
+const SHOT = Q.get('shot') === '1';
+const REDUCED = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+const ANIM = !SHOT && !REDUCED && 'IntersectionObserver' in window;
+const ROOT = document.documentElement;
+if (ANIM) ROOT.classList.add('anim');
+if (SHOT) ROOT.classList.add('shot');
+
+const SECTIONS = [
+  ['now', '現在地'], ['cut', 'へらす額'], ['stores', '店ごと'], ['path', '6月まで'],
+  ['profit', '店利益'], ['waste', '値引・廃棄'], ['trend', '前週対比'], ['baihen', '売変の宣言'],
+  ['kitchen', '厨房'], ['delivery', 'デリバリー'], ['kpi', 'KPI・AICO'],
+];
+// 6つの指標の色（暗い面でも見える明るさ）。profit.html の NW_COL と同じ色の系統
+const KCOL = {A: '#ff453a', B: '#ff9f0a', C: '#bf5af2', D: '#ac8e68', E: '#0a84ff', F: '#2ec4b6'};
+
+let E = null;      // profit.html の中身（定数・関数）
+let W = null;      // iframe の window
+let SC = 'all';
+let storeSort = 'cut', wsMode = 'rate';
+try { const s = localStorage.getItem('pn_sc'); if (s) SC = s; } catch (e) {}
+
+const $ = (s, r = document) => r.querySelector(s);
+const esc = t => String(t == null ? '' : t).replace(/[&<>"']/g, c => ({'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'}[c]));
+const txt = el => el ? el.textContent.replace(/\s+/g, ' ').trim() : '';
+
+// ===================================================================
+// 1. profit.html を計算エンジンとして読む
+// ===================================================================
+function boot() {
+  const ifr = document.createElement('iframe');
+  ifr.src = 'profit.html';
+  ifr.title = 'engine';
+  ifr.setAttribute('aria-hidden', 'true');
+  ifr.tabIndex = -1;
+  ifr.style.cssText = 'position:absolute;left:-10000px;top:0;width:1280px;height:800px;border:0;visibility:hidden;pointer-events:none';
+  let done = false;
+  const timer = setTimeout(() => { if (!done) { done = true; fail('時間内に読み込めませんでした'); } }, 25000);
+  ifr.addEventListener('load', () => {
+    if (done) return;
+    done = true; clearTimeout(timer);
+    try {
+      W = ifr.contentWindow;
+      E = W.eval(`({PROFIT, HISTORY, PLAN, CUR_LABEL, SC_MAP, SC_LIST, WASTE, NW_KEYS, NW_LAB, NW_DO,
+        nwRow, nwPath, nwCap, nwMan, nwYen, nwSg, nwPct, nwStoreText, prevSnapshot,
+        bdPlan, bdNow, bdWeeks, bdDecl, bdWeekActual, bdLoad, bdYen, bdWeekLab, BD, BD_GAS, bdAdd, bdYmd,
+        KPI: typeof KPI !== 'undefined' ? KPI : null, kpRow, kpAgg, kpItemStat, kpGo, KP_DO, KP_ACT, kpDept,
+        acList, AC, KITCHEN_START, KC_COVER: typeof KC_COVER !== 'undefined' ? KC_COVER : null})`);
+      if (!E.PROFIT || !E.PROFIT.length) throw new Error('データが空です');
+      if (!E.SC_LIST.includes(SC)) SC = 'all';
+      renderAll(true);
+      watchBaihen();
+    } catch (e) {
+      console.error(e);
+      fail(e && e.message ? e.message : String(e));
+    }
+  });
+  ifr.addEventListener('error', () => { if (!done) { done = true; clearTimeout(timer); fail('読み込めませんでした'); } });
+  document.body.appendChild(ifr);
+}
+
+function fail(msg) {
+  ROOT.classList.remove('anim');
+  const local = location.protocol === 'file:';
+  $('#app').innerHTML = `<header class="sec hero dark"><div class="aurora" aria-hidden="true"><span class="a1"></span><span class="a2"></span><span class="a3"></span></div>
+    <div class="wrap err"><h2>読み込めませんでした</h2>
+    <p>${local ? 'ファイルを直接開くと読み込めません。GitHub Pages のURLで開いてください。' : '電波のよい所で、もう一度開いてください。'}<br><small>${esc(msg)}</small></p>
+    <a class="pbtn" href="profit.html">今のダッシュボードを開く</a></div></header>`;
+}
+
+// ===================================================================
+// 2. 数字のまとめ（profit.html の関数をそのまま使う）
+// ===================================================================
+const man = (v, d) => E.nwMan(v, d);                 // 千円 → 万円（数字だけ）
+const sgMan = v => E.nwSg(v / 10);                    // 千円 → ±万円（数字だけ）
+const yen = v => E.nwYen(v).toLocaleString() + '円';  // 千円/日 → 円
+const pc = (k, v) => E.nwPct(k, v);
+const who = () => SC === 'all' ? '全社' : SC;
+
+function allRows() { return E.PROFIT.map(p => E.nwRow(p)); }
+function rowsSC() { const a = allRows(); return SC === 'all' ? a : a.filter(r => r.sc === SC); }
+
+// renderNow（profit.html）の 上の部分と 同じ集計
+function summary(rows) {
+  const sum = f => rows.reduce((a, r) => a + f(r), 0);
+  const N = sum(r => r.p.nisshu), V = sum(r => r.v), O = sum(r => r.o), VC = sum(r => r.vc), EF = sum(r => r.e);
+  const land = sum(r => r.p.landing), bud = sum(r => r.p.budget), diff = land - bud;
+  const rate = V / N * 100, after = (V - O) / N * 100;
+  const budRate = sum(r => r.p.markdownBudget) / sum(r => r.p.sales) * 100 * V / VC;
+  const need = bud - E.PLAN.surplus;
+  const ok = rows.filter(r => r.p.diff >= 0).length;
+  return {sum, N, V, O, VC, EF, land, bud, diff, rate, after, budRate, need, ok, n: rows.length};
+}
+
+// ===================================================================
+// 3. 描画
+// ===================================================================
+let IO = null, NAVIO = null;
+function renderAll(first) {
+  const rows = rowsSC(), S = summary(rows), path = E.nwPath();
+  const html = [heroHtml(S), nowHtml(S, path), cutHtml(rows, S), storesHtml(rows), pathHtml(path),
+    profitHtml(rows, S), wasteHtml(rows, S), trendHtml(rows), baihenWrap(), kitchenHtml(), deliveryHtml(), kpiHtml(rows), footHtml()];
+  $('#app').innerHTML = html.join('');
+  try {
+    renderBaihen();
+    drawCharts(path);
+    setupSeg();
+    $('#scBtn').textContent = '担当：' + (SC === 'all' ? '全社' : SC);
+    if (first) { buildPills(); bindGlobal(); }
+    observe();
+    if (first && location.hash) { const t = document.getElementById(location.hash.slice(1)); if (t) setTimeout(() => t.scrollIntoView(), 50); }
+  } catch (e) {
+    console.error(e);
+    ROOT.classList.remove('anim');
+  }
+}
+
+// ---------- ヒーロー ----------
+function heroHtml(S) {
+  const bad = S.diff < 0;
+  const scs = ['all', ...E.SC_LIST];
+  return `<header class="sec hero dark" id="hero">
+    <div class="aurora" aria-hidden="true"><span class="a1"></span><span class="a2"></span><span class="a3"></span></div>
+    <div class="wrap hero-in" id="heroIn">
+      <div class="eyebrow rv">${esc(E.CUR_LABEL.month)}・${esc(E.CUR_LABEL.date)}・${esc(who())}（${S.n}店）</div>
+      <h1 class="hero-k rv" style="--d:80ms">今月の店利益（着地の見込み）</h1>
+      <div class="rv" style="--d:160ms"><span class="hero-big num"><span class="cu" data-to="${S.land / 10}" data-dec="0">${man(S.land)}</span><small>万円</small></span></div>
+      <div class="hero-sub rv" style="--d:260ms"><span>予算 <b class="num">${man(S.bud)}</b>万円</span>
+        <span class="chip ${bad ? 'bad' : 'good'}">${bad ? '予算より少ない' : '予算より多い'}　<span class="num">${sgMan(S.diff)}</span>万円</span></div>
+      ${SC === 'all' ? `<div class="hero-need rv" style="--d:320ms">必要ライン（予算−${man(E.PLAN.surplus)}万円）${man(S.need)}万円 → <b class="${S.land - S.need < 0 ? 'bad' : 'good'}">${sgMan(S.land - S.need)}万円</b></div>`
+        : `<div class="hero-need rv" style="--d:320ms">予算の <b>${(S.land / S.bud * 100).toFixed(0)}%</b></div>`}
+      <div class="seg-wrap rv" style="--d:400ms"><div class="seg-l">担当SCで しぼる（全部の数字が かわります）</div>
+        <div class="seg" id="seg"><div class="seg-in"><span class="ind" id="segInd"></span>
+        ${scs.map(s => `<button type="button" data-sc="${esc(s)}" class="${s === SC ? 'on' : ''}">${s === 'all' ? '全体' : esc(s)}</button>`).join('')}</div></div></div>
+      <div class="cue rv" style="--d:600ms" aria-hidden="true">下へ<i></i></div>
+    </div></header>`;
+}
+
+// ---------- ① 現在地 ----------
+function ring(v, max, col, size = 96) {
+  const r = size / 2 - 7, c = 2 * Math.PI * r, f = Math.max(0, Math.min(1, v / max));
+  return `<svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}" aria-hidden="true"><circle class="trk" cx="${size / 2}" cy="${size / 2}" r="${r}" fill="none" stroke-width="10"/>
+    <circle class="val ringv" cx="${size / 2}" cy="${size / 2}" r="${r}" fill="none" stroke="${col}" stroke-width="10" stroke-linecap="round"
+      stroke-dasharray="${c.toFixed(2)}" data-off="${(c * (1 - f)).toFixed(2)}" stroke-dashoffset="${(c * (1 - f)).toFixed(2)}" transform="rotate(-90 ${size / 2} ${size / 2})"/></svg>`;
+}
+function gauge(now, cap, bud, max) {
+  const pos = v => Math.min(100, Math.max(0, v / max * 100));
+  return `<div class="gauge" role="img" aria-label="今 ${now.toFixed(1)}%・予算 ${bud.toFixed(1)}%・目標 ${cap.toFixed(1)}%"><i class="grow" style="width:${pos(now)}%;background:${now > bud ? 'var(--bad)' : 'var(--good)'}"></i>
+    <em style="left:${pos(bud)}%"><b class="up">予算 ${bud.toFixed(1)}%</b></em><em class="tg" style="left:${pos(cap)}%"><b class="dn">目標 ${cap.toFixed(1)}%</b></em></div>`;
+}
+function nowHtml(S, path) {
+  const isAll = SC === 'all';
+  const cashCls = path.cashPlan < 0 ? 'bad' : path.cashBase < 0 ? 'warn' : 'good';
+  return `<section class="sec light" id="now"><div class="wrap">
+    <div class="eyebrow rv">① 現在地</div>
+    <h2 class="h2 rv" style="--d:60ms">いま、どこにいるか。</h2>
+    <p class="lead rv" style="--d:120ms">${esc(E.CUR_LABEL.month)}・${esc(E.CUR_LABEL.date)}・${esc(who())}（${S.n}店）。数字は今のダッシュボードと同じ計算です。</p>
+    <div class="bento b4">
+      <div class="card span2 rv">
+        <div class="tag ${S.diff < 0 ? 'bad' : 'good'}">${S.diff < 0 ? '予算に届いていない' : '予算に届いている'}</div>
+        <div class="k">今月の店利益（着地の見込み）</div>
+        <div class="big ${S.diff < 0 ? 'bad' : 'good'}"><span class="cu" data-to="${S.land / 10}">${man(S.land)}</span><small>万円</small></div>
+        <div class="s">予算 ${man(S.bud)}万円 → <b class="${S.diff < 0 ? 'bad' : 'good'}">${sgMan(S.diff)}万円</b>
+        ${isAll ? `<br>必要ライン ${man(S.need)}万円 → <b class="${S.land - S.need < 0 ? 'bad' : 'good'}">${sgMan(S.land - S.need)}万円</b>` : `<br>予算の ${(S.land / S.bud * 100).toFixed(0)}%`}</div>
+      </div>
+      <div class="card rv" style="--d:90ms">
+        <div class="tag ${S.rate > S.budRate ? 'bad' : 'good'}">${S.rate > S.budRate ? '予算より多い' : '予算内'}</div>
+        <div class="k">売変率（値引＋廃棄の合計）</div>
+        <div class="big m ${S.rate > S.budRate ? 'bad' : 'good'}"><span class="cu" data-to="${S.rate}" data-dec="1">${S.rate.toFixed(1)}</span><small>%</small></div>
+        ${gauge(S.rate, S.after, S.budRate, Math.max(8, S.rate * 1.15))}
+        <div class="s">1日 <b>${man(S.V, 1)}万円</b>（売価）</div>
+      </div>
+      <div class="card rv" style="--d:180ms">
+        <div class="tag ${cashCls}">${path.cashBase < 0 ? 'このままだと足りない' : '足りている'}</div>
+        <div class="k">6月末のキャッシュ（全社・必要ラインとの差）</div>
+        <div class="big m ${path.cashBase < 0 ? 'bad' : 'good'}"><span class="cu" data-to="${path.cashBase / 10}" data-sg="1">${sgMan(path.cashBase)}</span><small>万円</small></div>
+        <div class="s">↑ このままの場合<br>上限まで下げると <b class="${path.cashPlan < 0 ? 'bad' : 'good'}">${sgMan(path.cashPlan)}万円</b></div>
+      </div>
+      <div class="card span2 rv" style="--d:120ms">
+        <div class="k">予算に届いている店</div>
+        <div class="ring">${ring(S.ok, S.n, S.ok < S.n / 2 ? 'var(--warn)' : 'var(--good)', 104)}
+          <div><div class="big m"><span class="cu" data-to="${S.ok}">${S.ok}</span><small>／${S.n}店</small></div>
+          <div class="s" style="margin-top:4px">${S.n - S.ok ? `<b class="bad">${S.n - S.ok}店</b>が予算に届いていません` : '全店が予算に届いています'}</div></div></div>
+      </div>
+      <div class="card span2 rv" style="--d:200ms">
+        <div class="k">上限まで下げると</div>
+        <div class="big m good">+<span class="cu" data-to="${S.EF / 10}">${man(S.EF)}</span><small>万円／月</small></div>
+        <div class="s">店利益が増える見込み。売変率 <b>${S.rate.toFixed(1)}%</b> → <b class="good">${S.after.toFixed(1)}%</b></div>
+      </div>
+    </div>
+  </div></section>`;
+}
+
+// ---------- ② 1日いくら減らすか・6つの指標 ----------
+function cutHtml(rows, S) {
+  const {sum, O, rate, after, EF} = S;
+  let stack = '', leg = '';
+  if (O > 0.05) {
+    stack = `<div class="stack" role="img" aria-label="指標ごとの へらす額">` + E.NW_KEYS.map(k => {
+      const o = sum(r => r.O[k]); return o / O > 0.004 ? `<i class="grow" style="width:${o / O * 100}%;background:${KCOL[k]}" data-tip="${E.NW_LAB[k]}\n1日 −${yen(o)}">${o / O > 0.12 ? E.NW_LAB[k] : ''}</i>` : '';
+    }).join('') + `</div>`;
+    leg = `<div class="legend">` + E.NW_KEYS.map(k => `<span><i style="background:${KCOL[k]}"></i>${E.NW_LAB[k]} −${yen(sum(r => r.O[k]))}</span>`).join('') + `</div>`;
+  }
+  const inds = E.NW_KEYS.map((k, i) => {
+    const s = sum(r => r.S[k]), v = sum(r => r.V[k]), o = sum(r => r.O[k]);
+    const r_ = s ? v / s * 100 : 0, cap = E.nwCap(k), n = rows.filter(r => r.O[k] * 1000 >= 50).length;
+    const over = r_ > cap, mx = Math.max(cap * 1.8, r_ * 1.15);
+    const st = over ? ['bad', '上限より上'] : n ? ['warn', '一部の店が上'] : ['good', '上限内'];
+    return `<button type="button" class="ind rv" style="--d:${i * 70}ms" data-ind="${k}">
+      <div class="ind-t"><span>${E.NW_LAB[k]}</span><span class="tag ${st[0]}" style="margin:0">${st[1]}</span></div>
+      <div class="ind-v ${over ? 'bad' : 'good'}">${pc(k, r_)}<small>上限 ${pc(k, cap)}</small></div>
+      <div class="bar1"><i class="grow" style="width:${Math.min(100, r_ / mx * 100)}%;background:${over ? 'var(--bad)' : 'var(--good)'}"></i><em style="left:${cap / mx * 100}%"></em></div>
+      <div class="ind-f"><span class="${n ? 'bad' : 'good'}">${n ? `${n}店が超え　−${yen(o)}/日` : '全店 上限内'}</span><span class="go">店を見る</span></div></button>`;
+  }).join('');
+  return `<section class="sec dark" id="cut"><div class="wrap">
+    <div class="eyebrow rv">② これから</div>
+    <h2 class="h2 rv" style="--d:60ms">1日 いくら減らすか。</h2>
+    <p class="lead rv" style="--d:120ms">売価・上限を超えている分だけ。${esc(who())}（${rows.length}店）。</p>
+    <div class="card rv">
+      <div class="k">上限まで、1日に減らす額</div>
+      <div class="big ${O > 0.05 ? 'bad' : 'good'}">−<span class="cu" data-to="${O / 10}" data-dec="1">${man(O, 1)}</span><small>万円／日</small></div>
+      <div class="s">売変率 <b>${rate.toFixed(1)}%</b> → <b class="good">${after.toFixed(1)}%</b>　／　店利益 月 <b class="good">+${man(EF)}万円</b></div>
+      ${stack}${leg}
+    </div>
+    <h3 class="h3 rv">6つの指標<small>線＝上限。押すと、超えている店が出ます</small></h3>
+    <div class="inds">${inds}</div>
+  </div></section>`;
+}
+
+// ---------- ③ 店ごと ----------
+function storeCard(r, i) {
+  const lv = r.o * 1000 >= 10000 ? 'l3' : r.o * 1000 >= 3000 ? 'l2' : '';
+  const top = E.NW_KEYS.slice().sort((a, b) => r.O[b] - r.O[a])[0];
+  return `<button type="button" class="st ${lv} rv" style="--d:${Math.min(i, 8) * 45}ms" data-store="${esc(r.name)}">
+    <div class="st-top"><div class="st-n">${esc(r.name)}<small>${esc(r.sc)}・${esc(r.p.type)}</small></div>
+      <div class="badge ${r.p.diff < 0 ? 'bad' : 'good'}"><small>予算との差</small>${sgMan(r.p.diff)}万</div></div>
+    <div class="st-m">売変率 <b class="${r.rate > r.bud ? 'bad' : 'good'}">${r.rate.toFixed(1)}%</b> → ${r.after.toFixed(1)}%</div>
+    <div class="pl">${E.NW_KEYS.filter(k => r.S[k]).map(k => `<span class="${r.O[k] * 1000 >= 50 ? 'x' : ''}">${E.NW_LAB[k]} ${pc(k, r.R[k])}</span>`).join('')}</div>
+    <div class="st-d">${r.o * 1000 >= 50 ? `<b class="bad">1日 −${yen(r.o)}</b><span>まず ${E.NW_LAB[top]}</span>` : `<b class="good">✓ 全部 上限内</b><span>今のまま</span>`}</div></button>`;
+}
+function storesHtml(rows) {
+  const sorted = rows.slice().sort((a, b) => storeSort === 'cut' ? b.o - a.o : storeSort === 'diff' ? a.p.diff - b.p.diff : storeSort === 'good' ? b.p.diff - a.p.diff : b.rate - a.rate);
+  const opts = [['cut', '減らす額が大きい順'], ['diff', '予算に遠い順（悪い順）'], ['good', '予算をこえた順（良い順）'], ['rate', '売変率が高い順']];
+  return `<section class="sec alt" id="stores"><div class="wrap">
+    <div class="eyebrow rv">③ 店ごと</div>
+    <h2 class="h2 rv" style="--d:60ms">何を、いくら。</h2>
+    <p class="lead rv" style="--d:120ms">店を押すと、原因と「やること」が出ます。LINE用のコピーもできます。</p>
+    <div class="tabs rv" role="group" aria-label="ならべかた">${opts.map(([k, t]) => `<button type="button" data-sort="${k}" class="${storeSort === k ? 'on' : ''}" aria-pressed="${storeSort === k}">${t}</button>`).join('')}</div>
+    <div class="stores" id="storeGrid">${sorted.map(storeCard).join('')}</div>
+  </div></section>`;
+}
+
+// ---------- ④ 6月までの道筋 ----------
+function pathHtml(path) {
+  const last = path.rows[path.rows.length - 1];
+  return `<section class="sec dark" id="path"><div class="wrap">
+    <div class="eyebrow rv">④ 6月までの道筋</div>
+    <h2 class="h2 rv" style="--d:60ms">6月度の精算書まで、<br>キャッシュを残す。</h2>
+    <p class="lead rv" style="--d:120ms">全社。必要ライン＝毎月の予算 − ${man(E.PLAN.surplus)}万円。差を積み上げて、6月末に<b>プラス</b>にする。<br>このままだと <b class="${path.cashBase < 0 ? 'bad' : 'good'}">${sgMan(path.cashBase)}万円</b>、上限まで下げると <b class="${path.cashPlan < 0 ? 'bad' : 'good'}">${sgMan(path.cashPlan)}万円</b>。</p>
+    <div class="two">
+      <div class="chart rv"><div class="k" style="font-weight:700;margin:0 4px 10px">毎月の店利益（万円）</div><div id="ch1"></div>
+        <div class="legend" style="margin:10px 4px 0"><span><i style="background:var(--ghost)"></i>予算</span><span><i style="background:var(--accent)"></i>実績</span><span><i style="background:var(--accent);opacity:.55"></i>今月の見込み</span><span><i style="background:var(--good)"></i>上限まで下げた場合</span><span><i class="ln" style="background:var(--fg)"></i>このまま</span></div></div>
+      <div class="chart rv" style="--d:120ms"><div class="k" style="font-weight:700;margin:0 4px 10px">必要ラインとの差の積み上げ（万円）</div><div id="ch2"></div>
+        <div class="legend" style="margin:10px 4px 0"><span><i class="ln" style="background:var(--fg3)"></i>このまま</span><span><i class="ln" style="background:var(--good)"></i>上限まで下げた場合</span><span><i class="ln" style="background:var(--fg);height:1px"></i>0＝必要ライン</span></div></div>
+    </div>
+    <p class="note rv">「このまま」＝これからの月も、今までと同じ予算達成率（${(path.ach * 100).toFixed(1)}%）だった場合。上限は ${esc(E.PLAN.start)}から段階で下げる（値引 ${E.PLAN.caps.A.join('→')}%・AICO ${E.PLAN.caps.B.join('→')}% など）。${last ? `6月の予算は ${man(last.bud)}万円。` : ''}</p>
+  </div></section>`;
+}
+function drawCharts(path) {
+  const c1 = $('#ch1'), c2 = $('#ch2');
+  if (c1) c1.innerHTML = chartMonthly(path, c1.clientWidth || 340);
+  if (c2) c2.innerHTML = chartCum(path, c2.clientWidth || 340);
+  // グラフの数字を 表でも読めるように（スマホ・キーボード・読み上げ用）
+  const host = c2 ? c2.closest('.wrap') : null;
+  if (host) {
+    let t = $('#chTbl'); const wasOpen = t ? t.open : SHOT;
+    if (!t) { t = document.createElement('details'); t.id = 'chTbl'; t.className = 'fold'; t.style.marginTop = '18px'; host.appendChild(t); }
+    const sg = v => (v > 0 ? '+' : v < 0 ? '−' : '') + man(Math.abs(v));
+    const sig = JSON.stringify(path.rows.map(x => [x.m, x.kind, x.bud, x.base, x.plan, x.need, x.cb, x.cp]));
+    if (t.dataset.sig === sig) return;          // 中身が同じ（幅が変わっただけ）なら 表は作り直さない
+    t.dataset.sig = sig;
+    t.innerHTML = `<summary>グラフの数字を表で見る</summary><div class="tw" style="margin-top:12px"><table class="ht sm"><caption style="text-align:left;padding:0 0 8px;font-size:13px">単位：万円。つみあげ＝必要ラインとの差を足していった額</caption>
+      <thead><tr><th scope="col">月</th><th scope="col">予算</th><th scope="col">このまま<small>実績・見込み</small></th><th scope="col">上限まで下げた場合</th><th scope="col">必要ライン</th><th scope="col">つみあげ<small>このまま</small></th><th scope="col">つみあげ<small>下げた場合</small></th></tr></thead>
+      <tbody>${path.rows.map(x => `<tr><th scope="row" style="text-align:left">${esc(x.m)}<small>${x.kind === 'done' ? '実績' : x.kind === 'now' ? '見込み' : ''}</small></th><td>${man(x.bud)}</td><td>${man(x.base)}</td><td>${x.kind === 'future' ? man(x.plan) : '─'}</td><td>${man(x.need)}</td><td class="${x.cb < 0 ? 'tb' : 'tg'}">${sg(x.cb)}</td><td class="${x.cp < 0 ? 'tb' : 'tg'}">${sg(x.cp)}</td></tr>`).join('')}</tbody></table></div>`;
+    t.open = wasOpen;
+  }
+}
+function chartMonthly(path, Wd) {
+  const R = path.rows, H = Wd < 500 ? 250 : 300, L = 40, Rm = 6, T = 26, B = 42;
+  const vals = R.flatMap(x => [x.bud, x.base, x.plan]).map(v => v / 10);
+  const mx = Math.max(...vals) * 1.12, mn = Math.min(0, ...vals);
+  const y = v => T + (mx - v) / (mx - mn) * (H - T - B);
+  const gw = (Wd - L - Rm) / R.length, bw = Math.max(5, Math.min(18, gw * 0.3));
+  let s = `<svg viewBox="0 0 ${Wd} ${H}" width="${Wd}" height="${H}" role="img" aria-label="毎月の店利益">`;
+  const step = mx > 1800 ? 500 : mx > 900 ? 300 : 100;
+  for (let g = 0; g <= mx; g += step) s += `<line x1="${L}" x2="${Wd - Rm}" y1="${y(g)}" y2="${y(g)}" stroke="var(--line)"/><text x="${L - 6}" y="${y(g) + 4}" text-anchor="end" font-size="11">${g.toLocaleString()}</text>`;
+  R.forEach((x, i) => {
+    const cx = L + gw * i + gw / 2, x1 = cx - bw - 1.5, x2 = cx + 1.5, bud = x.bud / 10;
+    const v = (x.kind === 'future' ? x.plan : x.base) / 10, col = x.kind === 'future' ? 'var(--good)' : 'var(--accent)';
+    const op = x.kind === 'now' ? .55 : 1;
+    s += `<rect class="cbar growy" style="--gd:${i * 70}ms" x="${x1}" y="${Math.min(y(bud), y(0))}" width="${bw}" height="${Math.max(1, Math.abs(y(0) - y(bud)))}" rx="4" fill="var(--ghost)"/>`;
+    s += `<rect class="cbar growy" style="--gd:${i * 70 + 60}ms" x="${x2}" y="${Math.min(y(v), y(0))}" width="${bw}" height="${Math.max(1, Math.abs(y(0) - y(v)))}" rx="4" fill="${col}" opacity="${op}"/>`;
+    if (x.kind === 'future') s += `<line class="fadein" x1="${x2 - 3}" x2="${x2 + bw + 3}" y1="${y(x.base / 10)}" y2="${y(x.base / 10)}" stroke="var(--fg)" stroke-width="2.5" stroke-linecap="round"/>`;
+    if (x.kind === 'now') s += `<text class="lbl fadein" x="${x2 + bw / 2}" y="${y(v) - 7}" text-anchor="middle" font-size="12">${man(x.base)}</text>`;
+    s += `<text x="${cx}" y="${H - 22}" text-anchor="middle" font-size="${gw < 30 ? 11 : 12.5}" font-weight="700" style="fill:var(--fg)">${esc(gw < 30 ? String(x.m).replace(/月$/, '') : x.m)}</text>`;
+    s += `<text x="${cx}" y="${H - 6}" text-anchor="middle" font-size="10.5">${x.kind === 'done' ? '実績' : x.kind === 'now' ? '見込み' : ''}</text>`;
+    const tip = `${x.m}\n予算 ${man(x.bud)}万円\n${x.kind === 'done' ? '実績' : x.kind === 'now' ? '今月の見込み' : 'このまま'} ${man(x.base)}万円${x.kind === 'future' ? `\n上限まで下げた場合 ${man(x.plan)}万円` : ''}\n必要ライン ${man(x.need)}万円`;
+    s += `<rect x="${L + gw * i}" y="${T - 10}" width="${gw}" height="${H - T - B + 10}" fill="transparent" data-tip="${esc(tip)}"/>`;
+  });
+  return s + `</svg>`;
+}
+function chartCum(path, Wd) {
+  const R = path.rows, H = Wd < 500 ? 250 : 300, L = 46, Rm = 14, T = 30, B = 42;
+  const vals = R.flatMap(x => [x.cb, x.cp]).map(v => v / 10).concat([0]);
+  let mx = Math.max(...vals), mn = Math.min(...vals); const pad = (mx - mn) * 0.12 || 10; mx += pad; mn -= pad;
+  const y = v => T + (mx - v) / (mx - mn) * (H - T - B);
+  const gw = (Wd - L - Rm) / R.length, X = i => L + gw * i + gw / 2;
+  const pts = k => R.map((x, i) => `${X(i).toFixed(1)},${y(x[k] / 10).toFixed(1)}`).join(' ');
+  let s = `<svg viewBox="0 0 ${Wd} ${H}" width="${Wd}" height="${H}" role="img" aria-label="必要ラインとの差の積み上げ">`;
+  const nice = [10, 20, 50, 100, 200, 300, 500, 1000, 2000], step = nice.find(n => (mx - mn) / n <= 5) || 5000;
+  for (let g = Math.ceil(mn / step) * step; g <= mx; g += step) if (g !== 0) s += `<line x1="${L}" x2="${Wd - Rm}" y1="${y(g)}" y2="${y(g)}" stroke="var(--line)"/><text x="${L - 6}" y="${y(g) + 4}" text-anchor="end" font-size="11">${g > 0 ? '+' : ''}${g.toLocaleString()}</text>`;
+  s += `<line x1="${L}" x2="${Wd - Rm}" y1="${y(0)}" y2="${y(0)}" stroke="var(--fg)" stroke-width="1.2"/><text x="${L - 6}" y="${y(0) + 4}" text-anchor="end" font-size="11" style="fill:var(--fg)">0</text>`;
+  s += `<polyline class="draw" pathLength="1" points="${pts('cb')}" fill="none" stroke="var(--fg3)" stroke-width="2.5" stroke-dasharray="1" stroke-linejoin="round" stroke-linecap="round"/>`;
+  s += `<polyline class="draw" pathLength="1" points="${pts('cp')}" fill="none" stroke="var(--good)" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"/>`;
+  R.forEach((x, i) => {
+    s += `<circle class="fadein" cx="${X(i)}" cy="${y(x.cp / 10)}" r="4.5" fill="var(--good)" stroke="var(--card)" stroke-width="2"/>`;
+    if (x.kind === 'future') s += `<circle class="fadein" cx="${X(i)}" cy="${y(x.cb / 10)}" r="4" fill="var(--fg3)" stroke="var(--card)" stroke-width="2"/>`;
+    s += `<text x="${X(i)}" y="${H - 22}" text-anchor="middle" font-size="${gw < 30 ? 11 : 12.5}" font-weight="700" style="fill:var(--fg)">${esc(gw < 30 ? String(x.m).replace(/月$/, '') : x.m)}</text>`;
+    s += `<text x="${X(i)}" y="${H - 6}" text-anchor="middle" font-size="10.5">${x.kind === 'done' ? '実績' : x.kind === 'now' ? '見込み' : ''}</text>`;
+    const tip = `${x.m}までの積み上げ\nこのまま ${sgMan(x.cb)}万円\n上限まで下げた場合 ${sgMan(x.cp)}万円`;
+    s += `<rect x="${L + gw * i}" y="${T - 14}" width="${gw}" height="${H - T - B + 14}" fill="transparent" data-tip="${esc(tip)}"/>`;
+  });
+  const n = R.length - 1, lx = X(n);
+  const lp = y(R[n].cp / 10), lb = y(R[n].cb / 10), sep = Math.abs(lp - lb) < 18;
+  s += `<text class="lbl fadein" x="${lx}" y="${lp + (R[n].cp >= R[n].cb ? -10 : 18)}" text-anchor="end" font-size="13" style="fill:var(--good)">${sgMan(R[n].cp)}</text>`;
+  s += `<text class="lbl fadein" x="${lx}" y="${lb + (R[n].cp >= R[n].cb ? (sep ? 22 : 18) : (sep ? -14 : -10))}" text-anchor="end" font-size="13" style="fill:var(--fg2)">${sgMan(R[n].cb)}</text>`;
+  return s + `</svg>`;
+}
+
+// ---------- ⑤ 店利益 ----------
+function dv(v, mx) { const w = Math.min(50, Math.abs(v) / (mx || 1) * 50); return `<div class="dv"><i class="${v < 0 ? 'n' : 'p'} grow" style="width:${w}%"></i></div>`; }
+// 表の店名セル：キーボードでも店の詳細を開けるように 本物のボタンにする（行のどこを押しても開くのは そのまま）
+const tdBtn = name => `<button type="button" class="tdbtn" data-store="${esc(name)}" aria-label="${esc(name)} の くわしい内容を開く">${esc(name)}</button>`;
+function causes(r) { return [['売上・粗利', r.fjd], ['見切・廃棄', -r.mkx], ['本部支援ほか', r.sup]]; }
+function mainCause(r) {   // profit.html の nwMainCause と同じえらび方
+  const cs = causes(r);
+  const c = r.p.diff < 0 ? cs.slice().sort((a, b) => a[1] - b[1])[0] : cs.slice().sort((a, b) => b[1] - a[1])[0];
+  return `<span class="cchip ${c[1] < 0 ? 'bad' : 'good'}">${c[0]} ${sgMan(c[1])}万</span>`;
+}
+function profitHtml(rows, S) {
+  const {sum, land, bud, diff, ok} = S, isAll = SC === 'all';
+  const cs = [['売上・粗利（FC収入）', sum(r => r.fjd)], ['見切・廃棄', -sum(r => r.mkx)], ['本部支援ほか', sum(r => r.sup)]];
+  const cmx = Math.max(...cs.map(c => Math.abs(c[1])), 1);
+  let h = `<section class="sec light" id="profit"><div class="wrap">
+    <div class="eyebrow rv">⑤ 店利益</div>
+    <h2 class="h2 rv" style="--d:60ms">予算との差は、なぜ。</h2>
+    <p class="lead rv" style="--d:120ms">${esc(E.CUR_LABEL.month)}・${esc(E.CUR_LABEL.date)}・${esc(who())}（${rows.length}店）</p>
+    <div class="bento b3">
+      <div class="card rv"><div class="k">着地の見込み</div><div class="big m ${diff < 0 ? 'bad' : 'good'}">${man(land)}<small>万円</small></div><div class="s">予算 ${man(bud)}万円（${(land / bud * 100).toFixed(0)}%）</div></div>
+      <div class="card rv" style="--d:80ms"><div class="k">予算との差</div><div class="big m ${diff < 0 ? 'bad' : 'good'}">${sgMan(diff)}<small>万円</small></div><div class="s">${isAll ? `必要ライン（予算−${man(E.PLAN.surplus)}万円）まで <b class="${diff + E.PLAN.surplus < 0 ? 'bad' : 'good'}">${sgMan(diff + E.PLAN.surplus)}万円</b>` : '&nbsp;'}</div></div>
+      <div class="card rv" style="--d:160ms"><div class="k">予算に届いている店</div><div class="big m">${ok}<small>／${rows.length}店</small></div><div class="bar1" style="height:12px;margin-top:18px"><i class="grow" style="width:${ok / rows.length * 100}%;background:var(--good)"></i></div></div>
+    </div>
+    <h3 class="h3 rv">なぜこの差か<small>予算との差を3つに分けると（万円）</small></h3>
+    <div class="list rv">${cs.map(([l, v]) => `<div class="row"><div class="l">${l}</div><div class="b">${dv(v, cmx)}</div><div class="v ${v < 0 ? 'bad' : 'good'}">${sgMan(v)}万</div></div>`).join('')}</div>`;
+  if (isAll) {
+    const scs = E.SC_LIST.map(sc => { const rs = rows.filter(r => r.sc === sc); return {sc, n: rs.length, d: rs.reduce((a, r) => a + r.p.diff, 0), l: rs.reduce((a, r) => a + r.p.landing, 0), b: rs.reduce((a, r) => a + r.p.budget, 0)}; }).filter(x => x.n).sort((a, b) => a.d - b.d);
+    const smx = Math.max(...scs.map(x => Math.abs(x.d)), 1);
+    h += `<h3 class="h3 rv">SCごと<small>予算との差（万円）。押すと、そのSCの店だけになります</small></h3>
+      <div class="list rv">${scs.map(x => `<button type="button" class="row" data-sc="${esc(x.sc)}"><div class="l">${esc(x.sc)} <small>${x.n}店・${x.b ? (x.l / x.b * 100).toFixed(0) : '—'}%</small></div><div class="b">${dv(x.d, smx)}</div><div class="v ${x.d < 0 ? 'bad' : 'good'}">${sgMan(x.d)}万</div></button>`).join('')}</div>`;
+  }
+  const st = rows.slice().sort((a, b) => a.p.diff - b.p.diff), mx = Math.max(...st.map(r => Math.abs(r.p.diff)), 1);
+  h += `<h3 class="h3 rv">店ごと<small>予算に遠い順。札＝いちばん大きい原因。押すと「やること」</small></h3>
+    <div class="list rv">${st.map(r => `<button type="button" class="row" data-store="${esc(r.name)}"><div class="l">${esc(r.name)}<br>${mainCause(r)}</div><div class="b">${dv(r.p.diff, mx)}</div><div class="v ${r.p.diff < 0 ? 'bad' : 'good'}">${sgMan(r.p.diff)}万</div></button>`).join('')}</div>
+    <a class="more" href="profit.html#profit">くわしい表（支援・雑益・荒利）は今の画面で</a>
+  </div></section>`;
+  return h;
+}
+
+// ---------- ⑥ 値引・廃棄 ----------
+function wasteTable(rows, S) {
+  const {sum, rate, O} = S;
+  const cell = (r, k) => {
+    if (!r.S[k]) return `<td class="na">─</td>`;
+    const x = r.R[k] / E.nwCap(k), over = r.O[k] * 1000 >= 50;
+    const c = !over ? 'g' : x <= 1.25 ? 'y' : x <= 1.6 ? 'o' : 'r';
+    return `<td class="${c}">${wsMode === 'rate' ? pc(k, r.R[k]) : over ? '−' + E.nwYen(r.O[k]).toLocaleString() : '✓'}</td>`;
+  };
+  let h = `<table class="ht"><thead><tr><th>店</th><th>売変率<small>赤＝店の予算より上</small></th>${E.NW_KEYS.map(k => `<th>${E.NW_LAB[k]}<small>上限 ${pc(k, E.nwCap(k))}</small></th>`).join('')}<th>1日<small>減らす額</small></th></tr></thead><tbody>`;
+  rows.slice().sort((a, b) => b.o - a.o).forEach(r => {
+    h += `<tr data-store="${esc(r.name)}"><td>${tdBtn(r.name)}</td><td class="${r.rate > r.bud ? 'tb' : 'tg'}">${r.rate.toFixed(1)}%</td>${E.NW_KEYS.map(k => cell(r, k)).join('')}<td class="${r.o * 1000 >= 50 ? 'tb' : 'tg'}">${r.o * 1000 >= 50 ? '−' + yen(r.o) : '✓'}</td></tr>`;
+  });
+  h += `<tr class="tot"><td>${esc(who())}</td><td>${rate.toFixed(1)}%</td>${E.NW_KEYS.map(k => { const s = sum(r => r.S[k]); return `<td>${wsMode === 'rate' ? (s ? pc(k, sum(r => r.V[k]) / s * 100) : '─') : '−' + E.nwYen(sum(r => r.O[k])).toLocaleString()}</td>`; }).join('')}<td>−${yen(O)}</td></tr></tbody></table>`;
+  return h;
+}
+function wasteHtml(rows, S) {
+  const {sum, V, O, rate, after, budRate} = S;
+  const nOver = rows.filter(r => r.nOver).length;
+  return `<section class="sec alt" id="waste"><div class="wrap">
+    <div class="eyebrow rv">⑥ 値引・廃棄</div>
+    <h2 class="h2 rv" style="--d:60ms">店 × 6つの指標。</h2>
+    <p class="lead rv" style="--d:120ms">${esc(E.CUR_LABEL.date)}・${esc(who())}・売価。色が濃いほど上限から遠い。押すと「やること」。</p>
+    <div class="bento b3">
+      <div class="card rv"><div class="k">売変率（値引＋廃棄の合計）</div><div class="big m ${rate > budRate ? 'bad' : 'good'}">${rate.toFixed(1)}<small>%</small></div>${gauge(rate, after, budRate, Math.max(8, rate * 1.15))}</div>
+      <div class="card rv" style="--d:80ms"><div class="k">上限まで、1日いくら減らすか</div><div class="big m ${O > 0.05 ? 'bad' : 'good'}">−${man(O, 1)}<small>万円／日</small></div><div class="s">今 1日 ${man(V, 1)}万円（値引 ${man(sum(r => r.V.A), 1)}万・廃棄 ${man(V - sum(r => r.V.A), 1)}万）</div></div>
+      <div class="card rv" style="--d:160ms"><div class="k">上限を超えている店</div><div class="big m">${nOver}<small>／${rows.length}店</small></div><div class="s">6つのうち1つでも超えている店</div></div>
+    </div>
+    <h3 class="h3 rv">店ごとの表<small>店名の列は よこに動かしても 残ります</small></h3>
+    <div class="tabs rv" role="group" aria-label="表示">${[['rate', '率（%）で見る'], ['yen', '減らす額（円/日）で見る']].map(([k, t]) => `<button type="button" data-ws="${k}" class="${wsMode === k ? 'on' : ''}" aria-pressed="${wsMode === k}">${t}</button>`).join('')}</div>
+    <div class="rv"><div class="tw" id="wsTable">${wasteTable(rows, S)}</div><div class="scroll-hint">← よこに動かすと ほかの指標が見えます →</div>
+    <div class="legend" style="margin-top:14px"><span><i style="background:var(--h-g)"></i>上限内</span><span><i style="background:var(--h-y)"></i>少し超え</span><span><i style="background:var(--h-o)"></i>超え</span><span><i style="background:var(--h-r)"></i>大きく超え</span></div></div>
+  </div></section>`;
+}
+
+// ---------- ⑦ 前週対比 ----------
+function trendHtml(rows) {
+  const p = E.prevSnapshot();
+  const head = `<section class="sec light" id="trend"><div class="wrap">
+    <div class="eyebrow rv">⑦ 前週対比</div><h2 class="h2 rv" style="--d:60ms">先週から、どう動いたか。</h2>`;
+  if (!p) return head + `<p class="lead">前の週のデータがありません。</p></div></section>`;
+  const prev = p.snap;
+  // profit.html の renderTrNew と同じ計算
+  const xs = rows.map(r => {
+    const q = prev.stores[r.name] || {};
+    const has = q.wact != null && q.nebiki != null && q.nisshu;
+    return {r, q, has, dN: has ? r.V.A - q.nebiki : null, dW: has ? (r.v - r.V.A) - q.wact : null,
+      pr: has ? (q.wact + q.nebiki) / q.nisshu * 100 : null, dL: q.landing != null ? r.p.landing - q.landing : null};
+  });
+  const ok = xs.filter(x => x.has);
+  if (!ok.length) return head + `<p class="lead">くらべられるデータがありません。</p></div></section>`;
+  const s = f => ok.reduce((a, x) => a + f(x), 0);
+  const pRate = s(x => x.q.wact + x.q.nebiki) / s(x => x.q.nisshu) * 100, nRate = s(x => x.r.v) / s(x => x.r.p.nisshu) * 100;
+  const dN = s(x => x.dN), dW = s(x => x.dW);
+  const sgY = v => E.nwSg(E.nwYen(v));
+  const tile = (t, v, unit, sub, good, d) => `<div class="card rv" style="--d:${d}ms"><div class="tag ${good ? 'good' : 'bad'}">${sub}</div><div class="k">${t}</div><div class="big m ${good ? 'good' : 'bad'}">${v}<small>${unit}</small></div></div>`;
+  const by = ok.slice().sort((a, b) => (b.dN + b.dW) - (a.dN + a.dW));
+  const item = x => { const d = x.dN + x.dW; return `<button type="button" class="row" data-store="${esc(x.r.name)}" style="grid-template-columns:minmax(0,1fr) 7.5em;grid-template-areas:'l v'"><div class="l">${esc(x.r.name)}<br><small>値引 ${sgY(x.dN)}円・廃棄 ${sgY(x.dW)}円</small></div><div class="v ${d > 0 ? 'bad' : 'good'}">${d > 0 ? '▲' : '▼'} ${sgY(d)}円</div></button>`; };
+  const worse = by.filter(x => x.dN + x.dW > 0.05).slice(0, 5), better = by.filter(x => x.dN + x.dW < -0.05).reverse().slice(0, 5);
+  let h = head + `<p class="lead rv" style="--d:120ms">値引・廃棄の 1日あたり（売価）。${esc(prev.date)} → ${esc(E.CUR_LABEL.date)}・${esc(who())}</p>
+    <div class="bento b3">
+      ${tile('売変率（値引＋廃棄）', `${pRate.toFixed(1)}→${nRate.toFixed(1)}`, '%', nRate <= pRate ? '下がった（良い）' : '上がった（悪い）', nRate <= pRate, 0)}
+      ${tile('値引（1日）', sgY(dN), '円', dN <= 0 ? '減った（良い）' : '増えた（悪い）', dN <= 0, 80)}
+      ${tile('廃棄（1日）', sgY(dW), '円', dW <= 0 ? '減った（良い）' : '増えた（悪い）', dW <= 0, 160)}
+    </div>
+    <div class="two" style="margin-top:18px">
+      <div class="rv"><h3 class="h3 bad" style="margin-top:28px">▲ 増えた店</h3><div class="list">${worse.map(item).join('') || '<div class="row"><div class="l mut">なし</div></div>'}</div></div>
+      <div class="rv" style="--d:100ms"><h3 class="h3 good" style="margin-top:28px">▼ 減った店</h3><div class="list">${better.map(item).join('') || '<div class="row"><div class="l mut">なし</div></div>'}</div></div>
+    </div>
+    <h3 class="h3 rv">店ごと<small>売変率の前回 → 今回。1日の金額（値引＋廃棄）が増えた順</small></h3>
+    <div class="rv"><div class="tw"><table class="ht sm"><thead><tr><th>店</th><th>売変率<small>前回 → 今回</small></th><th>値引<small>1日の差</small></th><th>廃棄<small>1日の差</small></th><th>店利益<small>着地の差${p.sameMonth ? '' : '（月が違う・参考）'}</small></th></tr></thead><tbody>`;
+  const c = v => v > 0.05 ? 'tb' : v < -0.05 ? 'tg' : '';
+  by.forEach(x => {
+    const up = x.r.rate > x.pr + 0.05, dn = x.r.rate < x.pr - 0.05;
+    h += `<tr data-store="${esc(x.r.name)}"><td>${tdBtn(x.r.name)}</td><td class="${up ? 'tb' : dn ? 'tg' : ''}">${x.pr.toFixed(1)}% → ${x.r.rate.toFixed(1)}% ${up ? '▲' : dn ? '▼' : ''}</td><td class="${c(x.dN)}">${sgY(x.dN)}円</td><td class="${c(x.dW)}">${sgY(x.dW)}円</td><td class="${x.dL == null ? '' : x.dL < 0 ? 'tb' : 'tg'}">${x.dL == null ? '─' : sgMan(x.dL) + '万'}</td></tr>`;
+  });
+  return h + `</tbody></table></div><div class="scroll-hint">← よこに動かせます →</div></div>
+    <a class="more" href="profit.html#trend">週ごとのグラフは今の画面で</a></div></section>`;
+}
+
+// ---------- ⑧ 売変の予算と宣言（読むだけ） ----------
+function baihenWrap() {
+  return `<section class="sec alt" id="baihen"><div class="wrap">
+    <div class="eyebrow rv">⑧ 売変の予算と宣言</div>
+    <h2 class="h2 rv" style="--d:60ms">のこりの日、1日いくらまで。</h2>
+    <div id="bdBody"></div>
+    <div class="btns rv"><a class="pbtn" href="profit.html#waste">宣言を入れる（今の画面へ）</a></div>
+    <p class="note">宣言の入力は、今の画面（値引・廃棄タブ）で行います。この画面は読むだけです。</p>
+  </div></section>`;
+}
+function renderBaihen() {
+  const el = $('#bdBody'); if (!el) return;
+  const rows = rowsSC(), BD = BDS, n = E.bdNow(), Wk = E.bdWeeks();
+  const bdYen = E.bdYen, wl = E.bdWeekLab;
+  let h = `<p class="lead">値引＋廃棄（売価）・1日あたり・${esc(E.CUR_LABEL.date)}・のこり${n.rem}日。赤＝もう予算をこえている／黄＝今のペースより下げる必要あり。</p>`;
+  const retryBtn = `<button type="button" class="pbtn sec2" style="min-height:44px;margin:8px 0 0" id="bdRetry">もう一度 読み込む</button>`;
+  if (BD.err && !BD.loaded && !BD.loading) h += `<div class="alertbox"><b>宣言を読み込めませんでした</b>（${esc(BD.err)}）<br>実績と予算は出ています。<br>${retryBtn}</div>`;
+  else if (!BD.loaded) h += `<div class="alertbox" id="bdMsg" tabindex="-1">宣言を読み込んでいます…（実績と予算は先に出ています）</div>`;
+  h += `<div class="tw"><table class="ht"><thead><tr><th>店</th><th>今月の実績<small>1日あたり</small></th><th>予算<small>1日あたり</small></th><th>のこり${n.rem}日<small>1日いくらまで</small></th><th>今週の宣言<small>${esc(wl(Wk.thisMon))}</small></th><th>先週の結果<small>${esc(wl(Wk.resWeek))}</small></th></tr></thead><tbody>`;
+  let nDecl = 0, nRes = 0, nOk = 0, A = 0, B = 0, AL = 0, alNull = false;
+  rows.forEach(r => {
+    const b = E.bdPlan(r.p), d = E.bdDecl(r.name, Wk.thisMon), pd = E.bdDecl(r.name, Wk.resWeek), pa = pd ? E.bdWeekActual(r.name, Wk.resWeek) : null;
+    A += b.act; B += b.bgtDay; if (b.allow == null) alNull = true; else AL += b.allow;
+    if (d) nDecl++;
+    let res = `<td class="na">${BD.loaded ? '宣言なし' : '…'}</td>`;
+    if (pd) {
+      if (!pa) res = `<td class="na">宣言 ${bdYen(pd.amount / 1000)}<small>データ待ち</small></td>`;
+      else { const ok = pa.v * 1000 <= pd.amount; nRes++; if (ok) nOk++; res = `<td class="${ok ? 'g' : 'r'}">${ok ? '○ 達成' : '× 未達'}<small>実績 ${bdYen(pa.v)}／宣言 ${bdYen(pd.amount / 1000)}${pa.part ? '<br>月の初めからの分だけ' : ''}</small></td>`; }
+    }
+    const al = b.allow;
+    h += `<tr data-store="${esc(r.name)}"><td>${tdBtn(r.name)}</td><td class="${b.act > b.bgtDay ? 'tb' : 'tg'}">${bdYen(b.act)}</td><td>${bdYen(b.bgtDay)}</td>
+      <td class="${al == null ? 'na' : al <= 0 ? 'r' : al < b.act ? 'y' : 'g'}">${al == null ? '─' : al <= 0 ? '予算オーバー' : bdYen(al)}</td>
+      <td class="${d ? '' : 'na'}">${d ? `<b>${bdYen(d.amount / 1000)}</b>${d.who ? `<small>${esc(d.who)}</small>` : ''}` : BD.loaded ? '未入力' : '…'}</td>${res}</tr>`;
+  });
+  h += `<tr class="tot"><td>${esc(who())}</td><td>${bdYen(A)}</td><td>${bdYen(B)}</td><td>${alNull ? '─' : AL <= 0 ? '予算オーバー' : bdYen(AL)}</td><td>${BD.loaded ? `宣言 ${nDecl}／${rows.length}店` : '…'}</td><td>${!BD.loaded ? '…' : nRes ? `達成 ${nOk}／${nRes}店` : '─'}</td></tr></tbody></table></div><div class="scroll-hint">← よこに動かせます →</div>`;
+  // 作り直しても、表のよこ位置と 店名ボタンのフォーカスは そのままにする（宣言があとから届いた時）
+  const tw0 = el.querySelector('.tw'), sl = tw0 ? tw0.scrollLeft : 0, af = document.activeElement;
+  const ftr = af && el.contains(af) && af.closest ? af.closest('tr[data-store]') : null, fs = ftr ? ftr.dataset.store : null;
+  el.innerHTML = h;
+  const tw1 = el.querySelector('.tw'); if (tw1 && sl) tw1.scrollLeft = sl;
+  if (fs) { const fb = [...el.querySelectorAll('tr[data-store]')].find(t => t.dataset.store === fs); const b2 = fb && fb.querySelector('button'); if (b2) b2.focus({preventScroll: true}); }
+  // 「もう一度 読み込む」を押した後は、ボタンが消えてもフォーカスを この欄の中に残す
+  if (af && af.id && (af.id === 'bdRetry' || af.id === 'bdMsg')) { const t2 = $('#bdRetry') || $('#bdMsg') || el.querySelector('tr[data-store] button'); if (t2) t2.focus({preventScroll: true}); }
+  const rb = $('#bdRetry'); if (rb) rb.onclick = () => { rb.disabled = true; rb.textContent = '読み込み中…'; bdRetry(); };
+}
+// 宣言の読み込み（GETだけ）は、この画面が自分で1本だけ行う。profit.html の bdLoad には頼らない
+//   （bdLoad の fetch には時間切れが無く、止まった古い応答があとから届いて内容を書き換えることがあるため）。
+//   ・いちばん新しく送った読み込みの結果だけを使う（BDS.seq）。20秒で時間切れ → 「もう一度 読み込む」。
+//   ・profit.html 側の計算（bdDecl など）は BD.rows を読むので、BD.rows を「この画面が読んだ行」に固定する。
+//     この画面は宣言を保存しないので、profit.html 側からの代入は受けつけなくてよい。
+const BDS = {rows: [], loaded: false, loading: false, err: '', seq: 0, hooked: false};
+function watchBaihen() {
+  if (!BDS.hooked) {
+    BDS.hooked = true;
+    try { E.BD.tried = true; Object.defineProperty(E.BD, 'rows', {get: () => BDS.rows, set: () => {}, configurable: true, enumerable: true}); } catch (e) {}
+  }
+  // 裏の profit.html も最初の表示で宣言を1回読む（GET・結果は使わない）。止めるには profit.html の変更が必要なので そのまま。
+  if (!BDS.loaded && !BDS.loading) bdFetch();
+}
+async function bdFetch() {
+  const my = ++BDS.seq;
+  BDS.loading = true; BDS.err = '';
+  renderBaihen();
+  const ac = 'AbortController' in window ? new AbortController() : null, to = setTimeout(() => ac && ac.abort(), 20000);
+  try {
+    const r = await fetch(`${E.BD_GAS}?action=getBaihenDecl&from=${E.bdAdd(E.bdYmd(new Date()), -120)}`, {redirect: 'follow', signal: ac ? ac.signal : undefined});
+    const d = await r.json();
+    if (!d.ok) throw new Error(d.error || '読み込めません');
+    if (!Array.isArray(d.rows)) throw new Error('返事の形がちがいます');
+    if (my !== BDS.seq) return;                       // もっと新しい読み込みがある → この結果は使わない
+    BDS.rows = d.rows; BDS.loaded = true; BDS.err = '';
+  } catch (e) {
+    if (my !== BDS.seq) return;
+    BDS.err = e && e.name === 'AbortError' ? '時間切れ' : /不明なアクション/.test(String(e && e.message)) ? 'サーバーの準備がまだです' : '電波のよい所で もう一度';
+  } finally {
+    clearTimeout(to);
+    if (my === BDS.seq) { BDS.loading = false; renderBaihen(); }
+  }
+}
+function bdRetry() { bdFetch(); }
+
+// ---------- ⑨ 厨房・デリバリー（profit.html の描画結果から要点だけ読む） ----------
+function runInEngine(fns) {
+  try { W.eval(`currentSC = ${JSON.stringify(SC)};`); } catch (e) {}
+  fns.forEach(f => { try { W.eval(f + '()'); } catch (e) { console.warn(f, e); } });
+}
+function cardsOf(sel) {
+  return [...W.document.querySelectorAll(sel)].map(c => ({h: txt(c.querySelector('.kcp-h')), n: txt(c.querySelector('.kcp-n')), s: txt(c.querySelector('.kcp-s'))}));
+}
+function miniCards(cs, d0 = 0) {
+  return `<div class="mini">${cs.map((c, i) => `<div class="mc rv" style="--d:${d0 + i * 60}ms"><div class="k">${esc(c.h)}</div><div class="n ${c.n.length > 12 ? 'sm' : ''} ${c.cls || ''}">${esc(c.n)}</div><div class="s">${esc(c.s)}</div></div>`).join('')}</div>`;
+}
+function kitchenHtml() {
+  runInEngine(['renderKcEffect', 'renderKcProg']);
+  const eff = cardsOf('#kcEff .kcp-card'), prog = cardsOf('#kcProg .kcp-card');
+  if (eff[0]) eff[0].cls = /^[+＋]/.test(eff[0].n) ? 'good' : /^[−-]/.test(eff[0].n) ? 'bad' : '';
+  const rows = [...W.document.querySelectorAll('#kcEff tbody tr')].map(tr => {
+    const td = tr.querySelectorAll('td'), name = txt(tr.querySelector('td b'));
+    if (td.length < 7) return {name, pre: true};
+    return {name, judge: txt(tr.querySelector('.kce-judge')), net: txt(td[5].firstChild), month: txt(td[5].querySelector('.kcp-sub')), start: txt(td[0].querySelector('.kcp-sub'))};
+  }).filter(r => r.name);
+  // 9品のカード（profit.html の kcCoverHtml が #kcProg の先頭に出す分）と、支援の進み具合のカードを分ける
+  const cov = prog.filter(c => /9品|12月/.test(c.h)), prog2 = prog.filter(c => !/9品|12月/.test(c.h));
+  if (cov[0]) cov[0].cls = '';
+  if (cov[1]) cov[1].cls = /^0/.test(cov[1].n) ? 'good' : 'bad';
+  const cover = (E.KC_COVER ? `<div class="alertbox rv"><b>12月1日から、本部支援の条件が変わります。</b>決められた${E.KC_COVER.items ? E.KC_COVER.items.length : 9}品を、1週間 毎日そろえる（作って売る）と支援あり。1品でも欠けた週は支援なし（あとからの救済はなし）。<br><small>11月の今は「13〜18時に作る種類が目標の80%以上」か「9品を全部そろえる」のどちらかでOK。12月（12/1〜1/4）は9品だけで決まる。大盛・2個入りなどは、どれか1つあればOK。本部が販売をやめた品は数えない。</small></div>` : '')
+    + (cov.length ? `<div class="two" style="margin-bottom:18px">${cov.map((c, i) => `<div class="mc rv" style="--d:${i * 60}ms"><div class="k">${esc(c.h)}</div><div class="n ${c.cls}">${esc(c.n)}</div><div class="s">${esc(c.s)}</div></div>`).join('')}</div>` : '');
+  const jc = j => /◎/.test(j) ? 'good' : /×/.test(j) ? 'bad' : 'warn';
+  return `<section class="sec dark" id="kitchen"><div class="wrap">
+    <div class="eyebrow rv">⑨ 厨房チャレンジ</div>
+    <h2 class="h2 rv" style="--d:60ms">チャレンジで、<br>荒利益は増えた？</h2>
+    <p class="lead rv" style="--d:120ms">まちかど厨房（値引・廃棄を引いたあと）＋ 本部支援。季節の動きを引いて見ます。${esc(who())}</p>
+    ${cover}
+    ${eff.length ? miniCards(eff) : '<p class="note">データがありません。</p>'}
+    ${rows.length ? `<h3 class="h3 rv">店ごと<small>合計の差（季節を引く＋支援）・1日</small></h3><div class="list rv">${rows.map(r => r.pre
+      ? `<div class="row" style="grid-template-columns:minmax(0,1fr) auto;grid-template-areas:'l v'"><div class="l">${esc(r.name)}</div><div class="v mut" style="font-size:14px">まだデータなし</div></div>`
+      : `<div class="row" style="grid-template-columns:minmax(0,1fr) auto;grid-template-areas:'l v'"><div class="l">${esc(r.name)} <span class="cchip ${jc(r.judge)}" style="background:var(--${jc(r.judge)}-bg);color:var(--${jc(r.judge)})">${esc(r.judge)}</span><br><small>${esc(r.start)}</small></div><div class="v ${/^−/.test(r.net) ? 'bad' : 'good'}">${esc(r.net)}<br><small class="mut" style="font-size:13px;font-weight:500">${esc(r.month)}</small></div></div>`).join('')}</div>` : ''}
+    ${prog2.length ? `<h3 class="h3 rv">本部支援の進み具合<small>本部の週ごとのレポートから（精算書に入る金額・原価）</small></h3>${miniCards(prog2)}` : ''}
+    <a class="more" href="profit.html#kitchen">週ごとの表は今の画面で</a>
+  </div></section>`;
+}
+// ゴースト売上のセル＝行の最後のセル（profit.html の grTd）。レポートなしの行（店名・案内・ゴーストの3セル）でも読む。
+//   店名セル・案内（colspan）セルは読まない。ゴーストが無い店は「—」（.kcp-out）なので空。
+function grOf(td) {
+  const last = td[td.length - 1];
+  if (!last || last === td[0] || last.hasAttribute('colspan') || last.classList.contains('kcp-out')) return '';
+  const b = last.querySelector('b'), sub = last.querySelector('.kcp-sub');
+  return b && sub && /厨房の/.test(txt(sub)) ? txt(b) : '';
+}
+function deliveryHtml() {
+  runInEngine(['renderDelivery']);
+  const cards = cardsOf('#dlv .kcp-card');
+  const rows = [...W.document.querySelectorAll('#dlv tbody tr')].map(tr => {
+    const td = tr.querySelectorAll('td');
+    return {name: txt(tr.querySelector('td b')), apd: txt(tr.querySelector('.dlv-n')), diff: td[1] ? txt(td[1].querySelector('.kcp-sub')) : '', ng: txt(tr.querySelector('.dlv-ng')).replace('基準まだ：', ''), gr: grOf(td)};
+  }).filter(r => r.name);
+  return `<section class="sec light" id="delivery"><div class="wrap">
+    <div class="eyebrow rv">⑩ デリバリー</div>
+    <h2 class="h2 rv" style="--d:60ms">デリバリーとゴーストレストラン。</h2>
+    <p class="lead rv" style="--d:120ms">本部のデリバリーレポートと、LDPのゴーストレストラン売上から。${esc(who())}</p>
+    ${cards.length ? miniCards(cards) : '<p class="note">データがありません。</p>'}
+    ${rows.length ? `<h3 class="h3 rv">店ごと<small>1日のデリバリー売上が多い順。模範店の基準にまだ届かない項目</small></h3>
+    <div class="list rv">${rows.map(r => `<div class="row" style="grid-template-columns:minmax(0,1fr) auto;grid-template-areas:'l v'"><div class="l">${esc(r.name)}${r.ng ? `<br><span class="cchip bad">基準まだ：${esc(r.ng)}</span>` : r.apd ? '<br><span class="cchip good">基準クリア</span>' : ''}${r.gr ? `<br><small>ゴースト ${esc(r.gr)}/日</small>` : ''}</div>
+      <div class="v">${r.apd ? esc(r.apd) : '<span class="mut" style="font-size:14px">レポートなし</span>'}${r.diff ? `<br><small class="${/\+/.test(r.diff) ? 'good' : /[-−]\d/.test(r.diff) ? 'bad' : 'mut'}" style="font-size:13px;font-weight:600">${esc(r.diff)}</small>` : ''}</div></div>`).join('')}</div>` : ''}
+    <a class="more" href="profit.html#delivery">準備時間・取消・FF欠品の表は今の画面で</a>
+  </div></section>`;
+}
+
+// ---------- ⑪ KPI・AICOクラス ----------
+function kpiHtml(rows) {
+  const K = E.KPI;
+  let h = `<section class="sec alt" id="kpi"><div class="wrap">
+    <div class="eyebrow rv">⑪ KPI・AICOクラス</div>
+    <h2 class="h2 rv" style="--d:60ms">全力チャレンジ実行プラン。</h2>`;
+  if (K && K.stores) {
+    const all = K.stores.map(s => E.kpRow(s)), kr = (SC === 'all' ? all : all.filter(r => r.sc === SC)).sort((a, b) => a.rate - b.rate);
+    const A = E.kpAgg(kr), T = K.target, me = K.mos.find(m => m.name === '阪口MO') || {}, goal = Math.ceil(A.n * T - 1e-9), one = kr.filter(r => r.need === 1);
+    const pv = K.prev, avgAll = E.kpAgg(all).avg;
+    h += `<p class="lead rv" style="--d:120ms">${esc(K.week)}の週・${esc(who())}（${A.n}店）・本部の集計。17項目のうち、○か×がついた項目の中で ○の割合が 80%以上なら「クリア」（評価のない項目は数えません）。</p>
+      <div class="bento b3">
+        <div class="card rv"><div class="tag ${A.clr >= T ? 'good' : 'bad'}">${A.ok >= goal ? '目標に届いている' : `あと ${goal - A.ok}店`}</div><div class="k">達成率80%以上の店</div>
+          <div class="big m ${A.clr >= T ? 'good' : 'bad'}">${A.ok}<small>／${A.n}店（${Math.round(A.clr * 100)}%）</small></div>
+          <div class="gauge" style="margin:18px 0 26px"><i class="grow" style="width:${A.clr * 100}%;background:${A.clr >= T ? 'var(--good)' : 'var(--bad)'}"></i><em style="left:${T * 100}%"><b class="dn">目標 ${Math.round(T * 100)}%</b></em></div>
+          <div class="s">${SC === 'all' && pv && pv.ok != null ? `前回（${esc(pv.week)}）は ${pv.ok}店` : `目標は ${goal}店`}</div></div>
+        <div class="card rv" style="--d:80ms"><div class="k">組織の順位（全社）</div><div class="big m">${me.rank || '─'}<small>位／${K.mos.length}MO</small></div>
+          <div class="s">80%以上の店の割合でくらべた順位${pv && pv.rank ? `（前回 ${pv.rank}位）` : ''}<br>平均の達成率 <b>${(avgAll * 100).toFixed(1)}%</b></div></div>
+        <div class="card rv" style="--d:160ms"><div class="k">あと1つで80%になる店</div><div class="big m">${one.length}<small>店</small></div><div class="s">${one.map(r => esc(r.name)).join('・') || 'なし'}</div></div>
+      </div>`;
+    const st = E.kpItemStat(kr).filter(x => x.go.length).sort((a, b) => b.win.length - a.win.length || b.go.length - a.go.length).slice(0, 3);
+    if (st.length) h += `<h3 class="h3 rv">まず直すこと<small>取り組む店の数。直すと80%に届く店が多い順</small></h3>
+      <div class="two" style="grid-template-columns:repeat(auto-fit,minmax(min(100%,300px),1fr))">${st.map((x, i) => `<div class="do rv" style="--d:${i * 70}ms;margin-top:0"><div class="do-t"><span>${esc(x.it.n)}</span><b>${x.go.length}店</b></div>
+        <div class="do-s">${esc(E.KP_DO[x.it.n] || '')}${x.win.length ? `<br><b class="good">これだけで ＋${x.win.length}店が80%以上に</b>` : ''}</div></div>`).join('')}</div>`;
+    h += `<h3 class="h3 rv">店ごと<small>達成率が低い順。×の項目</small></h3><details class="fold rv"${SHOT ? ' open' : ''}><summary>${kr.length}店の ○×を見る</summary><div class="stores" style="margin-top:12px">${kr.map((r, i) => `<div class="st ${!r.need ? '' : r.need === 1 ? 'l2' : 'l3'} rv" style="--d:${Math.min(i, 8) * 40}ms;cursor:default">
+      <div class="st-top"><div class="st-n">${esc(r.name)}<small>${esc(r.sc)}</small></div><div class="badge ${r.need ? 'bad' : 'good'}"><small>${r.pass}／${r.den}</small>${r.need ? `あと${r.need}つ` : 'クリア'}</div></div>
+      <div class="st-m">達成率 <b class="${r.need ? 'bad' : 'good'}">${Math.round(r.rate * 100)}%</b></div>
+      <div class="pl">${r.ng.map(i2 => E.kpGo(r.name, i2) ? `<span class="x">${esc(K.items[i2].n)}</span>` : `<span>${esc(K.items[i2].n)}（今は上げない）</span>`).join('') || '<span>×なし</span>'}</div></div>`).join('')}</div></details>`;
+  } else h += `<p class="lead">KPIのデータがありません。</p>`;
+  // AICOのクラス
+  const AC = E.AC;
+  if (AC) {
+    const names = rows.map(r => r.name), L = E.acList(names), cap = E.nwCap('B'), m = AC.meta;
+    const top = L.filter(x => x.over >= 50).slice(0, 8), O = L.reduce((a, x) => a + x.over, 0);
+    const rc = v => v <= cap ? 'g' : v <= cap * 1.5 ? 'y' : v <= cap * 2.5 ? 'o' : 'r';
+    h += `<h3 class="h3 rv">AICOのクラスごと<small>${esc(m.from)}〜${esc(m.to)}（${m.days}日）の1日あたり・売価。上限 ${pc('B', cap)} より多い廃棄が大きい順${O >= 50 ? `。合計 1日 ${Math.round(O).toLocaleString()}円 多い` : ''}</small></h3>`;
+    h += top.length ? `<div class="rv"><div class="tw"><table class="ht sm"><thead><tr><th>クラス</th><th>廃棄率<small>上限 ${pc('B', cap)}</small></th><th>上限より多い<small>1日</small></th><th>売上<small>1日</small></th><th>荒利率<small>廃棄を引いた後</small></th></tr></thead><tbody>
+      ${top.map(x => `<tr style="cursor:default"><td>${esc(x.k)}<small>${esc(x.dept)}</small></td><td class="${rc(x.rate)}">${isFinite(x.rate) ? x.rate.toFixed(1) + '%' : '売上なし'}</td><td class="tb">−${Math.round(x.over).toLocaleString()}円<small>${x.nOver}店が上限より上</small></td><td>${Math.round(x.s).toLocaleString()}円</td><td class="${x.gr != null && x.gr < 15 ? 'tb' : ''}">${x.gr == null ? '─' : x.gr.toFixed(1) + '%'}</td></tr>`).join('')}
+      </tbody></table></div><div class="scroll-hint">← よこに動かせます →</div></div>` : `<div class="okbox rv">✓ どのクラスも上限内です</div>`;
+  }
+  return h + `<a class="more" href="profit.html#kpi">17項目の表・組織の位置は今の画面で</a></div></section>`;
+}
+
+function footHtml() {
+  return `<footer class="foot dark"><div class="wrap">
+    <div style="font-size:17px;font-weight:700;color:#f5f5f7;margin-bottom:8px">店利益ダッシュボード</div>
+    <div>データ：${esc(E.CUR_LABEL.month)}・${esc(E.CUR_LABEL.date)}。数字は今のダッシュボード（profit.html）と同じデータ・同じ計算です。<br>
+    金額は売価（店の指標）。1日は円、1か月は万円。精算書では原価になります。</div>
+    <div class="btns"><a class="pbtn" href="profit.html">今のダッシュボードを開く</a><a class="pbtn sec2" href="index.html" style="color:#f5f5f7;background:rgba(255,255,255,.14)">アプリ一覧へ</a></div>
+  </div></footer>`;
+}
+
+// ===================================================================
+// 4. シート（店の詳細・指標・SC）
+// ===================================================================
+// 開いている間は うしろ（ナビ・本文）を inert にして Tab で出られないようにする。閉じたら 開いた元へ フォーカスを戻す
+let lastFocus = null, lastKey = null;   // lastKey＝開いた元が作り直しで消えた時に、同じ店のボタンを探すための目印
+const BEHIND = () => [$('#gnav'), $('#app')];
+function sheetOpen() { return $('#sheet').classList.contains('show'); }
+function openSheet(title, sub, html) {
+  const a = document.activeElement;
+  if (!sheetOpen() || !$('#sheet').contains(a)) { lastFocus = a; const sc0 = a && a.closest ? a.closest('section[id]') : null, st0 = a && a.closest ? a.closest('[data-store]') : null; lastKey = sc0 && st0 ? {sec: sc0.id, store: st0.dataset.store} : null; }     // シートの中から 別のシートへ移る時は、最初に開いた元を覚えたまま
+  $('#sheetTitle').innerHTML = esc(title) + (sub ? `<small>${esc(sub)}</small>` : '');
+  $('#sheetB').innerHTML = html;
+  $('#sheetB').scrollTop = 0;
+  $('#back').classList.add('show'); $('#sheet').classList.add('show');
+  $('#sheet').setAttribute('aria-hidden', 'false');
+  BEHIND().forEach(el => { el.inert = true; el.setAttribute('aria-hidden', 'true'); });
+  document.body.style.overflow = 'hidden';
+  $('#sheetX').focus({preventScroll: true});
+}
+function closeSheet(restore = true) {
+  if (!sheetOpen()) return;
+  $('#back').classList.remove('show'); $('#sheet').classList.remove('show');
+  $('#sheet').setAttribute('aria-hidden', 'true');
+  BEHIND().forEach(el => { el.inert = false; el.removeAttribute('aria-hidden'); });
+  document.body.style.overflow = '';
+  if (!restore) return;
+  let f = lastFocus && lastFocus.isConnected ? lastFocus : null;
+  if (!f && lastKey) {   // 開いている間に表が作り直された（宣言が届いた等）→ 同じセクションの同じ店のボタンへ
+    const sec = document.getElementById(lastKey.sec);
+    const t = sec ? [...sec.querySelectorAll('[data-store]')].find(x => x.dataset.store === lastKey.store) : null;
+    f = t ? (t.matches('button,a') ? t : t.querySelector('button,a') || null) : null;
+  }
+  if (f && f.focus) f.focus({preventScroll: true});
+  lastFocus = null; lastKey = null;
+}
+function trapTab(e) {   // inert が無いブラウザ向けの フォーカストラップ
+  if (e.key !== 'Tab' || !sheetOpen()) return;
+  const f = [...$('#sheet').querySelectorAll('a[href],button:not([disabled]),input,select,textarea,[tabindex]:not([tabindex="-1"])')].filter(x => x.offsetParent !== null);
+  if (!f.length) return;
+  const first = f[0], last = f[f.length - 1];
+  if (!$('#sheet').contains(document.activeElement)) { e.preventDefault(); first.focus(); }
+  else if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+  else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+}
+function openStore(name) {
+  const p = E.PROFIT.find(s => s.name === name); if (!p) return;
+  const r = E.nwRow(p);
+  const cs = causes(r), mx = Math.max(...cs.map(c => Math.abs(c[1])), 1);
+  let h = `<div class="kv"><div><div class="k">着地見込み</div><div class="v">${man(p.landing)}万</div></div><div><div class="k">予算</div><div class="v">${man(p.budget)}万</div></div>
+    <div><div class="k">差</div><div class="v ${p.diff < 0 ? 'bad' : 'good'}">${sgMan(p.diff)}万</div></div></div>`;
+  h += `<div class="sh">なぜこの差か <span class="mut">予算との差・万円</span></div><div class="list">${cs.map(([l, v]) => `<div class="row" style="grid-template-columns:6.5em 1fr 4.6em;grid-template-areas:'l b v'"><div class="l" style="font-size:15px">${l}</div><div class="b">${dv(v, mx)}</div><div class="v ${v < 0 ? 'bad' : 'good'}" style="font-size:16px">${sgMan(v)}万</div></div>`).join('')}</div>`;
+  const ks = E.NW_KEYS.filter(k => r.O[k] * 1000 >= 50).sort((a, b) => r.E[b] - r.E[a]);
+  h += `<div class="sh">やること ${ks.length ? `<span class="bad">1日 −${yen(r.o)}</span><span class="mut">（店利益 月 +${man(r.e, 1)}万円）</span>` : ''}</div>`;
+  if (!ks.length) h += `<div class="okbox">✓ 6つとも上限内です。今のまま続ける</div>`;
+  ks.forEach(k => { h += `<div class="do"><div class="do-t"><span>${E.NW_LAB[k]}　${pc(k, r.R[k])} → ${pc(k, E.nwCap(k))}</span><b>−${yen(r.O[k])}/日</b></div><div class="do-s">${esc(E.NW_DO[k])}</div></div>`; });
+  if (r.O.B * 1000 >= 50) {
+    const c = E.kpDept(name);
+    if (c && c.list.length) h += `<div class="sh">AICOのカテゴリごと（ドライバ） ${c.down.length ? `<span class="bad">${c.down.length}つ 下げる</span>` : ''}</div><div class="list">${c.list.map(x => { const [t] = E.KP_ACT[x.act]; const col = x.act === 'down' ? 'bad' : x.act === 'up' ? '' : 'mut';
+      return `<div class="row" style="grid-template-columns:minmax(0,1fr) auto;grid-template-areas:'l v'"><div class="l" style="font-size:15px">${esc(x.k)}</div><div class="v ${x.hi ? 'bad' : 'good'}" style="font-size:15px">${x.rate.toFixed(1)}%　<span class="${col}" style="${x.act === 'up' ? 'color:var(--accent)' : ''}">${t}</span></div></div>`; }).join('')}</div><p class="note">上限 ${pc('B', c.cap)}。廃棄÷売上（売価）</p>`;
+  }
+  if (r.fjd < -50) h += `<div class="do" style="background:var(--warn-bg)"><div class="do-t"><span>売上・粗利が予算より少ない</span><b style="color:var(--warn)">${sgMan(r.fjd)}万</b></div><div class="do-s">売上は今の数字で見ます。上の廃棄・値引と人件費で取り返す</div></div>`;
+  try {
+    const b = E.bdPlan(p), n = E.bdNow();
+    h += `<div class="sh">売変（値引＋廃棄）<span class="mut">1日あたり・売価</span></div><div class="kv"><div><div class="k">今月の実績</div><div class="v ${b.act > b.bgtDay ? 'bad' : 'good'}" style="font-size:18px">${E.bdYen(b.act)}</div></div>
+      <div><div class="k">予算</div><div class="v" style="font-size:18px">${E.bdYen(b.bgtDay)}</div></div><div><div class="k">のこり${n.rem}日</div><div class="v ${b.allow != null && b.allow < b.act ? 'bad' : 'good'}" style="font-size:18px">${b.allow == null ? '─' : b.allow <= 0 ? 'オーバー' : E.bdYen(b.allow)}</div></div></div>`;
+  } catch (e) {}
+  if (E.KPI) { const ks2 = E.KPI.stores.find(x => x.name === name); if (ks2) { const kr = E.kpRow(ks2); h += `<div class="sh">KPI <span class="${kr.need ? 'bad' : 'good'}">達成率 ${Math.round(kr.rate * 100)}%（${kr.need ? `あと${kr.need}つ` : 'クリア'}）</span></div>${kr.ng.length ? `<div class="pl">${kr.ng.map(i => E.kpGo(name, i) ? `<span class="x">${esc(E.KPI.items[i].n)}</span>` : `<span>${esc(E.KPI.items[i].n)}（今は上げない）</span>`).join('')}</div>` : ''}`; } }
+  h += `<div class="btns"><button type="button" class="pbtn" data-copy="${esc(name)}">LINE用にコピー</button><a class="pbtn sec2" href="profit.html#waste">宣言を入れる（今の画面）</a></div>`;
+  openSheet(name, `${r.sc}・${p.type}`, h);
+}
+function openInd(k) {
+  const rows = rowsSC().filter(r => r.S[k]).sort((a, b) => b.R[k] - a.R[k]);
+  const cap = E.nwCap(k), mx = Math.max(...rows.map(r => r.R[k]), cap * 1.2);
+  let h = `<p class="note" style="margin:0 0 12px">上限 <b>${pc(k, cap)}</b>（${E.PLAN.caps[k].map(v => pc(k, v)).join(' → ')} と段階で下げる）<br>${esc(E.NW_DO[k])}</p><div class="list">`;
+  rows.forEach(r => {
+    const ov = r.O[k] * 1000 >= 50;
+    h += `<button type="button" class="row" data-store="${esc(r.name)}" style="grid-template-columns:minmax(0,1fr) 8.5em;grid-template-areas:'l v' 'b b'"><div class="l" style="font-size:15px">${esc(r.name)}</div>
+      <div class="v ${ov ? 'bad' : 'good'}" style="font-size:15px">${pc(k, r.R[k])}${ov ? `<br><small style="font-size:13px">−${yen(r.O[k])}</small>` : ''}</div>
+      <div class="b"><div class="bar1" style="margin:4px 0"><i style="width:${r.R[k] / mx * 100}%;background:${ov ? 'var(--bad)' : 'var(--good)'};opacity:${ov ? 1 : .55}"></i><em style="left:${cap / mx * 100}%"></em></div></div></button>`;
+  });
+  openSheet(E.NW_LAB[k] + '：店ごとの今と上限', who(), h + `</div>`);
+}
+function openSCPicker() {
+  const list = ['all', ...E.SC_LIST];
+  openSheet('担当SCをえらぶ', '全部の数字が かわります', `<div class="sc-list">${list.map(s => {
+    const n = s === 'all' ? E.PROFIT.length : E.PROFIT.filter(p => E.SC_MAP[p.name] === s).length;
+    return `<button type="button" data-sc="${esc(s)}" class="${s === SC ? 'on' : ''}"><span>${s === 'all' ? '全体（全社）' : esc(s)}</span><span>${n}店</span></button>`; }).join('')}</div>`);
+}
+function copyText(t) {
+  const done = () => toast('コピーしました。LINEに貼りつけてください');
+  const ng = () => toast('コピーできませんでした');
+  if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(t).then(done, () => fallback());
+  else fallback();
+  function fallback() {   // execCommand が false を返した時・例外の時は「できませんでした」
+    const ta = document.createElement('textarea'); ta.value = t; ta.setAttribute('readonly', ''); ta.style.position = 'fixed'; ta.style.opacity = '0';
+    ($('#sheet').classList.contains('show') ? $('#sheet') : document.body).appendChild(ta);   // 背景が inert の間は シートの中で選ぶ
+    ta.select();
+    let ok = false; try { ok = document.execCommand('copy'); } catch (e) { ok = false; }
+    ta.remove();
+    ok ? done() : ng();
+  }
+}
+let toastT = 0;
+function toast(m) { const el = $('#toast'); el.textContent = m; el.classList.add('show'); clearTimeout(toastT); toastT = setTimeout(() => el.classList.remove('show'), 2000); }
+
+// ===================================================================
+// 5. 操作・モーション
+// ===================================================================
+function setSC(s) {
+  if (s === SC) { closeSheet(); return; }
+  SC = s;
+  try { localStorage.setItem('pn_sc', s); } catch (e) {}
+  const y = window.scrollY, fromSheet = sheetOpen(), inSeg = !!(document.activeElement && document.activeElement.closest && document.activeElement.closest('#seg'));
+  // 今 見ているセクションを覚えて、作り直した後も 同じセクションの同じあたりを出す（店の数が変わるとページの長さが変わるため）
+  let secId = '', secOff = 0;
+  const ae0 = document.activeElement, own = !sheetOpen() && ae0 && ae0.closest ? ae0.closest('section[id]') : null;   // 押したボタンがあるセクションを優先
+  if (own) { secId = own.id; secOff = own.getBoundingClientRect().top; }
+  else document.querySelectorAll('section[id]').forEach(sc => { const t = sc.getBoundingClientRect().top; if (t <= 90) { secId = sc.id; secOff = t; } });
+  closeSheet(false);
+  renderAll(false);
+  const ns2 = secId ? document.getElementById(secId) : null;
+  if (ns2) { const off = secOff < 0 && -secOff > ns2.offsetHeight - 200 ? 60 : secOff; window.scrollTo(0, Math.max(0, ns2.getBoundingClientRect().top + window.scrollY - off)); }
+  else window.scrollTo(0, y);
+  // 作り直しで 元のボタンが消えるので、同じ役目のボタンへ フォーカスを戻す
+  // （店利益の SC別ボタンなど、作り直しで消える所から押した時は 上の担当ボタンへ）
+  const lost = !document.activeElement || document.activeElement === document.body || !document.contains(document.activeElement);
+  const f = fromSheet ? $('#scBtn') : inSeg ? $(`#seg button[data-sc="${CSS.escape(s)}"]`) : lost ? $('#scBtn') : null;
+  if (f) f.focus({preventScroll: true});
+  lastFocus = null;
+  toast(s === 'all' ? '全社の数字にしました' : s + ' の店だけにしました');
+}
+function bindGlobal() {
+  document.addEventListener('click', e => {
+    const t = e.target.closest('[data-store],[data-ind],[data-sc],[data-sort],[data-ws],[data-copy]');
+    if (!t) return;
+    if (t.dataset.copy) { const p = E.PROFIT.find(s => s.name === t.dataset.copy); copyText(E.nwStoreText(E.nwRow(p))); return; }
+    if (t.dataset.sc) { setSC(t.dataset.sc); return; }
+    if (t.dataset.store) { openStore(t.dataset.store); return; }
+    if (t.dataset.ind) { openInd(t.dataset.ind); return; }
+    if (t.dataset.sort) {
+      storeSort = t.dataset.sort;
+      const rows = rowsSC();
+      const sec = $('#stores'); const tmp = document.createElement('div'); tmp.innerHTML = storesHtml(rows);
+      const ns = tmp.firstElementChild; sec.replaceWith(ns);
+      if (!ANIM) ns.querySelectorAll('.rv').forEach(x => x.classList.add('in'));
+      else ns.querySelectorAll('.tabs, .tabs .rv').forEach(x => x.classList.add('in'));   // 押したボタンの列は 見えたまま
+      observe(); const nb = ns.querySelector(`[data-sort="${storeSort}"]`); if (nb) nb.focus({preventScroll: true}); return;
+    }
+    if (t.dataset.ws) {
+      wsMode = t.dataset.ws; const rows = rowsSC();
+      $('#wsTable').innerHTML = wasteTable(rows, summary(rows));
+      document.querySelectorAll('[data-ws]').forEach(b => { b.classList.toggle('on', b.dataset.ws === wsMode); b.setAttribute('aria-pressed', b.dataset.ws === wsMode); });
+    }
+  });
+  $('#back').addEventListener('click', closeSheet);
+  $('#sheetX').addEventListener('click', closeSheet);
+  $('#scBtn').addEventListener('click', openSCPicker);
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape' && sheetOpen()) { e.preventDefault(); closeSheet(); return; }
+    trapTab(e);
+  });
+  // シートを下へ引っぱって閉じる（スマホ）
+  let sy = null;
+  $('#sheet').addEventListener('touchstart', e => { sy = $('#sheetB').scrollTop <= 0 ? e.touches[0].clientY : null; }, {passive: true});
+  $('#sheet').addEventListener('touchend', e => { if (sy != null && e.changedTouches[0].clientY - sy > 90 && innerWidth < 900) closeSheet(); sy = null; }, {passive: true});
+  // スクロール：ナビを縮める・ヒーローのパララックス
+  let ticking = false;
+  const onScroll = () => {
+    if (ticking) return; ticking = true;
+    requestAnimationFrame(() => {
+      ticking = false;
+      const y = window.scrollY;
+      $('#gnav').classList.toggle('small', y > 40);
+      if (ANIM) { const hi = $('#heroIn'); if (hi && y < innerHeight * 1.2) { hi.style.transform = `translate3d(0,${(y * 0.28).toFixed(1)}px,0)`; hi.style.opacity = Math.max(0, 1 - y / (innerHeight * 0.85)).toFixed(3); } }
+    });
+  };
+  addEventListener('scroll', onScroll, {passive: true});
+  let swT = 0;
+  addEventListener('scroll', () => { clearTimeout(swT); swT = setTimeout(sweep, 160); }, {passive: true});
+  document.addEventListener('toggle', e => { if (e.target.tagName === 'DETAILS' && e.target.open) requestAnimationFrame(sweep); }, true);
+  // 画面の幅が変わったらグラフを描き直す
+  let rt = 0, lastW = innerWidth;
+  addEventListener('resize', () => { clearTimeout(rt); rt = setTimeout(() => { if (Math.abs(innerWidth - lastW) < 2) return; lastW = innerWidth; drawCharts(E.nwPath()); document.querySelectorAll('#path .rv').forEach(x => x.classList.add('in')); setupSeg(); }, 180); });
+  // ツールチップ
+  const tip = $('#tip');
+  const showTip = (el, x, y) => { tip.innerHTML = esc(el.getAttribute('data-tip')).replace(/\n/g, '<br>'); tip.classList.add('show');
+    const w = tip.offsetWidth, h = tip.offsetHeight; tip.style.left = Math.min(innerWidth - w - 8, Math.max(8, x - w / 2)) + 'px'; tip.style.top = Math.max(8, y - h - 14) + 'px'; };
+  document.addEventListener('pointermove', e => { const el = e.target.closest && e.target.closest('[data-tip]'); if (el) showTip(el, e.clientX, e.clientY); else tip.classList.remove('show'); }, {passive: true});
+  document.addEventListener('pointerdown', e => { const el = e.target.closest && e.target.closest('[data-tip]'); if (el) showTip(el, e.clientX, e.clientY); else tip.classList.remove('show'); }, {passive: true});
+  addEventListener('scroll', () => tip.classList.remove('show'), {passive: true});
+}
+function buildPills() {
+  const el = $('#pills');
+  el.innerHTML = SECTIONS.map(([id, t]) => `<a href="#${id}" data-pill="${id}">${t}</a>`).join('');
+}
+function setupSeg() {
+  const seg = $('#seg'), ind = $('#segInd'); if (!seg || !ind) return;
+  const on = seg.querySelector('button.on'); if (!on) return;
+  ind.style.width = on.offsetWidth + 'px';
+  ind.style.transform = `translateX(${on.offsetLeft}px)`;
+  const l = on.offsetLeft - (seg.clientWidth - on.offsetWidth) / 2;
+  seg.scrollLeft = Math.max(0, l);
+}
+function countUp(el) {
+  if (el.dataset.done) return; el.dataset.done = '1';
+  const to = parseFloat(el.dataset.to), dec = +el.dataset.dec || 0, sg = el.dataset.sg === '1', fin = el.textContent;
+  if (!isFinite(to)) return;
+  const t0 = performance.now(), dur = 1500;
+  const f = v => { const s = Math.abs(v).toLocaleString('ja-JP', {minimumFractionDigits: dec, maximumFractionDigits: dec}); return (sg ? (v > 0 ? '+' : v < 0 ? '−' : '') : (v < 0 ? '−' : '')) + s; };
+  const step = now => { const k = Math.min(1, (now - t0) / dur), e = 1 - Math.pow(2, -10 * k);
+    el.textContent = k >= 1 ? fin : f(to * e); if (k < 1) requestAnimationFrame(step); };
+  requestAnimationFrame(step);
+}
+function ringIn(root) {
+  root.querySelectorAll('.ringv').forEach(c => { if (c.dataset.done) return; c.dataset.done = '1'; const full = c.getAttribute('stroke-dasharray');
+    c.style.transition = 'none'; c.setAttribute('stroke-dashoffset', full); c.getBoundingClientRect(); c.style.transition = ''; requestAnimationFrame(() => c.setAttribute('stroke-dashoffset', c.dataset.off)); });
+}
+function observe() {
+  const rvs = document.querySelectorAll('.rv:not(.in)');
+  if (!ANIM) { rvs.forEach(x => x.classList.add('in')); }
+  else {
+    if (IO) IO.disconnect();
+    IO = new IntersectionObserver(es => es.forEach(e => {
+      if (!e.isIntersecting) return;
+      const el = e.target; el.classList.add('in'); IO.unobserve(el);
+      el.querySelectorAll('.cu').forEach(countUp);
+      if (el.classList.contains('cu')) countUp(el);
+      ringIn(el);
+    }), {rootMargin: '0px 0px -8% 0px', threshold: 0.12});
+    rvs.forEach(x => IO.observe(x));
+  }
+  setTimeout(sweep, 700);   // ふつうは IO が先に表示する。これは 念のため
+}
+// 見落とし防止：スクロールが止まった時・<details> を開いた時に、画面内か もう通りすぎた .rv を 全部 表示にする
+//   （速いスクロールで IntersectionObserver が拾えなかった所が 透明のまま残らないように）
+function revealEl(el) {
+  if (el.classList.contains('in')) return;
+  el.classList.add('in'); if (IO) IO.unobserve(el);
+  el.querySelectorAll('.cu').forEach(countUp); if (el.classList.contains('cu')) countUp(el); ringIn(el);
+}
+function sweep() {
+  // 動きを切っている時（ANIM=false）も、下の「今いるセクションのハイライト」は動かす
+  if (ANIM) {
+    const vh = innerHeight;
+    document.querySelectorAll('.rv:not(.in)').forEach(el => {
+      if (el.closest('details:not([open])')) return;
+      const r = el.getBoundingClientRect();
+      if (r.top < vh * 0.95) revealEl(el);   // 画面に入っている／もう上へ通りすぎた
+    });
+  }
+  // 今いるセクションのハイライト
+  if (NAVIO) NAVIO.disconnect();
+  if ('IntersectionObserver' in window) {
+    NAVIO = new IntersectionObserver(es => es.forEach(e => { if (e.isIntersecting) setPill(e.target.id); }), {rootMargin: `-${Math.round(innerHeight * 0.45)}px 0px -${Math.round(innerHeight * 0.5)}px 0px`});
+    SECTIONS.forEach(([id]) => { const s = document.getElementById(id); if (s) NAVIO.observe(s); });
+    const h = $('#hero'); if (h) NAVIO.observe(h);
+  }
+}
+let curPill = '';
+function setPill(id) {
+  if (id === curPill) return; curPill = id;
+  const box = $('#pills');
+  box.querySelectorAll('a').forEach(a => a.classList.toggle('on', a.dataset.pill === id));
+  const a = box.querySelector(`a[data-pill="${id}"]`);
+  if (a) box.scrollTo({left: a.offsetLeft - (box.clientWidth - a.offsetWidth) / 2, behavior: ANIM ? 'smooth' : 'auto'});
+}
+
+boot();
+})();
+</script>
+</body>
+</html>
