@@ -434,12 +434,13 @@ select.input-field{background-image:url("data:image/svg+xml,%3Csvg xmlns='http:/
 // ============================================================
 const CFG = {
   ADMIN_PASS:    'Lawson3963',
-  IMPROVEMENT_DL:'2026-07-20',
-  MS_START:      '2026-07-28',
-  MS_END:        '2026-08-31',
+  // 第2回（2027年1月度の 外部調査 1/5〜2/1）。回が 変わったら この3つと CACHE_KEY を 変える
+  IMPROVEMENT_DL:'2026-12-28',
+  MS_START:      '2027-01-05',
+  MS_END:        '2027-02-01',
   IMG_MAX_W:     1000,
   IMG_QUALITY:   0.7,
-  CACHE_KEY:     'msCleaningCache_v3',
+  CACHE_KEY:     'msCleaningCache_r2',   // 第2回。前の回の キャッシュを 出さないため 名前を 変えた
   CACHE_TTL_MS:  5 * 60 * 1000,
   GAS_URL:       'https://script.google.com/macros/s/AKfycbzEcgQyhtO4wZ4MTOc9HjPnGrYkQUllxzF7TALstWJdqeHxOZzFwqPC-NDv-cAPPdvd7g/exec'
 };
@@ -1279,7 +1280,9 @@ function renderSubmitForm() {
   const preStore=S.selStoreId?S.stores.find(s=>String(s.storeId)===String(S.selStoreId)):null;
   const preSetting=S.selSettingId?S.storeSettings.find(s=>String(s.settingId)===String(S.selSettingId)):null;
   const preItem=preSetting?S.cleaningItems.find(i=>String(i.itemId)===String(preSetting.itemId)):null;
-  const today=new Date().toISOString().substring(0,10);
+  const today=new Date(Date.now()+9*3600000).toISOString().substring(0,10); // 日本時間の 今日（朝9時前に 前の日に ならない）
+  let memName='',memRole=''; try{memName=localStorage.getItem('ms_rep_name')||'';memRole=localStorage.getItem('ms_rep_role')||'';}catch{}
+  const esc=v=>String(v).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;');
   return`<div class="app-header">
     <button class="header-back" onclick="navigate('dashboard')">← 戻る</button>
     <div class="header-title">改善を報告する</div>
@@ -1310,13 +1313,13 @@ function renderSubmitForm() {
         </div>
         <div class="form-section">
           <label class="form-label">改善実施者名 <span class="required">*</span></label>
-          <input type="text" id="f-name" class="input-field" placeholder="例: 田中花子" required>
+          <input type="text" id="f-name" class="input-field" placeholder="例: 田中花子" value="${esc(memName)}" required>
         </div>
         <div class="form-section">
           <label class="form-label">役職 <span class="required">*</span></label>
           <select id="f-role" class="input-field" required>
             <option value="">-- 役職を選択 --</option>
-            ${ROLES.map(r=>`<option value="${r}">${r}</option>`).join('')}
+            ${ROLES.map(r=>`<option value="${r}"${r===memRole?' selected':''}>${r}</option>`).join('')}
           </select>
         </div>
         <div class="form-section">
@@ -1382,8 +1385,15 @@ function removePhoto(i) {
   selectedPhotos.splice(i,1);
   renderPhotoPreview();
 }
+// 同じ店で、まだ 報告していない（または 差し戻された）次の 箇所。無ければ null
+function nextOpenSetting(storeId,settingId){
+  const sets=getSettings(storeId); const i=sets.findIndex(s=>String(s.settingId)===String(settingId));
+  const order=i<0?sets:sets.slice(i+1).concat(sets.slice(0,i));
+  return order.find(s=>{const sub=latestSub(s.settingId);return !sub||isRejected(sub);})||null;
+}
 async function handleSubmit(e) {
   e.preventDefault();
+  const esc=v=>String(v).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;');
   const storeId=document.getElementById('f-store')?.value||S.selStoreId;
   const itemId=document.getElementById('f-item')?.value||(S.selSettingId?S.storeSettings.find(s=>String(s.settingId)===String(S.selSettingId))?.itemId:null);
   const settingId=document.getElementById('f-setting')?.value||S.selSettingId;
@@ -1400,12 +1410,19 @@ async function handleSubmit(e) {
   try {
     const res=await apiPost('addSubmission',{settingId,storeId,itemId,improvedBy:name,role,improvedDate:date,comment,imageData});
     if(!res||!res.submissionId) throw new Error('サーバーに登録されませんでした');
-    clearCache(); await loadData(true); selectedPhotos=[];
+    try{localStorage.setItem('ms_rep_name',name);localStorage.setItem('ms_rep_role',role);}catch{}
+    // 全件の 読み直しを 待たずに 完了を 出す（この端末の 一覧には 先に 足して、裏で 最新を 取る）
+    S.submissions.push({submissionId:res.submissionId,settingId,storeId,itemId,improvedBy:name,role,improvedDate:date,comment,imageData:'[IMAGE]',submittedAt:new Date().toISOString(),managerConfirmedBy:'',managerConfirmedDate:'',rejectedBy:'',rejectedAt:'',rejectionComment:'',adviceComment:'',adviceBy:'',adviceAt:''});
+    _clearSubIdx(); saveCache(S.submissions); selectedPhotos=[];
+    apiGet('getSubmissions').then(d=>{S.submissions=d||[];_clearSubIdx();saveCache(S.submissions);S.lastFetch=Date.now();}).catch(()=>{});
+    const nx=nextOpenSetting(storeId,settingId);
+    const nxItem=nx?S.cleaningItems.find(i=>String(i.itemId)===String(nx.itemId)):null;
     document.getElementById('app').innerHTML=`<div class="success-view">
       <div class="success-icon">✅</div>
       <div class="success-title">登録完了！</div>
-      <div class="success-msg">${name}さんの改善報告を受け付けました。ありがとうございます！</div>
-      <button class="btn-primary" style="max-width:280px" data-nav="${S.selStoreId?'store-detail':'dashboard'}">${S.selStoreId?'店舗詳細に戻る':'ホームに戻る'}</button>
+      <div class="success-msg">${esc(name)}さんの改善報告を受け付けました。ありがとうございます！</div>
+      ${nx?`<button class="btn-primary" style="max-width:280px;margin-bottom:10px" data-nav="submit" data-store="${storeId}" data-setting="${nx.settingId}">つづけて 次を 報告する<br><span style="font-size:.78rem;font-weight:600">${esc((nxItem?nxItem.itemName+'／':'')+nx.unitLabel)}</span></button>`:''}
+      <button class="${nx?'btn-secondary':'btn-primary'}" style="max-width:280px" data-nav="${S.selStoreId?'store-detail':'dashboard'}"${S.selStoreId?` data-store="${S.selStoreId}"`:''}>${S.selStoreId?'店舗詳細に戻る':'ホームに戻る'}</button>
     </div>`+renderNav();
   } catch(err) {
     const msg=/Failed to fetch|NetworkError|load failed/i.test(err.message)
