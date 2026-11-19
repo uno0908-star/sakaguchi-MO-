@@ -363,6 +363,17 @@ table.dlv thead th:first-child{background:#003087}
 .bd-yen{display:flex;align-items:center;gap:6px}.bd-yen input{flex:1}.bd-yen span{font-weight:800}
 .bd-msg{min-height:22px;font-size:14px;font-weight:700;margin-top:6px}
 .bd-hist{border-top:1px solid #e5e7eb;padding:8px 2px;font-size:14px}
+/* 売変の宣言の表：スマホで 右へ ずらしても 店名を 残す（table の overflow:hidden だと sticky が 効かない）・2026-11-19 */
+table.nw-heat.bd-tbl{min-width:760px;overflow:visible;overflow:clip}
+table.nw-heat.bd-tbl thead th:first-child{position:sticky;left:0;z-index:2;background:#003087}
+table.nw-heat.bd-tbl tbody td:first-child{box-shadow:2px 0 4px rgba(0,0,0,.12)}
+table.nw-heat.bd-tbl td.miss{background:#fff1b8;color:#7a5a00;font-weight:800}
+table.nw-heat.bd-tbl td.done{background:#dff3e2;color:#1b5e20}
+.bd-sum{background:#fff;border-radius:14px;box-shadow:0 1px 5px rgba(0,0,0,.09);padding:12px 14px;margin-bottom:10px;font-size:15px;line-height:1.7}
+.bd-sum .rule{font-weight:800;color:#0b1f4d;margin-bottom:6px}
+.bd-sum .ok{color:#1b5e20;font-weight:800}.bd-sum .ng{color:#c62828;font-weight:800}
+.bd-sum .lst{font-size:14px;color:#374151}
+#bdAmt::placeholder{font-size:14px;color:#9aa3b2;font-weight:400}
 @media(max-width:1100px){.nw-ind{grid-template-columns:repeat(3,1fr)}}
 @media(max-width:700px){
   .nw-hero{grid-template-columns:1fr}
@@ -3183,11 +3194,18 @@ function bdSectionHtml(rows) {
   const sum = f => rows.reduce((a, r) => a + f(r), 0);
   let h = `<div class="nw-h">売変の予算と宣言 <small>値引＋廃棄（売価）・1日あたり・${CUR_LABEL.date}・のこり${n.rem}日。店を押すと 宣言を 入力</small></div>`;
   if (BD.err) h += `<div class="nw-sub" style="color:#c62828;font-weight:700;margin-bottom:6px">${BD.err}　<button class="nw-btn" style="display:inline-block;width:auto;min-height:44px;margin:4px 0 0;padding:0 14px" onclick="bdLoad(true)">もう一度 読みこむ</button></div>`;
-  h += `<div class="table-wrap"><table class="nw-heat"><thead><tr><th>店</th><th>今月の実績<small>1日あたり</small></th><th>予算<small>1日あたり</small></th><th>のこり${n.rem}日<small>1日いくらまで</small></th><th>今週の宣言<small>${bdWeekLab(W.thisMon)}</small></th><th>先週の結果<small>${bdWeekLab(W.resWeek)}</small></th></tr></thead><tbody>`;
-  let nDecl = 0, nRes = 0, nOk = 0;
+  // 入れたか どうかの まとめ（今週・来週）と、毎週の 締切
+  if (BD.loaded) {
+    const line = (lab, wk) => { const miss = rows.filter(r => !bdDecl(r.name, wk)).map(r => r.name);
+      return `<div>${lab}（${bdWeekLab(wk)}）：${miss.length ? `<span class="ng">まだ ${miss.length}店</span>（入力 ${rows.length - miss.length}／${rows.length}店）<div class="lst">まだの店：${miss.join('・')}</div>` : `<span class="ok">✓ ${rows.length}店 ぜんぶ 入りました</span>`}</div>`; };
+    h += `<div class="bd-sum"><div class="rule">📅 毎週 水曜の 24時までに、次の週の分を 入れる</div>${line('今週', W.thisMon)}${line('来週', W.nextMon)}</div>`;
+  }
+  const dc = d => d ? `<td class="done"><b>✓ ${bdYen(d.amount / 1000)}</b>${d.who ? `<br><small>${bdEsc(d.who)}</small>` : ''}</td>` : '<td class="miss">まだ</td>';
+  h += `<div class="table-wrap"><table class="nw-heat bd-tbl"><thead><tr><th>店</th><th>今月の実績<small>1日あたり</small></th><th>予算<small>1日あたり</small></th><th>のこり${n.rem}日<small>1日いくらまで</small></th><th>今週の宣言<small>${bdWeekLab(W.thisMon)}</small></th><th>来週の宣言<small>${bdWeekLab(W.nextMon)}</small></th><th>先週の結果<small>${bdWeekLab(W.resWeek)}</small></th></tr></thead><tbody>`;
+  let nDecl = 0, nNext = 0, nRes = 0, nOk = 0;
   rows.forEach(r => {
-    const b = bdPlan(r.p), d = bdDecl(r.name, W.thisMon), pd = bdDecl(r.name, W.resWeek), pa = pd ? bdWeekActual(r.name, W.resWeek) : null;
-    if (d) nDecl++;
+    const b = bdPlan(r.p), d = bdDecl(r.name, W.thisMon), dn = bdDecl(r.name, W.nextMon), pd = bdDecl(r.name, W.resWeek), pa = pd ? bdWeekActual(r.name, W.resWeek) : null;
+    if (d) nDecl++; if (dn) nNext++;
     let res = '<td class="na">宣言なし</td>';
     if (pd) { if (!pa) res = `<td class="na">宣言 ${bdYen(pd.amount / 1000)}<br><small>データ待ち</small></td>`;
       else { const ok = pa.v * 1000 <= pd.amount; nRes++; if (ok) nOk++;
@@ -3195,10 +3213,10 @@ function bdSectionHtml(rows) {
     const al = b.allow;
     h += `<tr onclick="bdOpen('${r.name}')" style="cursor:pointer"><td>${r.name}</td><td class="${b.act > b.bgtDay ? 'tb' : 'tg'}">${bdYen(b.act)}</td><td>${bdYen(b.bgtDay)}</td>
       <td class="${al == null ? 'na' : al <= 0 ? 'r' : al < b.act ? 'y' : 'g'}">${al == null ? '─' : al <= 0 ? '予算オーバー' : bdYen(al)}</td>
-      <td class="${d ? '' : 'na'}">${d ? `<b>${bdYen(d.amount / 1000)}</b>${d.who ? `<br><small>${bdEsc(d.who)}</small>` : ''}` : '未入力'}</td>${res}</tr>`;
+      ${BD.loaded ? dc(d) + dc(dn) : '<td class="na">…</td><td class="na">…</td>'}${res}</tr>`;
   });
   const A = sum(r => bdPlan(r.p).act), B = sum(r => bdPlan(r.p).bgtDay), AL = rows.some(r => bdPlan(r.p).allow == null) ? null : sum(r => bdPlan(r.p).allow);
-  h += `<tr class="tot"><td>${currentSC === 'all' ? '全社' : currentSC}</td><td>${bdYen(A)}</td><td>${bdYen(B)}</td><td>${AL == null ? '─' : AL <= 0 ? '予算オーバー' : bdYen(AL)}</td><td>宣言 ${nDecl}／${rows.length}店</td><td>${nRes ? `達成 ${nOk}／${nRes}店` : '─'}</td></tr>`;
+  h += `<tr class="tot"><td>${currentSC === 'all' ? '全社' : currentSC}</td><td>${bdYen(A)}</td><td>${bdYen(B)}</td><td>${AL == null ? '─' : AL <= 0 ? '予算オーバー' : bdYen(AL)}</td><td>入力 ${nDecl}／${rows.length}店</td><td>入力 ${nNext}／${rows.length}店</td><td>${nRes ? `達成 ${nOk}／${nRes}店` : '─'}</td></tr>`;
   h += `</tbody></table></div><div class="nw-sub" style="font-size:12.5px;margin:6px 2px 0">「のこり${n.rem}日」＝今月の売変予算から ここまでの実績を引いて、のこりの日数で割った 1日あたりの金額。これより多く出すと 今月の予算を こえる。赤＝もう予算を こえている／黄＝今の ペースより 下げる必要あり。<br>宣言は 週（月〜日）ごと。結果は その週の 実績（1日あたり）と くらべる（月曜の データ更新で 出る）。</div>`;
   return h;
 }
@@ -3209,7 +3227,6 @@ function bdOpen(name, week) {
   const def = week === W.thisMon || week === W.nextMon ? week : new Date().getDay() === 1 ? W.thisMon : W.nextMon;     // 月曜は 今週、それ以外は 来週
   const cur = bdDecl(name, def);
   let who = ''; try { who = localStorage.getItem('bd_who') || ''; } catch (e) {}
-  const sug = b.allow != null && b.allow > 0 ? Math.min(b.allow, b.act) : b.bgtDay;
   let h = `<div class="nw-pp-kv"><div><div class="k">今月の実績</div><div class="v ${b.act > b.bgtDay ? 'nw-bad' : 'nw-good'}" style="font-size:17px">${bdYen(b.act)}</div><div class="k">1日あたり</div></div>
     <div><div class="k">予算</div><div class="v" style="font-size:17px">${bdYen(b.bgtDay)}</div><div class="k">1日あたり</div></div>
     <div><div class="k">のこり${n.rem}日</div><div class="v ${b.allow != null && b.allow < b.act ? 'nw-bad' : 'nw-good'}" style="font-size:17px">${b.allow == null ? '─' : b.allow <= 0 ? 'オーバー' : bdYen(b.allow)}</div><div class="k">1日いくらまで</div></div></div>
@@ -3220,7 +3237,7 @@ function bdOpen(name, week) {
         <option value="${W.thisMon}" ${def === W.thisMon ? 'selected' : ''}>今週（${bdWeekLab(W.thisMon)}）</option>
         <option value="${W.nextMon}" ${def === W.nextMon ? 'selected' : ''}>来週（${bdWeekLab(W.nextMon)}）</option></select>
       <label>売変（値引＋廃棄）を 1日 いくらまでに おさえるか</label>
-      <div class="bd-yen"><input id="bdAmt" type="number" inputmode="numeric" min="1000" step="500" value="${cur ? cur.amount : ''}" placeholder="${Math.round(sug * 1000 / 500) * 500}"><span>円／日</span></div>
+      <div class="bd-yen"><input id="bdAmt" type="number" inputmode="numeric" min="1000" step="500" value="${cur ? cur.amount : ''}" placeholder="ここに 金額を 入れる"><span>円／日</span></div>
       <div class="nw-sub" style="margin-top:4px">めやす：のこりの日の予算どおりなら 1日 ${b.allow != null && b.allow > 0 ? bdYen(b.allow) : '─'}（今の実績は ${bdYen(b.act)}）</div>
       <label>やること（ひとこと）</label><input id="bdMemo" type="text" maxlength="100" value="${cur ? bdEsc(cur.memo) : ''}" placeholder="例：夜の値引を1回にする・サンドの発注を2個へらす">
       <label>宣言する人</label><input id="bdWho" type="text" maxlength="30" value="${bdEsc(cur && cur.who ? cur.who : who)}" placeholder="名前">
