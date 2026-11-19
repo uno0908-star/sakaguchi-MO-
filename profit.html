@@ -2613,7 +2613,7 @@ function renderKcEffect() {
     <div class="kcp-cards">
       <div class="kcp-card ${tGain >= 0 ? '' : 'gray'}"><div class="kcp-h">チャレンジ店の 合計（1か月）</div><div class="kcp-n ${tGain >= 0 ? 'kce-good' : 'kce-bad'}">${man(tGain)}</div><div class="kcp-s">荒利益の 増えた分（季節の 動きを 引く）＋ 本部支援</div></div>
       <div class="kcp-card blue"><div class="kcp-h">店の 数</div><div class="kcp-n" style="font-size:18px">◎${nOk}　△${names.length - nOk - nNg - nPre}　×${nNg}</div><div class="kcp-s">1日 ±300円より 大きい 動きで 判定${nPre ? `／まだ ${nPre}店` : ''}</div></div>
-      <div class="kcp-card gray"><div class="kcp-h">うち 本部支援</div><div class="kcp-n" style="font-size:18px">${man(tSup)}</div><div class="kcp-s">本部レポートの m（1日分に ならして 30日）</div></div>
+      <div class="kcp-card gray"><div class="kcp-h">うち 本部支援</div><div class="kcp-n" style="font-size:18px">${man(tSup)}</div><div class="kcp-s">本部の 週別レポートの 支援額（1日分に ならして 30日分）</div></div>
     </div>
     <div class="table-wrap"><table class="kcp stick1"><thead><tr><th>店</th><th>前<br><span style="font-size:10px;font-weight:400">荒利益/日</span></th><th>後<br><span style="font-size:10px;font-weight:400">荒利益/日</span></th><th>荒利益の 差<br><span style="font-size:10px;font-weight:400">後−前</span></th><th>本部支援<br><span style="font-size:10px;font-weight:400">/日</span></th><th>合計の 差<br><span style="font-size:10px;font-weight:400">季節を 引く＋支援</span></th><th>判定</th></tr></thead>
     <tbody>${rows}</tbody></table></div>
