@@ -609,6 +609,17 @@ async function apiPost(action, body={}) {
   return d;
 }
 
+// 報告の 一覧を 取る。軽い版（見出し1回＋行は配列）を 先に 試し、だめなら 今までの 取り方
+async function fetchSubs(){
+  try{
+    const d=await apiGet('getSubmissionsCompact');
+    if(d&&Array.isArray(d.headers)&&Array.isArray(d.rows)) return d.rows.map(r=>{const o={};d.headers.forEach((h,i)=>{o[h]=r[i];});return o;});
+  }catch(e){ if(!/Unknown action/.test(e.message||'')) throw e; }
+  return (await apiGet('getSubmissions'))||[];
+}
+// 送信1回ごとの 番号。通信が 切れて 送りなおしても 二重に 登録されない（GAS側で 同じ番号は 1件だけ）
+function newReqId(){ return Date.now().toString(36)+Math.random().toString(36).slice(2,10); }
+let _subReqId=null,_resubReqId=null;
 // ============================================================
 // データ管理
 // ============================================================
@@ -618,7 +629,7 @@ async function loadData(force=false, silent=false) {
   if (!force) { const c=tryCache(); if(c){S.submissions=c;return;} }
   if (!silent) showLoading(); // 既にデータ表示中はスピナーを出さず裏で更新
   try {
-    const d = await apiGet('getSubmissions');
+    const d = await fetchSubs();
     S.submissions=d||[]; _clearSubIdx(); saveCache(S.submissions); S.lastFetch=Date.now(); S.error=null;
   } catch(e) { S.error=e.message; showToast('データ取得失敗: '+e.message,'error'); }
   if(!_formOpen()) renderView();
@@ -793,7 +804,7 @@ function showToast(msg,type='success') {
 // ============================================================
 function navigate(view,params={}) {
   S.view=view;
-  if(view==='submit') selectedPhotos=[];
+  if(view==='submit'){ selectedPhotos=[]; _subReqId=null; }
   if(params.storeId!==undefined) S.selStoreId=params.storeId;
   if(params.settingId!==undefined) S.selSettingId=params.settingId;
   if(params.itemId!==undefined) S.selItemId=params.itemId;
@@ -1420,13 +1431,15 @@ async function handleSubmit(e) {
     btn.disabled=false; btn.textContent='改善を登録する'; return;
   }
   try {
-    const res=await apiPost('addSubmission',{settingId,storeId,itemId,improvedBy:name,role,improvedDate:date,comment,imageData});
+    if(!_subReqId) _subReqId=newReqId();
+    const res=await apiPost('addSubmission',{settingId,storeId,itemId,improvedBy:name,role,improvedDate:date,comment,imageData,requestId:_subReqId});
     if(!res||!res.submissionId) throw new Error('サーバーに登録されませんでした');
+    _subReqId=null;
     try{localStorage.setItem('ms_rep_name',name);localStorage.setItem('ms_rep_role',role);}catch{}
     // 全件の 読み直しを 待たずに 完了を 出す（この端末の 一覧には 先に 足して、裏で 最新を 取る）
     S.submissions.push({submissionId:res.submissionId,settingId,storeId,itemId,improvedBy:name,role,improvedDate:date,comment,imageData:'[IMAGE]',submittedAt:new Date().toISOString(),managerConfirmedBy:'',managerConfirmedDate:'',rejectedBy:'',rejectedAt:'',rejectionComment:'',adviceComment:'',adviceBy:'',adviceAt:''});
     _clearSubIdx(); saveCache(S.submissions); selectedPhotos=[];
-    apiGet('getSubmissions').then(d=>{S.submissions=d||[];_clearSubIdx();saveCache(S.submissions);S.lastFetch=Date.now();}).catch(()=>{});
+    fetchSubs().then(d=>{S.submissions=d||[];_clearSubIdx();saveCache(S.submissions);S.lastFetch=Date.now();}).catch(()=>{});
     const nx=nextOpenSetting(storeId,settingId);
     const nxItem=nx?S.cleaningItems.find(i=>String(i.itemId)===String(nx.itemId)):null;
     document.getElementById('app').innerHTML=`<div class="success-view">
@@ -2003,7 +2016,7 @@ function openResubmitModal(settingId,storeId,itemId){
   const item=S.cleaningItems.find(i=>String(i.itemId)===String(itemId));
   const sub=latestSub(settingId);
   S.pendingResubmit={settingId,storeId,itemId};
-  resubmitPhotos=[];
+  resubmitPhotos=[]; _resubReqId=null;
   const info=document.getElementById('resubmit-info');
   if(info)info.textContent=`${store?.storeName||''} ／ ${item?.itemName||''}${setting?.unitLabel?' ／ '+setting.unitLabel:''}`;
   const reason=document.getElementById('resubmit-reject-reason');
@@ -2054,8 +2067,10 @@ async function doResubmit(){
   if(imageData.length>8*1024*1024){showToast('写真の合計サイズが大きすぎます。枚数を減らして送信してください','error');return;}
   const btn=document.getElementById('resubmit-btn');btn.disabled=true;btn.textContent='送信中...';
   try{
-    const res=await apiPost('addSubmission',{settingId:p.settingId,storeId:p.storeId,itemId:p.itemId,improvedBy:name,role,improvedDate:date,comment,imageData});
+    if(!_resubReqId) _resubReqId=newReqId();
+    const res=await apiPost('addSubmission',{settingId:p.settingId,storeId:p.storeId,itemId:p.itemId,improvedBy:name,role,improvedDate:date,comment,imageData,requestId:_resubReqId});
     if(!res||!res.submissionId)throw new Error('サーバーに登録されませんでした');
+    _resubReqId=null;
     try{localStorage.setItem('ms_rep_name',name);localStorage.setItem('ms_rep_role',role);}catch{}
     closeResubmitModal();clearCache();await loadData(true);
     showToast('再提出しました');renderView();
