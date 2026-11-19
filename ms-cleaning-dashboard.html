@@ -621,8 +621,10 @@ async function loadData(force=false, silent=false) {
     const d = await apiGet('getSubmissions');
     S.submissions=d||[]; _clearSubIdx(); saveCache(S.submissions); S.lastFetch=Date.now(); S.error=null;
   } catch(e) { S.error=e.message; showToast('データ取得失敗: '+e.message,'error'); }
-  renderView();
+  if(!_formOpen()) renderView();
 }
+// 報告フォームを 入力している 最中か（裏の 読みこみで 作りなおすと 入力が 消える）
+function _formOpen(){ return S.view==='submit'&&!!document.getElementById('submit-form'); }
 function applyData(d) { S.submissions=d||[]; }
 function tryCache() { try{const r=localStorage.getItem(CFG.CACHE_KEY);if(!r)return null;const{subs,ts}=JSON.parse(r);if(Date.now()-ts>CFG.CACHE_TTL_MS)return null;return subs;}catch{return null;} }
 // 起動時の即表示用：古くても残っているキャッシュを返す
@@ -737,7 +739,10 @@ function exclReqPending(){
   return list.sort((a,b)=>new Date(b.at||0)-new Date(a.at||0));
 }
 function roleStats(storeId) { const subs=storeId?S.submissions.filter(s=>String(s.storeId)===String(storeId)):S.submissions; return ROLES.reduce((acc,r)=>{acc[r]=subs.filter(s=>s.role===r).length;return acc;},{}); }
-function daysLeft() { return Math.ceil((new Date(CFG.IMPROVEMENT_DL+'T23:59:59')-new Date())/86400000); }
+// 日本時間の 今日（朝9時前に 前の日に ならない）
+function jstToday(){ return new Date(Date.now()+9*3600000).toISOString().substring(0,10); }
+// 期限までの 日数。日本の 暦で 数える（期限の日＝0、次の日から マイナス＝超過）
+function daysLeft() { return Math.round((Date.parse(CFG.IMPROVEMENT_DL+'T00:00:00Z')-Date.parse(jstToday()+'T00:00:00Z'))/86400000); }
 // 日付表示（日本時間）: "2026/6/10"
 function fmtD(v){if(!v)return'';const d=new Date(v);return isNaN(d)?v:d.toLocaleDateString('ja-JP',{timeZone:'Asia/Tokyo'});}
 // 日時表示（日本時間）: "2026/6/10 14:23"
@@ -748,9 +753,10 @@ function isOverdue() { return daysLeft()<0; }
 // 画像圧縮
 // ============================================================
 function compressImage(file) {
-  return new Promise(resolve=>{
+  return new Promise((resolve,reject)=>{
     const reader=new FileReader();
-    reader.onload=e=>{const img=new Image();img.onload=()=>{const canvas=document.createElement('canvas');let w=img.width,h=img.height;if(w>CFG.IMG_MAX_W){h=Math.round(h*CFG.IMG_MAX_W/w);w=CFG.IMG_MAX_W;}canvas.width=w;canvas.height=h;canvas.getContext('2d').drawImage(img,0,0,w,h);resolve(canvas.toDataURL('image/jpeg',CFG.IMG_QUALITY));};img.src=e.target.result;};
+    reader.onerror=()=>reject(new Error('read'));
+    reader.onload=e=>{const img=new Image();img.onerror=()=>reject(new Error('image'));img.onload=()=>{const canvas=document.createElement('canvas');let w=img.width,h=img.height;if(w>CFG.IMG_MAX_W){h=Math.round(h*CFG.IMG_MAX_W/w);w=CFG.IMG_MAX_W;}canvas.width=w;canvas.height=h;canvas.getContext('2d').drawImage(img,0,0,w,h);resolve(canvas.toDataURL('image/jpeg',CFG.IMG_QUALITY));};img.src=e.target.result;};
     reader.readAsDataURL(file);
   });
 }
@@ -770,7 +776,7 @@ function exportCSV() {
     ].map(v=>'"'+String(v).replace(/"/g,'""')+'"');
   });
   const csv='\uFEFF'+[h,...rows].map(r=>r.join(',')).join('\r\n');
-  const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8;'}));a.download='MS清掃改善_'+new Date().toISOString().substring(0,10)+'.csv';a.click();
+  const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8;'}));a.download='MS清掃改善_'+jstToday()+'.csv';a.click();
 }
 
 // ============================================================
@@ -787,6 +793,7 @@ function showToast(msg,type='success') {
 // ============================================================
 function navigate(view,params={}) {
   S.view=view;
+  if(view==='submit') selectedPhotos=[];
   if(params.storeId!==undefined) S.selStoreId=params.storeId;
   if(params.settingId!==undefined) S.selSettingId=params.settingId;
   if(params.itemId!==undefined) S.selItemId=params.itemId;
@@ -839,7 +846,7 @@ function renderDashboard() {
   const overall=overallProgress(), dl=daysLeft(), total=S.stores.length;
   const alertCls=dl<0?'alert-danger':dl<=3?'alert-danger':dl<=7?'alert-warning':'alert-info';
   const alertTxt=dl<0?`🚨 改善期限（${CFG.IMPROVEMENT_DL}）を過ぎています！至急対応してください`
-    :`⏰ 改善期限まであと <strong>${dl}日</strong>（${CFG.IMPROVEMENT_DL}まで）`;
+    :(dl===0?`⏰ 改善期限は <strong>今日まで</strong>（${CFG.IMPROVEMENT_DL}）`:`⏰ 改善期限まであと <strong>${dl}日</strong>（${CFG.IMPROVEMENT_DL}まで）`);
 
   const cards=S.cleaningItems.sort((a,b)=>a.sortOrder-b.sortOrder).map(item=>{
     const sp=itemStoreProgress(item.itemId), std=STANDARDS[item.itemId], pct=sp.pct;
@@ -1183,7 +1190,7 @@ function renderStoreDetail() {
     <div class="header-title">${store.storeName}</div>
     <button class="header-action" onclick="refreshData()">↻</button>
   </div>
-  <div class="view-content">
+  <div class="view-content">${(()=>{const nx=nextOpenSetting(store.storeId,null);if(!nx)return'';const left=getSettings(store.storeId).filter(t=>{const b=latestSub(t.settingId);return !b||isRejected(b);}).length;const it=S.cleaningItems.find(i=>String(i.itemId)===String(nx.itemId));return`<button class="btn-primary" style="margin-bottom:12px" data-nav="submit" data-store="${store.storeId}" data-setting="${nx.settingId}">📷 次の まだの 箇所を 報告する（のこり ${left}）<br><span style="font-size:.78rem;font-weight:600">${(it?it.itemName+'／':'')+nx.unitLabel}</span></button>`;})()}
     <div class="card">
       <div class="flex items-center justify-between mb-8">
         <div>
@@ -1280,7 +1287,7 @@ function renderSubmitForm() {
   const preStore=S.selStoreId?S.stores.find(s=>String(s.storeId)===String(S.selStoreId)):null;
   const preSetting=S.selSettingId?S.storeSettings.find(s=>String(s.settingId)===String(S.selSettingId)):null;
   const preItem=preSetting?S.cleaningItems.find(i=>String(i.itemId)===String(preSetting.itemId)):null;
-  const today=new Date(Date.now()+9*3600000).toISOString().substring(0,10); // 日本時間の 今日（朝9時前に 前の日に ならない）
+  const today=jstToday();
   let memName='',memRole=''; try{memName=localStorage.getItem('ms_rep_name')||'';memRole=localStorage.getItem('ms_rep_role')||'';}catch{}
   const esc=v=>String(v).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;');
   return`<div class="app-header">
@@ -1350,12 +1357,15 @@ function onItemChange(itemId) {
   const storeId=document.getElementById('f-store')?.value||S.selStoreId;
   const sel=document.getElementById('f-setting'); if(!sel||!storeId||!itemId)return;
   const sets=getSettings(storeId,itemId);
-  sel.innerHTML='<option value="">-- 箇所を選択 --</option>'+sets.map(s=>{const sub=latestSub(s.settingId);const lbl=sub?(isExcluded(sub)?' 除外':isExclReq(sub)?' 🙋除外申請中':isRejected(sub)?' ⚠差し戻しあり':' ✓済'):'';return`<option value="${s.settingId}">${s.unitLabel}${lbl}</option>`;}).join('');
+  sel.innerHTML='<option value="">-- 箇所を選択 --</option>'+sets.map(s=>{const sub=latestSub(s.settingId);const lbl=sub?(isExcluded(sub)?' 除外':isExclReq(sub)?' 🙋除外申請中':isRejected(sub)?' ⚠差し戻しあり':' ✓済'):'';const off=isExcluded(sub)||isExclReq(sub);return`<option value="${s.settingId}"${off?' disabled':''}>${s.unitLabel}${lbl}</option>`;}).join('');
   sel.disabled=false;
 }
 async function handlePhotoSelect(input) {
   if(!input.files.length)return;
-  const compressed=await Promise.all(Array.from(input.files).map(f=>compressImage(f)));
+  let compressed;
+  try{compressed=await Promise.all(Array.from(input.files).map(f=>compressImage(f)));}
+  catch(e){input.value='';showToast('写真を 読みこめませんでした。別の 写真を 選んでください','error');return;}
+  if(!document.getElementById('submit-form'))return; // 別の 画面へ 移ったあとは 足さない
   selectedPhotos=[...selectedPhotos,...compressed];
   input.value='';
   renderPhotoPreview();
@@ -1397,10 +1407,12 @@ async function handleSubmit(e) {
   const storeId=document.getElementById('f-store')?.value||S.selStoreId;
   const itemId=document.getElementById('f-item')?.value||(S.selSettingId?S.storeSettings.find(s=>String(s.settingId)===String(S.selSettingId))?.itemId:null);
   const settingId=document.getElementById('f-setting')?.value||S.selSettingId;
-  const name=document.getElementById('f-name').value.trim(), role=document.getElementById('f-role').value;
-  const date=document.getElementById('f-date').value, comment=document.getElementById('f-comment').value.trim();
+  const name=document.getElementById('f-name').value.replace(/[<>]/g,'').trim(), role=document.getElementById('f-role').value;
+  const date=document.getElementById('f-date').value, comment=document.getElementById('f-comment').value.replace(/[<>]/g,'').trim();
   if(!storeId||!settingId||!name||!role||!date){showToast('必須項目をすべて入力してください','error');return;}
   if(!selectedPhotos.length){showToast('写真を選択してください','error');return;}
+  const cur=latestSub(settingId);
+  if(isExcluded(cur)||isExclReq(cur)){showToast('この箇所は 除外（または 除外申請中）です。報告は できません','error');return;}
   const btn=document.getElementById('submit-btn'); btn.disabled=true; btn.textContent='送信中...';
   const imageData=selectedPhotos.length===1?selectedPhotos[0]:JSON.stringify(selectedPhotos);
   if(imageData.length>8*1024*1024){
@@ -1602,7 +1614,7 @@ async function doExclReq(){
   const name=document.getElementById('exclreq-name').value.trim();
   const reason=document.getElementById('exclreq-reason').value.trim();
   if(!reason){showToast('除外理由を入力してください','error');return;}
-  const today=new Date().toISOString().substring(0,10);
+  const today=jstToday();
   closeExclReqModal();
   try{
     await apiPost('addSubmission',{settingId:p.settingId,storeId:p.storeId,itemId:p.itemId,improvedBy:name||'店長',role:'除外申請',improvedDate:today,comment:reason,imageData:''});
@@ -1614,7 +1626,7 @@ function approveExclusion(submissionId){
   showConfirmModal('除外申請を承認','この箇所を「除外」に確定します。進捗の母数から除外されます。',async()=>{
     try{
       const sub=S.submissions.find(s=>String(s.submissionId)===String(submissionId));
-      const cmt=(sub&&sub.comment?sub.comment+' ':'')+'／承認: 管理者 '+new Date().toISOString().substring(0,10);
+      const cmt=(sub&&sub.comment?sub.comment+' ':'')+'／承認: 管理者 '+jstToday();
       await apiPost('updateSubmissionRole',{submissionId,role:'除外',comment:cmt});
       _setSubRoleLocal(submissionId,'除外',cmt);renderView();showToast('除外を承認しました');
     }catch(e){showToast('失敗: '+e.message,'error');}
@@ -1642,7 +1654,7 @@ function _setSubRoleLocal(id,role,comment){
 }
 // 除外設定（設備なし）
 async function excludeSetting(settingId,storeId,itemId){
-  const today=new Date().toISOString().substring(0,10);
+  const today=jstToday();
   showConfirmModal('除外設定','この箇所を「除外（設備なし）」に設定します。進捗の母数から除外されます。',async()=>{
     try{
       await apiPost('addSubmission',{settingId,storeId,itemId,improvedBy:'管理者',role:'除外',improvedDate:today,comment:'設備なし・除外設定',imageData:''});
@@ -1683,7 +1695,7 @@ async function bulkExclude(){
   if(!toExclude.length){showToast('除外にする箇所がありません','error');return;}
   showConfirmModal('一括除外',`${toExclude.length}件を除外に設定します。`,async()=>{
     try{
-      const today=new Date().toISOString().substring(0,10);
+      const today=jstToday();
       for(const settingId of toExclude){const s=sets.find(st=>String(st.settingId)===settingId);if(!s)continue;await apiPost('addSubmission',{settingId:s.settingId,storeId:selStore.storeId,itemId:s.itemId,improvedBy:'管理者',role:'除外',improvedDate:today,comment:'設備なし・除外設定',imageData:''});}
       S.bulkSelected.clear();clearCache();await loadData(true);renderView();showToast(`${toExclude.length}件を除外にしました`);
     }catch(e){showToast('失敗: '+e.message,'error');}
@@ -1704,7 +1716,7 @@ async function bulkUnexclude(){
 function bulkSelectGroup(ids,select){ids.forEach(id=>select?S.bulkSelected.add(String(id)):S.bulkSelected.delete(String(id)));renderView();_updateBulkActionsUI();}
 function clearBulkSelect(){S.bulkSelected.clear();renderView();}
 function confirmDeleteSub(id){showConfirmModal('報告を削除','この改善報告を削除します。元に戻せません。',async()=>{try{await apiPost('deleteSubmission',{submissionId:id});_removeSubLocal(id);renderView();showToast('削除しました');}catch(e){showToast('失敗: '+e.message,'error');}});}
-async function refreshData(){clearCache();await loadData(true);renderView();showToast('データを更新しました');}
+async function refreshData(){clearCache();await loadData(true);renderView();if(!S.error)showToast('データを更新しました');}
 function exportCSV(){
   const rows=[['submissionId','settingId','storeId','storeName','itemId','itemName','unitLabel','improvedBy','role','improvedDate','comment','submittedAt','managerConfirmedBy','managerConfirmedDate']];
   S.submissions.forEach(s=>{
@@ -1714,7 +1726,7 @@ function exportCSV(){
     rows.push([s.submissionId,s.settingId,s.storeId,store?.storeName||'',s.itemId,item?.itemName||'',setting?.unitLabel||'',s.improvedBy,s.role,s.improvedDate,s.comment,s.submittedAt,s.managerConfirmedBy||'',s.managerConfirmedDate||'']);
   });
   const csv=rows.map(r=>r.map(v=>`"${String(v||'').replace(/"/g,'""')}"`).join(',')).join('\n');
-  const a=document.createElement('a');a.href='data:text/csv;charset=utf-8,\uFEFF'+encodeURIComponent(csv);a.download='ms_cleaning_'+new Date().toISOString().slice(0,10)+'.csv';a.click();
+  const a=document.createElement('a');a.href='data:text/csv;charset=utf-8,\uFEFF'+encodeURIComponent(csv);a.download='ms_cleaning_'+jstToday()+'.csv';a.click();
 }
 
 // ============================================================
@@ -1937,7 +1949,7 @@ function renderNav() {
 function openAdminModal(){document.getElementById('modal-admin-login').classList.remove('hidden');document.getElementById('admin-password-input').value='';document.getElementById('admin-login-error').classList.add('hidden');setTimeout(()=>document.getElementById('admin-password-input').focus(),100);}
 function closeAdminModal(){document.getElementById('modal-admin-login').classList.add('hidden');}
 function doAdminLogin(){const pw=document.getElementById('admin-password-input').value;if(pw===CFG.ADMIN_PASS){S.isAdmin=true;closeAdminModal();navigate('admin');}else document.getElementById('admin-login-error').classList.remove('hidden');}
-function openManagerModal(id){S.pendingManagerId=id;document.getElementById('modal-manager-confirm').classList.remove('hidden');document.getElementById('manager-name-input').value=localStorage.getItem('ms_mgr_name')||'';document.getElementById('manager-date-input').value=new Date().toISOString().substring(0,10);closeConfirmModal();}
+function openManagerModal(id){S.pendingManagerId=id;document.getElementById('modal-manager-confirm').classList.remove('hidden');document.getElementById('manager-name-input').value=localStorage.getItem('ms_mgr_name')||'';document.getElementById('manager-date-input').value=jstToday();closeConfirmModal();}
 function closeManagerModal(){document.getElementById('modal-manager-confirm').classList.add('hidden');S.pendingManagerId=null;}
 // 確認結果をローカルに即反映（毎回の全データ再取得を不要に）
 function _applyManagerConfirmLocal(id,name,date){const sub=S.submissions.find(s=>String(s.submissionId)===String(id));if(sub){sub.managerConfirmedBy=name;sub.managerConfirmedDate=date;}saveCache(S.submissions);_clearSubIdx();}
@@ -1946,7 +1958,7 @@ async function doManagerConfirm(){const name=document.getElementById('manager-na
 async function quickManagerConfirm(id){
   const name=localStorage.getItem('ms_mgr_name');
   if(!name){openManagerModal(id);return;}
-  const date=new Date().toISOString().substring(0,10);
+  const date=jstToday();
   try{
     await apiPost('updateManagerConfirm',{submissionId:id,confirmedBy:name,confirmedDate:date});
     _applyManagerConfirmLocal(id,name,date);renderView();showToast(`✔ ${name} で確認しました`);
@@ -1958,10 +1970,10 @@ async function bulkManagerConfirm(){
   if(name===null)return; name=name.trim();
   if(!name){showToast('名前を入力してください','error');return;}
   localStorage.setItem('ms_mgr_name',name);
-  const targets=S.submissions.filter(s=>!s.managerConfirmedBy&&!s.rejectedBy&&s.role!=='除外'&&s.role!=='除外申請');
+  const targets=S.submissions.filter(s=>!s.managerConfirmedBy&&!s.rejectedBy&&s.role!=='除外'&&s.role!=='除外申請'&&latestSub(s.settingId)===s);
   if(!targets.length){showToast('未確認の報告はありません');return;}
   if(!confirm(`未確認 ${targets.length}件 をまとめて店長確認します。\n確認者: ${name}\n\nよろしいですか？`))return;
-  const date=new Date().toISOString().substring(0,10);
+  const date=jstToday();
   showToast(`一括確認中...（${targets.length}件）`);
   let ok=0;
   for(const s of targets){
@@ -1997,11 +2009,12 @@ function openResubmitModal(settingId,storeId,itemId){
   const reason=document.getElementById('resubmit-reject-reason');
   if(reason){const c=sub?.rejectionComment||'';reason.style.display=c?'':'none';reason.textContent=c?'差し戻し理由: '+c:'';}
   const roleEl=document.getElementById('resubmit-role');
-  if(roleEl)roleEl.innerHTML='<option value="">-- 役職を選択 --</option>'+ROLES.map(r=>`<option value="${r}">${r}</option>`).join('');
+  let memName='',memRole='';try{memName=localStorage.getItem('ms_rep_name')||'';memRole=localStorage.getItem('ms_rep_role')||'';}catch{}
+  if(roleEl){roleEl.innerHTML='<option value="">-- 役職を選択 --</option>'+ROLES.map(r=>`<option value="${r}">${r}</option>`).join('');roleEl.value=ROLES.includes(memRole)?memRole:'';}
   const dateEl=document.getElementById('resubmit-date');
-  if(dateEl)dateEl.value=new Date().toISOString().substring(0,10);
+  if(dateEl)dateEl.value=jstToday();
   renderResubmitPhotoPreview();
-  const nameEl=document.getElementById('resubmit-name');if(nameEl)nameEl.value='';
+  const nameEl=document.getElementById('resubmit-name');if(nameEl)nameEl.value=memName;
   const commentEl=document.getElementById('resubmit-comment');if(commentEl)commentEl.value='';
   document.getElementById('modal-resubmit').classList.remove('hidden');
 }
@@ -2011,7 +2024,10 @@ function closeResubmitModal(){
 }
 async function handleResubmitPhotoSelect(input){
   if(!input.files.length)return;
-  const compressed=await Promise.all(Array.from(input.files).map(f=>compressImage(f)));
+  let compressed;
+  try{compressed=await Promise.all(Array.from(input.files).map(f=>compressImage(f)));}
+  catch(e){input.value='';showToast('写真を 読みこめませんでした。別の 写真を 選んでください','error');return;}
+  if(!S.pendingResubmit)return;
   resubmitPhotos=[...resubmitPhotos,...compressed];
   input.value='';
   renderResubmitPhotoPreview();
@@ -2028,10 +2044,10 @@ function renderResubmitPhotoPreview(){
 function removeResubmitPhoto(i){resubmitPhotos.splice(i,1);renderResubmitPhotoPreview();}
 async function doResubmit(){
   const p=S.pendingResubmit;if(!p)return;
-  const name=document.getElementById('resubmit-name').value.trim();
+  const name=document.getElementById('resubmit-name').value.replace(/[<>]/g,'').trim();
   const role=document.getElementById('resubmit-role').value;
   const date=document.getElementById('resubmit-date').value;
-  const comment=document.getElementById('resubmit-comment').value.trim();
+  const comment=document.getElementById('resubmit-comment').value.replace(/[<>]/g,'').trim();
   if(!name||!role||!date){showToast('必須項目をすべて入力してください','error');return;}
   if(!resubmitPhotos.length){showToast('写真を選択してください','error');return;}
   const imageData=resubmitPhotos.length===1?resubmitPhotos[0]:JSON.stringify(resubmitPhotos);
@@ -2040,6 +2056,7 @@ async function doResubmit(){
   try{
     const res=await apiPost('addSubmission',{settingId:p.settingId,storeId:p.storeId,itemId:p.itemId,improvedBy:name,role,improvedDate:date,comment,imageData});
     if(!res||!res.submissionId)throw new Error('サーバーに登録されませんでした');
+    try{localStorage.setItem('ms_rep_name',name);localStorage.setItem('ms_rep_role',role);}catch{}
     closeResubmitModal();clearCache();await loadData(true);
     showToast('再提出しました');renderView();
   }catch(err){
@@ -2087,7 +2104,7 @@ function dismissAdvice(submissionId){
 }
 function _applyAdviceLocal(id,comment){
   const sub=S.submissions.find(s=>String(s.submissionId)===String(id));
-  if(sub){sub.adviceComment=comment;sub.adviceBy=comment?'管理者':'';sub.adviceAt=comment?new Date().toISOString().substring(0,10):'';}
+  if(sub){sub.adviceComment=comment;sub.adviceBy=comment?'管理者':'';sub.adviceAt=comment?jstToday():'';}
   saveCache(S.submissions);_clearSubIdx();
 }
 async function doSaveAdvice(){
@@ -2219,7 +2236,7 @@ function initEvents() {
     if(e.key==='Enter'&&document.getElementById('admin-password-input')===document.activeElement) doAdminLogin();
   });
 }
-async function refreshData(){clearCache();await loadData(true);renderView();showToast('データを更新しました');}
+async function refreshData(){clearCache();await loadData(true);renderView();if(!S.error)showToast('データを更新しました');}
 async function init(){
   S.stores=STORES; S.cleaningItems=ITEMS; S.storeSettings=ALL_SETTINGS;
   initEvents(); // イベント登録（1回のみ）
@@ -2230,7 +2247,7 @@ async function init(){
   renderView(); // マスター＋キャッシュで即時表示（写真付きダッシュボード）
   // 裏で最新取得。既にデータ表示中はスピナーを出さない
   try { await loadData(true, hasCache); } catch(e){ /* エラーはloadData内でtoast表示済み */ }
-  renderView(); // 報告データ反映
+  if(!_formOpen()) renderView(); // 報告データ反映
 }
 document.addEventListener('DOMContentLoaded',init);
 </script>
