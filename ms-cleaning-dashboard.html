@@ -817,7 +817,7 @@ function showLoading() {
 function renderView() {
   const app=document.getElementById('app');
   if(!S.gasUrl){app.innerHTML=renderSetup();return;}
-  const views={dashboard:renderDashboard,'item-detail':renderItemDetail,stores:renderStores,'store-detail':renderStoreDetail,submit:renderSubmitForm,analysis:renderAnalysis,admin:renderAdmin,photos:renderPhotos};
+  const views={dashboard:renderDashboard,'item-detail':renderItemDetail,stores:renderStores,'store-detail':renderStoreDetail,submit:renderSubmitForm,analysis:renderAnalysis,admin:renderAdmin,photos:renderPhotos,review:renderReview};
   app.innerHTML=(views[S.view]||renderDashboard)()+renderNav();
   if(S.view==='photos'||S.view==='admin') setTimeout(autoLoadThumbnails,300);
 }
@@ -900,6 +900,7 @@ function renderDashboard() {
   </div>
   <div class="view-content">
     <div class="alert ${alertCls}">${alertTxt}</div>
+    ${renderReviewBanner()}
     ${S.isAdmin?renderExclReqAlert():''}
     ${renderRejectedAlert()}
     ${renderAdviceAlert()}
@@ -1682,6 +1683,122 @@ function unExcludeSetting(submissionId){
     catch(e){showToast('失敗: '+e.message,'error');}
   },'解除する');
 }
+// ── 除外の 見直し（第1回に 管理者が「設備なし」で 入れた 除外を、SCが 今も ないか 見る）──────────
+//   ○ 今も ない → 除外の まま。コメントに「／見直し: ○ 名前 日付」を 足す（updateSubmissionRole・GASは 今のまま）
+//   × 今は ある → 除外を やめる（deleteSubmission）。店は その箇所を 報告する
+const RV_SC={'髙橋':['五月ケ丘東'],'五島':['池田市役所前'],
+  'ダハル':['大道南一丁目','吹田警察署前','江坂東','東淀川豊里五丁目'],
+  'ビスワス':['新御堂筋上新田','吹田青山台三丁目','豊中服部元町一丁目','吹田豊津中学校前'],
+  'フィ':['吹田垂水三丁目','東淀川大道南','豊里六丁目','豊中服部西町三丁目'],
+  'スラズ':['箕面白島二丁目','豊中利倉東一丁目','南金田二丁目','豊中原田南一丁目'],
+  'トゥアン':['江坂駅南口'],'レサム':['吹田朝日町'],'神田':[]};
+const rvE=v=>String(v==null?'':v).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;');
+const RV_MARK='／見直し:';
+const RV={busy:new Set(),lifted:[]};
+function rvGet(k){try{return localStorage.getItem(k)||'';}catch(e){return '';}}
+function rvSetLs(k,v){try{localStorage.setItem(k,v);}catch(e){}}
+function rvIsTarget(sub){return isExcluded(sub)&&String(sub.improvedBy||'')==='管理者'&&String(sub.comment||'').indexOf('設備なし')===0;}
+function rvDone(sub){return String(sub.comment||'').indexOf(RV_MARK)>=0;}
+// 見直す 箇所の 一覧（店ごと）
+function rvList(){
+  const out=[];
+  S.storeSettings.forEach(set=>{const sub=latestSub(set.settingId);if(sub&&rvIsTarget(sub))out.push({set,sub});});
+  return out;
+}
+function rvPending(){return rvList().filter(x=>!rvDone(x.sub)).length;}
+function renderReviewBanner(){
+  const n=rvPending();if(!n)return'';
+  return`<div data-nav="review" style="background:#FEF3C7;border:2px solid var(--orange);border-radius:var(--rs);padding:14px;margin-bottom:10px;cursor:pointer;display:flex;align-items:center;gap:10px">
+    <div style="font-size:1.5rem">🔎</div>
+    <div style="flex:1"><div style="font-weight:900;color:#92400E;font-size:.95rem">除外の 見直し　のこり ${n}箇所</div>
+    <div style="font-size:.78rem;color:#92400E">SCの 方へ：「設備なし」の 箇所が 今も ないか 見てください</div></div>
+    <div style="font-weight:900;color:#92400E">→</div></div>`;
+}
+function rvPickName(v){rvSetLs('ms_rv_name',v);renderView();}
+function rvToggleAll(){rvSetLs('ms_rv_all',rvGet('ms_rv_all')==='1'?'':'1');renderView();}
+function renderReview(){
+  const name=rvGet('ms_rv_name'), mine=RV_SC[name]||[], showAll=rvGet('ms_rv_all')==='1'||!mine.length;
+  const all=rvList();
+  const rows=all.filter(x=>{const st=S.stores.find(s=>String(s.storeId)===String(x.set.storeId));return showAll||(st&&mine.includes(st.storeName));});
+  const left=rows.filter(x=>!rvDone(x.sub)).length;
+  const byStore={};rows.forEach(x=>{(byStore[x.set.storeId]=byStore[x.set.storeId]||[]).push(x);});
+  const btn='min-height:48px;border-radius:10px;font-size:.92rem;font-weight:800;font-family:var(--font);cursor:pointer;padding:6px 8px;flex:1';
+  const cards=S.stores.filter(st=>byStore[st.storeId]).map(st=>{
+    const list=byStore[st.storeId], l=list.filter(x=>!rvDone(x.sub)).length;
+    return`<div class="card" style="padding:12px">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px"><div style="font-weight:900;font-size:1rem;flex:1">${rvE(st.storeName)}</div>
+      <div style="font-size:.8rem;font-weight:800;color:${l?'var(--orange)':'var(--green)'}">${l?`のこり ${l}`:'✓ おわり'}</div></div>
+      ${list.map(x=>{
+        const item=S.cleaningItems.find(i=>String(i.itemId)===String(x.set.itemId)), id=String(x.sub.submissionId), busy=RV.busy.has(id);
+        const done=rvDone(x.sub), who=done?String(x.sub.comment).split(RV_MARK)[1].replace(/^\s*○\s*/,'').trim():'';
+        return`<div style="border-top:1px solid var(--gray-border);padding:10px 0">
+          <div style="font-size:.76rem;color:var(--gray-text)">${rvE(item?item.itemName:'')}</div>
+          <div style="font-size:1rem;font-weight:800;margin-bottom:8px">${rvE(x.set.unitLabel)}</div>
+          ${done?`<div style="display:flex;align-items:center;gap:8px"><div style="flex:1;font-size:.85rem;font-weight:700;color:var(--green)">✓ 今も ない（${rvE(who)}）</div>
+            <button onclick="rvUndo('${id}')" ${busy?'disabled':''} style="min-height:44px;padding:0 14px;border-radius:10px;border:1px solid var(--gray-border);background:#fff;color:var(--gray-dark);font-size:.8rem;font-weight:700;font-family:var(--font);cursor:pointer">やり直す</button></div>`
+          :`<div style="display:flex;gap:8px">
+            <button onclick="rvKeep('${id}')" ${busy?'disabled':''} style="${btn};background:#fff;color:var(--green);border:2px solid var(--green)">${busy?'送信中…':'○ 今も ない'}</button>
+            <button onclick="rvLift('${id}')" ${busy?'disabled':''} style="${btn};background:#fff;color:var(--red);border:2px solid var(--red)">× 今は ある</button></div>`}
+        </div>`;}).join('')}
+    </div>`;}).join('');
+  const lifted=RV.lifted.length?`<div class="card" style="padding:12px"><div style="font-weight:800;font-size:.9rem;margin-bottom:4px">いま 除外を やめた 箇所（${RV.lifted.length}）</div>
+    ${RV.lifted.map(t=>`<div style="font-size:.85rem;padding:3px 0">・${rvE(t)}</div>`).join('')}
+    <div style="font-size:.76rem;color:var(--gray-text);margin-top:4px">この箇所は 店が 報告する ことに なります。</div></div>`:'';
+  return`<div class="app-header"><button class="header-back" data-nav="dashboard">← 戻る</button><div class="header-title">除外の 見直し</div><div style="width:56px"></div></div>
+  <div class="view-content">
+    <div class="alert alert-info" style="line-height:1.7">「設備が ない」ので 外している 箇所です。<br>店を 見て、<strong>○ 今も ない</strong> か <strong>× 今は ある</strong> を 押してください。</div>
+    <div class="card" style="padding:12px">
+      <label class="form-label">あなたの 名前</label>
+      <select style="width:100%;min-height:48px;font-size:1rem;font-family:var(--font);padding:0 12px;border:1px solid var(--gray-border);border-radius:10px;background:#fff" onchange="rvPickName(this.value)">
+        <option value="">えらんでください</option>
+        ${Object.keys(RV_SC).map(n=>`<option value="${n}" ${n===name?'selected':''}>${n}</option>`).join('')}
+      </select>
+      ${mine.length?`<button onclick="rvToggleAll()" style="margin-top:8px;min-height:44px;width:100%;border-radius:10px;border:1px solid var(--blue);background:#fff;color:var(--blue);font-weight:700;font-size:.85rem;font-family:var(--font);cursor:pointer">${showAll?'自分の 店だけ 見る':'ぜんぶの 店を 見る'}</button>`:''}
+    </div>
+    <div class="card" style="padding:14px;text-align:center">
+      <div style="font-size:.8rem;color:var(--gray-text);font-weight:700">${showAll?'ぜんぶの 店':rvE(name)+'さんの 店'}</div>
+      <div style="font-size:1.6rem;font-weight:900;color:${left?'var(--orange)':'var(--green)'}">${left?`のこり ${left}箇所`:'✓ ぜんぶ おわり'}</div>
+      <div style="font-size:.78rem;color:var(--gray-text)">ぜんぶで ${rows.length}箇所</div>
+    </div>
+    ${lifted}
+    ${cards||'<div class="card" style="text-align:center;color:var(--gray-text)">見直す 箇所は ありません</div>'}
+  </div>`;
+}
+function rvLabel(sub){
+  const set=S.storeSettings.find(s=>String(s.settingId)===String(sub.settingId));
+  const st=set&&S.stores.find(s=>String(s.storeId)===String(set.storeId)), item=set&&S.cleaningItems.find(i=>String(i.itemId)===String(set.itemId));
+  return`${st?st.storeName:''}／${item?item.itemName:''}／${set?set.unitLabel:''}`;
+}
+function rvNeedName(){const n=rvGet('ms_rv_name');if(!n){showToast('先に あなたの 名前を えらんでください','error');window.scrollTo(0,0);}return n;}
+async function rvKeep(id){
+  const name=rvNeedName();if(!name||RV.busy.has(id))return;
+  const sub=S.submissions.find(s=>String(s.submissionId)===String(id));if(!sub)return;
+  const cmt=String(sub.comment||'').split(RV_MARK)[0].trim()+' '+RV_MARK+' ○ '+name+' '+jstToday();
+  RV.busy.add(id);renderView();
+  try{await apiPost('updateSubmissionRole',{submissionId:id,role:'除外',comment:cmt});_setSubRoleLocal(id,'除外',cmt);}
+  catch(e){showToast('失敗: '+e.message+'。もう一度 押してください','error');}
+  RV.busy.delete(id);if(S.view==='review')renderView();
+}
+async function rvUndo(id){
+  if(RV.busy.has(id))return;
+  const sub=S.submissions.find(s=>String(s.submissionId)===String(id));if(!sub)return;
+  const cmt=String(sub.comment||'').split(RV_MARK)[0].trim();
+  RV.busy.add(id);renderView();
+  try{await apiPost('updateSubmissionRole',{submissionId:id,role:'除外',comment:cmt});_setSubRoleLocal(id,'除外',cmt);}
+  catch(e){showToast('失敗: '+e.message,'error');}
+  RV.busy.delete(id);if(S.view==='review')renderView();
+}
+function rvLift(id){
+  const name=rvNeedName();if(!name||RV.busy.has(id))return;
+  const sub=S.submissions.find(s=>String(s.submissionId)===String(id));if(!sub)return;
+  const lab=rvLabel(sub);
+  showConfirmModal('除外を やめます',`<strong>${rvE(lab)}</strong><br><br>この箇所は 設備が <strong>ある</strong> ので、除外を やめます。<br>店は この箇所を 報告する ことに なります。`,async()=>{
+    RV.busy.add(id);renderView();
+    try{await apiPost('deleteSubmission',{submissionId:id});_removeSubLocal(id);RV.lifted.push(lab+'（'+name+'）');showToast('除外を やめました');}
+    catch(e){showToast('失敗: '+e.message+'。もう一度 押してください','error');}
+    RV.busy.delete(id);if(S.view==='review')renderView();
+  },'除外を やめる');
+}
 // 一括選択
 function toggleBulkSelect(settingId,checked){
   if(checked)S.bulkSelected.add(String(settingId));else S.bulkSelected.delete(String(settingId));
@@ -1949,7 +2066,7 @@ async function loadAndOpenPhoto(submissionId){
 function renderNav() {
   const v=S.view;
   return`<nav class="bottom-nav">
-    ${[['dashboard','🏠','ホーム'],['stores','🏪','店舗一覧'],['submit','＋','報告する'],['photos','📷','写真'],['analysis','📊','分析'],['admin','⚙️','管理']].map(([nv,ic,lb])=>`
+    ${[['dashboard','🏠','ホーム'],['stores','🏪','店舗一覧'],['submit','＋','報告する'],['photos','📷','写真'],['analysis','📊','分析'],['review','🔎','見直し'],['admin','⚙️','管理']].map(([nv,ic,lb])=>`
     <button class="nav-item ${v===nv?'active':''}" data-nav="${nv}">
       <span class="nav-icon">${ic}</span><span class="nav-label">${lb}</span>
     </button>`).join('')}
@@ -2255,6 +2372,7 @@ async function refreshData(){clearCache();await loadData(true);renderView();if(!
 async function init(){
   S.stores=STORES; S.cleaningItems=ITEMS; S.storeSettings=ALL_SETTINGS;
   initEvents(); // イベント登録（1回のみ）
+  try{ if(new URLSearchParams(location.search).get('view')==='review') S.view='review'; }catch(e){}   // LINEから 見直しタブを 直接 開く
   // 前回のキャッシュがあれば即表示（古くてもまず出す）
   const cached = tryCacheAny();
   const hasCache = !!(cached && cached.length);
