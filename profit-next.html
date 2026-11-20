@@ -10,7 +10,7 @@
   店利益ダッシュボード（新しい画面）2026-11-18
   ・数字は持たない。同じ場所の profit.html を見えない iframe で読み、その中の定数と計算関数（nwRow / nwPath / bdPlan / kpRow など）を使う。
   ・毎週の更新スクリプトは profit.html だけを書き換えればよい（このファイルは触らなくても最新になる）。
-  ・入力（売変の宣言）は作らない。profit.html の値引・廃棄タブへ飛ばす。GASへの書き込みはしない（読むだけ）。
+  ・入力は「売変の宣言」だけ（2026-11-20〜 この画面で入れる）。GASへの書き込みは setBaihenDecl の1つだけ。
   ・?shot=1 で、動きなし・全部表示（スクリーンショット用）。
 -->
 <style>
@@ -281,6 +281,23 @@ table.ht.sm{min-width:600px}
 .ht td.na{color:var(--fg3)}
 .tdbtn{display:block;width:100%;min-height:44px;margin:-12px 0;padding:0;text-align:left;font-weight:700;font-size:15px;line-height:1.3;color:inherit;border-radius:6px}
 .tdbtn:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+/* 売変の宣言：表の中の「入れる」ボタンと、シートの入力らん（2026-11-20） */
+.dbtn{display:inline-block;min-width:6.6em;min-height:44px;padding:4px 12px;border-radius:12px;background:var(--ghost);color:var(--fg);font-weight:700;font-size:14.5px;line-height:1.3;text-align:center}
+.dbtn small{display:block;font-size:12px;font-weight:500;color:var(--fg2)}
+.dbtn.new{background:var(--accent);color:#fff}
+.bdsum{border-radius:18px;padding:14px 16px;background:var(--card);border:1px solid var(--line);font-size:15px;line-height:1.7;margin-bottom:14px}
+.bdsum .rule{font-weight:700;margin-bottom:4px}
+.bdsum .lst{font-size:13.5px;color:var(--fg2)}
+.bdf label{display:block;font-size:15px;font-weight:700;margin:16px 0 6px}
+.bdf input,.bdf select{display:block;width:100%;min-height:52px;padding:0 14px;border-radius:14px;border:1.5px solid var(--fg3);background:var(--card);color:var(--fg);font:inherit;font-size:18px}
+.bdf .yen{display:flex;align-items:center;gap:8px}
+.bdf .yen input{flex:1 1 auto;min-width:0;font-size:22px;font-weight:700;font-variant-numeric:tabular-nums}
+.bdf .yen span{flex:0 0 auto;font-weight:700}
+.bdf .pbtn{width:100%;margin-top:20px;min-height:56px;font-size:18px}
+.bdf .pbtn:disabled{opacity:.5}
+.bdf .msg{min-height:1.6em;margin-top:10px;font-size:15px;font-weight:700;line-height:1.6}
+.bdhist{background:var(--card);border-radius:14px;padding:12px 14px;margin-top:8px;font-size:15px;line-height:1.6}
+.bdhist small{display:block;font-size:13px;color:var(--fg2)}
 button:focus-visible,a:focus-visible,summary:focus-visible{outline:3px solid var(--accent);outline-offset:3px}
 .ht td.tb{color:var(--bad);font-weight:700} .ht td.tg{color:var(--good);font-weight:700}
 .ht tr.tot td{font-weight:700;border-bottom:0;background:var(--card);border-top:2px solid var(--fg3)}
@@ -983,14 +1000,13 @@ function trendHtml(rows) {
     <a class="more" href="profit.html#trend">週ごとのグラフは今の画面で</a></div></section>`;
 }
 
-// ---------- ⑧ 売変の予算と宣言（読むだけ） ----------
+// ---------- ⑧ 売変の予算と宣言（この画面で入れる・2026-11-20〜） ----------
 function baihenWrap() {
   return `<section class="sec alt" id="baihen"><div class="wrap">
     <div class="eyebrow rv">⑧ 売変の予算と宣言</div>
     <h2 class="h2 rv" style="--d:60ms">のこりの日、1日いくらまで。</h2>
     <div id="bdBody"></div>
-    <div class="btns rv"><a class="pbtn" href="profit.html#waste">宣言を入れる（今の画面へ）</a></div>
-    <p class="note">宣言の入力は、今の画面（値引・廃棄タブ）で行います。この画面は読むだけです。</p>
+    <p class="note">宣言は、表の「入れる」を押して この画面で入れます。入れるのは「1日 いくらまでに おさえるか」（上限）です。「へらす額」ではありません。<br>結果は、その週の実績（1日あたり）とくらべます（月曜のデータ更新で出ます）。</p>
   </div></section>`;
 }
 function renderBaihen() {
@@ -1001,12 +1017,19 @@ function renderBaihen() {
   const retryBtn = `<button type="button" class="pbtn sec2" style="min-height:44px;margin:8px 0 0" id="bdRetry">もう一度 読み込む</button>`;
   if (BD.err && !BD.loaded && !BD.loading) h += `<div class="alertbox"><b>宣言を読み込めませんでした</b>（${esc(BD.err)}）<br>実績と予算は出ています。<br>${retryBtn}</div>`;
   else if (!BD.loaded) h += `<div class="alertbox" id="bdMsg" tabindex="-1">宣言を読み込んでいます…（実績と予算は先に出ています）</div>`;
-  h += `<div class="tw"><table class="ht"><thead><tr><th>店</th><th>今月の実績<small>1日あたり</small></th><th>予算<small>1日あたり</small></th><th>のこり${n.rem}日<small>1日いくらまで</small></th><th>今週の宣言<small>${esc(wl(Wk.thisMon))}</small></th><th>先週の結果<small>${esc(wl(Wk.resWeek))}</small></th></tr></thead><tbody>`;
-  let nDecl = 0, nRes = 0, nOk = 0, A = 0, B = 0, AL = 0, alNull = false;
+  if (BD.loaded) {   // 入れたかどうかのまとめ（今週・来週）と 毎週の締切
+    const line = (lab, wk) => { const miss = rows.filter(r => !E.bdDecl(r.name, wk)).map(r => r.name);
+      return `<div>${lab}（${esc(wl(wk))}）：${miss.length ? `<b class="bad">まだ ${miss.length}店</b>（入力 ${rows.length - miss.length}／${rows.length}店）<div class="lst">まだの店：${miss.map(esc).join('・')}</div>` : `<b class="good">✓ ${rows.length}店 ぜんぶ入りました</b>`}</div>`; };
+    h += `<div class="bdsum"><div class="rule">📅 毎週 水曜の24時までに、次の週の分を入れる</div>${line('今週', Wk.thisMon)}${line('来週', Wk.nextMon)}</div>`;
+  }
+  const dcell = (name, wk, d) => !BD.loaded ? '<td class="na">…</td>'
+    : `<td><button type="button" class="dbtn${d ? '' : ' new'}" data-decl="${esc(name)}" data-week="${wk}">${d ? `✓ ${bdYen(d.amount / 1000)}${d.who ? `<small>${esc(d.who)}</small>` : ''}` : '入れる'}</button></td>`;
+  h += `<div class="tw"><table class="ht"><thead><tr><th>店</th><th>今月の実績<small>1日あたり</small></th><th>予算<small>1日あたり</small></th><th>のこり${n.rem}日<small>1日いくらまで</small></th><th>今週の宣言<small>${esc(wl(Wk.thisMon))}</small></th><th>来週の宣言<small>${esc(wl(Wk.nextMon))}</small></th><th>先週の結果<small>${esc(wl(Wk.resWeek))}</small></th></tr></thead><tbody>`;
+  let nDecl = 0, nNext = 0, nRes = 0, nOk = 0, A = 0, B = 0, AL = 0, alNull = false;
   rows.forEach(r => {
-    const b = E.bdPlan(r.p), d = E.bdDecl(r.name, Wk.thisMon), pd = E.bdDecl(r.name, Wk.resWeek), pa = pd ? E.bdWeekActual(r.name, Wk.resWeek) : null;
+    const b = E.bdPlan(r.p), d = E.bdDecl(r.name, Wk.thisMon), dn = E.bdDecl(r.name, Wk.nextMon), pd = E.bdDecl(r.name, Wk.resWeek), pa = pd ? E.bdWeekActual(r.name, Wk.resWeek) : null;
     A += b.act; B += b.bgtDay; if (b.allow == null) alNull = true; else AL += b.allow;
-    if (d) nDecl++;
+    if (d) nDecl++; if (dn) nNext++;
     let res = `<td class="na">${BD.loaded ? '宣言なし' : '…'}</td>`;
     if (pd) {
       if (!pa) res = `<td class="na">宣言 ${bdYen(pd.amount / 1000)}<small>データ待ち</small></td>`;
@@ -1015,9 +1038,9 @@ function renderBaihen() {
     const al = b.allow;
     h += `<tr data-store="${esc(r.name)}"><td>${tdBtn(r.name)}</td><td class="${b.act > b.bgtDay ? 'tb' : 'tg'}">${bdYen(b.act)}</td><td>${bdYen(b.bgtDay)}</td>
       <td class="${al == null ? 'na' : al <= 0 ? 'r' : al < b.act ? 'y' : 'g'}">${al == null ? '─' : al <= 0 ? '予算オーバー' : bdYen(al)}</td>
-      <td class="${d ? '' : 'na'}">${d ? `<b>${bdYen(d.amount / 1000)}</b>${d.who ? `<small>${esc(d.who)}</small>` : ''}` : BD.loaded ? '未入力' : '…'}</td>${res}</tr>`;
+      ${dcell(r.name, Wk.thisMon, d)}${dcell(r.name, Wk.nextMon, dn)}${res}</tr>`;
   });
-  h += `<tr class="tot"><td>${esc(who())}</td><td>${bdYen(A)}</td><td>${bdYen(B)}</td><td>${alNull ? '─' : AL <= 0 ? '予算オーバー' : bdYen(AL)}</td><td>${BD.loaded ? `宣言 ${nDecl}／${rows.length}店` : '…'}</td><td>${!BD.loaded ? '…' : nRes ? `達成 ${nOk}／${nRes}店` : '─'}</td></tr></tbody></table></div><div class="scroll-hint">← よこに動かせます →</div>`;
+  h += `<tr class="tot"><td>${esc(who())}</td><td>${bdYen(A)}</td><td>${bdYen(B)}</td><td>${alNull ? '─' : AL <= 0 ? '予算オーバー' : bdYen(AL)}</td><td>${BD.loaded ? `入力 ${nDecl}／${rows.length}店` : '…'}</td><td>${BD.loaded ? `入力 ${nNext}／${rows.length}店` : '…'}</td><td>${!BD.loaded ? '…' : nRes ? `達成 ${nOk}／${nRes}店` : '─'}</td></tr></tbody></table></div><div class="scroll-hint">← よこに動かせます →</div>`;
   // 作り直しても、表のよこ位置と 店名ボタンのフォーカスは そのままにする（宣言があとから届いた時）
   const tw0 = el.querySelector('.tw'), sl = tw0 ? tw0.scrollLeft : 0, af = document.activeElement;
   const ftr = af && el.contains(af) && af.closest ? af.closest('tr[data-store]') : null, fs = ftr ? ftr.dataset.store : null;
@@ -1032,7 +1055,7 @@ function renderBaihen() {
 //   （bdLoad の fetch には時間切れが無く、止まった古い応答があとから届いて内容を書き換えることがあるため）。
 //   ・いちばん新しく送った読み込みの結果だけを使う（BDS.seq）。20秒で時間切れ → 「もう一度 読み込む」。
 //   ・profit.html 側の計算（bdDecl など）は BD.rows を読むので、BD.rows を「この画面が読んだ行」に固定する。
-//     この画面は宣言を保存しないので、profit.html 側からの代入は受けつけなくてよい。
+//     宣言の保存も この画面が行い、BDS.rows を自分で書き換える。profit.html 側からの代入は受けつけない。
 const BDS = {rows: [], loaded: false, loading: false, err: '', seq: 0, hooked: false};
 function watchBaihen() {
   if (!BDS.hooked) {
@@ -1043,7 +1066,7 @@ function watchBaihen() {
   if (!BDS.loaded && !BDS.loading) bdFetch();
 }
 async function bdFetch() {
-  const my = ++BDS.seq;
+  const my = ++BDS.seq, t0 = Date.now();
   BDS.loading = true; BDS.err = '';
   renderBaihen();
   const ac = 'AbortController' in window ? new AbortController() : null, to = setTimeout(() => ac && ac.abort(), 20000);
@@ -1053,16 +1076,102 @@ async function bdFetch() {
     if (!d.ok) throw new Error(d.error || '読み込めません');
     if (!Array.isArray(d.rows)) throw new Error('返事の形がちがいます');
     if (my !== BDS.seq) return;                       // もっと新しい読み込みがある → この結果は使わない
-    BDS.rows = d.rows; BDS.loaded = true; BDS.err = '';
+    // 読み込み中に保存がおわった宣言は、古い読み込み結果で消さない
+    const kept = BDS.rows.filter(x => x.savedAt && x.savedAt >= t0), key = x => x.weekStart + '|' + x.store;
+    BDS.rows = d.rows.filter(x => !kept.some(k => key(k) === key(x))).concat(kept); BDS.loaded = true; BDS.err = '';
   } catch (e) {
     if (my !== BDS.seq) return;
     BDS.err = e && e.name === 'AbortError' ? '時間切れ' : /不明なアクション/.test(String(e && e.message)) ? 'サーバーの準備がまだです' : '電波のよい所で もう一度';
   } finally {
     clearTimeout(to);
-    if (my === BDS.seq) { BDS.loading = false; renderBaihen(); }
+    if (my === BDS.seq) { BDS.loading = false; renderBaihen(); declRefresh(); }
   }
 }
 function bdRetry() { bdFetch(); }
+
+// ---------- 宣言を入れるシート（保存先＝接客評価DBのGAS・setBaihenDecl。週の月曜＋店で上書き） ----------
+const DF = {name: '', dirty: false, saving: false, ticket: 0, warned: 0};
+const dfWho = () => { try { return localStorage.getItem('bd_who') || ''; } catch (e) { return ''; } };
+const declIsOpen = () => sheetOpen() && !!$('#dfSave');
+function declHist(name) {
+  const Wk = E.bdWeeks(), bdYen = E.bdYen;
+  const hist = BDS.rows.filter(r => r.store === name).sort((a, b) => b.weekStart.localeCompare(a.weekStart));
+  if (!hist.length) return `<p class="note" style="margin-top:0">${BDS.loaded ? 'まだ宣言はありません。' : '読み込んでいます…'}</p>`;
+  return hist.map(r => { const a = E.bdWeekActual(name, r.weekStart), ok = a ? a.v * 1000 <= r.amount : null;
+    return `<div class="bdhist"><b>${esc(E.bdWeekLab(r.weekStart))}</b>　宣言 <b>${bdYen(r.amount / 1000)}</b>／日　${a ? `実績 <b>${bdYen(a.v)}</b>　<b class="${ok ? 'good' : 'bad'}">${ok ? '○ 達成' : '× 未達'}（${ok ? '' : '+'}${Math.round(a.v * 1000 - r.amount).toLocaleString()}円）</b>${a.part ? '<small>月をまたぐ週は 月の初めからの分だけ</small>' : ''}` : `<small>${r.weekStart > Wk.resWeek ? '結果は、週がおわった後の月曜に出ます' : 'データ待ち'}</small>`}
+      ${r.memo ? `<small>${esc(r.memo)}</small>` : ''}${r.who ? `<small>${esc(r.who)}</small>` : ''}</div>`; }).join('');
+}
+function openDecl(name, week) {
+  const p = E.PROFIT.find(x => x.name === name); if (!p) return;
+  const b = E.bdPlan(p), Wk = E.bdWeeks(), n = E.bdNow(), bdYen = E.bdYen;
+  DF.name = name; DF.dirty = false; DF.warned = 0;
+  const def = week === Wk.thisMon || week === Wk.nextMon ? week : new Date().getDay() === 1 ? Wk.thisMon : Wk.nextMon;   // 月曜は今週、それ以外は来週
+  const cur = E.bdDecl(name, def);
+  const h = `<div class="kv"><div><div class="k">今月の実績</div><div class="v ${b.act > b.bgtDay ? 'bad' : 'good'}" style="font-size:18px">${bdYen(b.act)}</div><div class="k">1日あたり</div></div>
+      <div><div class="k">予算</div><div class="v" style="font-size:18px">${bdYen(b.bgtDay)}</div><div class="k">1日あたり</div></div>
+      <div><div class="k">のこり${n.rem}日</div><div class="v ${b.allow != null && b.allow < b.act ? 'bad' : 'good'}" style="font-size:18px">${b.allow == null ? '─' : b.allow <= 0 ? 'オーバー' : bdYen(b.allow)}</div><div class="k">1日いくらまで</div></div></div>
+    <p class="note" style="margin-top:6px">今月の売変予算 ${bdYen(b.bgtMonth)}　ここまで ${bdYen(b.used)}（${n.elapsed}日分）</p>
+    <div class="bdf" id="dfForm">
+      <label for="dfWeek">どの週</label><select id="dfWeek">
+        <option value="${Wk.thisMon}" ${def === Wk.thisMon ? 'selected' : ''}>今週（${esc(E.bdWeekLab(Wk.thisMon))}）</option>
+        <option value="${Wk.nextMon}" ${def === Wk.nextMon ? 'selected' : ''}>来週（${esc(E.bdWeekLab(Wk.nextMon))}）</option></select>
+      <label for="dfAmt">売変（値引＋廃棄）を 1日 いくらまでに おさえるか</label>
+      <div class="yen"><input id="dfAmt" type="number" inputmode="numeric" min="1000" step="500" value="${cur ? esc(cur.amount) : ''}" placeholder="例：25000"><span>円／日</span></div>
+      <p class="note" style="margin-top:6px">めやす：のこりの日の予算どおりなら 1日 ${b.allow != null && b.allow > 0 ? bdYen(b.allow) : '─'}（今の実績は ${bdYen(b.act)}）<br>「へらす額」ではなく、「1日の上限」を入れます。</p>
+      <label for="dfMemo">やること（ひとこと）</label><input id="dfMemo" type="text" maxlength="100" value="${cur ? esc(cur.memo || '') : ''}" placeholder="例：夜の値引を1回にする">
+      <label for="dfWho">宣言する人</label><input id="dfWho" type="text" maxlength="30" value="${esc(cur && cur.who ? cur.who : dfWho())}" placeholder="名前">
+      <button type="button" class="pbtn" id="dfSave">宣言を保存する</button><div class="msg" id="dfMsg" role="status"></div>
+    </div>
+    <div class="sh">これまでの宣言と結果</div><div id="dfHist">${declHist(name)}</div>`;
+  openSheet(name + '：売変の宣言', '週（月〜日）ごとに入れます', h);
+  $('#dfForm').addEventListener('input', () => { DF.dirty = true; DF.warned = 0; });
+  $('#dfWeek').addEventListener('change', () => { declFill(); DF.dirty = false; });
+  $('#dfSave').addEventListener('click', () => declSave(name));
+}
+function declFill() {   // えらんだ週に もう宣言があれば その内容を出す
+  const c = E.bdDecl(DF.name, $('#dfWeek').value);
+  $('#dfAmt').value = c ? c.amount : ''; $('#dfMemo').value = c ? c.memo || '' : ''; $('#dfWho').value = c && c.who ? c.who : dfWho();
+  $('#dfMsg').textContent = '';
+}
+function declRefresh() {   // 宣言があとから届いた時：まだ何も入力していなければ 中身を新しくする
+  if (!declIsOpen()) return;
+  $('#dfHist').innerHTML = declHist(DF.name);
+  if (!DF.dirty && !DF.saving) declFill();
+}
+async function declSave(name) {
+  const msg = $('#dfMsg'), btn = $('#dfSave');
+  const say = (t, c) => { msg.className = 'msg ' + (c || ''); msg.textContent = t; };
+  const week = $('#dfWeek').value, amt = Math.round(Number($('#dfAmt').value));
+  const whoV = $('#dfWho').value.trim(), memo = $('#dfMemo').value.trim();
+  if (!(amt >= 1000)) { say('金額を円で入れてください（1日あたり）', 'bad'); $('#dfAmt').focus(); return; }
+  if (!whoV) { say('宣言する人の名前を入れてください', 'bad'); $('#dfWho').focus(); return; }
+  // 「へらす額」を入れるまちがいを止める：今の実績の半分より小さい時は 1回 確かめる
+  const p = E.PROFIT.find(x => x.name === name), act = p ? E.bdPlan(p).act * 1000 : 0;
+  if (act > 0 && amt < act * 0.5 && DF.warned !== amt) { DF.warned = amt; say(`今の実績は 1日 ${E.bdYen(act / 1000)} です。入れるのは「へらす額」ではなく「1日の上限」です。${amt.toLocaleString()}円でよければ、もう一度「保存する」を押してください。`, 'bad'); return; }
+  try { localStorage.setItem('bd_who', whoV); } catch (e) {}
+  btn.disabled = true; say('保存しています…');
+  const ticket = ++DF.ticket;
+  DF.dirty = false; DF.saving = true;
+  const ac = 'AbortController' in window ? new AbortController() : null, to = setTimeout(() => ac && ac.abort(), 30000);
+  try {
+    const r = await fetch(E.BD_GAS, {method: 'POST', headers: {'Content-Type': 'text/plain;charset=utf-8'}, redirect: 'follow', signal: ac ? ac.signal : undefined,
+      body: JSON.stringify({action: 'setBaihenDecl', user: whoV, record: {weekStart: week, store: name, amount: amt, who: whoV, memo}})});
+    const d = await r.json();
+    if (!d.ok) throw new Error(d.error || '保存できません');
+    BDS.rows = BDS.rows.filter(x => !(x.store === name && x.weekStart === week)).concat([{weekStart: week, store: name, amount: d.amount != null ? d.amount : amt, who: whoV, memo, at: d.at, savedAt: Date.now()}]);
+    DF.saving = false;
+    renderBaihen();
+    toast('宣言を保存しました');
+    if ($('#dfSave') !== btn) return;                 // もう別の画面
+    btn.disabled = false;
+    $('#dfHist').innerHTML = declHist(name);
+    const same = DF.ticket === ticket && !DF.dirty && $('#dfWeek').value === week;
+    say(same ? `✓ 保存しました（${E.bdWeekLab(week)}・1日 ${amt.toLocaleString()}円まで）` : '✓ 保存しました（そのあと変えた所は まだ保存していません）', 'good');
+  } catch (e) {
+    DF.saving = false;
+    if ($('#dfSave') === btn) { btn.disabled = false; say(e && e.name === 'AbortError' ? '時間切れです。保存できたか分かりません。画面を読み込み直して、表で確かめてください。' : '保存できませんでした（' + (e && e.message || '') + '）。電波のよい所で もう一度', 'bad'); }
+  } finally { clearTimeout(to); }
+}
 
 // ---------- ⑨ 厨房・デリバリー（profit.html の描画結果から要点だけ読む） ----------
 function runInEngine(fns) {
@@ -1250,7 +1359,7 @@ function openStore(name) {
       <div><div class="k">予算</div><div class="v" style="font-size:18px">${E.bdYen(b.bgtDay)}</div></div><div><div class="k">のこり${n.rem}日</div><div class="v ${b.allow != null && b.allow < b.act ? 'bad' : 'good'}" style="font-size:18px">${b.allow == null ? '─' : b.allow <= 0 ? 'オーバー' : E.bdYen(b.allow)}</div></div></div>`;
   } catch (e) {}
   if (E.KPI) { const ks2 = E.KPI.stores.find(x => x.name === name); if (ks2) { const kr = E.kpRow(ks2); h += `<div class="sh">KPI <span class="${kr.need ? 'bad' : 'good'}">達成率 ${Math.round(kr.rate * 100)}%（${kr.need ? `あと${kr.need}つ` : 'クリア'}）</span></div>${kr.ng.length ? `<div class="pl">${kr.ng.map(i => E.kpGo(name, i) ? `<span class="x">${esc(E.KPI.items[i].n)}</span>` : `<span>${esc(E.KPI.items[i].n)}（今は上げない）</span>`).join('')}</div>` : ''}`; } }
-  h += `<div class="btns"><button type="button" class="pbtn" data-copy="${esc(name)}">LINE用にコピー</button><a class="pbtn sec2" href="profit.html#waste">宣言を入れる（今の画面）</a></div>`;
+  h += `<div class="btns"><button type="button" class="pbtn" data-copy="${esc(name)}">LINE用にコピー</button><button type="button" class="pbtn sec2" data-decl="${esc(name)}">売変の宣言を入れる</button></div>`;
   openSheet(name, `${r.sc}・${p.type}`, h);
 }
 function openInd(k) {
@@ -1316,8 +1425,9 @@ function setSC(s) {
 }
 function bindGlobal() {
   document.addEventListener('click', e => {
-    const t = e.target.closest('[data-store],[data-ind],[data-sc],[data-sort],[data-ws],[data-copy]');
+    const t = e.target.closest('[data-decl],[data-store],[data-ind],[data-sc],[data-sort],[data-ws],[data-copy]');
     if (!t) return;
+    if (t.dataset.decl) { openDecl(t.dataset.decl, t.dataset.week); return; }
     if (t.dataset.copy) { const p = E.PROFIT.find(s => s.name === t.dataset.copy); copyText(E.nwStoreText(E.nwRow(p))); return; }
     if (t.dataset.sc) { setSC(t.dataset.sc); return; }
     if (t.dataset.store) { openStore(t.dataset.store); return; }
@@ -1347,7 +1457,7 @@ function bindGlobal() {
   // シートを下へ引っぱって閉じる（スマホ）
   let sy = null;
   $('#sheet').addEventListener('touchstart', e => { sy = $('#sheetB').scrollTop <= 0 ? e.touches[0].clientY : null; }, {passive: true});
-  $('#sheet').addEventListener('touchend', e => { if (sy != null && e.changedTouches[0].clientY - sy > 90 && innerWidth < 900) closeSheet(); sy = null; }, {passive: true});
+  $('#sheet').addEventListener('touchend', e => { if (sy != null && e.changedTouches[0].clientY - sy > 90 && innerWidth < 900 && !$('#dfForm')) closeSheet(); sy = null; }, {passive: true});
   // スクロール：ナビを縮める・ヒーローのパララックス
   let ticking = false;
   const onScroll = () => {
