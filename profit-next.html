@@ -553,7 +553,7 @@ if (SHOT) ROOT.classList.add('shot');
 const SECTIONS = [
   ['now', '現在地'], ['cut', 'へらす額'], ['stores', '店ごと'], ['path', '6月まで'],
   ['profit', '店利益'], ['waste', '値引・廃棄'], ['trend', '前週対比'], ['baihen', '売変の宣言'],
-  ['kitchen', '厨房'], ['delivery', 'デリバリー'], ['kpi', 'KPI・AICO'],
+  ['kitchen', '厨房'], ['delivery', 'デリバリー'], ['kpi', 'KPI・AICO'], ['tana', '棚卸ロス'],
 ];
 // 6つの指標の色（暗い面でも見える明るさ）。profit.html の NW_COL と同じ色の系統
 const KCOL = {A: '#ff453a', B: '#ff9f0a', C: '#bf5af2', D: '#ac8e68', E: '#0a84ff', F: '#2ec4b6'};
@@ -589,7 +589,9 @@ function boot() {
         nwRow, nwPath, nwCap, nwMan, nwYen, nwSg, nwPct, nwStoreText, prevSnapshot,
         bdPlan, bdNow, bdWeeks, bdDecl, bdWeekActual, bdLoad, bdYen, bdWeekLab, BD, BD_GAS, bdAdd, bdYmd,
         KPI: typeof KPI !== 'undefined' ? KPI : null, kpRow, kpAgg, kpItemStat, kpGo, KP_DO, KP_ACT, kpDept,
-        acList, AC, KITCHEN_START, KC_COVER: typeof KC_COVER !== 'undefined' ? KC_COVER : null})`);
+        acList, AC, KITCHEN_START, KC_COVER: typeof KC_COVER !== 'undefined' ? KC_COVER : null,
+        TANA: typeof TANA !== 'undefined' ? TANA : null, tnRow: typeof tnRow === 'function' ? tnRow : null,
+        tnDo: typeof tnDo === 'function' ? tnDo : null, TN_RULE: typeof TN_RULE !== 'undefined' ? TN_RULE : null})`);
       if (!E.PROFIT || !E.PROFIT.length) throw new Error('データが空です');
       if (!E.SC_LIST.includes(SC)) SC = 'all';
       renderAll(true);
@@ -643,7 +645,7 @@ let IO = null, NAVIO = null;
 function renderAll(first) {
   const rows = rowsSC(), S = summary(rows), path = E.nwPath();
   const html = [heroHtml(S), nowHtml(S, path), cutHtml(rows, S), storesHtml(rows), pathHtml(path),
-    profitHtml(rows, S), wasteHtml(rows, S), trendHtml(rows), baihenWrap(), kitchenHtml(), deliveryHtml(), kpiHtml(rows), footHtml()];
+    profitHtml(rows, S), wasteHtml(rows, S), trendHtml(rows), baihenWrap(), kitchenHtml(), deliveryHtml(), kpiHtml(rows), tanaHtml(), footHtml()];
   $('#app').innerHTML = html.join('');
   try {
     renderBaihen();
@@ -1283,6 +1285,75 @@ function kpiHtml(rows) {
   return h + `<a class="more" href="profit.html#kpi">17項目の表・組織の位置は今の画面で</a></div></section>`;
 }
 
+// ---------- ⑫ 棚卸ロス（profit.html の TANA・tnRow・tnDo を使う。2026-11-23〜） ----------
+//   円。＋＝ロス（商品が足りない）、−＝逆ロス（商品が多い）。「調整」＝その他不明部門（合計を0円にする数字。次の棚卸で戻る）
+const tnMan = v => (v > 0 ? '＋' : v < 0 ? '−' : '') + (Math.abs(v) / 10000).toFixed(1);
+const tnYen = v => (v > 0 ? '＋' : v < 0 ? '−' : '') + Math.abs(Math.round(v)).toLocaleString('ja-JP');
+const tnMd = d => d ? `${+d.slice(5, 7)}/${+d.slice(8, 10)}` : '─';
+function tanaRows() {
+  const a = Object.keys(E.TANA.stores).map(n => E.tnRow(n));
+  return (SC === 'all' ? a : a.filter(r => r.sc === SC)).sort((x, y) => Math.abs(y.cur) - Math.abs(x.cur));
+}
+function tanaHtml() {
+  let h = `<section class="sec light" id="tana"><div class="wrap">
+    <div class="eyebrow rv">⑫ 棚卸ロス</div>
+    <h2 class="h2 rv" style="--d:60ms">棚卸で、合わなかった金額。</h2>`;
+  if (!E.TANA || !E.tnRow || !E.TN_RULE) return h + `<p class="lead">棚卸のデータがありません。</p></div></section>`;
+  const T = E.TANA, R = E.TN_RULE, rows = tanaRows();
+  if (!rows.length) return h + `<p class="lead">${esc(who())}の店のデータがありません。</p></div></section>`;
+  const sum = rows.reduce((a, r) => a + r.cur, 0), mon = rows.reduce((a, r) => a + (r.mon || 0), 0);
+  const over = rows.filter(r => r.over), back = rows.filter(r => r.back);
+  h += `<p class="lead rv" style="--d:120ms">本部の定期棚卸実績レポート・${esc(T.asof)}時点・${esc(who())}（${rows.length}店）。店ごとに一番新しい棚卸。<b>＋はロス</b>（商品が足りない）、<b>−は逆ロス</b>（商品が多い）。</p>
+    <div class="bento b3">
+      <div class="card rv"><div class="tag ${sum > 0 ? 'bad' : 'good'}">1か月あたり ${tnMan(mon)}万円</div><div class="k">直近の棚卸のロス（${rows.length}店の合計）</div>
+        <div class="big m ${sum > 0 ? 'bad' : 'good'}">${tnMan(sum)}<small>万円</small></div><div class="s">調整（その他不明部門）を除いた、部門の合計</div></div>
+      <div class="card rv" style="--d:80ms"><div class="k">対策書の線をこえた店</div><div class="big m ${over.length ? 'bad' : 'good'}">${over.length}<small>店</small></div>
+        <div class="s">${over.map(r => `${esc(r.name)}（${tnMd(r.s.d[r.L])}）`).join('・') || 'なし'}<br>ロス${R.loss / 10000}万円以上／逆ロス${R.rev / 10000}万円以上／1つの部門で${R.dept / 10000}万円以上</div></div>
+      <div class="card rv" style="--d:160ms"><div class="k">次の棚卸で、逆ロスが戻る店</div><div class="big m">${back.length}<small>店</small></div>
+        <div class="s">${back.map(r => `${esc(r.name)}（${tnMan(r.back).replace('＋', '')}万円・${esc(r.next)}ごろ）`).join('・') || 'なし'}<br>今回、合計を0円にする調整が入った店</div></div>
+    </div>`;
+  const cc = r => r.over ? 'r' : Math.abs(r.cur) >= 200000 ? 'o' : Math.abs(r.cur) >= 100000 ? 'y' : 'g';
+  const mark = r => [r.over ? '<span class="tag bad" style="margin:0">対策書</span>' : '', r.back ? '<span class="tag warn" style="margin:0">次に戻る</span>' : '',
+    !r.over && !r.back && r.swing.length ? '<span class="tag warn" style="margin:0">数えもれの疑い</span>' : ''].join('') || '─';
+  h += `<h3 class="h3 rv">店ごと<small>ロスの大きい順・万円。押すと、過去8回と部門ごと</small></h3>
+    <div class="rv"><div class="tw"><table class="ht"><thead><tr><th>店<small>担当SC</small></th><th>棚卸の日<small>前回からの日数</small></th><th>ロス<small>調整を除く</small></th><th>1か月あたり</th><th>調整<small>その他不明</small></th><th>本部の合計</th><th>一番大きい部門</th><th>しるし</th></tr></thead><tbody>
+    ${rows.map(r => { const t = r.top[0]; return `<tr data-tana="${esc(r.name)}" tabindex="0" role="button"><td>${esc(r.name)}<small>${esc(r.sc || '')}</small></td><td>${tnMd(r.s.d[r.L])}<small>${r.s.n[r.L] || '─'}日</small></td>
+      <td class="${cc(r)}">${tnMan(r.cur)}</td><td>${r.mon == null ? '─' : tnMan(r.mon)}</td><td class="${Math.abs(r.fu) >= R.rev ? 'y' : 'na'}">${Math.abs(r.fu) >= 5000 ? tnMan(r.fu) : '─'}</td><td>${tnMan(r.total)}</td>
+      <td>${t ? `${esc(t.n)}<small>${tnMan(t.v)}</small>` : '─'}</td><td>${mark(r)}</td></tr>`; }).join('')}
+    <tr class="tot" style="cursor:default"><td>${esc(who())}の合計</td><td>─</td><td>${tnMan(sum)}</td><td>${tnMan(mon)}</td><td>${tnMan(rows.reduce((a, r) => a + r.fu, 0))}</td><td>${tnMan(rows.reduce((a, r) => a + r.total, 0))}</td><td>─</td><td>─</td></tr>
+    </tbody></table></div><div class="scroll-hint">← よこに動かせます →</div></div>`;
+  // 部門ごと（えらんだ店の、直近の棚卸を足したもの）
+  const D = T.depts.map((n, k) => { if (k === T.fu) return null; const v = rows.map(r => r.s.v[k] ? r.s.v[k][r.L] : null).filter(x => x != null);
+    return v.length ? {n, sum: v.reduce((a, b) => a + b, 0), loss: v.filter(x => x >= R.small).length, rev: v.filter(x => x <= -R.small).length} : null; }).filter(Boolean);
+  const dl = [...D].sort((a, b) => b.sum - a.sum).filter(x => x.sum > 0).slice(0, 6);
+  if (dl.length) h += `<h3 class="h3 rv">ロスが大きい部門<small>${rows.length}店の直近の棚卸を足したもの・万円</small></h3>
+    <div class="rv"><div class="tw"><table class="ht sm"><thead><tr><th>部門</th><th>合計</th><th>ロスの店<small>1万円以上</small></th><th>逆ロスの店<small>1万円以上</small></th></tr></thead><tbody>
+    ${dl.map(x => `<tr style="cursor:default"><td>${esc(x.n)}</td><td class="tb">${tnMan(x.sum)}</td><td>${x.loss}店</td><td>${x.rev}店</td></tr>`).join('')}</tbody></table></div></div>`;
+  h += `<details class="fold rv"${SHOT ? ' open' : ''}><summary>数字の見かた</summary><p class="note">
+    ・<b>調整（その他不明部門）</b>＝部門の合計が逆ロスになった時、本部の集計で合計を0円にするために入る数字。次の棚卸で同じ額が逆ロスとして戻ります。商品の過不足ではありません。<br>
+    ・<b>ロス（調整を除く）</b>＝その調整を外した、部門の合計。店の本当の過不足はこちらで見ます。<br>
+    ・<b>対策書の線</b>＝本部の「ロス改善対策書」を支店長へ出す基準（FC店）。本部の合計と部門の数字から計算しています。<br>
+    ・金額は売価（FF・店内厨房だけ原価）。次の棚卸の時期は、前の棚卸から${R.cycle}日後のめやす。</p></details>`;
+  return h + `<a class="more" href="profit.html#tana">部門ごとの店の内訳・逆ロスの部門は今の画面で</a></div></section>`;
+}
+function openTana(name) {
+  if (!E.TANA || !E.TANA.stores[name]) return;
+  const r = E.tnRow(name), s = r.s, R = E.TN_RULE;
+  let h = `<div class="kv"><div><div class="k">ロス（調整を除く）</div><div class="v ${r.cur > 0 ? 'bad' : 'good'}">${tnMan(r.cur)}万</div></div><div><div class="k">調整</div><div class="v">${Math.abs(r.fu) >= 5000 ? tnMan(r.fu) + '万' : '─'}</div></div>
+    <div><div class="k">本部の合計</div><div class="v">${tnMan(r.total)}万</div></div></div>`;
+  const todo = E.tnDo ? E.tnDo(r) : [];
+  h += `<div class="sh">見ること</div>` + (todo.length ? todo.map(t => `<div class="do"><div class="do-s" style="margin:0">${t}</div></div>`).join('') : `<div class="okbox">✓ 大きな動きはありません</div>`);
+  h += `<div class="sh">過去8回の棚卸 <span class="mut">円・下が新しい</span></div><div class="tw"><table class="ht sm"><thead><tr><th>棚卸の日<small>日数</small></th><th>ロス<small>調整を除く</small></th><th>調整<small>その他不明</small></th><th>FF・厨房<small>原価</small></th><th>本部の合計</th></tr></thead><tbody>
+    ${s.d.map((d, i) => !d ? '' : `<tr style="cursor:default"${i === r.L ? ' class="tot"' : ''}><td>${esc(d)}<small>${s.n[i] || '─'}日</small></td><td class="${i === r.L ? '' : Math.abs(r.real[i]) >= 200000 ? 'o' : Math.abs(r.real[i]) >= 100000 ? 'y' : ''}">${tnYen(r.real[i])}</td><td class="${Math.abs(s.fu[i]) >= R.rev ? 'y' : 'na'}">${s.fu[i] ? tnYen(s.fu[i]) : '─'}</td><td>${tnYen(s.sh[i])}</td><td>${tnYen(r.tot[i])}</td></tr>`).join('')}
+    </tbody></table></div>`;
+  const lst = (t, a) => a.length ? `<div class="sh">${t} <span class="mut">今回・円（ ）は前回</span></div><div class="list">${a.map(x =>
+    `<div class="row" style="grid-template-columns:minmax(0,1fr) auto;grid-template-areas:'l v'"><div class="l" style="font-size:15px">${esc(x.n)}${x.rate != null && Math.abs(x.rate) >= 0.005 ? `<small>　ロス率 ${x.rate.toFixed(2)}%</small>` : ''}</div>
+      <div class="v ${x.v > 0 ? 'bad' : 'good'}" style="font-size:15px">${tnYen(x.v)}${x.p == null ? '' : `<span class="mut" style="font-weight:500;font-size:13px">（${tnYen(x.p)}）</span>`}</div></div>`).join('')}</div>` : '';
+  h += lst('ロスが大きい部門', r.dep.filter(x => x.v > 0).sort((a, b) => b.v - a.v).slice(0, 6));
+  h += lst('逆ロスが大きい部門', r.dep.filter(x => x.v < 0).sort((a, b) => a.v - b.v).slice(0, 4));
+  openSheet(name, `${r.sc || ''}・棚卸 ${s.d[r.L] || '─'}（前回から${s.n[r.L] || '─'}日）・次は ${r.next || '─'}ごろ`, h);
+}
+
 function footHtml() {
   return `<footer class="foot dark"><div class="wrap">
     <div style="font-size:17px;font-weight:700;color:#f5f5f7;margin-bottom:8px">店利益ダッシュボード</div>
@@ -1425,8 +1496,9 @@ function setSC(s) {
 }
 function bindGlobal() {
   document.addEventListener('click', e => {
-    const t = e.target.closest('[data-decl],[data-store],[data-ind],[data-sc],[data-sort],[data-ws],[data-copy]');
+    const t = e.target.closest('[data-decl],[data-store],[data-ind],[data-sc],[data-sort],[data-ws],[data-copy],[data-tana]');
     if (!t) return;
+    if (t.dataset.tana) { openTana(t.dataset.tana); return; }
     if (t.dataset.decl) { openDecl(t.dataset.decl, t.dataset.week); return; }
     if (t.dataset.copy) { const p = E.PROFIT.find(s => s.name === t.dataset.copy); copyText(E.nwStoreText(E.nwRow(p))); return; }
     if (t.dataset.sc) { setSC(t.dataset.sc); return; }
