@@ -593,11 +593,6 @@ function boot() {
         TANA: typeof TANA !== 'undefined' ? TANA : null, tnRow: typeof tnRow === 'function' ? tnRow : null,
         tnDo: typeof tnDo === 'function' ? tnDo : null, TN_RULE: typeof TN_RULE !== 'undefined' ? TN_RULE : null})`);
       if (!E.PROFIT || !E.PROFIT.length) throw new Error('データが空です');
-      // エリアのまとめ（この画面だけ）：トゥアンASCの店は髙橋エリア、レサムASCの店はビスワスエリアに入れる（2026-11-23 神田さん指示）
-      const AREA_MERGE = {'トゥアンASC': '髙橋SC', 'レサムASC': 'ビスワスSC'};
-      Object.keys(E.SC_MAP).forEach(n => { if (AREA_MERGE[E.SC_MAP[n]]) E.SC_MAP[n] = AREA_MERGE[E.SC_MAP[n]]; });
-      for (let i = E.SC_LIST.length - 1; i >= 0; i--) if (AREA_MERGE[E.SC_LIST[i]]) E.SC_LIST.splice(i, 1);
-      if (AREA_MERGE[SC]) SC = AREA_MERGE[SC];          // 前にASCを選んでいた端末は、まとめ先のエリアを開く
       if (!E.SC_LIST.includes(SC)) SC = 'all';
       renderAll(true);
       watchBaihen();
@@ -626,10 +621,14 @@ const man = (v, d) => E.nwMan(v, d);                 // 千円 → 万円（数�
 const sgMan = v => E.nwSg(v / 10);                    // 千円 → ±万円（数字だけ）
 const yen = v => E.nwYen(v).toLocaleString() + '円';  // 千円/日 → 円
 const pc = (k, v) => E.nwPct(k, v);
+// エリアのまとめ（この画面だけ）：髙橋エリアにはトゥアンASCの店、ビスワスエリアにはレサムASCの店も入れる。
+// ASCの2人は消さず、ボタンと店の名札はそのまま出す（2026-11-23 神田さん指示）
+const AREA_IN = {'トゥアンASC': '髙橋SC', 'レサムASC': 'ビスワスSC'};
+const inSC = (sc, sel) => sc === sel || AREA_IN[sc] === sel;      // その店（担当 sc）が、えらんだエリア sel に入るか
 const who = () => SC === 'all' ? '全社' : SC;
 
 function allRows() { return E.PROFIT.map(p => E.nwRow(p)); }
-function rowsSC() { const a = allRows(); return SC === 'all' ? a : a.filter(r => r.sc === SC); }
+function rowsSC() { const a = allRows(); return SC === 'all' ? a : a.filter(r => inSC(r.sc, SC)); }
 
 // renderNow（profit.html）の 上の部分と 同じ集計
 function summary(rows) {
@@ -914,10 +913,10 @@ function profitHtml(rows, S) {
     <h3 class="h3 rv">なぜこの差か<small>予算との差を3つに分けると（万円）</small></h3>
     <div class="list rv">${cs.map(([l, v]) => `<div class="row"><div class="l">${l}</div><div class="b">${dv(v, cmx)}</div><div class="v ${v < 0 ? 'bad' : 'good'}">${sgMan(v)}万</div></div>`).join('')}</div>`;
   if (isAll) {
-    const scs = E.SC_LIST.map(sc => { const rs = rows.filter(r => r.sc === sc); return {sc, n: rs.length, d: rs.reduce((a, r) => a + r.p.diff, 0), l: rs.reduce((a, r) => a + r.p.landing, 0), b: rs.reduce((a, r) => a + r.p.budget, 0)}; }).filter(x => x.n).sort((a, b) => a.d - b.d);
+    const scs = E.SC_LIST.map(sc => { const rs = rows.filter(r => inSC(r.sc, sc)); return {sc, n: rs.length, d: rs.reduce((a, r) => a + r.p.diff, 0), l: rs.reduce((a, r) => a + r.p.landing, 0), b: rs.reduce((a, r) => a + r.p.budget, 0)}; }).filter(x => x.n).sort((a, b) => a.d - b.d);
     const smx = Math.max(...scs.map(x => Math.abs(x.d)), 1);
     h += `<h3 class="h3 rv">SCごと<small>予算との差（万円）。押すと、そのSCの店だけになります</small></h3>
-      <div class="list rv">${scs.map(x => `<button type="button" class="row" data-sc="${esc(x.sc)}"><div class="l">${esc(x.sc)} <small>${x.n}店・${x.b ? (x.l / x.b * 100).toFixed(0) : '—'}%</small></div><div class="b">${dv(x.d, smx)}</div><div class="v ${x.d < 0 ? 'bad' : 'good'}">${sgMan(x.d)}万</div></button>`).join('')}</div>`;
+      <div class="list rv">${scs.map(x => `<button type="button" class="row" data-sc="${esc(x.sc)}"><div class="l">${esc(x.sc)} <small>${AREA_IN[x.sc] ? esc(AREA_IN[x.sc]) + 'にも入る・' : ''}${x.n}店・${x.b ? (x.l / x.b * 100).toFixed(0) : '—'}%</small></div><div class="b">${dv(x.d, smx)}</div><div class="v ${x.d < 0 ? 'bad' : 'good'}">${sgMan(x.d)}万</div></button>`).join('')}</div>`;
   }
   const st = rows.slice().sort((a, b) => a.p.diff - b.p.diff), mx = Math.max(...st.map(r => Math.abs(r.p.diff)), 1);
   h += `<h3 class="h3 rv">店ごと<small>予算に遠い順。札＝いちばん大きい原因。押すと「やること」</small></h3>
@@ -1254,7 +1253,7 @@ function kpiHtml(rows) {
     <div class="eyebrow rv">⑪ KPI・AICOクラス</div>
     <h2 class="h2 rv" style="--d:60ms">全力チャレンジ実行プラン。</h2>`;
   if (K && K.stores) {
-    const all = K.stores.map(s => E.kpRow(s)), kr = (SC === 'all' ? all : all.filter(r => r.sc === SC)).sort((a, b) => a.rate - b.rate);
+    const all = K.stores.map(s => E.kpRow(s)), kr = (SC === 'all' ? all : all.filter(r => inSC(r.sc, SC))).sort((a, b) => a.rate - b.rate);
     const A = E.kpAgg(kr), T = K.target, me = K.mos.find(m => m.name === '阪口MO') || {}, goal = Math.ceil(A.n * T - 1e-9), one = kr.filter(r => r.need === 1);
     const pv = K.prev, avgAll = E.kpAgg(all).avg;
     h += `<p class="lead rv" style="--d:120ms">${esc(K.week)}の週・${esc(who())}（${A.n}店）・本部の集計。17項目のうち、○か×がついた項目の中で ○の割合が 80%以上なら「クリア」（評価のない項目は数えません）。</p>
@@ -1297,7 +1296,7 @@ const tnYen = v => (v > 0 ? '＋' : v < 0 ? '−' : '') + Math.abs(Math.round(v)
 const tnMd = d => d ? `${+d.slice(5, 7)}/${+d.slice(8, 10)}` : '─';
 function tanaRows() {
   const a = Object.keys(E.TANA.stores).map(n => E.tnRow(n)).filter(Boolean);
-  return (SC === 'all' ? a : a.filter(r => r.sc === SC)).sort((x, y) => Math.abs(y.cur) - Math.abs(x.cur));
+  return (SC === 'all' ? a : a.filter(r => inSC(r.sc, SC))).sort((x, y) => Math.abs(y.cur) - Math.abs(x.cur));
 }
 const hasTana = () => Boolean(E && E.TANA && E.TANA.stores && Array.isArray(E.TANA.depts) && typeof E.tnRow === 'function' && E.TN_RULE);
 function tanaHtml() {
@@ -1455,7 +1454,7 @@ function openInd(k) {
 function openSCPicker() {
   const list = ['all', ...E.SC_LIST];
   openSheet('担当SCをえらぶ', '全部の数字が かわります', `<div class="sc-list">${list.map(s => {
-    const n = s === 'all' ? E.PROFIT.length : E.PROFIT.filter(p => E.SC_MAP[p.name] === s).length;
+    const n = s === 'all' ? E.PROFIT.length : E.PROFIT.filter(p => inSC(E.SC_MAP[p.name], s)).length;
     return `<button type="button" data-sc="${esc(s)}" class="${s === SC ? 'on' : ''}"><span>${s === 'all' ? '全体（全社）' : esc(s)}</span><span>${n}店</span></button>`; }).join('')}</div>`);
 }
 function copyText(t) {
