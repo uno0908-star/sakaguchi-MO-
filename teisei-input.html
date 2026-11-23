@@ -96,7 +96,7 @@
 </div></div>
 
 <dialog id="dlg"><div class="dl">
-  <h2>神田さんへ送る</h2>
+  <h2>神田へ送る</h2>
   <div class="stat" id="dlStat"></div>
   <div class="warn" id="dlWarn"></div>
   <div class="acts">
@@ -228,7 +228,7 @@ $('#fileBtn').addEventListener('click', () => {
   const a = document.createElement('a');
   a.href = URL.createObjectURL(new Blob([JSON.stringify(payload(), null, 1)], {type: 'application/json'}));
   a.download = '定性評価_' + MONTH + '.json'; document.body.appendChild(a); a.click(); a.remove();
-  toast('ファイルの保存を始めました。保存できたら神田さんへ送ってください');
+  toast('ファイルの保存を始めました。保存できたら神田へ送ってください');
 });
 let resetArmed = 0;
 $('#resetBtn').addEventListener('click', e => {
