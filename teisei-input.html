@@ -131,7 +131,7 @@ const ROLES = [
 ];
 const MARKS = ['○','△','×'];
 // 最初から分かっている対象外（役職:行 → 理由）。オーナーが画面で入・切できる
-const PRESET_EX = {"TEN:4": "帰国（9/16〜10/26）", "TEN:20": "帰国（10/1〜11/30）"};
+const PRESET_EX = {"TEN:4": "帰国（9/16〜10/26）", "TEN:5": "退職", "TEN:20": "帰国（10/1〜11/30）"};
 const KEY = 'teisei_input_' + MONTH;
 const $ = s => document.querySelector(s);
 const esc = t => String(t == null ? '' : t).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
