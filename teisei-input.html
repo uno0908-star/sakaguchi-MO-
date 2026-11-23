@@ -1,0 +1,253 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex,nofollow">
+<title>定性評価の入力（26年10月度）</title>
+<script src="ls-guard.js?v=20261024"></script>
+<style>
+  :root { --bg:#f4f5f7; --card:#fff; --ink:#1c2430; --mut:#667085; --line:#d9dee6; --accent:#0b4ea2; --ok:#1b8a3a; --mid:#b26a00; --ng:#c62828; }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  body { margin:0; background:var(--bg); color:var(--ink); font-family:"Meiryo UI","Hiragino Sans","Yu Gothic UI",sans-serif; font-size:16px; line-height:1.6; padding-bottom:110px; }
+  header { background:var(--accent); color:#fff; padding:14px 16px 12px; }
+  header h1 { font-size:19px; margin:0; }
+  header p { margin:4px 0 0; font-size:13px; opacity:.92; }
+  .wrap { max-width:860px; margin:0 auto; padding:0 12px; }
+  .how { background:#fff8e1; border:1px solid #f0d58a; border-radius:12px; padding:10px 14px; margin:12px 0; font-size:14.5px; }
+  .how b { color:#7a5200; }
+  .tabs { display:flex; gap:6px; position:sticky; top:0; z-index:5; background:var(--bg); padding:8px 0; }
+  .tabs button { flex:1; min-height:52px; border:2px solid var(--line); background:#fff; border-radius:12px; font-size:15px; font-weight:700; color:var(--ink); line-height:1.25; }
+  .tabs button small { display:block; font-weight:400; font-size:12px; color:var(--mut); }
+  .tabs button.on { border-color:var(--accent); background:var(--accent); color:#fff; }
+  .tabs button.on small { color:#dbe7f7; }
+  .tabs button.done small { color:var(--ok); font-weight:700; }
+  .tabs button.on.done small { color:#c9f2d3; }
+  .grp { background:var(--card); border:1px solid var(--line); border-radius:14px; margin:12px 0; overflow:hidden; }
+  .grp > h2 { margin:0; padding:11px 14px; font-size:17px; background:#eef3fa; border-bottom:1px solid var(--line); display:flex; justify-content:space-between; align-items:center; gap:8px; }
+  .grp > h2 small { font-size:13px; font-weight:400; color:var(--mut); }
+  .bulk { padding:10px 14px; border-bottom:1px dashed var(--line); background:#fafbfd; }
+  .bulk .lab { font-size:13.5px; color:var(--mut); margin-bottom:6px; }
+  .bulk .btns { display:flex; gap:8px; flex-wrap:wrap; }
+  .bulk button { min-height:44px; padding:0 14px; border-radius:10px; border:1.5px solid var(--line); background:#fff; font-size:14.5px; font-weight:700; }
+  .row { padding:12px 14px; border-bottom:1px solid var(--line); }
+  .row:last-child { border-bottom:none; }
+  .row h3 { margin:0 0 8px; font-size:16.5px; }
+  .row h3 small { font-weight:400; color:var(--mut); font-size:13px; margin-left:6px; }
+  .item { display:grid; grid-template-columns:1fr; gap:6px; margin-bottom:12px; }
+  .item:last-child { margin-bottom:0; }
+  .item .q { font-size:15px; font-weight:700; }
+  .item .q small { font-weight:400; color:var(--mut); font-size:12.5px; display:block; }
+  .marks { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; }
+  .marks button, .bulk button { font-family:"Yu Gothic","Yu Gothic UI","Hiragino Sans",sans-serif; }
+  .marks button { min-height:54px; border-radius:12px; border:2px solid var(--line); background:#fff; font-size:22px; font-weight:700; color:#98a2b3; display:flex; flex-direction:column; align-items:center; justify-content:center; line-height:1.1; }
+  .marks button small { font-size:11.5px; font-weight:400; }
+  .marks button.on[data-m="○"] { background:#e7f6ea; border-color:var(--ok); color:var(--ok); }
+  .marks button.on[data-m="△"] { background:#fff3dc; border-color:var(--mid); color:var(--mid); }
+  .marks button.on[data-m="×"] { background:#fdeaea; border-color:var(--ng); color:var(--ng); }
+  .why { width:100%; min-height:46px; border:1.5px solid var(--line); border-radius:10px; padding:9px 12px; font-size:15.5px; font-family:inherit; resize:vertical; background:#fff; }
+  .why:focus { outline:2px solid var(--accent); border-color:var(--accent); }
+  .need .why { border-color:var(--ng); background:#fff8f8; }
+  .needmsg { display:none; font-size:12.5px; color:var(--ng); }
+  .need .needmsg { display:block; }
+  .bar { position:fixed; left:0; right:0; bottom:0; background:#fff; border-top:1px solid var(--line); padding:10px 12px calc(10px + env(safe-area-inset-bottom)); z-index:10; }
+  .bar .in { max-width:860px; margin:0 auto; display:flex; gap:10px; align-items:center; }
+  .prog { flex:1; font-size:14px; }
+  .prog b { font-size:18px; }
+  .meter { height:8px; background:#e6e9ef; border-radius:5px; overflow:hidden; margin-top:4px; }
+  .meter i { display:block; height:100%; background:var(--ok); width:0; }
+  .send { min-height:52px; padding:0 18px; border:none; border-radius:12px; background:var(--accent); color:#fff; font-size:16px; font-weight:700; }
+  .send:disabled { background:#b6bfcc; }
+  dialog { border:none; border-radius:16px; padding:0; width:min(560px, 94vw); }
+  dialog::backdrop { background:rgba(0,0,0,.45); }
+  .dl { padding:16px; }
+  .dl h2 { margin:0 0 6px; font-size:18px; }
+  .dl p { margin:6px 0; font-size:14.5px; }
+  .dl textarea { width:100%; height:150px; font-size:12px; border:1px solid var(--line); border-radius:8px; padding:8px; }
+  .dl .acts { display:grid; gap:8px; margin-top:10px; }
+  .dl button { min-height:50px; border-radius:12px; border:1.5px solid var(--line); background:#fff; font-size:16px; font-weight:700; }
+  .dl button.pri { background:var(--accent); color:#fff; border-color:var(--accent); }
+  .toast { position:fixed; left:50%; bottom:120px; transform:translateX(-50%); background:#1c2430; color:#fff; padding:10px 16px; border-radius:20px; font-size:14px; opacity:0; transition:opacity .2s; pointer-events:none; z-index:20; }
+  .toast.on { opacity:.95; }
+  .foot { text-align:center; margin:18px 0 0; }
+  .foot button { min-height:44px; padding:0 16px; border-radius:10px; border:1px solid var(--line); background:#fff; color:var(--mut); font-size:13.5px; }
+  @media (min-width:700px) {
+    body { font-size:17px; }
+    .item { grid-template-columns:230px 250px 1fr; align-items:start; gap:12px; }
+    .marks button { min-height:50px; }
+  }
+</style>
+</head>
+<body>
+<header><div class="wrap">
+  <h1>定性評価の入力（26年10月度）</h1>
+  <p>課題解決・育成などの ○ △ × を、店と役職ごとに決めます。</p>
+</div></header>
+
+<div class="wrap">
+  <div class="how">
+    <b>つかいかた</b><br>
+    ① 上のボタンで役職をえらぶ　② 店ごとに ○ △ × を押す　③ 理由を一言入れる（△・× は必ず）<br>
+    ④ ぜんぶ入れたら、下の「神田さんへ送る」を押す。理由が長い時は「ファイルで保存する」が確実です。<br>
+    入れた内容は、この端末に自動で残ります。とちゅうで閉じても続きから入れられます。<br>
+    <b>点数</b>：○＝20点　△＝10点　×＝0点
+  </div>
+  <div class="tabs" id="tabs"></div>
+  <div id="list"></div>
+  <div class="foot"><button type="button" id="resetBtn">入力をぜんぶ消して、はじめからやり直す</button></div>
+</div>
+
+<div class="bar"><div class="in">
+  <div class="prog"><span>入力ずみ <b id="pn">0</b> ／ <span id="pt">0</span></span><div class="meter"><i id="pm"></i></div></div>
+  <button type="button" class="send" id="sendBtn">神田さんへ送る</button>
+</div></div>
+
+<dialog id="dlg"><div class="dl">
+  <h2 id="dlTitle">神田さんへ送る</h2>
+  <p id="dlMsg"></p>
+  <div class="acts">
+    <button type="button" class="pri" id="shareBtn">LINEなどで送る（共有）</button>
+    <button type="button" id="copyBtn">文字をコピーする</button>
+    <button type="button" id="fileBtn">ファイルで保存する</button>
+    <button type="button" id="closeBtn">とじる</button>
+  </div>
+  <p style="font-size:12.5px;color:#667085;margin-top:10px">送る文字（中身は変えないでください）</p>
+  <textarea id="dlText" readonly></textarea>
+</div></dialog>
+<div class="toast" id="toast"></div>
+
+<script>
+// ===== 対象（評価スプレッドシート 入力(26.10) の行と同じ。r＝行番号） =====
+const MONTH = '26.10';
+const ROWS = [{"r":3,"name":"吹田垂水三丁目","sc":"フィ","motr":"五島","tencho":false,"keiyaku":0,"ab":"垂水三"},{"r":4,"name":"江坂東","sc":"ダハル","motr":"五島","tencho":true,"keiyaku":2,"ab":"江坂東"},{"r":5,"name":"江坂駅南口","sc":"トゥアン","motr":"五島","tencho":true,"keiyaku":0,"ab":"江坂南"},{"r":6,"name":"吹田警察署前","sc":"ダハル","motr":"髙橋","tencho":true,"keiyaku":1,"ab":"吹警察"},{"r":7,"name":"豊中原田南一丁目","sc":"スラズ","motr":"五島","tencho":true,"keiyaku":2,"ab":"原田南"},{"r":8,"name":"南金田二丁目","sc":"スラズ","motr":"五島","tencho":true,"keiyaku":0,"ab":"南金田"},{"r":9,"name":"吹田豊津中学校前","sc":"ビスワス","motr":"五島","tencho":true,"keiyaku":0,"ab":"豊津中"},{"r":10,"name":"新御堂筋上新田","sc":"ビスワス","motr":"髙橋","tencho":true,"keiyaku":0,"ab":"上新田"},{"r":11,"name":"東淀川大道南","sc":"フィ","motr":"髙橋","tencho":false,"keiyaku":1,"ab":"東淀川"},{"r":12,"name":"豊中服部西町三丁目","sc":"フィ","motr":"五島","tencho":true,"keiyaku":0,"ab":"服部三"},{"r":13,"name":"大道南一丁目","sc":"ダハル","motr":"髙橋","tencho":false,"keiyaku":1,"ab":"大道南"},{"r":14,"name":"豊里六丁目","sc":"フィ","motr":"髙橋","tencho":true,"keiyaku":1,"ab":"豊里六"},{"r":15,"name":"吹田青山台三丁目","sc":"ビスワス","motr":"髙橋","tencho":true,"keiyaku":2,"ab":"青山台"},{"r":16,"name":"豊中利倉東一丁目","sc":"スラズ","motr":"五島","tencho":true,"keiyaku":0,"ab":"利倉東"},{"r":17,"name":"五月ケ丘東","sc":null,"motr":"五島","tencho":true,"keiyaku":0,"ab":"五月東"},{"r":18,"name":"豊中服部元町一丁目","sc":"ビスワス","motr":"五島","tencho":true,"keiyaku":0,"ab":"元町一"},{"r":19,"name":"吹田朝日町","sc":"レサム","motr":"髙橋","tencho":true,"keiyaku":1,"ab":"朝日町"},{"r":20,"name":"東淀川豊里五丁目","sc":"ダハル","motr":"髙橋","tencho":true,"keiyaku":2,"ab":"豊里五"},{"r":21,"name":"池田市役所前","sc":null,"motr":"髙橋","tencho":false,"keiyaku":1,"ab":"池田市"},{"r":22,"name":"箕面白島二丁目","sc":"スラズ","motr":"髙橋","tencho":true,"keiyaku":0,"ab":"白島二"}];
+// 役職ごとの項目（cell＝スプレッドシートの列）
+const ROLES = [
+  {key:'SC',   label:'SC',      who:r => r.sc,   grp:r => r.sc + ' SC',     items:[['BA','課題解決','店の課題を見つけて、直せたか'],['BB','店長育成','店長を育てられたか']]},
+  {key:'MOTR', label:'MOTR',    who:r => r.motr, grp:r => r.motr + ' MOTR', items:[['BI','課題解決','店の課題を見つけて、直せたか'],['BJ','店長育成','店長を育てられたか']]},
+  {key:'TEN',  label:'店長',    who:r => r.tencho ? '店長' : null, grp:() => '店長', items:[['BR','課題解決','店の課題を自分で直せたか'],['BS','クルー育成','クルーを育てられたか']]},
+  {key:'KEI',  label:'契約社員', who:r => r.keiyaku ? '契約社員' : null, grp:() => '契約社員', items:[['CJ','課題解決姿勢','課題に進んで取り組んだか'],['CK','売場力訴求','売場づくりに力を出したか']]},
+];
+const MARKS = [['○','できた'],['△','半分'],['×','できていない']];
+const KEY = 'teisei_input_' + MONTH;
+const $ = s => document.querySelector(s);
+const esc = t => String(t == null ? '' : t).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
+let D = {};            // {'BA4': {m:'○', w:'理由'}}
+let bulkArm = {k: '', t: 0};
+let TAB = 'SC';
+try { const s = JSON.parse(localStorage.getItem(KEY) || '{}'); if (s && typeof s === 'object') { D = s.d || {}; TAB = s.tab || 'SC'; } } catch (e) {}
+function save() { try { localStorage.setItem(KEY, JSON.stringify({d: D, tab: TAB, at: Date.now()})); } catch (e) { toast('この端末に保存できませんでした。先に「神田さんへ送る」で控えを取ってください'); } }
+
+const rowsOf = role => ROWS.filter(r => role.who(r));
+const cellsOf = role => rowsOf(role).flatMap(r => role.items.map(it => it[0] + r.r));
+const ALL = ROLES.flatMap(cellsOf);
+const isSet = c => D[c] && D[c].m;
+const needWhy = c => D[c] && (D[c].m === '△' || D[c].m === '×') && !(D[c].w || '').trim();
+
+function toast(t) { const el = $('#toast'); el.textContent = t; el.classList.add('on'); clearTimeout(toast.t); toast.t = setTimeout(() => el.classList.remove('on'), 2600); }
+
+function renderTabs() {
+  $('#tabs').innerHTML = ROLES.map(role => {
+    const cs = cellsOf(role), n = cs.filter(isSet).length;
+    return `<button type="button" data-tab="${role.key}" class="${role.key === TAB ? 'on' : ''} ${n === cs.length ? 'done' : ''}">${esc(role.label)}<small>${n === cs.length ? '✓ ぜんぶ入力' : n + '／' + cs.length}</small></button>`;
+  }).join('');
+}
+function renderProg() {
+  const n = ALL.filter(isSet).length;
+  $('#pn').textContent = n; $('#pt').textContent = ALL.length; $('#pm').style.width = (n / ALL.length * 100) + '%';
+}
+function itemHtml(role, r, it) {
+  const c = it[0] + r.r, v = D[c] || {};
+  return `<div class="item ${needWhy(c) ? 'need' : ''}" data-cell="${c}">
+    <div class="q">${esc(it[1])}<small>${esc(it[2])}</small></div>
+    <div class="marks">${MARKS.map(m => `<button type="button" data-m="${m[0]}" class="${v.m === m[0] ? 'on' : ''}" aria-pressed="${v.m === m[0]}">${m[0]}<small>${m[1]}</small></button>`).join('')}</div>
+    <div><textarea class="why" rows="1" placeholder="理由（△・× は必ず。○ も一言あると伝わります）" aria-label="${esc(r.name)} ${esc(it[1])} の理由">${esc(v.w || '')}</textarea><div class="needmsg">△・× の理由を入れてください</div></div>
+  </div>`;
+}
+function renderList() {
+  const role = ROLES.find(x => x.key === TAB), rows = rowsOf(role);
+  const groups = []; rows.forEach(r => { const g = role.grp(r); let o = groups.find(x => x.g === g); if (!o) groups.push(o = {g, rows: []}); o.rows.push(r); });
+  $('#list').innerHTML = groups.map((o, gi) => `<section class="grp" data-g="${gi}">
+    <h2>${esc(o.g)}<small>${o.rows.length}店</small></h2>
+    <div class="bulk"><div class="lab">この ${o.rows.length}店を まとめて入れる（あとで店ごとに直せます）</div><div class="btns">
+      ${role.items.map(it => MARKS.map(m => `<button type="button" data-bulk="${it[0]}" data-m="${m[0]}">${esc(it[1])}を ぜんぶ ${m[0]}</button>`).join('')).join('')}
+    </div></div>
+    ${o.rows.map(r => `<div class="row"><h3>${esc(r.name)}${role.key === 'KEI' ? `<small>契約社員 ${r.keiyaku}名（店で1つの評価）</small>` : role.key === 'TEN' ? '' : `<small>${esc(role.who(r))}</small>`}</h3>${role.items.map(it => itemHtml(role, r, it)).join('')}</div>`).join('')}
+  </section>`).join('');
+  list._groups = groups;
+}
+const list = $('#list');
+function renderAll() { renderTabs(); renderList(); renderProg(); }
+
+$('#tabs').addEventListener('click', e => { const b = e.target.closest('button[data-tab]'); if (!b) return; TAB = b.dataset.tab; save(); renderAll(); window.scrollTo({top: 0}); });
+list.addEventListener('click', e => {
+  const bk = e.target.closest('button[data-bulk]');
+  if (bk) {
+    const g = list._groups[+bk.closest('.grp').dataset.g];
+    const diff = g.rows.filter(r => { const v = D[bk.dataset.bulk + r.r]; return v && v.m && v.m !== bk.dataset.m; }).length;
+    const armKey = bk.closest('.grp').dataset.g + bk.dataset.bulk + bk.dataset.m;
+    if (diff && !(bulkArm.k === armKey && Date.now() - bulkArm.t < 5000)) { bulkArm = {k: armKey, t: Date.now()}; toast('もう入っている ' + diff + '店を 書きかえます。よければ もう一度 押してください'); return; }
+    bulkArm = {k: '', t: 0};
+    g.rows.forEach(r => { const c = bk.dataset.bulk + r.r; D[c] = Object.assign({}, D[c], {m: bk.dataset.m}); });
+    save(); renderAll(); toast(g.rows.length + '店に ' + bk.dataset.m + ' を入れました'); return;
+  }
+  const b = e.target.closest('.marks button'); if (!b) return;
+  const it = b.closest('.item'), c = it.dataset.cell;
+  D[c] = Object.assign({}, D[c], {m: (D[c] && D[c].m === b.dataset.m) ? '' : b.dataset.m});
+  it.querySelectorAll('.marks button').forEach(x => { const on = x.dataset.m === D[c].m; x.classList.toggle('on', on); x.setAttribute('aria-pressed', on); });
+  it.classList.toggle('need', !!needWhy(c));
+  save(); renderTabs(); renderProg();
+});
+list.addEventListener('input', e => {
+  const t = e.target.closest('.why'); if (!t) return;
+  const it = t.closest('.item'), c = it.dataset.cell;
+  D[c] = Object.assign({}, D[c], {w: t.value});
+  it.classList.toggle('need', !!needWhy(c));
+  save();
+});
+
+function payload() {
+  const cells = {}; ALL.forEach(c => { if (isSet(c)) cells[c] = {m: D[c].m, w: (D[c].w || '').trim()}; });
+  const stores = {}; ROWS.forEach(r => { stores[r.r] = r.ab; });   // 行番号 → 店（取り込みの時に行ずれを見つけるため）
+  const unset = ALL.filter(c => !isSet(c));
+  return {app: 'teisei-input', month: MONTH, at: new Date().toISOString(), total: ALL.length, stores, cells, unset};
+}
+function payloadText() { return '【定性評価 ' + MONTH + '】' + JSON.stringify(payload()); }
+$('#sendBtn').addEventListener('click', () => {
+  const left = ALL.filter(c => !isSet(c)).length, noWhy = ALL.filter(needWhy).length;
+  let msg = left ? `まだ <b>${left}</b> こ 入っていません。とちゅうでも送れますが、入っていない所は評価に入りません。` : 'ぜんぶ入りました。下のボタンで神田さんへ送ってください。';
+  if (noWhy) msg += `<br><span style="color:#c62828">△・× の理由が <b>${noWhy}</b> こ 空です。赤い枠の所に入れてください。</span>`;
+  $('#dlMsg').innerHTML = msg; $('#dlText').value = payloadText();
+  $('#shareBtn').style.display = navigator.share ? '' : 'none';
+  $('#dlg').showModal();
+});
+$('#closeBtn').addEventListener('click', () => $('#dlg').close());
+$('#shareBtn').addEventListener('click', async () => {
+  try { await navigator.share({title: '定性評価 ' + MONTH, text: payloadText()}); toast('送る画面を開きました'); }
+  catch (e) { if (!e || e.name !== 'AbortError') toast('共有できませんでした。「文字をコピーする」か「ファイルで保存する」を使ってください'); }
+});
+$('#copyBtn').addEventListener('click', async () => {
+  const t = $('#dlText'); let ok = false;
+  try { await navigator.clipboard.writeText(t.value); ok = true; } catch (e) { t.select(); try { ok = document.execCommand('copy'); } catch (e2) {} }
+  toast(ok ? 'コピーしました。LINEやメールに貼って送ってください' : 'コピーできませんでした。下の文字を長押しでコピーしてください');
+});
+$('#fileBtn').addEventListener('click', () => {
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([JSON.stringify(payload(), null, 1)], {type: 'application/json'}));
+  a.download = '定性評価_' + MONTH + '.json'; document.body.appendChild(a); a.click(); a.remove();
+  toast('ファイルの保存を始めました。保存できたら神田さんへ送ってください');
+});
+let resetArmed = 0;
+$('#resetBtn').addEventListener('click', e => {
+  if (Date.now() - resetArmed < 4000) { D = {}; save(); renderAll(); resetArmed = 0; e.target.textContent = '入力をぜんぶ消して、はじめからやり直す'; toast('ぜんぶ消しました'); return; }
+  resetArmed = Date.now(); e.target.textContent = 'ほんとうに消す時は、もう一度押す'; setTimeout(() => { if (resetArmed) { resetArmed = 0; e.target.textContent = '入力をぜんぶ消して、はじめからやり直す'; } }, 4000);
+});
+window.addEventListener('storage', e => {
+  if (e.key !== KEY || !e.newValue) return;
+  try { const s = JSON.parse(e.newValue); if (s && s.d) { D = s.d; renderAll(); toast('ほかの画面で入れた内容を読みこみました'); } } catch (err) {}
+});
+if (!ROLES.some(x => x.key === TAB)) TAB = 'SC';
+renderAll();
+</script>
+</body>
+</html>
