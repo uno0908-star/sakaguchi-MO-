@@ -593,6 +593,11 @@ function boot() {
         TANA: typeof TANA !== 'undefined' ? TANA : null, tnRow: typeof tnRow === 'function' ? tnRow : null,
         tnDo: typeof tnDo === 'function' ? tnDo : null, TN_RULE: typeof TN_RULE !== 'undefined' ? TN_RULE : null})`);
       if (!E.PROFIT || !E.PROFIT.length) throw new Error('データが空です');
+      // エリアのまとめ（この画面だけ）：トゥアンASCの店は髙橋エリア、レサムASCの店はビスワスエリアに入れる（2026-11-23 神田さん指示）
+      const AREA_MERGE = {'トゥアンASC': '髙橋SC', 'レサムASC': 'ビスワスSC'};
+      Object.keys(E.SC_MAP).forEach(n => { if (AREA_MERGE[E.SC_MAP[n]]) E.SC_MAP[n] = AREA_MERGE[E.SC_MAP[n]]; });
+      for (let i = E.SC_LIST.length - 1; i >= 0; i--) if (AREA_MERGE[E.SC_LIST[i]]) E.SC_LIST.splice(i, 1);
+      if (AREA_MERGE[SC]) SC = AREA_MERGE[SC];          // 前にASCを選んでいた端末は、まとめ先のエリアを開く
       if (!E.SC_LIST.includes(SC)) SC = 'all';
       renderAll(true);
       watchBaihen();
