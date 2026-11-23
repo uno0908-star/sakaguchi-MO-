@@ -33,6 +33,15 @@
   .cards { display:grid; gap:10px; grid-template-columns:1fr; }
   .card { background:var(--card); border:2px solid var(--line); border-radius:16px; padding:12px; }
   .card.done { border-color:#9fd9b2; }
+  .card.ex { background:#eceff3; border-style:dashed; border-color:#b8c0cc; }
+  .card h3 .st { display:flex; flex-direction:column; line-height:1.3; }
+  .card h3 .nm { font-size:14px; font-weight:700; color:var(--accent); }
+  .card.ex h3 .nm { color:var(--mut); }
+  .card.ex h3 .ck { background:#98a2b3; }
+  .exbox { display:flex; align-items:center; gap:10px; }
+  .exbox b { background:#6b7686; color:#fff; border-radius:999px; padding:6px 14px; font-size:15px; flex:none; }
+  .exwhy { flex:1; min-height:46px; border:2px solid var(--line); border-radius:12px; padding:9px 12px; font-size:16px; font-family:inherit; resize:vertical; background:#fff; }
+  .exbtn { margin-top:10px; min-height:44px; width:100%; border:1.5px dashed #b8c0cc; border-radius:12px; background:transparent; color:var(--mut); font-size:13.5px; font-family:inherit; }
   .card h3 { margin:0 0 10px; font-size:17px; display:flex; align-items:center; gap:8px; }
   .card h3 .ck { margin-left:auto; width:26px; height:26px; border-radius:50%; background:#e8ecf2; color:#fff; display:flex; align-items:center; justify-content:center; font-size:16px; flex:none; }
   .card.done h3 .ck { background:var(--ok); }
@@ -112,28 +121,33 @@
 <script>
 // ===== 対象（評価スプレッドシート 入力(26.10) の行と同じ。r＝行番号・ab＝B列の店名） =====
 const MONTH = '26.10';
-const ROWS = [{"r":3,"name":"吹田垂水三丁目","sc":"フィ","motr":"五島","tencho":false,"keiyaku":0,"ab":"垂水三"},{"r":4,"name":"江坂東","sc":"ダハル","motr":"五島","tencho":true,"keiyaku":2,"ab":"江坂東"},{"r":5,"name":"江坂駅南口","sc":"トゥアン","motr":"五島","tencho":true,"keiyaku":0,"ab":"江坂南"},{"r":6,"name":"吹田警察署前","sc":"ダハル","motr":"髙橋","tencho":true,"keiyaku":1,"ab":"吹警察"},{"r":7,"name":"豊中原田南一丁目","sc":"スラズ","motr":"五島","tencho":true,"keiyaku":2,"ab":"原田南"},{"r":8,"name":"南金田二丁目","sc":"スラズ","motr":"五島","tencho":true,"keiyaku":0,"ab":"南金田"},{"r":9,"name":"吹田豊津中学校前","sc":"ビスワス","motr":"五島","tencho":true,"keiyaku":0,"ab":"豊津中"},{"r":10,"name":"新御堂筋上新田","sc":"ビスワス","motr":"髙橋","tencho":true,"keiyaku":0,"ab":"上新田"},{"r":11,"name":"東淀川大道南","sc":"フィ","motr":"髙橋","tencho":false,"keiyaku":1,"ab":"東淀川"},{"r":12,"name":"豊中服部西町三丁目","sc":"フィ","motr":"五島","tencho":true,"keiyaku":0,"ab":"服部三"},{"r":13,"name":"大道南一丁目","sc":"ダハル","motr":"髙橋","tencho":false,"keiyaku":1,"ab":"大道南"},{"r":14,"name":"豊里六丁目","sc":"フィ","motr":"髙橋","tencho":true,"keiyaku":1,"ab":"豊里六"},{"r":15,"name":"吹田青山台三丁目","sc":"ビスワス","motr":"髙橋","tencho":true,"keiyaku":2,"ab":"青山台"},{"r":16,"name":"豊中利倉東一丁目","sc":"スラズ","motr":"五島","tencho":true,"keiyaku":0,"ab":"利倉東"},{"r":17,"name":"五月ケ丘東","sc":null,"motr":"五島","tencho":true,"keiyaku":0,"ab":"五月東"},{"r":18,"name":"豊中服部元町一丁目","sc":"ビスワス","motr":"五島","tencho":true,"keiyaku":0,"ab":"元町一"},{"r":19,"name":"吹田朝日町","sc":"レサム","motr":"髙橋","tencho":true,"keiyaku":1,"ab":"朝日町"},{"r":20,"name":"東淀川豊里五丁目","sc":"ダハル","motr":"髙橋","tencho":true,"keiyaku":2,"ab":"豊里五"},{"r":21,"name":"池田市役所前","sc":null,"motr":"髙橋","tencho":false,"keiyaku":1,"ab":"池田市"},{"r":22,"name":"箕面白島二丁目","sc":"スラズ","motr":"髙橋","tencho":true,"keiyaku":0,"ab":"白島二"}];
+const ROWS = [{"r":3,"name":"吹田垂水三丁目","sc":"フィ","motr":"五島","tencho":false,"keiyaku":0,"ab":"垂水三","tn":[],"kn":[]},{"r":4,"name":"江坂東","sc":"ダハル","motr":"五島","tencho":true,"keiyaku":2,"ab":"江坂東","tn":["ジティシュ"],"kn":["中村","山田"]},{"r":5,"name":"江坂駅南口","sc":"トゥアン","motr":"五島","tencho":true,"keiyaku":0,"ab":"江坂南","tn":["ビカス"],"kn":[]},{"r":6,"name":"吹田警察署前","sc":"ダハル","motr":"髙橋","tencho":true,"keiyaku":1,"ab":"吹警察","tn":["ヘムラジ"],"kn":["速水"]},{"r":7,"name":"豊中原田南一丁目","sc":"スラズ","motr":"五島","tencho":true,"keiyaku":2,"ab":"原田南","tn":["ナレス"],"kn":["林","北川"]},{"r":8,"name":"南金田二丁目","sc":"スラズ","motr":"五島","tencho":true,"keiyaku":0,"ab":"南金田","tn":["三國"],"kn":[]},{"r":9,"name":"吹田豊津中学校前","sc":"ビスワス","motr":"五島","tencho":true,"keiyaku":0,"ab":"豊津中","tn":["マノズ"],"kn":[]},{"r":10,"name":"新御堂筋上新田","sc":"ビスワス","motr":"髙橋","tencho":true,"keiyaku":0,"ab":"上新田","tn":["ネパリ"],"kn":[]},{"r":11,"name":"東淀川大道南","sc":"フィ","motr":"髙橋","tencho":false,"keiyaku":1,"ab":"東淀川","tn":[],"kn":["原田友"]},{"r":12,"name":"豊中服部西町三丁目","sc":"フィ","motr":"五島","tencho":true,"keiyaku":0,"ab":"服部三","tn":["ズン"],"kn":[]},{"r":13,"name":"大道南一丁目","sc":"ダハル","motr":"髙橋","tencho":false,"keiyaku":1,"ab":"大道南","tn":[],"kn":["本間"]},{"r":14,"name":"豊里六丁目","sc":"フィ","motr":"髙橋","tencho":true,"keiyaku":1,"ab":"豊里六","tn":["ラジト"],"kn":["南田"]},{"r":15,"name":"吹田青山台三丁目","sc":"ビスワス","motr":"髙橋","tencho":true,"keiyaku":2,"ab":"青山台","tn":["マヘンドラ"],"kn":["清水","岡平"]},{"r":16,"name":"豊中利倉東一丁目","sc":"スラズ","motr":"五島","tencho":true,"keiyaku":0,"ab":"利倉東","tn":["プラディープ"],"kn":[]},{"r":17,"name":"五月ケ丘東","sc":null,"motr":"五島","tencho":true,"keiyaku":0,"ab":"五月東","tn":["ゴレ"],"kn":[]},{"r":18,"name":"豊中服部元町一丁目","sc":"ビスワス","motr":"五島","tencho":true,"keiyaku":0,"ab":"元町一","tn":["ビシャル"],"kn":[]},{"r":19,"name":"吹田朝日町","sc":"レサム","motr":"髙橋","tencho":true,"keiyaku":1,"ab":"朝日町","tn":["レサム"],"kn":["本間"]},{"r":20,"name":"東淀川豊里五丁目","sc":"ダハル","motr":"髙橋","tencho":true,"keiyaku":2,"ab":"豊里五","tn":["レグミ"],"kn":["南田","原田友"]},{"r":21,"name":"池田市役所前","sc":null,"motr":"髙橋","tencho":false,"keiyaku":1,"ab":"池田市","tn":[],"kn":["原田陽"]},{"r":22,"name":"箕面白島二丁目","sc":"スラズ","motr":"髙橋","tencho":true,"keiyaku":0,"ab":"白島二","tn":["カマル"],"kn":[]}];
 // 役職ごとの項目（先頭＝スプレッドシートの列）
 const ROLES = [
-  {key:'SC',   label:'SC',      who:r => r.sc,   grp:r => r.sc + ' SC',     items:[['BA','課題解決'],['BB','店長育成']]},
-  {key:'MOTR', label:'MOTR',    who:r => r.motr, grp:r => r.motr + ' MOTR', items:[['BI','課題解決'],['BJ','店長育成']]},
-  {key:'TEN',  label:'店長',    who:r => r.tencho ? '店長' : null, grp:() => '店長', items:[['BR','課題解決'],['BS','クルー育成']]},
-  {key:'KEI',  label:'契約社員', who:r => r.keiyaku ? '契約社員' : null, grp:() => '契約社員', items:[['CJ','課題解決'],['CK','売場力']]},
+  {key:'SC',   label:'SC',      who:r => r.sc,   grp:r => r.sc + ' SC',     names:r => [r.sc],   items:[['BA','課題解決'],['BB','店長育成']]},
+  {key:'MOTR', label:'MOTR',    who:r => r.motr, grp:r => r.motr + ' MOTR', names:r => [r.motr], items:[['BI','課題解決'],['BJ','店長育成']]},
+  {key:'TEN',  label:'店長',    who:r => r.tencho ? '店長' : null, grp:() => '店長', names:r => r.tn, items:[['BR','課題解決'],['BS','クルー育成']]},
+  {key:'KEI',  label:'契約社員', who:r => r.keiyaku ? '契約社員' : null, grp:() => '契約社員', names:r => r.kn, items:[['CJ','課題解決'],['CK','売場力']]},
 ];
 const MARKS = ['○','△','×'];
+// 最初から分かっている対象外（役職:行 → 理由）。オーナーが画面で入・切できる
+const PRESET_EX = {"TEN:4": "帰国（9/16〜10/26）", "TEN:20": "帰国（10/1〜11/30）"};
 const KEY = 'teisei_input_' + MONTH;
 const $ = s => document.querySelector(s);
 const esc = t => String(t == null ? '' : t).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 
 let D = {};            // {'BA4': {m:'○', w:'理由'}}
+let X = {};            // 対象外 {'TEN:4': {on:true, w:'帰国…'}}（役職:行）
 let TAB = 'SC';
 const OPEN = {};       // 理由の欄を開いているセル
-try { const s = JSON.parse(localStorage.getItem(KEY) || '{}'); if (s && typeof s === 'object') { D = s.d || {}; TAB = s.tab || 'SC'; } } catch (e) {}
-function save() { try { localStorage.setItem(KEY, JSON.stringify({d: D, tab: TAB, at: Date.now()})); } catch (e) { toast('この端末に保存できませんでした。先に「送る」で控えを取ってください'); } }
+try { const s = JSON.parse(localStorage.getItem(KEY) || '{}'); if (s && typeof s === 'object') { D = s.d || {}; X = s.x || {}; TAB = s.tab || 'SC'; } } catch (e) {}
+Object.keys(PRESET_EX).forEach(k => { if (!X[k]) X[k] = {on: true, w: PRESET_EX[k]}; });   // まだ触っていない所だけ 初期値を入れる
+function save() { try { localStorage.setItem(KEY, JSON.stringify({d: D, x: X, tab: TAB, at: Date.now()})); } catch (e) { toast('この端末に保存できませんでした。先に「送る」で控えを取ってください'); } }
 
 const rowsOf = role => ROWS.filter(r => role.who(r));
-const cellsOf = role => rowsOf(role).flatMap(r => role.items.map(it => it[0] + r.r));
-const ALL = ROLES.flatMap(cellsOf);
+const isEx = (role, r) => !!(X[role.key + ':' + r.r] && X[role.key + ':' + r.r].on);
+const cellsOf = role => rowsOf(role).filter(r => !isEx(role, r)).flatMap(r => role.items.map(it => it[0] + r.r));   // 対象外の店は数えない
+const allCells = () => ROLES.flatMap(cellsOf);
 const isSet = c => !!(D[c] && D[c].m);
 const hasWhy = c => !!(D[c] && (D[c].w || '').trim());
 const needWhy = c => isSet(c) && D[c].m !== '○' && !hasWhy(c);
@@ -144,12 +158,12 @@ function toast(t) { const el = $('#toast'); el.textContent = t; el.classList.add
 function renderTabs() {
   $('#tabs').innerHTML = ROLES.map(role => {
     const cs = cellsOf(role), n = cs.filter(isSet).length;
-    return `<button type="button" data-tab="${role.key}" class="${role.key === TAB ? 'on' : ''}" aria-label="${esc(role.label)} ${n}／${cs.length}">${esc(role.label)}${n === cs.length ? ' ✓' : ''}<span class="mini"><i style="width:${n / cs.length * 100}%"></i></span></button>`;
+    return `<button type="button" data-tab="${role.key}" class="${role.key === TAB ? 'on' : ''}" aria-label="${esc(role.label)} ${n}／${cs.length}">${esc(role.label)}${n === cs.length ? ' ✓' : ''}<span class="mini"><i style="width:${cs.length ? n / cs.length * 100 : 100}%"></i></span></button>`;
   }).join('');
 }
 function renderProg() {
-  const n = ALL.filter(isSet).length;
-  $('#pn').textContent = n; $('#pt').textContent = ALL.length; $('#pm').style.width = (n / ALL.length * 100) + '%';
+  const n = allCells().filter(isSet).length;
+  $('#pn').textContent = n; $('#pt').textContent = allCells().length; $('#pm').style.width = (allCells().length ? n / allCells().length * 100 : 0) + '%';
 }
 function itemHtml(r, it) {
   const c = it[0] + r.r, v = D[c] || {};
@@ -160,28 +174,38 @@ function itemHtml(r, it) {
     <textarea class="why" rows="1" placeholder="理由" aria-label="${esc(r.name)} ${esc(it[1])} の理由">${esc(v.w || '')}</textarea>
   </div>`;
 }
-function cardDone(role, r) { return role.items.every(it => isSet(it[0] + r.r)); }
+function cardDone(role, r) { return isEx(role, r) || role.items.every(it => isSet(it[0] + r.r)); }
+function cardHtml(role, r) {
+  const k = role.key + ':' + r.r, ex = isEx(role, r), nm = role.names(r).join('・');
+  return `<div class="card ${ex ? 'ex' : cardDone(role, r) ? 'done' : ''}" data-r="${r.r}">
+    <h3><span class="st">${esc(r.name)}<span class="nm">${esc(nm)}</span></span><span class="ck">${ex ? '－' : '✓'}</span></h3>
+    ${ex ? `<div class="exbox"><b>対象外</b><textarea class="exwhy" rows="1" placeholder="理由（例：帰国）" aria-label="${esc(r.name)} 対象外の理由">${esc((X[k] && X[k].w) || '')}</textarea></div>` : role.items.map(it => itemHtml(r, it)).join('')}
+    <button type="button" class="exbtn" data-ex="${k}">${ex ? '対象外をやめる（評価する）' : '対象外にする'}</button>
+  </div>`;
+}
 function renderList() {
   const role = ROLES.find(x => x.key === TAB), rows = rowsOf(role);
   const groups = []; rows.forEach(r => { const g = role.grp(r); let o = groups.find(x => x.g === g); if (!o) groups.push(o = {g, rows: []}); o.rows.push(r); });
   $('#list').innerHTML = groups.map(o => {
     const dn = o.rows.filter(r => cardDone(role, r)).length;
     return `<div class="who"><div class="av">${esc(o.g.charAt(0))}</div><h2>${esc(o.g)}</h2><div class="cnt ${dn === o.rows.length ? 'full' : ''}" data-cnt>${dn}／${o.rows.length}店</div></div>
-    <div class="cards">${o.rows.map(r => `<div class="card ${cardDone(role, r) ? 'done' : ''}" data-r="${r.r}"><h3>${esc(r.name)}<span class="ck">✓</span></h3>${role.items.map(it => itemHtml(r, it)).join('')}</div>`).join('')}</div>`;
+    <div class="cards">${o.rows.map(r => cardHtml(role, r)).join('')}</div>`;
   }).join('');
 }
 const list = $('#list');
 function renderAll() { renderTabs(); renderList(); renderProg(); }
 function refreshCard(card) {
   const role = ROLES.find(x => x.key === TAB), r = ROWS.find(x => x.r === +card.dataset.r);
-  card.classList.toggle('done', cardDone(role, r));
+  card.classList.toggle('done', !isEx(role, r) && cardDone(role, r));
   const cards = card.parentElement, cnt = cards.previousElementSibling.querySelector('[data-cnt]');
-  const all = [...cards.children], dn = all.filter(x => x.classList.contains('done')).length;
+  const all = [...cards.children], dn = all.filter(x => x.classList.contains('done') || x.classList.contains('ex')).length;
   cnt.textContent = dn + '／' + all.length + '店'; cnt.classList.toggle('full', dn === all.length);
 }
 
 $('#tabs').addEventListener('click', e => { const b = e.target.closest('button[data-tab]'); if (!b) return; TAB = b.dataset.tab; save(); renderAll(); window.scrollTo({top: 0}); });
 list.addEventListener('click', e => {
+  const xb = e.target.closest('.exbtn');
+  if (xb) { const k = xb.dataset.ex; X[k] = Object.assign({}, X[k], {on: !(X[k] && X[k].on)}); save(); renderAll(); toast(X[k].on ? '対象外にしました' : '評価する店にもどしました'); return; }
   const mb = e.target.closest('.memo');
   if (mb) { const it = mb.closest('.item'), c = it.dataset.cell; OPEN[c] = !it.classList.contains('open'); it.classList.toggle('open', OPEN[c] || isOpen(c)); if (it.classList.contains('open')) it.querySelector('.why').focus(); return; }
   const b = e.target.closest('.marks button'); if (!b) return;
@@ -192,6 +216,8 @@ list.addEventListener('click', e => {
   save(); refreshCard(it.closest('.card')); renderTabs(); renderProg();
 });
 list.addEventListener('input', e => {
+  const xw = e.target.closest('.exwhy');
+  if (xw) { const k = xw.closest('.card').querySelector('.exbtn').dataset.ex; X[k] = Object.assign({on: true}, X[k], {w: xw.value}); save(); return; }
   const t = e.target.closest('.why'); if (!t) return;
   const it = t.closest('.item'), c = it.dataset.cell;
   D[c] = Object.assign({}, D[c], {w: t.value});
@@ -200,16 +226,18 @@ list.addEventListener('input', e => {
 });
 
 function payload() {
-  const cells = {}; ALL.forEach(c => { if (isSet(c)) cells[c] = {m: D[c].m, w: (D[c].w || '').trim()}; });
+  const cells = {}; allCells().forEach(c => { if (isSet(c)) cells[c] = {m: D[c].m, w: (D[c].w || '').trim()}; });
   const stores = {}; ROWS.forEach(r => { stores[r.r] = r.ab; });   // 行番号 → 店（取り込みの時に行ずれを見つけるため）
-  const unset = ALL.filter(c => !isSet(c));
-  return {app: 'teisei-input', month: MONTH, at: new Date().toISOString(), total: ALL.length, stores, cells, unset};
+  const unset = allCells().filter(c => !isSet(c));
+  const excluded = []; ROLES.forEach(role => rowsOf(role).forEach(r => { if (isEx(role, r)) excluded.push({role: role.key, r: r.r, store: r.ab, names: role.names(r), cells: role.items.map(it => it[0] + r.r), w: ((X[role.key + ':' + r.r] || {}).w || '').trim()}); }));
+  return {app: 'teisei-input', month: MONTH, at: new Date().toISOString(), total: allCells().length, stores, cells, unset, excluded};
 }
 function payloadText() { return '【定性評価 ' + MONTH + '】' + JSON.stringify(payload()); }
 $('#sendBtn').addEventListener('click', () => {
-  const cnt = m => ALL.filter(c => isSet(c) && D[c].m === m).length, left = ALL.filter(c => !isSet(c)).length, noWhy = ALL.filter(needWhy).length;
+  const cnt = m => allCells().filter(c => isSet(c) && D[c].m === m).length, left = allCells().filter(c => !isSet(c)).length, noWhy = allCells().filter(needWhy).length;
   $('#dlStat').innerHTML = `<div class="o">○<b>${cnt('○')}</b></div><div class="t">△<b>${cnt('△')}</b></div><div class="x">×<b>${cnt('×')}</b></div><div class="e">まだ<b>${left}</b></div>`;
-  $('#dlWarn').textContent = (left ? `まだ ${left}こ 入っていません。` : '') + (noWhy ? `△・× の理由が ${noWhy}こ 空です。` : '');
+  const nEx = payload().excluded.length;
+  $('#dlWarn').textContent = (left ? `まだ ${left}こ 入っていません。` : '') + (noWhy ? `△・× の理由が ${noWhy}こ 空です。` : '') + (nEx ? `対象外 ${nEx}件。` : '');
   $('#dlText').value = payloadText();
   $('#shareBtn').style.display = navigator.share ? '' : 'none';
   $('#dlg').showModal();
@@ -232,12 +260,12 @@ $('#fileBtn').addEventListener('click', () => {
 });
 let resetArmed = 0;
 $('#resetBtn').addEventListener('click', e => {
-  if (Date.now() - resetArmed < 4000) { D = {}; Object.keys(OPEN).forEach(k => delete OPEN[k]); save(); renderAll(); resetArmed = 0; e.target.textContent = 'ぜんぶ消してやり直す'; toast('ぜんぶ消しました'); return; }
+  if (Date.now() - resetArmed < 4000) { D = {}; X = {}; Object.keys(PRESET_EX).forEach(k => { X[k] = {on: true, w: PRESET_EX[k]}; }); Object.keys(OPEN).forEach(k => delete OPEN[k]); save(); renderAll(); resetArmed = 0; e.target.textContent = 'ぜんぶ消してやり直す'; toast('ぜんぶ消しました'); return; }
   resetArmed = Date.now(); e.target.textContent = 'ほんとうに消す時は、もう一度押す'; setTimeout(() => { if (resetArmed) { resetArmed = 0; e.target.textContent = 'ぜんぶ消してやり直す'; } }, 4000);
 });
 window.addEventListener('storage', e => {
   if (e.key !== KEY || !e.newValue) return;
-  try { const s = JSON.parse(e.newValue); if (s && s.d) { D = s.d; renderAll(); toast('ほかの画面で入れた内容を読みこみました'); } } catch (err) {}
+  try { const s = JSON.parse(e.newValue); if (s && s.d) { D = s.d; X = s.x || X; renderAll(); toast('ほかの画面で入れた内容を読みこみました'); } } catch (err) {}
 });
 if (!ROLES.some(x => x.key === TAB)) TAB = 'SC';
 renderAll();
