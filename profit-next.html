@@ -975,8 +975,32 @@ function trendHtml(rows) {
     return {r, q, has, dN: has ? r.V.A - q.nebiki : null, dW: has ? (r.v - r.V.A) - q.wact : null,
       pr: has ? (q.wact + q.nebiki) / q.nisshu * 100 : null, dL: q.landing != null ? r.p.landing - q.landing : null};
   });
+  // 店利益（月の着地・千円）の前回 → 今回（2026-11-23〜）
+  const pl = xs.filter(x => x.dL != null);
+  let ph = '';
+  if (pl.length) {
+    const sum = f => pl.reduce((a, x) => a + f(x), 0);
+    const L0 = sum(x => x.q.landing), L1 = sum(x => x.r.p.landing), dLs = L1 - L0;
+    const hasB = pl.every(x => x.q.budget != null), G0 = hasB ? L0 - sum(x => x.q.budget) : null, G1 = L1 - sum(x => x.r.p.budget);
+    const nUp = pl.filter(x => x.dL > 0).length, nDn = pl.filter(x => x.dL < 0).length;
+    const pt = (t, v, unit, sub, good, d) => `<div class="card rv" style="--d:${d}ms"><div class="tag ${good ? 'good' : 'bad'}">${sub}</div><div class="k">${t}</div><div class="big m ${good ? 'good' : 'bad'}">${v}<small>${unit}</small></div></div>`;
+    const pi = x => `<button type="button" class="row" data-store="${esc(x.r.name)}" style="grid-template-columns:minmax(0,1fr) 7.5em;grid-template-areas:'l v'"><div class="l">${esc(x.r.name)}<br><small>${man(x.q.landing)}万 → ${man(x.r.p.landing)}万円・予算との差 ${sgMan(x.r.p.diff)}万</small></div><div class="v ${x.dL < 0 ? 'bad' : 'good'}">${x.dL < 0 ? '▼' : '▲'} ${sgMan(x.dL)}万</div></button>`;
+    const srt = pl.slice().sort((a, b) => a.dL - b.dL);
+    const down = srt.filter(x => x.dL < 0).slice(0, 5), up = srt.filter(x => x.dL > 0).reverse().slice(0, 5);
+    const none = '<div class="row"><div class="l mut">なし</div></div>';
+    ph = `<h3 class="h3 rv">店利益<small>月の着地の見こみ。${esc(prev.date)} → ${esc(E.CUR_LABEL.date)}・${esc(who())}${p.sameMonth ? '' : '（月が違うので参考）'}</small></h3>
+    <div class="bento b3">
+      ${pt('着地の見こみ', `${man(L0)}→${man(L1)}`, '万円', dLs >= 0 ? `${sgMan(dLs)}万円（上がった）` : `${sgMan(dLs)}万円（下がった）`, dLs >= 0, 0)}
+      ${pt('予算との差', `${G0 == null ? '─' : sgMan(G0)}→${sgMan(G1)}`, '万円', G0 == null ? '今回の差' : G1 >= G0 ? '良くなった' : '悪くなった', G0 == null ? G1 >= 0 : G1 >= G0, 80)}
+      ${pt('上がった店・下がった店', `${nUp}・${nDn}`, '店', nUp >= nDn ? '上がった店が多い' : '下がった店が多い', nUp >= nDn, 160)}
+    </div>
+    <div class="two" style="margin-top:18px">
+      <div class="rv"><h3 class="h3 bad" style="margin-top:28px">▼ 着地が下がった店</h3><div class="list">${down.map(pi).join('') || none}</div></div>
+      <div class="rv" style="--d:100ms"><h3 class="h3 good" style="margin-top:28px">▲ 着地が上がった店</h3><div class="list">${up.map(pi).join('') || none}</div></div>
+    </div>`;
+  }
   const ok = xs.filter(x => x.has);
-  if (!ok.length) return head + `<p class="lead">くらべられるデータがありません。</p></div></section>`;
+  if (!ok.length) return head + (ph || `<p class="lead">くらべられるデータがありません。</p>`) + `</div></section>`;
   const s = f => ok.reduce((a, x) => a + f(x), 0);
   const pRate = s(x => x.q.wact + x.q.nebiki) / s(x => x.q.nisshu) * 100, nRate = s(x => x.r.v) / s(x => x.r.p.nisshu) * 100;
   const dN = s(x => x.dN), dW = s(x => x.dW);
@@ -985,7 +1009,7 @@ function trendHtml(rows) {
   const by = ok.slice().sort((a, b) => (b.dN + b.dW) - (a.dN + a.dW));
   const item = x => { const d = x.dN + x.dW; return `<button type="button" class="row" data-store="${esc(x.r.name)}" style="grid-template-columns:minmax(0,1fr) 7.5em;grid-template-areas:'l v'"><div class="l">${esc(x.r.name)}<br><small>値引 ${sgY(x.dN)}円・廃棄 ${sgY(x.dW)}円</small></div><div class="v ${d > 0 ? 'bad' : 'good'}">${d > 0 ? '▲' : '▼'} ${sgY(d)}円</div></button>`; };
   const worse = by.filter(x => x.dN + x.dW > 0.05).slice(0, 5), better = by.filter(x => x.dN + x.dW < -0.05).reverse().slice(0, 5);
-  let h = head + `<p class="lead rv" style="--d:120ms">値引・廃棄の 1日あたり（売価）。${esc(prev.date)} → ${esc(E.CUR_LABEL.date)}・${esc(who())}</p>
+  let h = head + ph + `<h3 class="h3 rv">値引・廃棄<small>1日あたり（売価）。${esc(prev.date)} → ${esc(E.CUR_LABEL.date)}・${esc(who())}</small></h3>
     <div class="bento b3">
       ${tile('売変率（値引＋廃棄）', `${pRate.toFixed(1)}→${nRate.toFixed(1)}`, '%', nRate <= pRate ? '下がった（良い）' : '上がった（悪い）', nRate <= pRate, 0)}
       ${tile('値引（1日）', sgY(dN), '円', dN <= 0 ? '減った（良い）' : '増えた（悪い）', dN <= 0, 80)}
