@@ -816,7 +816,88 @@ function pathHtml(path) {
     <p class="note rv">「このまま」＝これからの月も、今までと同じ予算達成率（${(path.ach * 100).toFixed(1)}%）だった場合。上限は ${esc(E.PLAN.start)}から段階で下げる（値引 ${E.PLAN.caps.A.join('→')}%・AICO ${E.PLAN.caps.B.join('→')}% など）。${last ? `6月の予算は ${man(last.bud)}万円。` : ''}</p>
   </div></section>`;
 }
+// ---------- ⑧ の下：組織の売変率のうごき（2026-11-24〜） ----------
+//   売変Ⅲ（値引＋廃棄・売価・千円/日）÷ 日販。過去の週は HISTORY（b3 か wact＋nebiki）、今は PROFIT.baihen3。
+//   どれも「月の初めから その時点まで」の1日平均。その週だけの率は 前の時点との差から出す。
+function b3Snaps(rows) {
+  const names = rows.map(r => r.name), out = [];
+  const add = (month, date, get) => {
+    let s = 0, b = 0, n = 0;
+    names.forEach(nm => { const x = get(nm); if (x && x.b != null && x.s > 0) { s += x.s; b += x.b; n++; } });
+    if (!names.length || n !== names.length) return;       // 1店でも欠けたら その時点は出さない
+    const m = month.match(/(\d+)年(\d+)月度/), d = date.match(/(\d+)\/(\d+)/); if (!m || !d) return;
+    const mo = Number(m[2]), day = Number(d[1]) === mo ? Number(d[2]) : new Date(2000 + Number(m[1]), mo, 0).getDate();
+    out.push({month, mo, date: date.replace('時点', ''), day, s, b, rate: b / s * 100});
+  };
+  (E.HISTORY || []).forEach(h => add(h.month, h.date, nm => { const x = (h.stores || {})[nm]; if (!x) return null;
+    return {s: x.nisshu, b: x.b3 != null ? x.b3 : (x.wact != null && x.nebiki != null ? x.wact + x.nebiki : null)}; }));
+  add(E.CUR_LABEL.month, E.CUR_LABEL.date, nm => { const p = E.PROFIT.find(q => q.name === nm); return p ? {s: p.nisshu, b: p.baihen3 || 0} : null; });
+  out.forEach((x, i) => {
+    const pv = i && out[i - 1].month === x.month && x.day > out[i - 1].day ? out[i - 1] : null;
+    const ws = pv ? x.s * x.day - pv.s * pv.day : x.s * x.day, wb = pv ? x.b * x.day - pv.b * pv.day : x.b * x.day;
+    x.wk = ws > 0 ? wb / ws * 100 : null; x.wkFrom = pv ? pv.date : null;
+  });
+  return out;
+}
+function drawB3() {
+  const host = $('#chB3'), top = $('#b3Top'), tbl = $('#b3Tbl'); if (!host || !top || !tbl) return;
+  const rows = rowsSC(), sn = b3Snaps(rows);
+  if (!sn.length) { top.innerHTML = ''; tbl.innerHTML = ''; host.innerHTML = '<div class="mut" style="padding:20px 4px">まだ記録がありません</div>'; return; }
+  const manK = k => (k / 10).toFixed(1) + '万円';
+  // 今月の予算（売価に直したもの）÷ 売上
+  let bg = 0, ss = 0; rows.forEach(r => { bg += E.bdPlan(r.p).bgtDay; ss += r.p.nisshu || 0; });
+  const bud = ss > 0 ? bg / ss * 100 : null;
+  // 月ごと（その月の 最後の時点）
+  const months = []; sn.forEach(x => { const l = months[months.length - 1]; if (l && l.month === x.month) l.last = x; else months.push({month: x.month, mo: x.mo, last: x}); });
+  const cur = months[months.length - 1], pm = months.length > 1 ? months[months.length - 2] : null;
+  const isCur = m => m.month === E.CUR_LABEL.month;
+  const cell = (k, v, sub, col) => `<div><div class="k">${k}</div><div class="v"${col ? ` style="color:var(--${col})"` : ''}>${v}</div><div class="k" style="font-weight:500">${sub}</div></div>`;
+  let kv = '';
+  if (pm) kv += cell(`${pm.mo}月度の実績`, pm.last.rate.toFixed(2) + '%', `1日 ${manK(pm.last.b)}`);
+  kv += cell(`${cur.mo}月度<br>${esc(cur.last.date)}まで`, cur.last.rate.toFixed(2) + '%', `1日 ${manK(cur.last.b)}`);
+  if (pm) { const d = Number(cur.last.rate.toFixed(2)) - Number(pm.last.rate.toFixed(2)); kv += cell('前の月との差', (d > 0 ? '+' : d < 0 ? '−' : '') + Math.abs(d).toFixed(2) + 'pt', d < -0.005 ? '下がった' : d > 0.005 ? '上がった' : '同じ', d < -0.005 ? 'good' : d > 0.005 ? 'bad' : ''); }
+  else if (bud != null) kv += cell('今月の予算', bud.toFixed(2) + '%', '売価に直した数字');
+  top.innerHTML = `<p class="lead" style="margin-bottom:12px">${esc(who())}・${rows.length}店の合計。${bud != null ? `今月の予算は ${bud.toFixed(2)}%（見切・処分の予算を売価に直した数字）。` : ''}</p><div class="kv">${kv}</div>`;
+  // グラフ
+  const Wd = host.clientWidth || 340, H = Wd < 500 ? 250 : 300, L = 40, Rm = 12, T = 26, B = 46;
+  const vals = sn.flatMap(x => [x.rate, x.wk]).filter(v => v != null).concat(bud != null ? [bud] : []);
+  const mn = Math.floor(Math.min(...vals) - 0.3), mx = Math.ceil(Math.max(...vals) + 0.3);
+  const y = v => T + (mx - v) / (mx - mn) * (H - T - B), gw = (Wd - L - Rm) / sn.length, X = i => L + gw * i + gw / 2;
+  let s = `<svg viewBox="0 0 ${Wd} ${H}" width="${Wd}" height="${H}" role="img" aria-label="売変率のうごき">`;
+  const step = mx - mn > 6 ? 2 : 1;
+  for (let g = mn; g <= mx; g += step) s += `<line x1="${L}" x2="${Wd - Rm}" y1="${y(g)}" y2="${y(g)}" stroke="var(--line)"/><text x="${L - 6}" y="${y(g) + 4}" text-anchor="end" font-size="11">${g}%</text>`;
+  // 月の区切りと 月の名前
+  let st = 0;
+  months.forEach((m, k) => {
+    const n = sn.filter(x => x.month === m.month).length, x1 = L + gw * st, x2 = L + gw * (st + n);
+    if (k) s += `<line x1="${x1}" x2="${x1}" y1="${T - 12}" y2="${H - B + 34}" stroke="var(--fg3)" stroke-dasharray="3 4"/>`;
+    s += `<text x="${(x1 + x2) / 2}" y="${H - 6}" text-anchor="middle" font-size="12.5" font-weight="700" style="fill:var(--fg)">${m.mo}月度</text>`;
+    if (isCur(m) && bud != null) s += `<line x1="${x1 + 4}" x2="${x2}" y1="${y(bud)}" y2="${y(bud)}" stroke="var(--good)" stroke-width="2" stroke-dasharray="6 5"/><text x="${x2}" y="${y(bud) - 6}" text-anchor="end" font-size="11.5" font-weight="700" style="fill:var(--good)">予算 ${bud.toFixed(1)}%</text>`;
+    const seg = k2 => sn.map((x, i) => x.month === m.month && x[k2] != null ? `${X(i).toFixed(1)},${y(x[k2]).toFixed(1)}` : '').filter(Boolean).join(' ');
+    s += `<polyline points="${seg('wk')}" fill="none" stroke="var(--fg3)" stroke-width="2" stroke-linejoin="round"/>`;
+    s += `<polyline points="${seg('rate')}" fill="none" stroke="var(--accent)" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"/>`;
+    st += n;
+  });
+  sn.forEach((x, i) => {
+    if (x.wk != null) s += `<circle cx="${X(i)}" cy="${y(x.wk)}" r="3.5" fill="var(--card)" stroke="var(--fg3)" stroke-width="2"/>`;
+    s += `<circle cx="${X(i)}" cy="${y(x.rate)}" r="4.5" fill="var(--accent)"/>`;
+    const up = x.wk == null || x.rate >= x.wk;
+    if (gw >= 34 || i === sn.length - 1 || (pm && x === pm.last)) s += `<text class="lbl" x="${X(i)}" y="${y(x.rate) + (up ? -9 : 18)}" text-anchor="middle" font-size="12">${x.rate.toFixed(1)}</text>`;
+    s += `<text x="${X(i)}" y="${H - 24}" text-anchor="middle" font-size="${gw < 34 ? 10 : 11.5}">${esc(x.date)}</text>`;
+    const tip = `${x.month}・${x.date}時点\n月の初めから ${x.rate.toFixed(2)}%\nその週だけ ${x.wk == null ? '─' : x.wk.toFixed(2) + '%'}${x.wkFrom ? `（${x.wkFrom}のあと）` : ''}\n売変 1日 ${manK(x.b)}／売上 1日 ${manK(x.s)}`;
+    s += `<rect x="${L + gw * i}" y="${T - 12}" width="${gw}" height="${H - T - B + 12}" fill="transparent" data-tip="${esc(tip)}"/>`;
+  });
+  host.innerHTML = s + `</svg>`;
+  // 表（スマホ・読み上げ用）
+  const sig = JSON.stringify(sn.map(x => [x.month, x.date, x.rate, x.wk])) + (bud == null ? '' : bud.toFixed(3));
+  if (tbl.dataset.sig === sig) return;
+  const old = tbl.querySelector('details'), open = old ? old.open : SHOT;
+  tbl.dataset.sig = sig;
+  tbl.innerHTML = `<details class="fold" style="margin-top:18px"${open ? ' open' : ''}><summary>グラフの数字を表で見る</summary><div class="tw" style="margin-top:12px"><table class="ht sm"><thead><tr><th scope="col">時点</th><th scope="col">売変率<small>月の初めから</small></th><th scope="col">その週だけ</th><th scope="col">売変<small>1日あたり</small></th><th scope="col">売上<small>1日あたり</small></th></tr></thead><tbody>${
+    sn.map(x => `<tr style="cursor:default"><td>${esc(x.month.replace(/^\d+年/, ''))}<small>${esc(x.date)}時点</small></td><td><b>${x.rate.toFixed(2)}%</b></td><td>${x.wk == null ? '─' : x.wk.toFixed(2) + '%'}</td><td>${manK(x.b)}</td><td>${manK(x.s)}</td></tr>`).join('')}</tbody></table></div></details>`;
+}
 function drawCharts(path) {
+  try { drawB3(); } catch (e) { console.error(e); }
   const c1 = $('#ch1'), c2 = $('#ch2');
   if (c1) c1.innerHTML = chartMonthly(path, c1.clientWidth || 340);
   if (c2) c2.innerHTML = chartCum(path, c2.clientWidth || 340);
@@ -1037,6 +1118,12 @@ function baihenWrap() {
     <h2 class="h2 rv" style="--d:60ms">のこりの日、1日いくらまで。</h2>
     <div id="bdBody"></div>
     <p class="note">宣言は、表の「入れる」を押して この画面で入れます。入れるのは「1日 いくらまでに おさえるか」（上限）です。「へらす額」ではありません。<br>結果は、その週の実績（1日あたり）とくらべます（月曜のデータ更新で出ます）。</p>
+    <h3 class="h3 rv">売変率のうごき<small>売変率＝（値引＋廃棄）÷ 売上。売価。店を全部たした数字です</small></h3>
+    <div id="b3Top" class="rv"></div>
+    <div class="chart rv" style="margin-top:12px"><div class="k" style="font-weight:700;margin:0 4px 10px">売変率（%）・週ごとの時点</div><div id="chB3"></div>
+      <div class="legend" style="margin:10px 4px 0"><span><i class="ln" style="background:var(--accent)"></i>月の初めからの率</span><span><i class="ln" style="background:var(--fg3)"></i>その週だけの率</span><span><i class="ln" style="background:var(--good)"></i>今月の予算</span></div></div>
+    <div id="b3Tbl"></div>
+    <p class="note">10月度より前（8〜9月）は、値引の記録が残っていないので出せません。「その週だけ」は、前の時点との差から出した数字です。</p>
   </div></section>`;
 }
 function renderBaihen() {
