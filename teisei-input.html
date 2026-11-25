@@ -41,7 +41,13 @@
   .exbox { display:flex; align-items:center; gap:10px; }
   .exbox b { background:#6b7686; color:#fff; border-radius:999px; padding:6px 14px; font-size:15px; flex:none; }
   .exwhy { flex:1; min-height:46px; border:2px solid var(--line); border-radius:12px; padding:9px 12px; font-size:16px; font-family:inherit; resize:vertical; background:#fff; }
-  .exbtn { margin-top:10px; min-height:44px; width:100%; border:1.5px dashed #b8c0cc; border-radius:12px; background:transparent; color:var(--mut); font-size:13.5px; font-family:inherit; }
+  .ixbtn { margin-top:8px; min-height:44px; width:100%; border:1.5px dashed #b8c0cc; border-radius:12px; background:transparent; color:var(--mut); font-size:13.5px; font-family:inherit; }
+  .item.exi { background:#eceff3; border:1.5px dashed #b8c0cc; border-radius:12px; padding:10px; }
+  .item.exi .exwhy { display:block; width:100%; margin-top:8px; }
+  .exb { background:#6b7686; color:#fff; border-radius:999px; padding:6px 14px; font-size:15px; flex:none; }
+  .item + .item { margin-top:14px; }
+  #inText { width:100%; min-height:120px; border:2px solid var(--line); border-radius:12px; padding:9px 12px; font-size:14px; font-family:inherit; margin-top:8px; }
+  .foot { display:flex; flex-wrap:wrap; gap:8px; justify-content:center; }
   .card h3 { margin:0 0 10px; font-size:17px; display:flex; align-items:center; gap:8px; }
   .card h3 .ck { margin-left:auto; width:26px; height:26px; border-radius:50%; background:#e8ecf2; color:#fff; display:flex; align-items:center; justify-content:center; font-size:16px; flex:none; }
   .card.done h3 .ck { background:var(--ok); }
@@ -96,7 +102,7 @@
 
 <div class="wrap">
   <div id="list"></div>
-  <div class="foot"><button type="button" id="resetBtn">ぜんぶ消してやり直す</button></div>
+  <div class="foot"><button type="button" id="inBtn">前に送った内容を読みこむ</button><button type="button" id="resetBtn">ぜんぶ消してやり直す</button></div>
 </div>
 
 <div class="bar"><div class="in">
@@ -116,6 +122,15 @@
   </div>
   <textarea id="dlText" readonly aria-hidden="true" tabindex="-1"></textarea>
 </div></dialog>
+<dialog id="inDlg"><div class="dl">
+  <h2>前に送った内容を読みこむ</h2>
+  <div style="font-size:14px;color:var(--mut)">前に送った文字（【定性評価 …】で始まる文字）を、下に貼ってください。いま入っている所は変えません。空の所だけ入ります。</div>
+  <textarea id="inText" aria-label="前に送った文字"></textarea>
+  <div class="acts">
+    <button type="button" class="pri" id="inGo">読みこむ</button>
+    <button type="button" id="inClose">とじる</button>
+  </div>
+</div></dialog>
 <div class="toast" id="toast"></div>
 
 <script>
@@ -130,23 +145,42 @@ const ROLES = [
   {key:'KEI',  label:'契約社員', who:r => r.keiyaku ? '契約社員' : null, grp:() => '契約社員', names:r => r.kn, items:[['CJ','課題解決'],['CK','売場力']]},
 ];
 const MARKS = ['○','△','×'];
-// 最初から分かっている対象外（役職:行 → 理由）。オーナーが画面で入・切できる
+// 最初から分かっている対象外（役職:行 → 理由）。その役職の項目を全部 対象外にしておく。オーナーが画面で 項目ごとに 入・切できる
 const PRESET_EX = {"TEN:4": "帰国（9/16〜10/26）", "TEN:5": "退職", "TEN:20": "帰国（10/1〜11/30）"};
 const KEY = 'teisei_input_' + MONTH;
 const $ = s => document.querySelector(s);
 const esc = t => String(t == null ? '' : t).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 
 let D = {};            // {'BA4': {m:'○', w:'理由'}}
-let X = {};            // 対象外 {'TEN:4': {on:true, w:'帰国…'}}（役職:行）
+let X = {};            // 前の版の対象外 {'TEN:4': {on:true, w:'帰国…'}}（役職:行）。消さずに残す（XI へ引きつぐ元）
+let XI = {};           // 対象外（項目ごと） {'BR4': {on:true, w:'帰国…', u:1}}　u＝人が入れた（初期値ではない）
+let XS = {};           // X のうち XI へ引きつぎ済みの分の写し（前の版の画面が あとから X を変えたら 気づけるように）
+const XKEY = KEY + '_xi';   // 項目ごとの対象外は 別の場所に保存する（前の版の画面が KEY を上書きしても 消えない）
 let TAB = 'SC';
 const OPEN = {};       // 理由の欄を開いているセル
 try { const s = JSON.parse(localStorage.getItem(KEY) || '{}'); if (s && typeof s === 'object') { D = s.d || {}; X = s.x || {}; TAB = s.tab || 'SC'; } } catch (e) {}
-Object.keys(PRESET_EX).forEach(k => { if (!X[k]) X[k] = {on: true, w: PRESET_EX[k]}; });   // まだ触っていない所だけ 初期値を入れる
-function save() { try { localStorage.setItem(KEY, JSON.stringify({d: D, x: X, tab: TAB, at: Date.now()})); } catch (e) { toast('この端末に保存できませんでした。先に「送る」で控えを取ってください'); } }
+try { const s = JSON.parse(localStorage.getItem(XKEY) || '{}'); if (s && typeof s === 'object') { XI = s.xi || {}; XS = s.xs || {}; } } catch (e) {}
+// KEY は前の版と同じ形のまま（d・x・tab）。うまく保存できたら true
+function save() {
+  try { localStorage.setItem(XKEY, JSON.stringify({xi: XI, xs: XS, at: Date.now()})); localStorage.setItem(KEY, JSON.stringify({d: D, x: X, tab: TAB, at: Date.now()})); return true; }
+  catch (e) { toast('この端末に保存できませんでした。先に「送る」で控えを取ってください'); return false; }
+}
+function cellsOfKey(k) { const a = String(k).split(':'), role = ROLES.find(x => x.key === a[0]); return role ? role.items.map(it => it[0] + a[1]) : []; }
+// 前の版（役職ごとの対象外）で入れた内容を、項目ごとへ引きつぐ。○△×と理由（D）は さわらない
+function migrate() {
+  Object.keys(X).forEach(k => {
+    const o = X[k] || {}, sig = JSON.stringify([!!o.on, o.w || '']);
+    if (XS[k] === sig) return;                                   // もう引きついだ（その後 変わっていない）
+    cellsOfKey(k).forEach(c => { XI[c] = {on: !!o.on, w: o.w || '', u: 1}; });
+    XS[k] = sig;
+  });
+  Object.keys(PRESET_EX).forEach(k => cellsOfKey(k).forEach(c => { if (XI[c] === undefined) XI[c] = {on: true, w: PRESET_EX[k]}; }));   // まだ触っていない所だけ 初期値を入れる
+}
 
 const rowsOf = role => ROWS.filter(r => role.who(r));
-const isEx = (role, r) => !!(X[role.key + ':' + r.r] && X[role.key + ':' + r.r].on);
-const cellsOf = role => rowsOf(role).filter(r => !isEx(role, r)).flatMap(r => role.items.map(it => it[0] + r.r));   // 対象外の店は数えない
+const isExC = c => !!(XI[c] && XI[c].on);                                                    // その項目が対象外か
+const isEx = (role, r) => role.items.every(it => isExC(it[0] + r.r));                         // その店・役職の項目が 全部 対象外か
+const cellsOf = role => rowsOf(role).flatMap(r => role.items.map(it => it[0] + r.r)).filter(c => !isExC(c));   // 対象外の項目は数えない
 const allCells = () => ROLES.flatMap(cellsOf);
 const isSet = c => !!(D[c] && D[c].m);
 const hasWhy = c => !!(D[c] && (D[c].w || '').trim());
@@ -167,20 +201,25 @@ function renderProg() {
 }
 function itemHtml(r, it) {
   const c = it[0] + r.r, v = D[c] || {};
+  if (isExC(c)) return `<div class="item exi" data-cell="${c}">
+    <div class="line"><div class="lab">${esc(it[1])}</div><b class="exb">対象外</b></div>
+    <textarea class="exwhy" rows="1" placeholder="理由（例：帰国）" aria-label="${esc(r.name)} ${esc(it[1])} 対象外の理由">${esc((XI[c] && XI[c].w) || '')}</textarea>
+    <button type="button" class="ixbtn" data-ix="${c}">対象外をやめる（評価する）</button>
+  </div>`;
   return `<div class="item ${isOpen(c) ? 'open' : ''} ${needWhy(c) ? 'need' : ''}" data-cell="${c}">
     <div class="line"><div class="lab">${esc(it[1])}</div>
       <div class="marks">${MARKS.map(m => `<button type="button" data-m="${m}" class="${v.m === m ? 'on' : ''}" aria-pressed="${v.m === m}" aria-label="${esc(it[1])} ${m}">${m}</button>`).join('')}</div>
       <button type="button" class="memo ${hasWhy(c) ? 'has' : ''}" aria-label="理由を書く">✎</button></div>
     <textarea class="why" rows="1" placeholder="理由" aria-label="${esc(r.name)} ${esc(it[1])} の理由">${esc(v.w || '')}</textarea>
+    <button type="button" class="ixbtn" data-ix="${c}">「${esc(it[1])}」を対象外にする</button>
   </div>`;
 }
-function cardDone(role, r) { return isEx(role, r) || role.items.every(it => isSet(it[0] + r.r)); }
+function cardDone(role, r) { return role.items.every(it => isExC(it[0] + r.r) || isSet(it[0] + r.r)); }
 function cardHtml(role, r) {
-  const k = role.key + ':' + r.r, ex = isEx(role, r), nm = role.names(r).join('・');
+  const ex = isEx(role, r), nm = role.names(r).join('・');
   return `<div class="card ${ex ? 'ex' : cardDone(role, r) ? 'done' : ''}" data-r="${r.r}">
     <h3><span class="st">${esc(r.name)}<span class="nm">${esc(nm)}</span></span><span class="ck">${ex ? '－' : '✓'}</span></h3>
-    ${ex ? `<div class="exbox"><b>対象外</b><textarea class="exwhy" rows="1" placeholder="理由（例：帰国）" aria-label="${esc(r.name)} 対象外の理由">${esc((X[k] && X[k].w) || '')}</textarea></div>` : role.items.map(it => itemHtml(r, it)).join('')}
-    <button type="button" class="exbtn" data-ex="${k}">${ex ? '対象外をやめる（評価する）' : '対象外にする'}</button>
+    ${role.items.map(it => itemHtml(r, it)).join('')}
   </div>`;
 }
 function renderList() {
@@ -204,8 +243,8 @@ function refreshCard(card) {
 
 $('#tabs').addEventListener('click', e => { const b = e.target.closest('button[data-tab]'); if (!b) return; TAB = b.dataset.tab; save(); renderAll(); window.scrollTo({top: 0}); });
 list.addEventListener('click', e => {
-  const xb = e.target.closest('.exbtn');
-  if (xb) { const k = xb.dataset.ex; X[k] = Object.assign({}, X[k], {on: !(X[k] && X[k].on)}); save(); renderAll(); toast(X[k].on ? '対象外にしました' : '評価する店にもどしました'); return; }
+  const xb = e.target.closest('.ixbtn');
+  if (xb) { const k = xb.dataset.ix; XI[k] = Object.assign({w: ''}, XI[k], {on: !isExC(k), u: 1}); save(); renderAll(); toast(XI[k].on ? 'この項目を 対象外にしました' : '評価する項目に もどしました'); return; }   // ○△×と理由は消さない（もどすと出てくる）
   const mb = e.target.closest('.memo');
   if (mb) { const it = mb.closest('.item'), c = it.dataset.cell; OPEN[c] = !it.classList.contains('open'); it.classList.toggle('open', OPEN[c] || isOpen(c)); if (it.classList.contains('open')) it.querySelector('.why').focus(); return; }
   const b = e.target.closest('.marks button'); if (!b) return;
@@ -217,7 +256,7 @@ list.addEventListener('click', e => {
 });
 list.addEventListener('input', e => {
   const xw = e.target.closest('.exwhy');
-  if (xw) { const k = xw.closest('.card').querySelector('.exbtn').dataset.ex; X[k] = Object.assign({on: true}, X[k], {w: xw.value}); save(); return; }
+  if (xw) { const k = xw.closest('.item').dataset.cell; XI[k] = Object.assign({on: true}, XI[k], {w: xw.value, u: 1}); save(); return; }
   const t = e.target.closest('.why'); if (!t) return;
   const it = t.closest('.item'), c = it.dataset.cell;
   D[c] = Object.assign({}, D[c], {w: t.value});
@@ -229,15 +268,16 @@ function payload() {
   const cells = {}; allCells().forEach(c => { if (isSet(c)) cells[c] = {m: D[c].m, w: (D[c].w || '').trim()}; });
   const stores = {}; ROWS.forEach(r => { stores[r.r] = r.ab; });   // 行番号 → 店（取り込みの時に行ずれを見つけるため）
   const unset = allCells().filter(c => !isSet(c));
-  const excluded = []; ROLES.forEach(role => rowsOf(role).forEach(r => { if (isEx(role, r)) excluded.push({role: role.key, r: r.r, store: r.ab, names: role.names(r), cells: role.items.map(it => it[0] + r.r), w: ((X[role.key + ':' + r.r] || {}).w || '').trim()}); }));
-  return {app: 'teisei-input', month: MONTH, at: new Date().toISOString(), total: allCells().length, stores, cells, unset, excluded};
+  // 対象外は 項目ごとに1件（cells は1つ）。取り込み側は cells の数に関係なく読める
+  const excluded = []; ROLES.forEach(role => rowsOf(role).forEach(r => role.items.forEach(it => { const c = it[0] + r.r; if (isExC(c)) excluded.push({role: role.key, r: r.r, store: r.ab, names: role.names(r), item: it[1], cells: [c], w: ((XI[c] || {}).w || '').trim()}); })));
+  return {app: 'teisei-input', v: 2, month: MONTH, at: new Date().toISOString(), total: allCells().length, stores, cells, unset, excluded};
 }
 function payloadText() { return '【定性評価 ' + MONTH + '】' + JSON.stringify(payload()); }
 $('#sendBtn').addEventListener('click', () => {
   const cnt = m => allCells().filter(c => isSet(c) && D[c].m === m).length, left = allCells().filter(c => !isSet(c)).length, noWhy = allCells().filter(needWhy).length;
   $('#dlStat').innerHTML = `<div class="o">○<b>${cnt('○')}</b></div><div class="t">△<b>${cnt('△')}</b></div><div class="x">×<b>${cnt('×')}</b></div><div class="e">まだ<b>${left}</b></div>`;
   const nEx = payload().excluded.length;
-  $('#dlWarn').textContent = (left ? `まだ ${left}こ 入っていません。` : '') + (noWhy ? `△・× の理由が ${noWhy}こ 空です。` : '') + (nEx ? `対象外 ${nEx}件。` : '');
+  $('#dlWarn').textContent = (left ? `まだ ${left}こ 入っていません。` : '') + (noWhy ? `△・× の理由が ${noWhy}こ 空です。` : '') + (nEx ? `対象外 ${nEx}こ。` : '');
   $('#dlText').value = payloadText();
   $('#shareBtn').style.display = navigator.share ? '' : 'none';
   $('#dlg').showModal();
@@ -260,13 +300,50 @@ $('#fileBtn').addEventListener('click', () => {
 });
 let resetArmed = 0;
 $('#resetBtn').addEventListener('click', e => {
-  if (Date.now() - resetArmed < 4000) { D = {}; X = {}; Object.keys(PRESET_EX).forEach(k => { X[k] = {on: true, w: PRESET_EX[k]}; }); Object.keys(OPEN).forEach(k => delete OPEN[k]); save(); renderAll(); resetArmed = 0; e.target.textContent = 'ぜんぶ消してやり直す'; toast('ぜんぶ消しました'); return; }
+  if (Date.now() - resetArmed < 4000) { D = {}; X = {}; XI = {}; XS = {}; migrate(); Object.keys(OPEN).forEach(k => delete OPEN[k]); save(); renderAll(); resetArmed = 0; e.target.textContent = 'ぜんぶ消してやり直す'; toast('ぜんぶ消しました'); return; }
   resetArmed = Date.now(); e.target.textContent = 'ほんとうに消す時は、もう一度押す'; setTimeout(() => { if (resetArmed) { resetArmed = 0; e.target.textContent = 'ぜんぶ消してやり直す'; } }, 4000);
 });
 window.addEventListener('storage', e => {
-  if (e.key !== KEY || !e.newValue) return;
-  try { const s = JSON.parse(e.newValue); if (s && s.d) { D = s.d; X = s.x || X; renderAll(); toast('ほかの画面で入れた内容を読みこみました'); } } catch (err) {}
+  if (!e.newValue) return;
+  try {
+    const s = JSON.parse(e.newValue);
+    if (e.key === XKEY && s && s.xi) { XI = s.xi; XS = s.xs || XS; renderAll(); return; }
+    if (e.key !== KEY || !s || !s.d) return;
+    D = s.d; X = s.x || X;
+    const before = JSON.stringify(XS); migrate();                  // 前の版の画面が 対象外を変えていたら 項目ごとへ写す
+    if (JSON.stringify(XS) !== before) { try { localStorage.setItem(XKEY, JSON.stringify({xi: XI, xs: XS, at: Date.now()})); } catch (err) {} }
+    renderAll(); toast('ほかの画面で入れた内容を読みこみました');
+  } catch (err) {}
 });
+// 前に送った文字を読みこむ（端末の中身が消えた時の もどし用）。いま入っている所は変えない
+$('#inBtn').addEventListener('click', () => { $('#inText').value = ''; $('#inDlg').showModal(); });
+$('#inClose').addEventListener('click', () => $('#inDlg').close());
+function importText(t) {
+  try {
+    t = String(t || '');
+    const i = t.indexOf('{"app"'), j = t.lastIndexOf('}');
+    let p = null; try { if (i >= 0 && j > i) p = JSON.parse(t.slice(i, j + 1)); } catch (e) {}
+    if (!p || typeof p !== 'object' || p.app !== 'teisei-input' || !p.cells || typeof p.cells !== 'object') return '読めませんでした。文字が とちゅうで切れていないか 見てください';
+    if (p.month !== MONTH) return '月がちがいます。読みこみません';
+    const ok = new Set(ROLES.flatMap(role => rowsOf(role).flatMap(r => role.items.map(it => it[0] + r.r))));
+    const str = x => typeof x === 'string' ? x : '';
+    const preset = {}; Object.keys(PRESET_EX).forEach(k => cellsOfKey(k).forEach(c => { preset[c] = PRESET_EX[k]; }));
+    const touched = c => !!(D[c] && (D[c].m || (D[c].w || '').trim()));                                  // ○△×か理由が もう入っている
+    const exFree = c => XI[c] === undefined || (!XI[c].u && XI[c].on && preset[c] !== undefined);   // まだ触っていない（初期値のまま）
+    // ① 先に全部を確かめる（ここでは何も変えない）
+    const addD = [], addX = [];
+    Object.keys(p.cells).forEach(c => { const v = p.cells[c]; if (!ok.has(c) || !v || typeof v !== 'object' || MARKS.indexOf(v.m) < 0 || touched(c) || isExC(c) && !exFree(c)) return; addD.push([c, {m: v.m, w: str(v.w)}]); });
+    (Array.isArray(p.excluded) ? p.excluded : []).forEach(e => { if (!e || typeof e !== 'object' || !Array.isArray(e.cells)) return; e.cells.forEach(c => { if (typeof c !== 'string' || !ok.has(c) || touched(c) || !exFree(c)) return; addX.push([c, {on: true, w: str(e.w), u: 1}]); }); });
+    // ② まとめて入れる
+    const inD = new Set(addD.map(x => x[0]));
+    addD.forEach(x => { D[x[0]] = x[1]; if (XI[x[0]] && XI[x[0]].on) XI[x[0]] = {on: false, w: XI[x[0]].w || '', u: 1}; });   // 送った時に評価していた項目は、初期値の対象外を外す
+    let b = 0; addX.forEach(x => { if (inD.has(x[0])) return; XI[x[0]] = x[1]; b++; });
+    const saved = save(); renderAll();
+    return saved ? '読みこみました（○△× ' + addD.length + 'こ・対象外 ' + b + 'こ）' : '画面には入りましたが、この端末に保存できませんでした。先に「送る」で控えを取ってください';
+  } catch (err) { return '読めませんでした。何も変えていません'; }
+}
+$('#inGo').addEventListener('click', () => { const msg = importText($('#inText').value); toast(msg); if (msg.indexOf('読みこみました') === 0) $('#inDlg').close(); });
+migrate();
 if (!ROLES.some(x => x.key === TAB)) TAB = 'SC';
 renderAll();
 </script>
