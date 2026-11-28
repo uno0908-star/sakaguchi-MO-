@@ -1008,7 +1008,7 @@ const PROFIT = [
   {name:'東淀川大道南', type:'CN', nisshu:523.688, yoy:110.65, yoyBudget:103.934, sales:15711, fjIncome:2513, fjBudget:2390, miscBudget:233, laborBudget:1735, otherExp:580, markdownActual:904, markdownBudget:450, hqSupport:76, hqKc:9, kitchenSalesDay:22.658, kitchenSupportMonth:54.38, kitchenSupportRate:0.08, miscExtra:296, miscExtraMin:0, landing:49, budget:-46, diff:95, markdownAmount:2.32, nebiki:33.063, baihen3:44.386},
   {name:'大道南一丁目', type:'TS', nisshu:457.153, yoy:95.63, yoyBudget:103.958, sales:13715, fjIncome:2288, fjBudget:2472, miscBudget:296, laborBudget:1450, otherExp:652, markdownActual:666, markdownBudget:450, hqSupport:36, hqKc:36, kitchenSalesDay:16.667, kitchenSupportMonth:35.0, kitchenSupportRate:0.07, miscExtra:-31, miscExtraMin:0, landing:-118, budget:242, diff:-360, markdownAmount:2.306, nebiki:20.656, baihen3:33.045},
   {name:'豊里六丁目', type:'TS', nisshu:386.449, yoy:101.42, yoyBudget:100.0, sales:11593, fjIncome:2029, fjBudget:2034, miscBudget:221, laborBudget:999, otherExp:411, markdownActual:440, markdownBudget:338, hqSupport:0, hqKc:0, kitchenSalesDay:0.0, kitchenSupportMonth:0.0, kitchenSupportRate:0.0, miscExtra:-1, miscExtraMin:0, landing:442, budget:551, diff:-109, markdownAmount:1.214, nebiki:10.484, baihen3:21.66},
-  {name:'東淀川豊里五丁目', type:'CN', nisshu:640.138, yoy:101.06, yoyBudget:104.05, sales:19204, fjIncome:2699, fjBudget:3151, miscBudget:270, laborBudget:1560, otherExp:647, markdownActual:893, markdownBudget:608, hqSupport:32, hqKc:10, kitchenSalesDay:26.679, kitchenSupportMonth:64.029, kitchenSupportRate:0.08, miscExtra:251, miscExtraMin:0, landing:306, budget:696, diff:-390, markdownAmount:3.479, nebiki:26.375, baihen3:44.511},
+  {name:'東淀川豊里五丁目', type:'CN', nisshu:640.138, yoy:101.06, yoyBudget:104.05, sales:19204, fjIncome:2699, fjBudget:3151, miscBudget:270, laborBudget:1560, otherExp:647, markdownActual:893, markdownBudget:608, hqSupport:32, hqKc:10, kitchenSalesDay:26.679, kitchenSupportMonth:64.029, kitchenSupportRate:0.08, miscExtra:251, miscExtraMin:0, landing:307, budget:697, diff:-390, markdownAmount:3.479, nebiki:26.375, baihen3:44.511},
   {name:'豊中原田南一丁目', type:'CN', nisshu:483.116, yoy:106.09, yoyBudget:103.871, sales:14493, fjIncome:2521, fjBudget:2546, miscBudget:236, laborBudget:1074, otherExp:561, markdownActual:694, markdownBudget:428, hqSupport:8, hqKc:8, kitchenSalesDay:22.06, kitchenSupportMonth:52.943, kitchenSupportRate:0.08, miscExtra:206, miscExtraMin:0, landing:755, budget:778, diff:-23, markdownAmount:2.697, nebiki:17.826, baihen3:34.574},
   {name:'南金田二丁目', type:'CN', nisshu:793.753, yoy:110.39, yoyBudget:103.951, sales:23813, fjIncome:3611, fjBudget:3657, miscBudget:305, laborBudget:1718, otherExp:837, markdownActual:946, markdownBudget:675, hqSupport:138, hqKc:2, kitchenSalesDay:24.807, kitchenSupportMonth:59.537, kitchenSupportRate:0.08, miscExtra:86, miscExtraMin:0, landing:826, budget:859, diff:-33, markdownAmount:2.863, nebiki:24.197, baihen3:46.701},
   {name:'豊中服部西町三丁目', type:'TS', nisshu:374.856, yoy:93.55, yoyBudget:100.0, sales:11246, fjIncome:2047, fjBudget:2111, miscBudget:231, laborBudget:1122, otherExp:460, markdownActual:314, markdownBudget:360, hqSupport:0, hqKc:0, kitchenSalesDay:0.0, kitchenSupportMonth:0.0, kitchenSupportRate:0.0, miscExtra:-12, miscExtraMin:0, landing:383, budget:414, diff:-31, markdownAmount:1.446, nebiki:5.733, baihen3:15.783},
@@ -2782,18 +2782,18 @@ function renderDelivery() {
 //   目標を変えるときは PLAN だけ直す。精算書が確定したら months の act に実績（千円）を入れる。
 // ===================================================================
 const PLAN = {
-  surplus: 500,            // 必要ライン＝毎月の予算 − 500千円（憲治さん 11/13）
+  need: 16500,             // 必要ライン＝毎月1,650万円（販管費＋借入返済・神田さん 11/26）
   start: '26年12月度',     // 上限を下げ始める月
   months: [
     {lab:'26年10月度', m:'10月', days:31, bud:15551, sales:356344, act:14864},
-    {lab:'26年11月度', m:'11月', days:30, bud:13112, sales:338813, act:null},
-    {lab:'26年12月度', m:'12月', days:31, bud:16518, sales:357586, act:null},
-    {lab:'27年1月度',  m:'1月',  days:31, bud:15065, sales:339541, act:null},
-    {lab:'27年2月度',  m:'2月',  days:28, bud:12572, sales:316125, act:null},
-    {lab:'27年3月度',  m:'3月',  days:31, bud:19295, sales:353458, act:null},
-    {lab:'27年4月度',  m:'4月',  days:30, bud:15305, sales:340834, act:null},
-    {lab:'27年5月度',  m:'5月',  days:31, bud:18144, sales:354315, act:null},
-    {lab:'27年6月度',  m:'6月',  days:30, bud:17405, sales:358595, act:null},
+    {lab:'26年11月度', m:'11月', days:30, bud:13113, sales:338813, act:null},
+    {lab:'26年12月度', m:'12月', days:31, bud:17911, sales:357586, act:null},
+    {lab:'27年1月度',  m:'1月',  days:31, bud:16357, sales:339541, act:null},
+    {lab:'27年2月度',  m:'2月',  days:28, bud:13833, sales:316125, act:null},
+    {lab:'27年3月度',  m:'3月',  days:31, bud:20678, sales:353458, act:null},
+    {lab:'27年4月度',  m:'4月',  days:30, bud:16654, sales:340834, act:null},
+    {lab:'27年5月度',  m:'5月',  days:31, bud:19483, sales:354315, act:null},
+    {lab:'27年6月度',  m:'6月',  days:30, bud:18763, sales:358595, act:null},
   ],
   // 店ごとの上限（%）：[始める月, 次の月, その次の月から]
   caps: {A:[3.0,2.8,2.6], B:[4.5,4.0,4.0], C:[6.0,5.0,5.0], D:[0.5,0.3,0.3], E:[8.0,8.0,7.0], F:[15.0,12.0,10.0]},
@@ -2860,7 +2860,7 @@ function nwPath() {
     if (i > ci) return;
     const a = x.act != null ? x.act : (i === ci ? land : (histOf(x.lab) != null ? histOf(x.lab) : x.bud));   // 確定した実績があればそれを使う
     sa += a; sb += x.bud;
-    out.push({m: x.m, need: x.bud - PLAN.surplus, bud: x.bud, base: a, plan: a, kind: (i === ci && x.act == null) ? 'now' : 'done'});
+    out.push({m: x.m, need: PLAN.need, bud: x.bud, base: a, plan: a, kind: (i === ci && x.act == null) ? 'now' : 'done'});
   });
   const ach = sb ? sa / sb : 1;
   const cur = M[ci];
@@ -2869,7 +2869,7 @@ function nwPath() {
     const ti = Math.min(2, Math.max(0, i - si));
     const sf = (x.sales / x.days) / (cur.sales / cur.days);
     const eff = i < si ? 0 : rows.reduce((a, r) => a + NW_KEYS.reduce((b, k) => b + nwOverAt(r, k, PLAN.caps[k][ti]) * PLAN.cost[k] * r.keep * PLAN.rec[k], 0), 0) * x.days * sf;
-    out.push({m: x.m, need: x.bud - PLAN.surplus, bud: x.bud, base: x.bud * ach, plan: x.bud * ach + eff, kind: 'future'});
+    out.push({m: x.m, need: PLAN.need, bud: x.bud, base: x.bud * ach, plan: x.bud * ach + eff, kind: 'future'});
   });
   let cb = 0, cp = 0;
   out.forEach(x => { cb += x.base - x.need; cp += x.plan - x.need; x.cb = cb; x.cp = cp; });
@@ -2896,7 +2896,7 @@ function renderNow() {
   const rate = V / N * 100, after = (V - O) / N * 100;
   const budRate = sum(r => r.p.markdownBudget) / sum(r => r.p.sales) * 100 * V / VC;      // 見切・処分の予算（原価）を売価に直す
   const path = nwPath();
-  const need = bud - PLAN.surplus;
+  const need = PLAN.need;
   const who = isAll ? '全社' : currentSC;
 
   // ── 現在地 ──
@@ -2958,8 +2958,8 @@ function renderNow() {
   // ── 6月までの道筋 ──
   h += `<div class="nw-h">⑤ 6月までの道筋 <small>全社・必要ラインとの差の積み上げ（万円）</small></div><div class="nw-path">${nwPathSvg(path)}</div>`;
   h += `<details class="nw-more"><summary>数字の決め方</summary><div>
-    ・必要ライン＝毎月の予算 − 50万円。6月度の精算書までに、差の積み上げをプラスにする。<br>
-    ・売変率＝（値引＋5つの廃棄）÷ 日販。売価。予算は原価で売上の3.0%＝売価に直すと約${budRate.toFixed(1)}%。<br>
+    ・必要ライン＝毎月1,650万円（会社の販管費＋借入の返済）。6月度の精算書までに、差の積み上げをプラスにする。<br>
+    ・売変率＝（値引＋5つの廃棄）÷ 日販。売価。今月の予算は売価に直すと約${budRate.toFixed(1)}%。12月度からの予算は売価で日販の3.3%（11/28に修正）。<br>
     ・上限（2月から）：値引2.6%・AICO 4.0%・オープンケース5.0%・ドライ0.3%・FF 7%・厨房10%。12月・1月は少しゆるい上限から始める。<br>
     ・店利益の効果＝減らす額×原価（70%・FFと厨房は50%）×店に残る割合。売上も少し減るので、値引は半分・廃棄は7割だけ数える。<br>
     ・「このまま」＝これからの月も、今までと同じ予算達成率（${(path.ach * 100).toFixed(1)}%）だった場合。</div></details>`;
@@ -3082,7 +3082,7 @@ function renderPfNew() {
   const ok = rows.filter(r => r.p.diff >= 0).length;
   let h = `<div class="nw-h">今月の店利益 <small>${CUR_LABEL.month}・${CUR_LABEL.date}・${isAll ? '全社' : currentSC}（${rows.length}店）</small></div><div class="nw-hero">`;
   h += `<div class="nw-tile ${diff < 0 ? 'bad' : 'good'}"><div class="nw-tl">着地の見込み</div><div class="nw-big ${diff < 0 ? 'nw-bad' : 'nw-good'}">${nwMan(land)}<span>万円</span></div><div class="nw-sub">予算 ${nwMan(bud)}万円（${(land / bud * 100).toFixed(0)}%）</div></div>`;
-  h += `<div class="nw-tile ${diff < 0 ? 'bad' : 'good'}"><div class="nw-tl">予算との差</div><div class="nw-big ${diff < 0 ? 'nw-bad' : 'nw-good'}">${nwSg(diff / 10)}<span>万円</span></div><div class="nw-sub">${isAll ? `必要ライン（予算−50万円）まで <b class="${diff + PLAN.surplus < 0 ? 'nw-bad' : 'nw-good'}">${nwSg((diff + PLAN.surplus) / 10)}万円</b>` : '&nbsp;'}</div></div>`;
+  h += `<div class="nw-tile ${diff < 0 ? 'bad' : 'good'}"><div class="nw-tl">予算との差</div><div class="nw-big ${diff < 0 ? 'nw-bad' : 'nw-good'}">${nwSg(diff / 10)}<span>万円</span></div><div class="nw-sub">${isAll ? `必要ライン（月1,650万円）まで <b class="${diff + bud - PLAN.need < 0 ? 'nw-bad' : 'nw-good'}">${nwSg((diff + bud - PLAN.need) / 10)}万円</b>` : '&nbsp;'}</div></div>`;
   h += `<div class="nw-tile ${ok < rows.length / 2 ? 'warn' : 'good'}"><div class="nw-tl">予算に届いている店</div><div class="nw-big">${ok}<span>／${rows.length}店</span></div>
     <div class="nw-ic-b" style="height:14px;margin-top:12px"><i style="width:${ok / rows.length * 100}%;background:#2e7d32"></i></div></div></div>`;
 
